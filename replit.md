@@ -13,7 +13,7 @@ A browser-based turn-based RPG with a board-style overworld, character creation 
 - `shared/schema.ts` - All data models: GameSave, PlayerCharacter, Enemy, BattleState, PartyMember, etc.
 - `client/src/lib/gameData.ts` - Game constants, enemy pools, regions, perks, damage calculations, party character definitions
 - `client/src/lib/gameState.ts` - Game state hook with all game logic (battle, leveling, inventory, party)
-- `client/src/components/` - All game screens: MainMenu, CharacterCreation, Overworld, BattleScreen, LevelUpScreen, PerkSelectScreen, ShopScreen, InventoryScreen, CharacterUnlockScreen
+- `client/src/components/` - All game screens: MainMenu, CharacterCreation, Overworld, BattleScreen, LevelUpScreen, PerkSelectScreen, ShopScreen, InventoryScreen, PartyChoiceScreen, CharacterUnlockScreen
 - `client/src/components/ParticleCanvas.tsx` - Canvas-based particle effects system
 - `server/routes.ts` - CRUD API for game saves
 - `server/storage.ts` - Database storage layer
@@ -21,20 +21,24 @@ A browser-based turn-based RPG with a board-style overworld, character creation 
 
 ## Game Flow
 1. Main Menu → New Game / Continue / Options
-2. Character Creation → Name, Energy Color, Energy Shape (Element fixed to Wind/Samurai)
+2. Character Creation → Name, Element selection, Energy Color, Energy Shape → Confirm
 3. Overworld → Board-style node map with battle/shop/rest/boss nodes
 4. Battle → Turn-based combat with Attack/Defend/Magic/Item actions + party auto-attacks
-5. Boss Victory → Party member unlock screen
+5. Boss Victory (first time) → PartyChoiceScreen (2 darkened silhouettes) → pick one → name them → party unlock
 6. Level Up → Allocate stats + choose perk
 7. Shop → Buy items/equipment
 
 ## Party System
-- Main character (Samurai) is fixed as Wind element
-- Defeating regional bosses unlocks new party members:
-  - Ember Plains boss → Ignis (Knight, Fire)
-  - Frozen Depths boss → Sylph (Ranger, Wind)
-  - Shadow Forest boss → Basken (Warrior, Lightning)
-  - Crystal Desert boss → Lumen (Paladin, Light) + Terra (Axe Warrior, Earth)
+- Player chooses element during character creation (all 8 elements available)
+- Defeating regional bosses (first time only) shows PartyChoiceScreen with 2 darkened silhouettes
+- Player picks one character to unlock, then names them on CharacterUnlockScreen
+- `defeatedBosses` array on PlayerCharacter tracks which bosses have granted unlocks
+- If only 1 of the 2 choices is unowned, skips choice screen and goes straight to naming
+- BOSS_UNLOCK_MAP pairs per region:
+  - Ember Plains (0) → Knight (Fire) or Basken (Lightning)
+  - Frozen Depths (1) → Ranger (Wind) or Axe Warrior (Earth)
+  - Shadow Forest (2) → Knight2D (Light) or Knight (Fire)
+  - Crystal Desert (3) → Basken (Lightning) or Axe Warrior (Earth)
 - Party members auto-attack during "partyTurn" phase (no player input needed)
 - Party members target the lowest HP enemy
 - Enemies randomly target player or alive party members

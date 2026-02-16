@@ -91,11 +91,11 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
   },
 ];
 
-export const BOSS_UNLOCK_MAP: Record<number, string[]> = {
-  0: ["knight_fire"],
-  1: ["ranger_wind"],
-  2: ["basken_lightning"],
-  3: ["knight2d_light", "axewarrior_earth"],
+export const BOSS_UNLOCK_MAP: Record<number, [string, string]> = {
+  0: ["knight_fire", "basken_lightning"],
+  1: ["ranger_wind", "axewarrior_earth"],
+  2: ["knight2d_light", "knight_fire"],
+  3: ["basken_lightning", "axewarrior_earth"],
 };
 
 export interface PartySpriteData {
@@ -179,6 +179,7 @@ export function createNewPlayer(name: string, color: EnergyColor, shape: EnergyS
     currentNode: 0,
     clearedNodes: [],
     party: [],
+    defeatedBosses: [],
   };
 }
 

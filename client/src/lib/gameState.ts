@@ -9,6 +9,7 @@ const INITIAL_STATE: GameState = {
   battle: null,
   currentShop: null,
   pendingLevelUp: null,
+  pendingUnlockChoices: null,
   pendingUnlock: null,
   textSpeed: "medium",
   musicVolume: 70,
@@ -438,20 +439,36 @@ export function useGameState() {
         },
       };
 
+      let pendingUnlockChoices: [PartyMemberDef, PartyMemberDef] | null = null;
       let pendingUnlock: PartyMemberDef | null = null;
-      if (isBossNode) {
-        const unlockIds = BOSS_UNLOCK_MAP[s.player.currentRegion] || [];
-        const existingIds = updatedPlayer.party.map(p => p.id);
-        const newUnlocks = unlockIds.filter(id => !existingIds.includes(id));
-        if (newUnlocks.length > 0) {
-          const charDef = PARTY_CHARACTERS.find(c => c.id === newUnlocks[0]);
-          if (charDef) {
-            pendingUnlock = charDef;
+      const defeatedBosses = [...(s.player.defeatedBosses || [])];
+      if (isBossNode && !defeatedBosses.includes(s.player.currentRegion)) {
+        defeatedBosses.push(s.player.currentRegion);
+        const unlockPair = BOSS_UNLOCK_MAP[s.player.currentRegion];
+        if (unlockPair) {
+          const existingIds = updatedPlayer.party.map(p => p.id);
+          const available = unlockPair.filter(id => !existingIds.includes(id));
+          if (available.length === 2) {
+            const char1 = PARTY_CHARACTERS.find(c => c.id === available[0]);
+            const char2 = PARTY_CHARACTERS.find(c => c.id === available[1]);
+            if (char1 && char2) {
+              pendingUnlockChoices = [char1, char2];
+            }
+          } else if (available.length === 1) {
+            const char = PARTY_CHARACTERS.find(c => c.id === available[0]);
+            if (char) {
+              pendingUnlock = char;
+            }
           }
         }
       }
+      updatedPlayer.defeatedBosses = defeatedBosses;
 
-      const nextScreen = pendingUnlock ? "partyUnlock" : (pendingLevelUp ? "levelUp" : "overworld");
+      const nextScreen = pendingUnlockChoices
+        ? "partyChoice"
+        : pendingUnlock
+          ? "partyUnlock"
+          : (pendingLevelUp ? "levelUp" : "overworld");
 
       return {
         ...s,
@@ -459,6 +476,7 @@ export function useGameState() {
         battle: null,
         screen: nextScreen,
         pendingLevelUp,
+        pendingUnlockChoices,
         pendingUnlock,
       };
     });
@@ -594,56 +612,56 @@ export function useGameState() {
   }, []);
 
   const loadGame = useCallback((playerData: PlayerCharacter) => {
-    const normalizedPlayer = { ...playerData, party: playerData.party || [] };
+    const normalizedPlayer = { ...playerData, party: playerData.party || [], defeatedBosses: playerData.defeatedBosses || [] };
     setState(s => ({ ...s, player: normalizedPlayer, screen: "overworld" }));
   }, []);
 
-  const confirmUnlock = useCallback(() => {
+  const selectUnlockChoice = useCallback((charDef: PartyMemberDef) => {
+    setState(s => {
+      if (!s.player || !s.pendingUnlockChoices) return s;
+      return {
+        ...s,
+        pendingUnlock: charDef,
+        pendingUnlockChoices: null,
+        screen: "partyUnlock" as const,
+      };
+    });
+  }, []);
+
+  const confirmUnlock = useCallback((customName: string) => {
     setState(s => {
       if (!s.player || !s.pendingUnlock) return s;
 
       const def = s.pendingUnlock;
+      const scale = 1 + (s.player.level - 1) * 0.15;
       const newMember: PartyMember = {
         id: def.id,
-        name: def.name,
+        name: customName.trim() || def.name,
         className: def.className,
         element: def.element,
         level: s.player.level,
-        stats: { ...def.baseStats },
+        stats: {
+          hp: Math.floor(def.baseStats.hp * scale),
+          maxHp: Math.floor(def.baseStats.maxHp * scale),
+          mp: Math.floor(def.baseStats.mp * scale),
+          maxMp: Math.floor(def.baseStats.maxMp * scale),
+          atk: Math.floor(def.baseStats.atk * scale),
+          def: Math.floor(def.baseStats.def * scale),
+          agi: Math.floor(def.baseStats.agi * scale),
+          int: Math.floor(def.baseStats.int * scale),
+          luck: Math.floor(def.baseStats.luck * scale),
+        },
         spriteId: def.spriteId,
       };
 
-      const scale = 1 + (s.player.level - 1) * 0.15;
-      newMember.stats = {
-        hp: Math.floor(def.baseStats.hp * scale),
-        maxHp: Math.floor(def.baseStats.maxHp * scale),
-        mp: Math.floor(def.baseStats.mp * scale),
-        maxMp: Math.floor(def.baseStats.maxMp * scale),
-        atk: Math.floor(def.baseStats.atk * scale),
-        def: Math.floor(def.baseStats.def * scale),
-        agi: Math.floor(def.baseStats.agi * scale),
-        int: Math.floor(def.baseStats.int * scale),
-        luck: Math.floor(def.baseStats.luck * scale),
-      };
-
       const newParty = [...s.player.party, newMember];
-
-      const regionUnlocks = BOSS_UNLOCK_MAP[s.player.currentRegion - 1] || [];
-      const remainingUnlocks = regionUnlocks.filter(
-        id => id !== def.id && !newParty.some(p => p.id === id)
-      );
-
-      let nextUnlock: PartyMemberDef | null = null;
-      if (remainingUnlocks.length > 0) {
-        nextUnlock = PARTY_CHARACTERS.find(c => c.id === remainingUnlocks[0]) || null;
-      }
-
-      const nextScreen = nextUnlock ? "partyUnlock" : (s.pendingLevelUp ? "levelUp" : "overworld");
+      const nextScreen = s.pendingLevelUp ? "levelUp" : "overworld";
 
       return {
         ...s,
         player: { ...s.player, party: newParty },
-        pendingUnlock: nextUnlock,
+        pendingUnlock: null,
+        pendingUnlockChoices: null,
         screen: nextScreen,
       };
     });
@@ -675,6 +693,7 @@ export function useGameState() {
     loadGame,
     setAnimating,
     finishPlayerTurn,
+    selectUnlockChoice,
     confirmUnlock,
   };
 }
