@@ -12,6 +12,9 @@ import { playSfx } from "@/lib/sfx";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
+import samuraiRun from "@/assets/images/samurai-run.png";
+import knightRun from "@/assets/images/knight-run.png";
+import baskenRun from "@/assets/images/basken-run.png";
 import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
 import smearH1 from "@/assets/images/smear-h1.png";
 import smearH2 from "@/assets/images/smear-h2.png";
@@ -85,10 +88,11 @@ const ENEMY_SPRITES: Record<string, string> = {
   crystal_titan: crystalTitanImg,
 };
 
-const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number }> = {
-  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, frameWidth: 86, frameHeight: 98, idleFrames: 4, attackFrames: 7, hurtFrames: 2 },
+const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; scale?: number }> = {
+  samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 4, scale: 3.5 },
+  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, run: knightRun, frameWidth: 86, frameHeight: 98, idleFrames: 4, attackFrames: 7, hurtFrames: 2, scale: 3.5 },
+  basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, scale: 5 },
   ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6 },
-  basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3 },
   knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3 },
   axewarrior: { idle: axewarriorIdle, attack: axewarriorAttack, hurt: axewarriorHurt, frameWidth: 94, frameHeight: 91, idleFrames: 6, attackFrames: 8, hurtFrames: 3 },
 };
@@ -774,27 +778,33 @@ export default function BattleScreen({
     return ENEMY_SPRITES[enemyId] || fireSlimeImg;
   };
 
-  const getSpriteSheet = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number; startAt?: number } => {
+  const playerSprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
+
+  const getSpriteSheet = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number; startAt?: number; w: number; h: number } => {
+    const idle = { src: playerSprites.idle, frames: playerSprites.idleFrames, fps: 8, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+    const atk = { src: playerSprites.attack, frames: playerSprites.attackFrames, fps: 14, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+    const hurt = { src: playerSprites.hurt, frames: playerSprites.hurtFrames, fps: 10, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+
     switch (animPhase) {
       case "attacking":
-        return { src: samuraiAttack, frames: 7, fps: 14, loop: false };
+        return atk;
       case "casting":
-        return { src: samuraiAttack, frames: 7, fps: 14, loop: false };
+        return atk;
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
-          return { src: samuraiAttack, frames: 7, fps: 12, loop: false, pauseAt: 3 };
+          return { ...atk, fps: 12, pauseAt: Math.min(3, atk.frames - 1) };
         }
         if (fujinDashPhase === "dash") {
-          return { src: samuraiAttack, frames: 7, fps: 12, loop: false, pauseAt: 3 };
+          return { ...atk, fps: 12, pauseAt: Math.min(3, atk.frames - 1) };
         }
         if (fujinDashPhase === "strike") {
-          return { src: samuraiAttack, frames: 7, fps: 16, loop: false, startAt: 3 };
+          return { ...atk, fps: 16, startAt: Math.min(3, atk.frames - 1) };
         }
-        return { src: samuraiIdle, frames: 10, fps: 8, loop: true };
+        return idle;
       case "hurt":
-        return { src: samuraiHurt, frames: 4, fps: 10, loop: false };
+        return hurt;
       default:
-        return { src: samuraiIdle, frames: 10, fps: 8, loop: true };
+        return idle;
     }
   };
 
@@ -1052,14 +1062,14 @@ export default function BattleScreen({
             <div className="relative">
               <SpriteAnimator
                 spriteSheet={spriteConfig.src}
-                frameWidth={96}
-                frameHeight={96}
+                frameWidth={spriteConfig.w}
+                frameHeight={spriteConfig.h}
                 totalFrames={spriteConfig.frames}
                 fps={spriteConfig.fps}
-                scale={3.5}
+                scale={playerSprites.scale || 3.5}
                 loop={spriteConfig.loop}
                 onComplete={onSpriteComplete}
-                preloadSheets={[samuraiIdle, samuraiAttack, samuraiHurt]}
+                preloadSheets={[playerSprites.idle, playerSprites.attack, playerSprites.hurt]}
                 startFrame={spriteConfig.startAt}
                 pauseAtFrame={spriteConfig.pauseAt}
               />
