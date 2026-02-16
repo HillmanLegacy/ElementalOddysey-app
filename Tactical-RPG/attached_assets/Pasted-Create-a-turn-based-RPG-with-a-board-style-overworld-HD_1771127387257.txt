@@ -1,0 +1,231 @@
+Create a turn-based RPG with a board-style overworld, HD effects, dynamic audio, and full elemental progression.
+
+1️⃣ Intro & Main Menu
+
+Intro Animation:
+
+Full-screen cinematic with swirling particle auras in multiple colors.
+
+Each color corresponds to energy manifestation options (Red, Blue, Green, etc.).
+
+Shimmering lights, spark trails, energy pulses, and subtle camera pans for depth.
+
+Ambient soundtrack with rising intensity; layered with particle-triggered SFX for each moving energy trail.
+
+Main Menu Layout:
+
+New Game / Continue / Options
+
+Options Menu:
+
+Text speed: Slow / Medium / Fast
+
+Audio sliders: Music, SFX
+
+Controls: Tap/click to progress dialogue
+
+2️⃣ Character Creation
+
+Energy Manifestation:
+
+Player selects Color (Red, Blue, Green, Yellow, Purple, White, Black, Cyan, Orange, Pink)
+
+Player selects Shape (Orb, Flame, Crystal, Lightning, Shadow, Leaf, Wave)
+
+Each combination has unique aura effects: glow, particle trails, flicker intensity.
+
+Stats: HP, ATK, DEF, AGI, INT, LUCK (default + element modifiers)
+
+Element Selection: Fire, Water, Wind, Earth, Lightning, Shadow, Light, Ice
+
+Each element modifies visual effects:
+
+Fire → flickering flames, heat distortion
+
+Water → flowing ripples, droplets
+
+Wind → gusts, swirling leaves
+
+Earth → dust, stone particles
+
+Lightning → arcs, sparks, crackle glow
+
+Shadow → smoky trails, dark mist
+
+Light → radiant beams, lens flare
+
+Ice → frost particles, sparkly shards
+
+Gameplay Detail: Character sprite has dynamic aura matching chosen color/shape/element; aura pulses on movement or selection.
+
+3️⃣ Overworld
+
+Board Game Layout:
+
+Nodes represent battle levels, shops, events.
+
+Cleared levels replayable for XP, magic, and items.
+
+Tiles animate: glowing edges, hover highlights, particle shimmer.
+
+Region Themes & Visuals:
+
+Fire Region → lava flows, embers, heat haze
+
+Ice Region → frost, snow particles, frozen mist
+
+Shadow Forest → swirling dark mist, floating glowing motes
+
+Crystal Desert → reflective crystals, shimmering light beams
+
+NPCs & Shops:
+
+NPCs animate with idle breathing, gestures.
+
+Shop items have hover glows and sparkle SFX on selection.
+
+4️⃣ Battle System
+
+Turn-Based Combat:
+
+1–3 enemies per battle; enemy auras and animations reflect their element
+
+Action menu: Attack, Defend, Magic, Item
+
+Detailed Mechanics:
+
+Attack: Visual slash or strike animation; damage number pops with color-coded element effect
+
+Defend: Shield aura appears; incoming damage flashes on shield
+
+Magic: Particle-heavy spell animation unique per element:
+
+Fire → explosion / flame trail
+
+Water → wave / splash
+
+Lightning → bolts / arcs
+
+Shadow → dark tendrils
+
+Ice → shards / frost
+
+Item: Healing glow, buff spark, or weapon effect overlay
+
+Dodge & Critical Hits:
+
+Dodge → character flashes and blurs; coin-flip animation effect for success
+
+Critical → explosion of color particles, damage number larger, shake effect
+
+Stats Influence:
+
+HP → health bar with gradient fill + screen shake at low HP
+
+AGI → faster attack animations, dodge blur
+
+INT → larger spell effects, mana efficiency glow
+
+LUCK → occasional golden sparkle when activated
+
+5️⃣ Leveling & Perks
+
+XP Gain & Level Up:
+
+Animation: confetti particle burst on level-up
+
+Player selects 2 stats to increase
+
+Unlock 1 perk per level; perks have animated icons and elemental glow
+
+Perk Trees by Element:
+
+Fire: Burn chance, +ATK, AoE Fire Magic
+
+Water: HP regen, +INT, Ice debuff
+
+Wind: AGI boost, dodge bonus, pushback
+
+Earth: +DEF, HP boost, armor-piercing
+
+Lightning: AGI, critical chance, chain attack
+
+Shadow: AGI, dodge, life-steal
+
+Light: Healing buffs, magic amplification
+
+Ice: Freeze, AoE slow
+
+6️⃣ Items & Equipment
+
+Item Types: Consumables, Weapons, Armor, Accessories
+
+Visuals:
+
+Hover glow on items
+
+Equip animation: aura envelops character
+
+Consumable: particle burst on use
+
+7️⃣ Regions & Levels
+
+Regions: 10–20 levels each
+
+Mini-Boss / Boss:
+
+Multi-phase, elemental resistances
+
+Particle-heavy ultimate attacks
+
+Camera shake, screen flashes, audio cues for impact
+
+8️⃣ Visual & Audio
+
+Dynamic particle effects for all attacks, spells, and elemental auras
+
+Animated overworld tiles and NPCs
+
+Ambient audio per region: looping background music + particle-linked SFX
+
+Optional cinematic boss intro sequences
+
+9️⃣ Replayability
+
+Multiple elements for varied playstyle
+
+Previously cleared levels replayable
+
+Unlockable cosmetic aura shapes and colors
+
+Optional hard mode or challenges
+
+10️⃣ Technical Requirements
+
+Browser-based (Replit prototype), Android-ready via PWA/Cordova
+
+Framework: Phaser 3 for 2D and particle effects
+
+Save System: Player stats, inventory, spells, element, perk progression
+
+Fully functional: overworld map, battle system, leveling/perks, shops
+
+💡 Optional Enhancements:
+
+Procedural enemy scaling for replayability
+
+Multi-phase boss attack sequences with particle FX
+
+Adaptive music tied to battle intensity
+
+Dynamic camera zoom and shake during magic or critical hits
+
+If you want, I can write a complete Phaser 3 starter template based on this prompt with:
+
+Overworld board tiles
+
+Turn-based battle system
+
+Character creation with aura/color effects
+
+XP, leveling, and perk tree skeleton
