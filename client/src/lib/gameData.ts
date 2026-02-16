@@ -1,4 +1,4 @@
-import type { Enemy, Region, OverworldNode, Perk, ShopItem, PlayerStats, PlayerCharacter, Element, EnergyColor, EnergyShape, BattleState, Spell } from "@shared/schema";
+import type { Enemy, Region, OverworldNode, Perk, ShopItem, PlayerStats, PlayerCharacter, Element, EnergyColor, EnergyShape, BattleState, Spell, PartyMemberDef } from "@shared/schema";
 
 export const COLOR_MAP: Record<string, string> = {
   Red: "#ef4444",
@@ -48,6 +48,114 @@ export function applyElementMods(stats: PlayerStats, element: Element): PlayerSt
   return result;
 }
 
+export const PARTY_CHARACTERS: PartyMemberDef[] = [
+  {
+    id: "knight_fire",
+    name: "Ignis",
+    className: "Knight",
+    element: "Fire",
+    baseStats: { hp: 120, maxHp: 120, mp: 30, maxMp: 30, atk: 14, def: 12, agi: 6, int: 5, luck: 4 },
+    spriteId: "knight",
+  },
+  {
+    id: "ranger_wind",
+    name: "Sylph",
+    className: "Ranger",
+    element: "Wind",
+    baseStats: { hp: 80, maxHp: 80, mp: 40, maxMp: 40, atk: 10, def: 6, agi: 14, int: 10, luck: 7 },
+    spriteId: "ranger",
+  },
+  {
+    id: "basken_lightning",
+    name: "Basken",
+    className: "Warrior",
+    element: "Lightning",
+    baseStats: { hp: 100, maxHp: 100, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
+    spriteId: "basken",
+  },
+  {
+    id: "knight2d_light",
+    name: "Lumen",
+    className: "Paladin",
+    element: "Light",
+    baseStats: { hp: 110, maxHp: 110, mp: 45, maxMp: 45, atk: 11, def: 11, agi: 7, int: 12, luck: 5 },
+    spriteId: "knight2d",
+  },
+  {
+    id: "axewarrior_earth",
+    name: "Terra",
+    className: "Axe Warrior",
+    element: "Earth",
+    baseStats: { hp: 130, maxHp: 130, mp: 25, maxMp: 25, atk: 15, def: 13, agi: 5, int: 4, luck: 5 },
+    spriteId: "axewarrior",
+  },
+];
+
+export const BOSS_UNLOCK_MAP: Record<number, string[]> = {
+  0: ["knight_fire"],
+  1: ["ranger_wind"],
+  2: ["basken_lightning"],
+  3: ["knight2d_light", "axewarrior_earth"],
+};
+
+export interface PartySpriteData {
+  idle: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number };
+  attack: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number };
+  run: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number };
+  hurt: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number };
+}
+
+export const PARTY_SPRITE_DATA: Record<string, PartySpriteData> = {
+  knight: {
+    idle: { sheet: "knight-idle-4f.png", frameWidth: 86, frameHeight: 98, totalFrames: 4 },
+    attack: { sheet: "knight-attack.png", frameWidth: 86, frameHeight: 98, totalFrames: 7 },
+    run: { sheet: "knight-run.png", frameWidth: 86, frameHeight: 98, totalFrames: 6 },
+    hurt: { sheet: "knight-hurt.png", frameWidth: 86, frameHeight: 98, totalFrames: 2 },
+  },
+  ranger: {
+    idle: { sheet: "ranger-idle.png", frameWidth: 64, frameHeight: 48, totalFrames: 6 },
+    attack: { sheet: "ranger-attack.png", frameWidth: 64, frameHeight: 48, totalFrames: 6 },
+    run: { sheet: "ranger-run.png", frameWidth: 64, frameHeight: 48, totalFrames: 6 },
+    hurt: { sheet: "ranger-hurt.png", frameWidth: 64, frameHeight: 48, totalFrames: 6 },
+  },
+  basken: {
+    idle: { sheet: "basken-idle.png", frameWidth: 56, frameHeight: 56, totalFrames: 5 },
+    attack: { sheet: "basken-attack.png", frameWidth: 56, frameHeight: 56, totalFrames: 8 },
+    run: { sheet: "basken-run.png", frameWidth: 56, frameHeight: 56, totalFrames: 6 },
+    hurt: { sheet: "basken-hurt.png", frameWidth: 56, frameHeight: 56, totalFrames: 3 },
+  },
+  knight2d: {
+    idle: { sheet: "knight2d-idle.png", frameWidth: 84, frameHeight: 84, totalFrames: 8 },
+    attack: { sheet: "knight2d-attack-1.png", frameWidth: 84, frameHeight: 84, totalFrames: 4 },
+    run: { sheet: "knight2d-run.png", frameWidth: 84, frameHeight: 84, totalFrames: 8 },
+    hurt: { sheet: "knight2d-hurt.png", frameWidth: 84, frameHeight: 84, totalFrames: 3 },
+  },
+  axewarrior: {
+    idle: { sheet: "axewarrior-idle.png", frameWidth: 94, frameHeight: 91, totalFrames: 6 },
+    attack: { sheet: "axewarrior-attack.png", frameWidth: 94, frameHeight: 91, totalFrames: 8 },
+    run: { sheet: "axewarrior-run.png", frameWidth: 94, frameHeight: 91, totalFrames: 6 },
+    hurt: { sheet: "axewarrior-hurt.png", frameWidth: 94, frameHeight: 91, totalFrames: 3 },
+  },
+};
+
+export function getPartyMemberForLevel(def: PartyMemberDef, level: number): PartyMemberDef & { scaledStats: PlayerStats } {
+  const scale = 1 + (level - 1) * 0.15;
+  return {
+    ...def,
+    scaledStats: {
+      hp: Math.floor(def.baseStats.hp * scale),
+      maxHp: Math.floor(def.baseStats.maxHp * scale),
+      mp: Math.floor(def.baseStats.mp * scale),
+      maxMp: Math.floor(def.baseStats.maxMp * scale),
+      atk: Math.floor(def.baseStats.atk * scale),
+      def: Math.floor(def.baseStats.def * scale),
+      agi: Math.floor(def.baseStats.agi * scale),
+      int: Math.floor(def.baseStats.int * scale),
+      luck: Math.floor(def.baseStats.luck * scale),
+    },
+  };
+}
+
 export function createNewPlayer(name: string, color: EnergyColor, shape: EnergyShape, element: Element): PlayerCharacter {
   const baseStats = createDefaultStats();
   const stats = applyElementMods(baseStats, element);
@@ -70,6 +178,7 @@ export function createNewPlayer(name: string, color: EnergyColor, shape: EnergyS
     currentRegion: 0,
     currentNode: 0,
     clearedNodes: [],
+    party: [],
   };
 }
 
@@ -325,5 +434,7 @@ export function initBattle(enemies: Enemy[]): BattleState {
     defending: false,
     buffs: [],
     turnCount: 0,
+    party: [],
+    activePartyIndex: 0,
   };
 }

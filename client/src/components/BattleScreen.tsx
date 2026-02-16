@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
-import type { PlayerCharacter, BattleState, Spell } from "@shared/schema";
+import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
 import { ELEMENT_COLORS, getPlayerSpells } from "@/lib/gameData";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
@@ -53,6 +53,22 @@ import dragonLordAttack from "@/assets/images/dragonlord-attack.png";
 import dragonLordHurt from "@/assets/images/dragonlord-hurt.png";
 import dragonLordDeath from "@/assets/images/dragonlord-death.png";
 
+import knightIdle from "@/assets/images/knight-idle-4f.png";
+import knightAttack from "@/assets/images/knight-attack.png";
+import knightHurt from "@/assets/images/knight-hurt.png";
+import rangerIdle from "@/assets/images/ranger-idle.png";
+import rangerAttack from "@/assets/images/ranger-attack.png";
+import rangerHurt from "@/assets/images/ranger-hurt.png";
+import baskenIdle from "@/assets/images/basken-idle.png";
+import baskenAttack from "@/assets/images/basken-attack.png";
+import baskenHurt from "@/assets/images/basken-hurt.png";
+import knight2dIdle from "@/assets/images/knight2d-idle.png";
+import knight2dAttack from "@/assets/images/knight2d-attack-1.png";
+import knight2dHurt from "@/assets/images/knight2d-hurt.png";
+import axewarriorIdle from "@/assets/images/axewarrior-idle.png";
+import axewarriorAttack from "@/assets/images/axewarrior-attack.png";
+import axewarriorHurt from "@/assets/images/axewarrior-hurt.png";
+
 const ENEMY_SPRITES: Record<string, string> = {
   slime_fire: fireSlimeImg,
   slime_water: aquaSlimeImg,
@@ -69,6 +85,14 @@ const ENEMY_SPRITES: Record<string, string> = {
   crystal_titan: crystalTitanImg,
 };
 
+const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number }> = {
+  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, frameWidth: 86, frameHeight: 98, idleFrames: 4, attackFrames: 7, hurtFrames: 2 },
+  ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6 },
+  basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3 },
+  knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3 },
+  axewarrior: { idle: axewarriorIdle, attack: axewarriorAttack, hurt: axewarriorHurt, frameWidth: 94, frameHeight: 91, idleFrames: 6, attackFrames: 8, hurtFrames: 3 },
+};
+
 interface BattleScreenProps {
   player: PlayerCharacter;
   battle: BattleState;
@@ -76,7 +100,9 @@ interface BattleScreenProps {
   onCastSpell: (spell: Spell, targetIndex?: number) => void;
   onDefend: () => void;
   onUseItem: (itemId: string) => void;
-  onEnemyAttack: (enemyIndex: number) => boolean;
+  onPartyMemberAttack: (partyIndex: number) => void;
+  onFinishPartyTurn: () => void;
+  onEnemyAttack: (enemyIndex: number) => { dodged: boolean; target: { type: "player" | "party"; index: number } };
   onEnemyTurnEnd: () => void;
   onEndBattle: (victory: boolean) => void;
   onSetAnimating: () => void;
@@ -86,7 +112,7 @@ interface BattleScreenProps {
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice";
 
 export default function BattleScreen({
-  player, battle, onAttack, onCastSpell, onDefend, onUseItem, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
+  player, battle, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
 }: BattleScreenProps) {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
@@ -110,6 +136,9 @@ export default function BattleScreen({
   const [fujinZoom, setFujinZoom] = useState(false);
   const [fujinTargetIdx, setFujinTargetIdx] = useState<number | null>(null);
   const [fujinDashPhase, setFujinDashPhase] = useState<"none" | "windup" | "dash" | "strike" | "fadeout" | "return">("none");
+  const [partyAnimIndex, setPartyAnimIndex] = useState(-1);
+  const [partyAnimPhase, setPartyAnimPhase] = useState<"idle" | "attacking" | "done">("idle");
+  const [partyHurtIndex, setPartyHurtIndex] = useState(-1);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
   const prevPhaseRef = useRef(battle.phase);
@@ -405,11 +434,16 @@ export default function BattleScreen({
         playSfx("magicRing", 0.7);
 
         scheduleTimer(() => {
-          const dodged = onEnemyAttack(enemyIdx);
-          if (!dodged) {
-            setDarkMagicSfx(true);
+          const result = onEnemyAttack(enemyIdx);
+          if (!result.dodged) {
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 600);
+            } else {
+              setDarkMagicSfx(true);
+              setAnimPhase("hurt");
+            }
             setShakeScreen(true);
-            setAnimPhase("hurt");
             playSfx("stabRing");
             scheduleTimer(() => setShakeScreen(false), 600);
           }
@@ -430,10 +464,15 @@ export default function BattleScreen({
         }, 600);
 
         scheduleTimer(() => {
-          const dodged = onEnemyAttack(enemyIdx);
-          if (!dodged) {
+          const result = onEnemyAttack(enemyIdx);
+          if (!result.dodged) {
             setShakeScreen(true);
-            setAnimPhase("hurt");
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 500);
+            } else {
+              setAnimPhase("hurt");
+            }
             playSfx("hitCombo");
             scheduleTimer(() => setShakeScreen(false), 500);
           }
@@ -461,11 +500,16 @@ export default function BattleScreen({
 
       scheduleTimer(() => {
         setFireballAnim(null);
-        const dodged = onEnemyAttack(enemyIdx);
-        if (!dodged) {
-          setFireHitSfx(true);
+        const result = onEnemyAttack(enemyIdx);
+        if (!result.dodged) {
           setShakeScreen(true);
-          setAnimPhase("hurt");
+          if (result.target.type === "party") {
+            setPartyHurtIndex(result.target.index);
+            scheduleTimer(() => setPartyHurtIndex(-1), 500);
+          } else {
+            setFireHitSfx(true);
+            setAnimPhase("hurt");
+          }
           playSfx("hitMetal");
           scheduleTimer(() => setShakeScreen(false), 500);
         }
@@ -486,11 +530,16 @@ export default function BattleScreen({
 
       scheduleTimer(() => {
         setFrostBreathAnim(null);
-        const dodged = onEnemyAttack(enemyIdx);
-        if (!dodged) {
-          setFrostHitSfx(true);
+        const result = onEnemyAttack(enemyIdx);
+        if (!result.dodged) {
           setShakeScreen(true);
-          setAnimPhase("hurt");
+          if (result.target.type === "party") {
+            setPartyHurtIndex(result.target.index);
+            scheduleTimer(() => setPartyHurtIndex(-1), 500);
+          } else {
+            setFrostHitSfx(true);
+            setAnimPhase("hurt");
+          }
           playSfx("hitMetal");
           scheduleTimer(() => setShakeScreen(false), 500);
         }
@@ -516,11 +565,16 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setFrostBreathAnim(null);
-          const dodged = onEnemyAttack(enemyIdx);
-          if (!dodged) {
-            setFrostHitSfx(true);
+          const result = onEnemyAttack(enemyIdx);
+          if (!result.dodged) {
             setShakeScreen(true);
-            setAnimPhase("hurt");
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 600);
+            } else {
+              setFrostHitSfx(true);
+              setAnimPhase("hurt");
+            }
             playSfx("stabRing");
             scheduleTimer(() => setShakeScreen(false), 600);
           }
@@ -540,10 +594,15 @@ export default function BattleScreen({
         }, 400);
 
         scheduleTimer(() => {
-          const dodged = onEnemyAttack(enemyIdx);
-          if (!dodged) {
+          const result = onEnemyAttack(enemyIdx);
+          if (!result.dodged) {
             setShakeScreen(true);
-            setAnimPhase("hurt");
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 600);
+            } else {
+              setAnimPhase("hurt");
+            }
             playSfx("hitCombo");
             scheduleTimer(() => setShakeScreen(false), 600);
           }
@@ -564,10 +623,15 @@ export default function BattleScreen({
         }, 600);
 
         scheduleTimer(() => {
-          const dodged = onEnemyAttack(enemyIdx);
-          if (!dodged) {
+          const result = onEnemyAttack(enemyIdx);
+          if (!result.dodged) {
             setShakeScreen(true);
-            setAnimPhase("hurt");
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 500);
+            } else {
+              setAnimPhase("hurt");
+            }
             playSfx("hitCombo");
             scheduleTimer(() => setShakeScreen(false), 500);
           }
@@ -587,9 +651,14 @@ export default function BattleScreen({
       }
     } else {
       playSfx("stabWhoosh");
-      const dodged = onEnemyAttack(enemyIdx);
-      if (!dodged) {
-        setAnimPhase("hurt");
+      const result = onEnemyAttack(enemyIdx);
+      if (!result.dodged) {
+        if (result.target.type === "party") {
+          setPartyHurtIndex(result.target.index);
+          scheduleTimer(() => setPartyHurtIndex(-1), 600);
+        } else {
+          setAnimPhase("hurt");
+        }
         playSfx("hitMetal", 0.6);
       }
       scheduleTimer(() => {
@@ -598,6 +667,71 @@ export default function BattleScreen({
       }, 600);
     }
   }, [isDragonLord, isFrostLizard, isJotem, scheduleTimer, onEnemyAttack]);
+
+  const partyTurnTimers = useRef<number[]>([]);
+  const partyTurnCancelled = useRef(false);
+
+  useEffect(() => {
+    if (battle.phase !== "partyTurn") {
+      setPartyAnimIndex(-1);
+      setPartyAnimPhase("idle");
+      partyTurnCancelled.current = true;
+      partyTurnTimers.current.forEach(id => clearTimeout(id));
+      partyTurnTimers.current = [];
+      return;
+    }
+
+    partyTurnCancelled.current = false;
+
+    const schedulePartyTimer = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(() => {
+        if (!partyTurnCancelled.current) fn();
+      }, ms);
+      partyTurnTimers.current.push(id);
+      return id;
+    };
+
+    const alivePartyMembers = battle.party
+      .map((p, i) => ({ ...p, idx: i }))
+      .filter(p => p.currentHp > 0);
+
+    if (alivePartyMembers.length === 0) {
+      onFinishPartyTurn();
+      return;
+    }
+
+    let currentIdx = 0;
+
+    const attackNext = () => {
+      if (partyTurnCancelled.current) return;
+      if (currentIdx >= alivePartyMembers.length) {
+        setPartyAnimIndex(-1);
+        setPartyAnimPhase("idle");
+        schedulePartyTimer(() => onFinishPartyTurn(), 400);
+        return;
+      }
+
+      const member = alivePartyMembers[currentIdx];
+      setPartyAnimIndex(member.idx);
+      setPartyAnimPhase("attacking");
+
+      schedulePartyTimer(() => {
+        if (partyTurnCancelled.current) return;
+        onPartyMemberAttack(member.idx);
+        setPartyAnimPhase("idle");
+        currentIdx++;
+        schedulePartyTimer(attackNext, 600);
+      }, 500);
+    };
+
+    schedulePartyTimer(attackNext, 300);
+
+    return () => {
+      partyTurnCancelled.current = true;
+      partyTurnTimers.current.forEach(id => clearTimeout(id));
+      partyTurnTimers.current = [];
+    };
+  }, [battle.phase, battle.party, onFinishPartyTurn, onPartyMemberAttack]);
 
   useEffect(() => {
     if (battle.phase === "enemyTurn" && prevPhaseRef.current !== "enemyTurn") {
@@ -936,6 +1070,42 @@ export default function BattleScreen({
             </div>
           </div>
 
+          {battle.party.length > 0 && (
+            <div className="absolute z-20 flex gap-2" style={{ left: "2%", bottom: "8%" }}>
+              {battle.party.map((member, idx) => {
+                const spriteInfo = PARTY_SPRITE_MAP[member.spriteId];
+                if (!spriteInfo) return null;
+                const isAttacking = partyAnimIndex === idx && partyAnimPhase === "attacking";
+                const isHurt = partyHurtIndex === idx;
+                const isDead = member.currentHp <= 0;
+
+                return (
+                  <div key={member.id} className={`flex flex-col items-center ${isDead ? 'opacity-30' : ''}`}>
+                    <SpriteAnimator
+                      spriteSheet={isHurt ? spriteInfo.hurt : isAttacking ? spriteInfo.attack : spriteInfo.idle}
+                      frameWidth={spriteInfo.frameWidth}
+                      frameHeight={spriteInfo.frameHeight}
+                      totalFrames={isHurt ? spriteInfo.hurtFrames : isAttacking ? spriteInfo.attackFrames : spriteInfo.idleFrames}
+                      fps={isAttacking ? 12 : 8}
+                      scale={2}
+                      loop={!isAttacking && !isHurt}
+                      onComplete={isAttacking || isHurt ? () => {} : undefined}
+                    />
+                    <div className="mt-1 text-center">
+                      <p className="text-[10px] text-purple-300/70">{member.name}</p>
+                      <div className="w-16 h-1.5 bg-black/40 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-red-500 rounded-full transition-all duration-300"
+                          style={{ width: `${(member.currentHp / member.stats.maxHp) * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
           <div
             className="absolute z-20 pointer-events-none"
             style={{
@@ -971,6 +1141,22 @@ export default function BattleScreen({
                     <span key={i} className="text-[7px] px-1 py-0.5 rounded bg-yellow-600/30 text-yellow-300 border border-yellow-500/20 leading-none">
                       {buff.name} ({buff.turnsRemaining})
                     </span>
+                  ))}
+                </div>
+              )}
+              {battle.party.length > 0 && (
+                <div className="mt-2 space-y-1 border-t border-purple-500/10 pt-2">
+                  {battle.party.map(member => (
+                    <div key={member.id} className="flex items-center gap-2">
+                      <span className="text-[10px] text-purple-300/60 w-12 truncate">{member.name}</span>
+                      <div className="flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-red-500/80 rounded-full transition-all duration-300"
+                          style={{ width: `${Math.max(0, (member.currentHp / member.stats.maxHp) * 100)}%` }}
+                        />
+                      </div>
+                      <span className="text-[10px] text-purple-200/60">{member.currentHp}</span>
+                    </div>
                   ))}
                 </div>
               )}
@@ -1442,10 +1628,10 @@ export default function BattleScreen({
             </div>
           )}
 
-          {(battle.phase === "enemyTurn" || (battle.phase === "animating" && animPhase !== "idle")) && battle.phase !== "victory" && battle.phase !== "defeat" && (
+          {(battle.phase === "enemyTurn" || battle.phase === "partyTurn" || (battle.phase === "animating" && animPhase !== "idle")) && battle.phase !== "victory" && battle.phase !== "defeat" && (
             <div className="text-center py-2">
               <p className="text-sm text-purple-300/60 animate-pulse">
-                {battle.phase === "enemyTurn" ? "Enemies attacking..." : ""}
+                {battle.phase === "partyTurn" ? "Party attacking..." : battle.phase === "enemyTurn" ? "Enemies attacking..." : ""}
               </p>
             </div>
           )}

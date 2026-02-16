@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
-import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff } from "@shared/schema";
-import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS } from "./gameData";
+import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember } from "@shared/schema";
+import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, BOSS_UNLOCK_MAP } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 const INITIAL_STATE: GameState = {
@@ -9,6 +9,7 @@ const INITIAL_STATE: GameState = {
   battle: null,
   currentShop: null,
   pendingLevelUp: null,
+  pendingUnlock: null,
   textSpeed: "medium",
   musicVolume: 70,
   sfxVolume: 80,
@@ -45,6 +46,16 @@ export function useGameState() {
       battle.playerHp = s.player.stats.hp;
       battle.playerMp = s.player.stats.mp;
       battle.phase = "playerTurn";
+
+      battle.party = s.player.party.map(pm => ({
+        id: pm.id,
+        name: pm.name,
+        element: pm.element,
+        stats: { ...pm.stats },
+        currentHp: pm.stats.hp,
+        defending: false,
+        spriteId: pm.spriteId,
+      }));
 
       return { ...s, battle, screen: "battle", player: { ...s.player, currentNode: nodeId } };
     });
@@ -95,7 +106,13 @@ export function useGameState() {
 
       if (battle.phase === "victory" || battle.phase === "defeat") return s;
 
-      battle.phase = "enemyTurn";
+      const aliveParty = battle.party.filter(p => p.currentHp > 0);
+      if (aliveParty.length > 0) {
+        battle.phase = "partyTurn";
+        battle.activePartyIndex = 0;
+      } else {
+        battle.phase = "enemyTurn";
+      }
       return { ...s, battle };
     });
   }, []);
@@ -220,43 +237,113 @@ export function useGameState() {
     });
   }, []);
 
+  const partyMemberAttack = useCallback((partyIndex: number) => {
+    setState(s => {
+      if (!s.battle || !s.player || s.battle.phase !== "partyTurn") return s;
+
+      const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })), party: s.battle.party.map(p => ({ ...p })) };
+      const member = battle.party[partyIndex];
+      if (!member || member.currentHp <= 0) return s;
+
+      const aliveEnemies = battle.enemies.filter(e => e.currentHp > 0);
+      if (aliveEnemies.length === 0) {
+        battle.phase = "victory";
+        battle.animation = "victory";
+        return { ...s, battle };
+      }
+
+      const target = aliveEnemies.reduce((lowest, e) => e.currentHp < lowest.currentHp ? e : lowest);
+      const targetIndex = battle.enemies.indexOf(target);
+
+      const dodged = checkDodge(target.stats);
+      if (dodged) {
+        battle.log = [...battle.log, `${target.name} dodged ${member.name}'s attack!`];
+      } else {
+        const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, member.element, target.element);
+        target.currentHp = Math.max(0, target.currentHp - damage);
+        battle.log = [...battle.log, `${member.name} deals ${damage}${isCrit ? " CRIT" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+      }
+
+      const allDead = battle.enemies.every(e => e.currentHp <= 0);
+      if (allDead) {
+        battle.phase = "victory";
+        battle.animation = "victory";
+      }
+
+      return { ...s, battle };
+    });
+  }, []);
+
+  const finishPartyTurn = useCallback(() => {
+    setState(s => {
+      if (!s.battle || s.battle.phase !== "partyTurn") return s;
+      const battle = { ...s.battle };
+      if (battle.phase === "victory" || battle.phase === "defeat") return s;
+      battle.phase = "enemyTurn";
+      return { ...s, battle };
+    });
+  }, []);
+
   const lastEnemyDodgedRef = useRef(false);
+  const lastEnemyTargetRef = useRef<{ type: "player" | "party"; index: number }>({ type: "player", index: -1 });
 
   const enemyAttack = useCallback((enemyIndex: number) => {
     lastEnemyDodgedRef.current = false;
+    lastEnemyTargetRef.current = { type: "player", index: -1 };
     setState(s => {
       if (!s.battle || !s.player || s.battle.phase !== "enemyTurn") return s;
 
-      const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })) };
+      const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })), party: s.battle.party.map(p => ({ ...p })) };
       const buffedStats = getBuffedStats(s.player.stats, battle.buffs);
-      let hp = battle.playerHp;
 
       const enemy = battle.enemies[enemyIndex];
       if (!enemy || enemy.currentHp <= 0) return s;
 
-      const dodged = checkDodge(buffedStats);
-      if (dodged) {
-        battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
-        lastEnemyDodgedRef.current = true;
+      const aliveParty = battle.party.filter(p => p.currentHp > 0);
+      const totalTargets = 1 + aliveParty.length;
+      const targetRoll = Math.floor(Math.random() * totalTargets);
+
+      if (targetRoll === 0 || aliveParty.length === 0) {
+        lastEnemyTargetRef.current = { type: "player", index: -1 };
+        const dodged = checkDodge(buffedStats);
+        if (dodged) {
+          battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
+          lastEnemyDodgedRef.current = true;
+        } else {
+          const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
+          const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
+          battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
+          battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
+          battle.animation = "enemyAttack";
+        }
       } else {
-        const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
-        const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
-        hp = Math.max(0, hp - actualDamage);
-        battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
-        battle.animation = "enemyAttack";
+        const partyTarget = aliveParty[targetRoll - 1];
+        const partyIdx = battle.party.findIndex(p => p.id === partyTarget.id);
+        lastEnemyTargetRef.current = { type: "party", index: partyIdx };
+
+        const dodged = checkDodge(partyTarget.stats);
+        if (dodged) {
+          battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
+          lastEnemyDodgedRef.current = true;
+        } else {
+          const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, Math.random() > 0.5, enemy.element, partyTarget.element);
+          const actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
+          battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
+          battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${isCrit ? " CRIT" : ""} to ${partyTarget.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+          battle.animation = "enemyAttack";
+        }
       }
 
-      battle.playerHp = hp;
       return { ...s, battle };
     });
-    return lastEnemyDodgedRef.current;
+    return { dodged: lastEnemyDodgedRef.current, target: lastEnemyTargetRef.current };
   }, []);
 
   const enemyTurnEnd = useCallback(() => {
     setState(s => {
       if (!s.battle || !s.player || (s.battle.phase !== "enemyTurn" && s.battle.phase !== "animating")) return s;
 
-      const battle = { ...s.battle, buffs: [...s.battle.buffs] };
+      const battle = { ...s.battle, buffs: [...s.battle.buffs], party: s.battle.party.map(p => ({ ...p })) };
       let hp = battle.playerHp;
 
       if (hp <= 0) {
@@ -281,6 +368,8 @@ export function useGameState() {
           }
           return true;
         });
+
+      battle.party.forEach(p => { p.defending = false; });
 
       battle.playerHp = hp;
       battle.defending = false;
@@ -349,12 +438,28 @@ export function useGameState() {
         },
       };
 
+      let pendingUnlock: PartyMemberDef | null = null;
+      if (isBossNode) {
+        const unlockIds = BOSS_UNLOCK_MAP[s.player.currentRegion] || [];
+        const existingIds = updatedPlayer.party.map(p => p.id);
+        const newUnlocks = unlockIds.filter(id => !existingIds.includes(id));
+        if (newUnlocks.length > 0) {
+          const charDef = PARTY_CHARACTERS.find(c => c.id === newUnlocks[0]);
+          if (charDef) {
+            pendingUnlock = charDef;
+          }
+        }
+      }
+
+      const nextScreen = pendingUnlock ? "partyUnlock" : (pendingLevelUp ? "levelUp" : "overworld");
+
       return {
         ...s,
         player: updatedPlayer,
         battle: null,
-        screen: pendingLevelUp ? "levelUp" : "overworld",
+        screen: nextScreen,
         pendingLevelUp,
+        pendingUnlock,
       };
     });
   }, []);
@@ -489,7 +594,59 @@ export function useGameState() {
   }, []);
 
   const loadGame = useCallback((playerData: PlayerCharacter) => {
-    setState(s => ({ ...s, player: playerData, screen: "overworld" }));
+    const normalizedPlayer = { ...playerData, party: playerData.party || [] };
+    setState(s => ({ ...s, player: normalizedPlayer, screen: "overworld" }));
+  }, []);
+
+  const confirmUnlock = useCallback(() => {
+    setState(s => {
+      if (!s.player || !s.pendingUnlock) return s;
+
+      const def = s.pendingUnlock;
+      const newMember: PartyMember = {
+        id: def.id,
+        name: def.name,
+        className: def.className,
+        element: def.element,
+        level: s.player.level,
+        stats: { ...def.baseStats },
+        spriteId: def.spriteId,
+      };
+
+      const scale = 1 + (s.player.level - 1) * 0.15;
+      newMember.stats = {
+        hp: Math.floor(def.baseStats.hp * scale),
+        maxHp: Math.floor(def.baseStats.maxHp * scale),
+        mp: Math.floor(def.baseStats.mp * scale),
+        maxMp: Math.floor(def.baseStats.maxMp * scale),
+        atk: Math.floor(def.baseStats.atk * scale),
+        def: Math.floor(def.baseStats.def * scale),
+        agi: Math.floor(def.baseStats.agi * scale),
+        int: Math.floor(def.baseStats.int * scale),
+        luck: Math.floor(def.baseStats.luck * scale),
+      };
+
+      const newParty = [...s.player.party, newMember];
+
+      const regionUnlocks = BOSS_UNLOCK_MAP[s.player.currentRegion - 1] || [];
+      const remainingUnlocks = regionUnlocks.filter(
+        id => id !== def.id && !newParty.some(p => p.id === id)
+      );
+
+      let nextUnlock: PartyMemberDef | null = null;
+      if (remainingUnlocks.length > 0) {
+        nextUnlock = PARTY_CHARACTERS.find(c => c.id === remainingUnlocks[0]) || null;
+      }
+
+      const nextScreen = nextUnlock ? "partyUnlock" : (s.pendingLevelUp ? "levelUp" : "overworld");
+
+      return {
+        ...s,
+        player: { ...s.player, party: newParty },
+        pendingUnlock: nextUnlock,
+        screen: nextScreen,
+      };
+    });
   }, []);
 
   return {
@@ -504,6 +661,8 @@ export function useGameState() {
     playerDefend,
     useItem,
     useItemOverworld,
+    partyMemberAttack,
+    finishPartyTurn,
     enemyAttack,
     enemyTurnEnd,
     endBattle,
@@ -516,6 +675,7 @@ export function useGameState() {
     loadGame,
     setAnimating,
     finishPlayerTurn,
+    confirmUnlock,
   };
 }
 

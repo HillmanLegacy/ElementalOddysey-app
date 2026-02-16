@@ -1,7 +1,7 @@
 # Elemental Odyssey - Turn-Based RPG
 
 ## Overview
-A browser-based turn-based RPG with a board-style overworld, character creation with elemental energy manifestation, turn-based combat, leveling/perks, inventory/equipment, and save/load functionality.
+A browser-based turn-based RPG with a board-style overworld, character creation with elemental energy manifestation, turn-based combat, leveling/perks, inventory/equipment, save/load functionality, and a party system where defeating bosses unlocks new party members.
 
 ## Architecture
 - **Frontend**: React + Vite + Tailwind CSS with shadcn/ui components
@@ -10,10 +10,10 @@ A browser-based turn-based RPG with a board-style overworld, character creation 
 - **Save System**: Backend API for persistent game saves
 
 ## Key Files
-- `shared/schema.ts` - All data models: GameSave, PlayerCharacter, Enemy, BattleState, etc.
-- `client/src/lib/gameData.ts` - Game constants, enemy pools, regions, perks, damage calculations
-- `client/src/lib/gameState.ts` - Game state hook with all game logic (battle, leveling, inventory)
-- `client/src/components/` - All game screens: MainMenu, CharacterCreation, Overworld, BattleScreen, LevelUpScreen, PerkSelectScreen, ShopScreen, InventoryScreen
+- `shared/schema.ts` - All data models: GameSave, PlayerCharacter, Enemy, BattleState, PartyMember, etc.
+- `client/src/lib/gameData.ts` - Game constants, enemy pools, regions, perks, damage calculations, party character definitions
+- `client/src/lib/gameState.ts` - Game state hook with all game logic (battle, leveling, inventory, party)
+- `client/src/components/` - All game screens: MainMenu, CharacterCreation, Overworld, BattleScreen, LevelUpScreen, PerkSelectScreen, ShopScreen, InventoryScreen, CharacterUnlockScreen
 - `client/src/components/ParticleCanvas.tsx` - Canvas-based particle effects system
 - `server/routes.ts` - CRUD API for game saves
 - `server/storage.ts` - Database storage layer
@@ -21,21 +21,53 @@ A browser-based turn-based RPG with a board-style overworld, character creation 
 
 ## Game Flow
 1. Main Menu → New Game / Continue / Options
-2. Character Creation → Name, Energy Color, Energy Shape, Element
+2. Character Creation → Name, Energy Color, Energy Shape (Element fixed to Wind/Samurai)
 3. Overworld → Board-style node map with battle/shop/rest/boss nodes
-4. Battle → Turn-based combat with Attack/Defend/Magic/Item actions
-5. Level Up → Allocate stats + choose perk
-6. Shop → Buy items/equipment
+4. Battle → Turn-based combat with Attack/Defend/Magic/Item actions + party auto-attacks
+5. Boss Victory → Party member unlock screen
+6. Level Up → Allocate stats + choose perk
+7. Shop → Buy items/equipment
+
+## Party System
+- Main character (Samurai) is fixed as Wind element
+- Defeating regional bosses unlocks new party members:
+  - Ember Plains boss → Ignis (Knight, Fire)
+  - Frozen Depths boss → Sylph (Ranger, Wind)
+  - Shadow Forest boss → Basken (Warrior, Lightning)
+  - Crystal Desert boss → Lumen (Paladin, Light) + Terra (Axe Warrior, Earth)
+- Party members auto-attack during "partyTurn" phase (no player input needed)
+- Party members target the lowest HP enemy
+- Enemies randomly target player or alive party members
+- Party member stats scale with player level (1 + (level-1) * 0.15 multiplier)
+- PartyMember type: id, name, className, element, level, stats, spriteId
+- BattlePartyMember: extends with currentHp, defending for battle tracking
+- PARTY_CHARACTERS in gameData.ts defines all 5 characters
+- BOSS_UNLOCK_MAP maps region index to character IDs to unlock
+- CharacterUnlockScreen shows new member with stats and sprite animation
+- Turn flow: playerTurn → partyTurn → enemyTurn → playerTurn
+
+## Party Sprite Assets
+- Knight (Fire): 86x98 frames, idle(4f), attack(7f), run(6f), hurt(2f)
+- Ranger (Wind): 64x48 frames, idle(6f), attack(6f), run(6f), hurt(6f)
+- Basken (Lightning): 56x56 frames, idle(5f), attack(8f), run(6f), hurt(3f)
+- Knight2D (Light): 84x84 frames, idle(8f), attack(4f, uses knight2d-attack-1.png), run(8f), hurt(3f)
+- AxeWarrior (Earth): 94x91 frames, idle(6f), attack(8f), run(6f), hurt(3f)
+- All sprite sheets stored as separate per-animation PNGs in client/src/assets/images/
+- PARTY_SPRITE_MAP in BattleScreen.tsx maps spriteId to imported sprite sheets
 
 ## Battle Animation System
 - Event-driven animation queue (not setTimeout-based)
-- Attack flow: idle → runToEnemy → attacking (sprite plays) → runBack → idle → enemyTurn
+- Attack flow: idle → runToEnemy → attacking (sprite plays) → runBack → idle → partyTurn → enemyTurn
 - Hurt animation plays when receiving damage from enemies
 - Phase "animating" gates all input during animation sequences
-- `onSetAnimating()` transitions to animating phase, `onFinishPlayerTurn()` transitions to enemyTurn
+- `onSetAnimating()` transitions to animating phase, `onFinishPlayerTurn()` transitions to partyTurn/enemyTurn
+- Party turn uses schedulePartyTimer with cancellation refs for safe timer cleanup
+- Party member hurt animations triggered via partyHurtIndex state
 
 ## Enemy Turn System
 - Split into `enemyAttack(enemyIndex)` (single enemy damage) and `enemyTurnEnd()` (buffs/phase transition)
+- enemyAttack returns { dodged: boolean, target: { type: "player" | "party", index: number } }
+- Enemies randomly target player or alive party members
 - BattleScreen sequences all alive enemies with `animateEnemyAttack` callback for per-enemy animations
 - Each enemy gets its own attack animation + damage application before the next enemy starts
 - 1-second delay after all enemies finish before `enemyTurnEnd` applies buffs and transitions to playerTurn

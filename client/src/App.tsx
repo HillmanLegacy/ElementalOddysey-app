@@ -12,6 +12,7 @@ import LevelUpScreen from "@/components/LevelUpScreen";
 import PerkSelectScreen from "@/components/PerkSelectScreen";
 import ShopScreen from "@/components/ShopScreen";
 import InventoryScreen from "@/components/InventoryScreen";
+import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
@@ -59,8 +60,10 @@ function Game() {
   const {
     state, setState, setScreen, createCharacter, updatePlayer,
     startBattle, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
+    partyMemberAttack, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, allocateStat, selectPerk, openShop,
     buyItem, equipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
+    confirmUnlock,
   } = useGameState();
 
   const { toast } = useToast();
@@ -154,6 +157,8 @@ function Game() {
             onCastSpell={castSpell}
             onDefend={playerDefend}
             onUseItem={useItem}
+            onPartyMemberAttack={partyMemberAttack}
+            onFinishPartyTurn={finishPartyTurn}
             onEnemyAttack={enemyAttack}
             onEnemyTurnEnd={enemyTurnEnd}
             onEndBattle={endBattle}
@@ -200,6 +205,16 @@ function Game() {
             onEquip={equipItem}
             onUseItem={useItemOverworld}
             onBack={() => setScreen("overworld")}
+          />
+        );
+
+      case "partyUnlock":
+        if (!state.player || !state.pendingUnlock) return null;
+        return (
+          <CharacterUnlockScreen
+            character={state.pendingUnlock}
+            playerLevel={state.player.level}
+            onConfirm={confirmUnlock}
           />
         );
 

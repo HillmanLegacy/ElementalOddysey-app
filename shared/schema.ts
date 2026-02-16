@@ -65,6 +65,7 @@ export interface PlayerCharacter {
   currentRegion: number;
   currentNode: number;
   clearedNodes: number[];
+  party: PartyMember[];
 }
 
 export interface InventoryItem {
@@ -160,8 +161,37 @@ export interface Buff {
   turnsRemaining: number;
 }
 
+export interface PartyMemberDef {
+  id: string;
+  name: string;
+  className: string;
+  element: Element;
+  baseStats: PlayerStats;
+  spriteId: string;
+}
+
+export interface PartyMember {
+  id: string;
+  name: string;
+  className: string;
+  element: Element;
+  level: number;
+  stats: PlayerStats;
+  spriteId: string;
+}
+
+export interface BattlePartyMember {
+  id: string;
+  name: string;
+  element: Element;
+  stats: PlayerStats;
+  currentHp: number;
+  defending: boolean;
+  spriteId: string;
+}
+
 export interface BattleState {
-  phase: "start" | "playerTurn" | "animating" | "enemyTurn" | "victory" | "defeat";
+  phase: "start" | "playerTurn" | "animating" | "partyTurn" | "enemyTurn" | "victory" | "defeat";
   enemies: (Enemy & { currentHp: number })[];
   playerHp: number;
   playerMp: number;
@@ -174,6 +204,8 @@ export interface BattleState {
   defending: boolean;
   buffs: Buff[];
   turnCount: number;
+  party: BattlePartyMember[];
+  activePartyIndex: number;
 }
 
 export interface ShopItem extends InventoryItem {
@@ -182,11 +214,12 @@ export interface ShopItem extends InventoryItem {
 }
 
 export interface GameState {
-  screen: "menu" | "intro" | "creation" | "overworld" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect";
+  screen: "menu" | "intro" | "creation" | "overworld" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect" | "partyUnlock";
   player: PlayerCharacter | null;
   battle: BattleState | null;
   currentShop: ShopItem[] | null;
   pendingLevelUp: { statsToAllocate: number; perksToChoose: number } | null;
+  pendingUnlock: PartyMemberDef | null;
   textSpeed: "slow" | "medium" | "fast";
   musicVolume: number;
   sfxVolume: number;

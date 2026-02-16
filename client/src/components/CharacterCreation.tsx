@@ -3,10 +3,10 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ParticleCanvas from "./ParticleCanvas";
-import { EnergyColors, EnergyShapes, Elements } from "@shared/schema";
-import type { EnergyColor, EnergyShape, Element, PlayerStats } from "@shared/schema";
-import { COLOR_MAP, ELEMENT_COLORS, ELEMENT_STAT_MODS, createDefaultStats, applyElementMods } from "@/lib/gameData";
-import { ArrowLeft, ArrowRight, Sparkles, Flame, Droplets, Wind, Mountain, Zap, Moon, Sun, Snowflake, CircleDot, Triangle, Diamond, CloudLightning, Ghost, Leaf, Waves, Check } from "lucide-react";
+import { EnergyColors, EnergyShapes } from "@shared/schema";
+import type { EnergyColor, EnergyShape, Element } from "@shared/schema";
+import { COLOR_MAP, ELEMENT_COLORS, createDefaultStats, applyElementMods } from "@/lib/gameData";
+import { ArrowLeft, ArrowRight, Sparkles, Wind, CircleDot, Diamond, CloudLightning, Ghost, Leaf, Waves, Flame, Check } from "lucide-react";
 
 const SHAPE_ICONS: Record<string, any> = {
   Orb: CircleDot,
@@ -18,16 +18,7 @@ const SHAPE_ICONS: Record<string, any> = {
   Wave: Waves,
 };
 
-const ELEMENT_ICONS: Record<Element, any> = {
-  Fire: Flame,
-  Water: Droplets,
-  Wind: Wind,
-  Earth: Mountain,
-  Lightning: Zap,
-  Shadow: Moon,
-  Light: Sun,
-  Ice: Snowflake,
-};
+const WIND_ICON = Wind;
 
 interface CharacterCreationProps {
   onComplete: (name: string, color: EnergyColor, shape: EnergyShape, element: Element) => void;
@@ -39,11 +30,9 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState<EnergyColor>("Purple");
   const [selectedShape, setSelectedShape] = useState<EnergyShape>("Orb");
-  const [selectedElement, setSelectedElement] = useState<Element>("Fire");
+  const steps = ["Name", "Energy Color", "Energy Shape", "Confirm"];
 
-  const steps = ["Name", "Energy Color", "Energy Shape", "Element", "Confirm"];
-
-  const previewStats = applyElementMods(createDefaultStats(), selectedElement);
+  const previewStats = applyElementMods(createDefaultStats(), "Wind" as Element);
 
   const statBar = (label: string, value: number, max: number, color: string) => (
     <div className="flex items-center gap-2">
@@ -138,46 +127,6 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
       case 3:
         return (
           <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Choose Element</h3>
-            <div className="grid grid-cols-4 gap-2">
-              {Elements.map(el => {
-                const Icon = ELEMENT_ICONS[el];
-                return (
-                  <button
-                    key={el}
-                    onClick={() => setSelectedElement(el)}
-                    className={`flex flex-col items-center gap-2 p-3 rounded-md transition-all duration-200 ${
-                      selectedElement === el
-                        ? "ring-2 ring-white/50 bg-white/10 scale-105"
-                        : "bg-white/5 hover:bg-white/10"
-                    }`}
-                    data-testid={`button-element-${el.toLowerCase()}`}
-                  >
-                    <Icon className="w-7 h-7" style={{ color: ELEMENT_COLORS[el] }} />
-                    <span className="text-xs text-purple-300/70">{el}</span>
-                  </button>
-                );
-              })}
-            </div>
-            <div className="mt-3 p-3 rounded-md bg-black/30 space-y-1">
-              <p className="text-xs text-purple-400/60 mb-2">Element Modifiers:</p>
-              {Object.entries(ELEMENT_STAT_MODS[selectedElement]).map(([stat, val]) => (
-                <span
-                  key={stat}
-                  className={`inline-block mr-2 text-xs px-2 py-0.5 rounded ${
-                    (val as number) > 0 ? "bg-green-900/40 text-green-400" : "bg-red-900/40 text-red-400"
-                  }`}
-                >
-                  {stat.toUpperCase()} {(val as number) > 0 ? "+" : ""}{val as number}
-                </span>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
             <h3 className="text-xl text-purple-300 font-semibold text-center">Confirm Your Hero</h3>
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
@@ -198,11 +147,8 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               <div className="text-center">
                 <p className="text-2xl font-bold text-white" data-testid="text-confirm-name">{name || "Hero"}</p>
                 <div className="flex items-center justify-center gap-2 mt-1">
-                  {(() => {
-                    const ElIcon = ELEMENT_ICONS[selectedElement];
-                    return <ElIcon className="w-4 h-4" style={{ color: ELEMENT_COLORS[selectedElement] }} />;
-                  })()}
-                  <span className="text-sm" style={{ color: ELEMENT_COLORS[selectedElement] }}>{selectedElement}</span>
+                  <WIND_ICON className="w-4 h-4" style={{ color: ELEMENT_COLORS["Wind"] }} />
+                  <span className="text-sm" style={{ color: ELEMENT_COLORS["Wind"] }}>Wind</span>
                   <span className="text-purple-500/40">|</span>
                   <span className="text-sm text-purple-300/70">{selectedColor} {selectedShape}</span>
                 </div>
@@ -225,7 +171,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
       <ParticleCanvas
-        colors={[COLOR_MAP[selectedColor], ELEMENT_COLORS[selectedElement]]}
+        colors={[COLOR_MAP[selectedColor], ELEMENT_COLORS["Wind"]]}
         count={50}
         speed={0.6}
         style="swirl"
@@ -263,7 +209,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               {step === 0 ? "Menu" : "Back"}
             </Button>
 
-            {step < 4 ? (
+            {step < 3 ? (
               <Button
                 onClick={() => setStep(step + 1)}
                 disabled={step === 0 && name.trim().length === 0}
@@ -275,7 +221,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               </Button>
             ) : (
               <Button
-                onClick={() => onComplete(name.trim() || "Hero", selectedColor, selectedShape, selectedElement)}
+                onClick={() => onComplete(name.trim() || "Hero", selectedColor, selectedShape, "Wind" as Element)}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500"
                 data-testid="button-begin-adventure"
               >
