@@ -56,6 +56,11 @@ import dragonLordAttack from "@/assets/images/dragonlord-attack.png";
 import dragonLordHurt from "@/assets/images/dragonlord-hurt.png";
 import dragonLordDeath from "@/assets/images/dragonlord-death.png";
 
+import vfxWindSlash1 from "@/assets/images/vfx-wind-slash1.png";
+import vfxWindSlash2 from "@/assets/images/vfx-wind-slash2.png";
+import vfxWindSlash3 from "@/assets/images/vfx-wind-slash3.png";
+import vfxWindVortex from "@/assets/images/vfx-wind-vortex.png";
+
 import knightIdle from "@/assets/images/knight-idle-4f.png";
 import knightAttack from "@/assets/images/knight-attack.png";
 import knightHurt from "@/assets/images/knight-hurt.png";
@@ -143,6 +148,9 @@ export default function BattleScreen({
   const [partyAnimIndex, setPartyAnimIndex] = useState(-1);
   const [partyAnimPhase, setPartyAnimPhase] = useState<"idle" | "attacking" | "done">("idle");
   const [partyHurtIndex, setPartyHurtIndex] = useState(-1);
+  const [windAttackVfx, setWindAttackVfx] = useState<number | null>(null);
+  const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
+  const [tempestVortexActive, setTempestVortexActive] = useState(false);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
   const prevPhaseRef = useRef(battle.phase);
@@ -157,6 +165,17 @@ export default function BattleScreen({
   const mpPercent = (battle.playerMp / player.stats.maxMp) * 100;
   const isLowHp = hpPercent < 25;
   const latestLog = battle.log.slice(-3);
+
+  const clearEnemyTurnTimers = useCallback(() => {
+    enemyTurnTimers.current.forEach(id => clearTimeout(id));
+    enemyTurnTimers.current = [];
+  }, []);
+
+  const scheduleTimer = useCallback((fn: () => void, ms: number) => {
+    const id = window.setTimeout(fn, ms);
+    enemyTurnTimers.current.push(id);
+    return id;
+  }, []);
 
   const spawnDamageNumber = useCallback((text: string, x: number, y: number, color: string) => {
     const id = damageIdRef.current++;
@@ -184,20 +203,41 @@ export default function BattleScreen({
     onSetAnimating();
     setAnimPhase("casting");
     playSfx("magicRing", 0.6);
+    if (selectedSpell.animation === "windBlade") {
+      setWindSpellVfx({ type: "windBlade", targets: [targetIdx] });
+      playSfx("whoosh");
+      scheduleTimer(() => setWindSpellVfx(null), 700);
+    }
     onCastSpell(selectedSpell, targetIdx);
     setSelectedSpell(null);
     setShowSpells(false);
-  }, [selectedSpell, onSetAnimating, onCastSpell]);
+  }, [selectedSpell, onSetAnimating, onCastSpell, scheduleTimer]);
 
   const handleSelfSpell = useCallback((spell: Spell) => {
     onSetAnimating();
     setAnimPhase("casting");
     playSfx("magicRing", 0.6);
+    if (spell.animation === "galeSlash") {
+      const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
+      setWindSpellVfx({ type: "galeSlash", targets: aliveTargets });
+      playSfx("whoosh");
+      scheduleTimer(() => setWindSpellVfx(null), 800);
+    } else if (spell.animation === "tempest") {
+      const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
+      setTempestVortexActive(true);
+      setWindSpellVfx({ type: "tempest", targets: aliveTargets });
+      playSfx("whoosh");
+      scheduleTimer(() => playSfx("swordSwing"), 300);
+      scheduleTimer(() => {
+        setWindSpellVfx(null);
+        setTempestVortexActive(false);
+      }, 1200);
+    }
     onCastSpell(spell);
     setSelectedSpell(null);
     setShowSpells(false);
     setSelectedAction(null);
-  }, [onSetAnimating, onCastSpell]);
+  }, [onSetAnimating, onCastSpell, battle.enemies, scheduleTimer]);
 
   const handleDefend = useCallback(() => {
     onSetAnimating();
@@ -213,6 +253,10 @@ export default function BattleScreen({
       playSfx("gruntAttack", 0.7);
       if (pendingTargetIdx !== null) {
         onAttack(pendingTargetIdx);
+        if (player.element === "Wind") {
+          setWindAttackVfx(pendingTargetIdx);
+          scheduleTimer(() => setWindAttackVfx(null), 600);
+        }
       }
     } else if (animPhase === "runBack") {
       setAnimPhase("idle");
@@ -326,17 +370,6 @@ export default function BattleScreen({
       }
     }
   }, [animPhase, battle.phase, onFinishPlayerTurn]);
-
-  const clearEnemyTurnTimers = useCallback(() => {
-    enemyTurnTimers.current.forEach(id => clearTimeout(id));
-    enemyTurnTimers.current = [];
-  }, []);
-
-  const scheduleTimer = useCallback((fn: () => void, ms: number) => {
-    const id = window.setTimeout(fn, ms);
-    enemyTurnTimers.current.push(id);
-    return id;
-  }, []);
 
   const startFujinSlice = useCallback((targetIdx: number, spell: Spell) => {
     setSelectedAction(null);
@@ -914,6 +947,21 @@ export default function BattleScreen({
           ))}
         </div>
       )}
+      {tempestVortexActive && (
+        <div className="absolute inset-0 z-[55] pointer-events-none">
+          <div
+            className="absolute inset-0 animate-[tempestVignette_1.5s_ease-out_forwards]"
+            style={{
+              background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,40,0,0.5) 100%)",
+            }}
+          />
+          <div className="absolute inset-0 overflow-hidden" style={{ opacity: 0.25, mixBlendMode: "screen" }}>
+            <div className="absolute w-[200%] h-[200%] -left-[50%] -top-[50%] animate-[spin_2s_linear_infinite]">
+              <img src={vfxWindVortex} alt="" className="w-full h-full" style={{ filter: "hue-rotate(80deg) brightness(2)" }} />
+            </div>
+          </div>
+        </div>
+      )}
       <div
         style={{
           position: "absolute",
@@ -921,7 +969,7 @@ export default function BattleScreen({
           transform: fujinZoom ? "scale(1.45)" : "scale(1)",
           transformOrigin: fujinOrigin,
           transition: fujinZoom ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
-          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : "none",
+          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : tempestVortexActive ? "contrast(1.05) saturate(1.1)" : "none",
         }}
       >
       <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" />
@@ -1223,6 +1271,46 @@ export default function BattleScreen({
                   )}
                   {isHit && (
                     <div className="absolute inset-0 z-20 animate-[flashDamage_0.3s_ease-out]" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.7) 0%, transparent 70%)" }} />
+                  )}
+                  {windAttackVfx === idx && (
+                    <div className="absolute z-25 pointer-events-none" style={{ top: "-60%", left: "-50%", width: "200%", height: "200%", filter: "drop-shadow(0 0 8px rgba(100,255,100,0.6))" }}>
+                      <SpriteAnimator
+                        spriteSheet={vfxWindSlash1}
+                        frameWidth={128}
+                        frameHeight={128}
+                        totalFrames={9}
+                        fps={16}
+                        scale={2.5}
+                        loop={false}
+                        onComplete={() => setWindAttackVfx(null)}
+                        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+                      />
+                    </div>
+                  )}
+                  {windSpellVfx && windSpellVfx.targets.includes(idx) && (
+                    <div className="absolute z-25 pointer-events-none" style={{
+                      top: windSpellVfx.type === "tempest" ? "-80%" : "-60%",
+                      left: windSpellVfx.type === "tempest" ? "-70%" : "-50%",
+                      width: windSpellVfx.type === "tempest" ? "240%" : "200%",
+                      height: windSpellVfx.type === "tempest" ? "240%" : "200%",
+                      filter: "drop-shadow(0 0 10px rgba(100,255,100,0.7))",
+                    }}>
+                      {windSpellVfx.type === "tempest" && (
+                        <div className="absolute inset-0 animate-[spin_0.8s_linear_infinite]" style={{ opacity: 0.6 }}>
+                          <img src={vfxWindVortex} alt="" className="w-full h-full" style={{ mixBlendMode: "screen", filter: "hue-rotate(80deg) brightness(1.5)" }} />
+                        </div>
+                      )}
+                      <SpriteAnimator
+                        spriteSheet={windSpellVfx.type === "windBlade" ? vfxWindSlash2 : vfxWindSlash3}
+                        frameWidth={128}
+                        frameHeight={128}
+                        totalFrames={windSpellVfx.type === "windBlade" ? 7 : 9}
+                        fps={windSpellVfx.type === "tempest" ? 12 : 14}
+                        scale={windSpellVfx.type === "tempest" ? 3 : 2.5}
+                        loop={windSpellVfx.type === "tempest"}
+                        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+                      />
+                    </div>
                   )}
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
                     <div
@@ -1721,6 +1809,12 @@ export default function BattleScreen({
           0% { opacity: 0; }
           15% { opacity: 1; }
           80% { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        @keyframes tempestVignette {
+          0% { opacity: 0; }
+          10% { opacity: 1; }
+          70% { opacity: 1; }
           100% { opacity: 0; }
         }
       `}</style>
