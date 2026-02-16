@@ -1,7 +1,7 @@
 modules = ["nodejs-20"]
 [nix]
 channel = "stable-25_05"
-packages = ["unzip", "p7zip", "unar"]
+packages = ["unzip", "p7zip", "unar", "imagemagick"]
 
 [agent]
 expertMode = true
