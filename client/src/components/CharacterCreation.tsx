@@ -24,7 +24,7 @@ const SHAPE_ICONS: Record<string, any> = {
 };
 
 const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number }> = {
-  knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 8 },
+  knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4 },
   samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10 },
   basken: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5 },
 };
