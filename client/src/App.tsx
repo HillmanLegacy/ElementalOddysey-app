@@ -13,7 +13,6 @@ import PerkSelectScreen from "@/components/PerkSelectScreen";
 import ShopScreen from "@/components/ShopScreen";
 import InventoryScreen from "@/components/InventoryScreen";
 import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
-import PartyChoiceScreen from "@/components/PartyChoiceScreen";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
@@ -64,8 +63,8 @@ function Game() {
     partyMemberAttack, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, allocateStat, selectPerk, openShop,
     buyItem, equipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
-    selectUnlockChoice,
     confirmUnlock,
+    changeRegion,
   } = useGameState();
 
   const { toast } = useToast();
@@ -99,10 +98,6 @@ function Game() {
       const latestSave = saves[0];
       loadGame(latestSave.playerData as PlayerCharacter);
     }
-  };
-
-  const handleRegionChange = (regionId: number) => {
-    updatePlayer({ currentRegion: regionId });
   };
 
   const renderScreen = () => {
@@ -145,7 +140,7 @@ function Game() {
             }}
             onInventory={() => setScreen("inventory")}
             onSave={handleSave}
-            onRegionChange={handleRegionChange}
+            onRegionChange={changeRegion}
           />
         );
 
@@ -207,17 +202,6 @@ function Game() {
             onEquip={equipItem}
             onUseItem={useItemOverworld}
             onBack={() => setScreen("overworld")}
-          />
-        );
-
-      case "partyChoice":
-        if (!state.player || !state.pendingUnlockChoices) return null;
-        return (
-          <PartyChoiceScreen
-            choices={state.pendingUnlockChoices}
-            playerLevel={state.player.level}
-            ownedIds={state.player.party.map(p => p.id)}
-            onSelect={selectUnlockChoice}
           />
         );
 

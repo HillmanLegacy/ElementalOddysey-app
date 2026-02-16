@@ -6,10 +6,37 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, Settings, X } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, Settings, X, MapPin } from "lucide-react";
+import { isRegionUnlocked, getRegionTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
+import knightIdle from "@/assets/images/knight-idle-4f.png";
+import knightRun from "@/assets/images/knight-run.png";
+import baskenIdle from "@/assets/images/basken-idle.png";
+import baskenRun from "@/assets/images/basken-run.png";
 import bgEmberPlains from "@/assets/images/bg-ember-plains.png";
+
+const OVERWORLD_SPRITES: Record<string, {
+  idle: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number; fps: number };
+  run: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number; fps: number };
+  scale: number;
+}> = {
+  samurai: {
+    idle: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10, fps: 8 },
+    run: { sheet: samuraiRun, frameWidth: 96, frameHeight: 96, totalFrames: 8, fps: 14 },
+    scale: 2,
+  },
+  knight: {
+    idle: { sheet: knightIdle, frameWidth: 86, frameHeight: 98, totalFrames: 4, fps: 8 },
+    run: { sheet: knightRun, frameWidth: 86, frameHeight: 98, totalFrames: 6, fps: 14 },
+    scale: 2,
+  },
+  basken: {
+    idle: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5, fps: 8 },
+    run: { sheet: baskenRun, frameWidth: 56, frameHeight: 56, totalFrames: 6, fps: 14 },
+    scale: 3,
+  },
+};
 
 const NODE_ICONS: Record<string, any> = {
   battle: Swords,
@@ -536,33 +563,39 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
         );
       })}
 
-      <div
-        className="absolute transition-none pointer-events-none"
-        style={{
-          left: `${charPos.x}%`,
-          top: `${charPos.y}%`,
-          transform: "translate(-50%, -85%)",
-          zIndex: Math.floor(charPos.y) + 50,
-        }}
-        data-testid="img-overworld-character"
-      >
-        <div className="relative">
-          <SpriteAnimator
-            spriteSheet={isMoving ? samuraiRun : samuraiIdle}
-            frameWidth={96}
-            frameHeight={96}
-            totalFrames={isMoving ? 8 : 10}
-            fps={isMoving ? 14 : 8}
-            scale={2}
-            loop={true}
-            flipX={!facingRight}
-            preloadSheets={[samuraiIdle, samuraiRun]}
-          />
-          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-2 rounded-full blur-sm"
-            style={{ backgroundColor: COLOR_MAP[player.energyColor] + "40" }}
-          />
-        </div>
-      </div>
+      {(() => {
+        const spriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;
+        const activeSprite = isMoving ? spriteConfig.run : spriteConfig.idle;
+        return (
+          <div
+            className="absolute transition-none pointer-events-none"
+            style={{
+              left: `${charPos.x}%`,
+              top: `${charPos.y}%`,
+              transform: "translate(-50%, -85%)",
+              zIndex: Math.floor(charPos.y) + 50,
+            }}
+            data-testid="img-overworld-character"
+          >
+            <div className="relative">
+              <SpriteAnimator
+                spriteSheet={activeSprite.sheet}
+                frameWidth={activeSprite.frameWidth}
+                frameHeight={activeSprite.frameHeight}
+                totalFrames={activeSprite.totalFrames}
+                fps={activeSprite.fps}
+                scale={spriteConfig.scale}
+                loop={true}
+                flipX={!facingRight}
+                preloadSheets={[spriteConfig.idle.sheet, spriteConfig.run.sheet]}
+              />
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-2 rounded-full blur-sm"
+                style={{ backgroundColor: COLOR_MAP[player.energyColor] + "40" }}
+              />
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between gap-2 p-2 px-3 bg-black/50 backdrop-blur-sm border-b border-white/5">
         <div className="flex items-center gap-3 flex-wrap">
@@ -644,7 +677,10 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
         <div className="flex items-center justify-between px-3 py-1.5">
           <Button size="icon" variant="ghost"
             disabled={player.currentRegion <= 0}
-            onClick={() => onRegionChange(player.currentRegion - 1)}
+            onClick={() => {
+              const prevRegion = player.currentRegion - 1;
+              if (prevRegion >= 0) onRegionChange(prevRegion);
+            }}
             className="text-white/50 disabled:opacity-20 h-7 w-7"
             data-testid="button-prev-region"
           >
@@ -655,22 +691,31 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
             <h2 className="text-sm font-semibold tracking-wide" style={{ color: ELEMENT_COLORS[region.theme] }} data-testid="text-region-name">
               {region.name}
             </h2>
-            <div className="flex items-center justify-center gap-2 mt-0.5">
-              <span className="text-[9px] text-white/30">XP</span>
-              <Progress value={(player.xp / player.xpToNext) * 100} className="h-1 w-24 bg-black/30" />
-              <span className="text-[9px] text-white/30">{player.xp}/{player.xpToNext}</span>
+            <div className="flex items-center justify-center gap-1.5 mt-0.5">
+              {(() => {
+                const defeats = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
+                const dots = [];
+                for (let i = 0; i < 3; i++) {
+                  dots.push(
+                    <div key={i} className={`w-2 h-2 rounded-full ${i < defeats ? "bg-green-400" : "bg-white/20"}`} />
+                  );
+                }
+                return (
+                  <>
+                    <span className="text-[9px] text-white/40 mr-1">Clear</span>
+                    {dots}
+                    <span className="text-[9px] text-white/30 ml-2">XP</span>
+                    <Progress value={(player.xp / player.xpToNext) * 100} className="h-1 w-16 bg-black/30" />
+                    <span className="text-[9px] text-white/30">{player.xp}/{player.xpToNext}</span>
+                  </>
+                );
+              })()}
             </div>
           </div>
 
           <Button size="icon" variant="ghost"
-            disabled={player.currentRegion >= REGIONS.length - 1 || !REGIONS[player.currentRegion + 1]?.unlocked}
-            onClick={() => {
-              const nextRegion = player.currentRegion + 1;
-              const bossNode = region.nodes.find(n => n.type === "boss");
-              if (bossNode && player.clearedNodes.includes(bossNode.id)) {
-                onRegionChange(nextRegion);
-              }
-            }}
+            disabled={!isRegionUnlocked(player.currentRegion + 1, player.regionBossDefeats || {})}
+            onClick={() => onRegionChange(player.currentRegion + 1)}
             className="text-white/50 disabled:opacity-20 h-7 w-7"
             data-testid="button-next-region"
           >

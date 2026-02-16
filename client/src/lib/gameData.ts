@@ -24,29 +24,32 @@ export const ELEMENT_COLORS: Record<Element, string> = {
   Ice: "#67e8f9",
 };
 
-export const ELEMENT_STAT_MODS: Record<Element, Partial<PlayerStats>> = {
-  Fire: { atk: 3, hp: -5, maxHp: -5 },
-  Water: { int: 3, hp: 5, maxHp: 5 },
-  Wind: { agi: 4, def: -2 },
-  Earth: { def: 4, hp: 10, maxHp: 10, agi: -2 },
-  Lightning: { agi: 3, luck: 2 },
-  Shadow: { atk: 2, agi: 2, luck: 1 },
-  Light: { int: 4, luck: 2 },
-  Ice: { int: 2, def: 2, agi: -1 },
-};
-
-export function createDefaultStats(): PlayerStats {
-  return { hp: 100, maxHp: 100, atk: 10, def: 8, agi: 8, int: 8, luck: 5, mp: 50, maxMp: 50 };
-}
-
-export function applyElementMods(stats: PlayerStats, element: Element): PlayerStats {
-  const mods = ELEMENT_STAT_MODS[element];
-  const result = { ...stats };
-  for (const [key, val] of Object.entries(mods)) {
-    (result as any)[key] = Math.max(1, (result as any)[key] + val);
-  }
-  return result;
-}
+export const STARTER_CHARACTERS: PartyMemberDef[] = [
+  {
+    id: "knight_fire",
+    name: "Knight",
+    className: "Knight",
+    element: "Fire",
+    baseStats: { hp: 120, maxHp: 120, mp: 30, maxMp: 30, atk: 14, def: 12, agi: 6, int: 5, luck: 4 },
+    spriteId: "knight",
+  },
+  {
+    id: "samurai_wind",
+    name: "Samurai",
+    className: "Samurai",
+    element: "Wind",
+    baseStats: { hp: 100, maxHp: 100, mp: 40, maxMp: 40, atk: 12, def: 8, agi: 12, int: 8, luck: 5 },
+    spriteId: "samurai",
+  },
+  {
+    id: "basken_lightning",
+    name: "Basken",
+    className: "Warrior",
+    element: "Lightning",
+    baseStats: { hp: 100, maxHp: 100, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
+    spriteId: "basken",
+  },
+];
 
 export const PARTY_CHARACTERS: PartyMemberDef[] = [
   {
@@ -91,13 +94,6 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
   },
 ];
 
-export const BOSS_UNLOCK_MAP: Record<number, [string, string]> = {
-  0: ["knight_fire", "basken_lightning"],
-  1: ["ranger_wind", "axewarrior_earth"],
-  2: ["knight2d_light", "knight_fire"],
-  3: ["basken_lightning", "axewarrior_earth"],
-};
-
 export interface PartySpriteData {
   idle: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number };
   attack: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number };
@@ -106,6 +102,12 @@ export interface PartySpriteData {
 }
 
 export const PARTY_SPRITE_DATA: Record<string, PartySpriteData> = {
+  samurai: {
+    idle: { sheet: "samurai-idle.png", frameWidth: 96, frameHeight: 96, totalFrames: 10 },
+    attack: { sheet: "samurai-attack.png", frameWidth: 96, frameHeight: 96, totalFrames: 10 },
+    run: { sheet: "samurai-run.png", frameWidth: 96, frameHeight: 96, totalFrames: 8 },
+    hurt: { sheet: "samurai-hurt.png", frameWidth: 96, frameHeight: 96, totalFrames: 3 },
+  },
   knight: {
     idle: { sheet: "knight-idle-4f.png", frameWidth: 86, frameHeight: 98, totalFrames: 4 },
     attack: { sheet: "knight-attack.png", frameWidth: 86, frameHeight: 98, totalFrames: 7 },
@@ -156,9 +158,7 @@ export function getPartyMemberForLevel(def: PartyMemberDef, level: number): Part
   };
 }
 
-export function createNewPlayer(name: string, color: EnergyColor, shape: EnergyShape, element: Element): PlayerCharacter {
-  const baseStats = createDefaultStats();
-  const stats = applyElementMods(baseStats, element);
+export function createNewPlayer(starterDef: PartyMemberDef, name: string, color: EnergyColor, shape: EnergyShape): PlayerCharacter {
   return {
     name,
     level: 1,
@@ -166,8 +166,8 @@ export function createNewPlayer(name: string, color: EnergyColor, shape: EnergyS
     xpToNext: 100,
     energyColor: color,
     energyShape: shape,
-    element,
-    stats,
+    element: starterDef.element,
+    stats: { ...starterDef.baseStats },
     gold: 50,
     inventory: [
       { id: "potion1", name: "Health Potion", type: "consumable", description: "Restores 30 HP", effect: { type: "heal", stat: "hp", amount: 30 }, icon: "heart", value: 15 },
@@ -180,6 +180,9 @@ export function createNewPlayer(name: string, color: EnergyColor, shape: EnergyS
     clearedNodes: [],
     party: [],
     defeatedBosses: [],
+    spriteId: starterDef.spriteId,
+    starterCharacterId: starterDef.id,
+    regionBossDefeats: {},
   };
 }
 
@@ -221,9 +224,11 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   };
 }
 
-export function getEnemiesForNode(node: OverworldNode, region: Region): Enemy[] {
+export function getEnemiesForNode(node: OverworldNode, region: Region, tier: number = 0): Enemy[] {
   const regionElement = region.theme;
-  const scale = 1 + region.id * 0.3;
+  const baseScale = 1 + region.id * 0.3;
+  const tierScale = 1 + tier * 0.4;
+  const scale = baseScale * tierScale;
   const pool = ENEMY_POOL.filter(e => {
     if (node.type === "boss") return e.isBoss;
     return !e.isBoss;
@@ -236,7 +241,10 @@ export function getEnemiesForNode(node: OverworldNode, region: Region): Enemy[] 
   const enemies: Enemy[] = [];
   for (let i = 0; i < count; i++) {
     const base = selectedPool[Math.floor(Math.random() * selectedPool.length)];
-    enemies.push(generateEnemyStats(base, scale));
+    const enemy = generateEnemyStats(base, scale);
+    enemy.xpReward = Math.floor(enemy.xpReward * tierScale);
+    enemy.goldReward = Math.floor(enemy.goldReward * tierScale);
+    enemies.push(enemy);
   }
   return enemies;
 }
@@ -304,6 +312,15 @@ export const REGIONS: Region[] = [
   },
 ];
 
+export function isRegionUnlocked(regionId: number, regionBossDefeats: Record<string, number>): boolean {
+  if (regionId === 0) return true;
+  return (regionBossDefeats[String(regionId - 1)] || 0) >= 3;
+}
+
+export function getRegionTier(regionId: number, regionBossDefeats: Record<string, number>): number {
+  return regionBossDefeats[String(regionId)] || 0;
+}
+
 export const PERKS: Perk[] = [
   { id: "fire_burn", name: "Burn Chance", description: "10% chance to burn on attack", element: "Fire", tier: 1, effect: { special: "burn" } },
   { id: "fire_atk", name: "Flame Power", description: "+5 ATK", element: "Fire", tier: 1, effect: { stat: "atk", amount: 5 } },
@@ -342,7 +359,7 @@ export const SPELLS: Spell[] = [
 ];
 
 export function getPlayerSpells(player: PlayerCharacter): Spell[] {
-  const spells: Spell[] = [SPELLS.find(s => s.id === "speed_up")!];
+  const spells: Spell[] = [];
 
   const elementSpellMap: Record<Element, string[]> = {
     Fire: ["fire_bolt"],
@@ -360,6 +377,9 @@ export function getPlayerSpells(player: PlayerCharacter): Spell[] {
     const spell = SPELLS.find(s => s.id === spellId);
     if (spell) spells.push(spell);
   }
+
+  const speedUp = SPELLS.find(s => s.id === "speed_up");
+  if (speedUp) spells.push(speedUp);
 
   if (player.level >= 3) {
     const healSpell = SPELLS.find(s => s.id === "heal");

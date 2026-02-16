@@ -3,10 +3,15 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ParticleCanvas from "./ParticleCanvas";
-import { EnergyColors, EnergyShapes, Elements } from "@shared/schema";
-import type { EnergyColor, EnergyShape, Element } from "@shared/schema";
-import { COLOR_MAP, ELEMENT_COLORS, createDefaultStats, applyElementMods } from "@/lib/gameData";
-import { ArrowLeft, ArrowRight, Sparkles, Wind, CircleDot, Diamond, CloudLightning, Ghost, Leaf, Waves, Flame, Check, Snowflake, Sun, Mountain, Droplets, Zap, Eye } from "lucide-react";
+import { EnergyColors, EnergyShapes } from "@shared/schema";
+import type { EnergyColor, EnergyShape } from "@shared/schema";
+import { COLOR_MAP, ELEMENT_COLORS, STARTER_CHARACTERS } from "@/lib/gameData";
+import { ArrowLeft, ArrowRight, Sparkles, CircleDot, Diamond, CloudLightning, Ghost, Leaf, Waves, Flame, Check, Sword, Wind, Zap } from "lucide-react";
+import SpriteAnimator from "./SpriteAnimator";
+
+import knightIdle from "@/assets/images/knight-idle-4f.png";
+import samuraiIdle from "@/assets/images/samurai-idle.png";
+import baskenIdle from "@/assets/images/basken-idle.png";
 
 const SHAPE_ICONS: Record<string, any> = {
   Orb: CircleDot,
@@ -18,42 +23,40 @@ const SHAPE_ICONS: Record<string, any> = {
   Wave: Waves,
 };
 
-const ELEMENT_ICONS: Record<string, any> = {
-  Fire: Flame,
-  Water: Droplets,
-  Wind: Wind,
-  Earth: Mountain,
-  Lightning: Zap,
-  Shadow: Eye,
-  Light: Sun,
-  Ice: Snowflake,
+const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number }> = {
+  knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 98, totalFrames: 4 },
+  samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10 },
+  basken: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5 },
 };
 
-const ELEMENT_DESCRIPTIONS: Record<string, string> = {
-  Fire: "Fierce attacker with high ATK",
-  Water: "Wise caster with high INT & HP",
-  Wind: "Swift striker with high AGI",
-  Earth: "Stalwart defender with high DEF & HP",
-  Lightning: "Quick and lucky fighter",
-  Shadow: "Balanced attacker with agility",
-  Light: "Holy caster with high INT & LUCK",
-  Ice: "Tactical mage with INT & DEF",
+const STARTER_ICONS: Record<string, any> = {
+  knight_fire: Flame,
+  samurai_wind: Wind,
+  basken_lightning: Zap,
+};
+
+const STARTER_DESCRIPTIONS: Record<string, string> = {
+  knight_fire: "A stalwart fire knight with high HP and ATK. Excels at close combat with devastating fire magic.",
+  samurai_wind: "A swift wind samurai with high AGI and balanced stats. Masters wind techniques and blade arts.",
+  basken_lightning: "A versatile lightning warrior with good luck and speed. Wields thunder magic in battle.",
 };
 
 interface CharacterCreationProps {
-  onComplete: (name: string, color: EnergyColor, shape: EnergyShape, element: Element) => void;
+  onComplete: (starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape) => void;
   onBack: () => void;
 }
 
 export default function CharacterCreation({ onComplete, onBack }: CharacterCreationProps) {
   const [step, setStep] = useState(0);
+  const [selectedStarter, setSelectedStarter] = useState<string>("samurai_wind");
   const [name, setName] = useState("");
   const [selectedColor, setSelectedColor] = useState<EnergyColor>("Purple");
   const [selectedShape, setSelectedShape] = useState<EnergyShape>("Orb");
-  const [selectedElement, setSelectedElement] = useState<Element>("Wind");
-  const steps = ["Name", "Element", "Energy Color", "Energy Shape", "Confirm"];
+  const steps = ["Character", "Name", "Energy Color", "Energy Shape", "Confirm"];
 
-  const previewStats = applyElementMods(createDefaultStats(), selectedElement);
+  const starterDef = STARTER_CHARACTERS.find(c => c.id === selectedStarter)!;
+  const spriteData = STARTER_SPRITES[starterDef.spriteId];
+  const elemColor = ELEMENT_COLORS[starterDef.element];
 
   const statBar = (label: string, value: number, max: number, color: string) => (
     <div className="flex items-center gap-2">
@@ -73,48 +76,88 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
       case 0:
         return (
           <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Name Your Hero</h3>
-            <Input
-              value={name}
-              onChange={e => setName(e.target.value)}
-              placeholder="Enter name..."
-              className="text-center text-lg bg-black/30 border-purple-500/30 text-purple-100 placeholder:text-purple-500/40 h-12"
-              maxLength={20}
-              data-testid="input-player-name"
-            />
-          </div>
-        );
-
-      case 1:
-        return (
-          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Choose Your Element</h3>
-            <div className="grid grid-cols-4 gap-2">
-              {Elements.map(element => {
-                const Icon = ELEMENT_ICONS[element] || CircleDot;
-                const elColor = ELEMENT_COLORS[element];
+            <h3 className="text-xl text-purple-300 font-semibold text-center">Choose Your Character</h3>
+            <div className="grid grid-cols-3 gap-3">
+              {STARTER_CHARACTERS.map(starter => {
+                const Icon = STARTER_ICONS[starter.id] || Sword;
+                const sColor = ELEMENT_COLORS[starter.element];
+                const sprite = STARTER_SPRITES[starter.spriteId];
+                const isSelected = selectedStarter === starter.id;
                 return (
                   <button
-                    key={element}
-                    onClick={() => setSelectedElement(element)}
-                    className={`relative flex flex-col items-center gap-1.5 p-3 rounded-md transition-all duration-200 ${
-                      selectedElement === element
+                    key={starter.id}
+                    onClick={() => setSelectedStarter(starter.id)}
+                    className={`relative flex flex-col items-center gap-2 p-3 rounded-lg transition-all duration-200 ${
+                      isSelected
                         ? "ring-2 ring-white/50 bg-white/10 scale-105"
                         : "bg-white/5 hover:bg-white/10"
                     }`}
                   >
-                    <Icon className="w-7 h-7" style={{ color: elColor }} />
-                    <span className="text-[11px] font-medium" style={{ color: elColor }}>{element}</span>
-                    {selectedElement === element && (
-                      <Check className="absolute top-1 right-1 w-3 h-3 text-white/80" />
+                    <div className="w-16 h-16 flex items-center justify-center">
+                      <SpriteAnimator
+                        spriteSheet={sprite.sheet}
+                        frameWidth={sprite.frameWidth}
+                        frameHeight={sprite.frameHeight}
+                        totalFrames={sprite.totalFrames}
+                        fps={8}
+                        scale={sprite.frameHeight > 80 ? 1.2 : 1.8}
+                        loop={true}
+                      />
+                    </div>
+                    <div className="text-center">
+                      <span className="text-sm font-semibold text-white block">{starter.className}</span>
+                      <div className="flex items-center justify-center gap-1 mt-0.5">
+                        <Icon className="w-3 h-3" style={{ color: sColor }} />
+                        <span className="text-[10px]" style={{ color: sColor }}>{starter.element}</span>
+                      </div>
+                    </div>
+                    {isSelected && (
+                      <Check className="absolute top-1.5 right-1.5 w-4 h-4 text-white/80" />
                     )}
                   </button>
                 );
               })}
             </div>
             <p className="text-xs text-center text-purple-400/70 mt-2">
-              {ELEMENT_DESCRIPTIONS[selectedElement]}
+              {STARTER_DESCRIPTIONS[selectedStarter]}
             </p>
+            <div className="space-y-1.5 mt-2">
+              {statBar("HP", starterDef.baseStats.maxHp, 150, "#ef4444")}
+              {statBar("MP", starterDef.baseStats.maxMp, 60, "#3b82f6")}
+              {statBar("ATK", starterDef.baseStats.atk, 20, "#f97316")}
+              {statBar("DEF", starterDef.baseStats.def, 20, "#22c55e")}
+              {statBar("AGI", starterDef.baseStats.agi, 20, "#eab308")}
+              {statBar("INT", starterDef.baseStats.int, 15, "#a855f7")}
+              {statBar("LCK", starterDef.baseStats.luck, 10, "#ec4899")}
+            </div>
+          </div>
+        );
+
+      case 1:
+        return (
+          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
+            <h3 className="text-xl text-purple-300 font-semibold text-center">Name Your {starterDef.className}</h3>
+            <div className="flex justify-center mb-2">
+              <div className="w-16 h-16 flex items-center justify-center">
+                <SpriteAnimator
+                  spriteSheet={spriteData.sheet}
+                  frameWidth={spriteData.frameWidth}
+                  frameHeight={spriteData.frameHeight}
+                  totalFrames={spriteData.totalFrames}
+                  fps={8}
+                  scale={spriteData.frameHeight > 80 ? 1.2 : 1.8}
+                  loop={true}
+                />
+              </div>
+            </div>
+            <Input
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder={`Enter name (default: ${starterDef.name})...`}
+              className="text-center text-lg bg-black/30 border-purple-500/30 text-purple-100 placeholder:text-purple-500/40 h-12"
+              maxLength={20}
+              data-testid="input-player-name"
+            />
           </div>
         );
 
@@ -179,43 +222,49 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
         );
 
       case 4:
-        const SelectedElementIcon = ELEMENT_ICONS[selectedElement] || CircleDot;
+        const displayName = name.trim() || starterDef.name;
+        const StarterIcon = STARTER_ICONS[selectedStarter] || Sword;
         return (
           <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
             <h3 className="text-xl text-purple-300 font-semibold text-center">Confirm Your Hero</h3>
             <div className="flex flex-col items-center gap-4">
               <div className="relative">
                 <div
-                  className="w-24 h-24 rounded-full flex items-center justify-center animate-pulse"
+                  className="w-24 h-24 rounded-full flex items-center justify-center"
                   style={{
-                    backgroundColor: COLOR_MAP[selectedColor] + "20",
-                    boxShadow: `0 0 40px ${COLOR_MAP[selectedColor]}40, 0 0 80px ${COLOR_MAP[selectedColor]}20`,
-                    border: `2px solid ${COLOR_MAP[selectedColor]}60`,
+                    backgroundColor: elemColor + "20",
+                    boxShadow: `0 0 40px ${elemColor}40, 0 0 80px ${elemColor}20`,
+                    border: `2px solid ${elemColor}60`,
                   }}
                 >
-                  {(() => {
-                    const Icon = SHAPE_ICONS[selectedShape] || CircleDot;
-                    return <Icon className="w-12 h-12" style={{ color: COLOR_MAP[selectedColor] }} />;
-                  })()}
+                  <SpriteAnimator
+                    spriteSheet={spriteData.sheet}
+                    frameWidth={spriteData.frameWidth}
+                    frameHeight={spriteData.frameHeight}
+                    totalFrames={spriteData.totalFrames}
+                    fps={8}
+                    scale={spriteData.frameHeight > 80 ? 1.2 : 1.8}
+                    loop={true}
+                  />
                 </div>
               </div>
               <div className="text-center">
-                <p className="text-2xl font-bold text-white" data-testid="text-confirm-name">{name || "Hero"}</p>
+                <p className="text-2xl font-bold text-white" data-testid="text-confirm-name">{displayName}</p>
                 <div className="flex items-center justify-center gap-2 mt-1">
-                  <SelectedElementIcon className="w-4 h-4" style={{ color: ELEMENT_COLORS[selectedElement] }} />
-                  <span className="text-sm" style={{ color: ELEMENT_COLORS[selectedElement] }}>{selectedElement}</span>
+                  <StarterIcon className="w-4 h-4" style={{ color: elemColor }} />
+                  <span className="text-sm" style={{ color: elemColor }}>{starterDef.element} {starterDef.className}</span>
                   <span className="text-purple-500/40">|</span>
                   <span className="text-sm text-purple-300/70">{selectedColor} {selectedShape}</span>
                 </div>
               </div>
               <div className="w-full space-y-1.5 mt-2">
-                {statBar("HP", previewStats.maxHp, 150, "#ef4444")}
-                {statBar("MP", previewStats.maxMp, 80, "#3b82f6")}
-                {statBar("ATK", previewStats.atk, 20, "#f97316")}
-                {statBar("DEF", previewStats.def, 20, "#22c55e")}
-                {statBar("AGI", previewStats.agi, 20, "#eab308")}
-                {statBar("INT", previewStats.int, 20, "#a855f7")}
-                {statBar("LCK", previewStats.luck, 15, "#ec4899")}
+                {statBar("HP", starterDef.baseStats.maxHp, 150, "#ef4444")}
+                {statBar("MP", starterDef.baseStats.maxMp, 60, "#3b82f6")}
+                {statBar("ATK", starterDef.baseStats.atk, 20, "#f97316")}
+                {statBar("DEF", starterDef.baseStats.def, 20, "#22c55e")}
+                {statBar("AGI", starterDef.baseStats.agi, 20, "#eab308")}
+                {statBar("INT", starterDef.baseStats.int, 15, "#a855f7")}
+                {statBar("LCK", starterDef.baseStats.luck, 10, "#ec4899")}
               </div>
             </div>
           </div>
@@ -226,7 +275,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
       <ParticleCanvas
-        colors={[COLOR_MAP[selectedColor], ELEMENT_COLORS[selectedElement]]}
+        colors={[COLOR_MAP[selectedColor], elemColor]}
         count={50}
         speed={0.6}
         style="swirl"
@@ -250,7 +299,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
           ))}
         </div>
 
-        <Card className="w-full max-w-md p-6 bg-[#12122a]/90 border-purple-500/15 backdrop-blur-sm">
+        <Card className="w-full max-w-md p-6 bg-[#12122a]/90 border-purple-500/15 backdrop-blur-sm max-h-[80vh] overflow-y-auto">
           {renderStep()}
 
           <div className="flex justify-between mt-6 gap-3">
@@ -267,7 +316,6 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
             {step < 4 ? (
               <Button
                 onClick={() => setStep(step + 1)}
-                disabled={step === 0 && name.trim().length === 0}
                 className="bg-purple-600/80 text-white hover:bg-purple-500/80 border border-purple-400/20"
                 data-testid="button-creation-next"
               >
@@ -276,7 +324,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               </Button>
             ) : (
               <Button
-                onClick={() => onComplete(name.trim() || "Hero", selectedColor, selectedShape, selectedElement)}
+                onClick={() => onComplete(selectedStarter, name.trim() || starterDef.name, selectedColor, selectedShape)}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500"
                 data-testid="button-begin-adventure"
               >

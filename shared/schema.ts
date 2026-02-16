@@ -67,6 +67,9 @@ export interface PlayerCharacter {
   clearedNodes: number[];
   party: PartyMember[];
   defeatedBosses: number[];
+  spriteId: string;
+  starterCharacterId: string;
+  regionBossDefeats: Record<string, number>;
 }
 
 export interface InventoryItem {
@@ -215,12 +218,12 @@ export interface ShopItem extends InventoryItem {
 }
 
 export interface GameState {
-  screen: "menu" | "intro" | "creation" | "overworld" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect" | "partyChoice" | "partyUnlock";
+  screen: "menu" | "intro" | "creation" | "overworld" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect" | "partyUnlock";
   player: PlayerCharacter | null;
   battle: BattleState | null;
   currentShop: ShopItem[] | null;
   pendingLevelUp: { statsToAllocate: number; perksToChoose: number } | null;
-  pendingUnlockChoices: [PartyMemberDef, PartyMemberDef] | null;
+  pendingUnlocks: PartyMemberDef[];
   pendingUnlock: PartyMemberDef | null;
   textSpeed: "slow" | "medium" | "fast";
   musicVolume: number;

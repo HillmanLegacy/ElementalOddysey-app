@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember } from "@shared/schema";
-import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, BOSS_UNLOCK_MAP } from "./gameData";
+import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 const INITIAL_STATE: GameState = {
@@ -9,7 +9,7 @@ const INITIAL_STATE: GameState = {
   battle: null,
   currentShop: null,
   pendingLevelUp: null,
-  pendingUnlockChoices: null,
+  pendingUnlocks: [],
   pendingUnlock: null,
   textSpeed: "medium",
   musicVolume: 70,
@@ -23,8 +23,10 @@ export function useGameState() {
     setState(s => ({ ...s, screen }));
   }, []);
 
-  const createCharacter = useCallback((name: string, color: EnergyColor, shape: EnergyShape, element: Element) => {
-    const player = createNewPlayer(name, color, shape, element);
+  const createCharacter = useCallback((starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape) => {
+    const starterDef = STARTER_CHARACTERS.find(c => c.id === starterCharId);
+    if (!starterDef) return;
+    const player = createNewPlayer(starterDef, name, color, shape);
     setState(s => ({ ...s, player, screen: "overworld" }));
   }, []);
 
@@ -42,7 +44,8 @@ export function useGameState() {
       const node = region.nodes.find(n => n.id === nodeId);
       if (!node || (node.type !== "battle" && node.type !== "boss")) return s;
 
-      const enemies = getEnemiesForNode(node, region);
+      const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
+      const enemies = getEnemiesForNode(node, region, tier);
       const battle = initBattle(enemies);
       battle.playerHp = s.player.stats.hp;
       battle.playerMp = s.player.stats.mp;
@@ -419,9 +422,41 @@ export function useGameState() {
       }
 
       const isBossNode = REGIONS[s.player.currentRegion].nodes.find(n => n.id === s.player!.currentNode)?.type === "boss";
+      const regionBossDefeats = { ...(s.player.regionBossDefeats || {}) };
       let currentRegion = s.player.currentRegion;
-      if (isBossNode && currentRegion < REGIONS.length - 1) {
-        currentRegion++;
+      let finalCleared = newCleared;
+      let currentNode = s.player.currentNode;
+      let pendingUnlocks: PartyMemberDef[] = [];
+      let pendingUnlock: PartyMemberDef | null = null;
+
+      if (isBossNode) {
+        const regionKey = String(s.player.currentRegion);
+        const prevDefeats = regionBossDefeats[regionKey] || 0;
+        regionBossDefeats[regionKey] = prevDefeats + 1;
+        const newDefeats = regionBossDefeats[regionKey];
+
+        if (s.player.currentRegion === 0 && prevDefeats === 0) {
+          const unchosen = STARTER_CHARACTERS.filter(c => c.id !== s.player!.starterCharacterId);
+          pendingUnlocks = unchosen;
+          pendingUnlock = unchosen[0] || null;
+        }
+
+        if (newDefeats >= 3) {
+          if (currentRegion < REGIONS.length - 1) {
+            currentRegion++;
+          }
+          const newRegion = REGIONS[currentRegion];
+          currentNode = newRegion.nodes[0].id;
+          finalCleared = newCleared.filter(nId => {
+            const inNewRegion = newRegion.nodes.some(n => n.id === nId);
+            return !inNewRegion;
+          });
+        } else {
+          const thisRegion = REGIONS[s.player.currentRegion];
+          currentNode = thisRegion.nodes[0].id;
+          const regionNodeIds = thisRegion.nodes.map(n => n.id);
+          finalCleared = newCleared.filter(nId => !regionNodeIds.includes(nId));
+        }
       }
 
       const updatedPlayer: PlayerCharacter = {
@@ -430,8 +465,10 @@ export function useGameState() {
         xpToNext,
         level: newLevel,
         gold: s.player.gold + totalGold,
-        clearedNodes: newCleared,
+        clearedNodes: finalCleared,
         currentRegion,
+        currentNode,
+        regionBossDefeats,
         stats: {
           ...baseStats,
           hp: Math.min(baseStats.maxHp, s.battle.playerHp),
@@ -439,36 +476,9 @@ export function useGameState() {
         },
       };
 
-      let pendingUnlockChoices: [PartyMemberDef, PartyMemberDef] | null = null;
-      let pendingUnlock: PartyMemberDef | null = null;
-      const defeatedBosses = [...(s.player.defeatedBosses || [])];
-      if (isBossNode && !defeatedBosses.includes(s.player.currentRegion)) {
-        defeatedBosses.push(s.player.currentRegion);
-        const unlockPair = BOSS_UNLOCK_MAP[s.player.currentRegion];
-        if (unlockPair) {
-          const existingIds = updatedPlayer.party.map(p => p.id);
-          const available = unlockPair.filter(id => !existingIds.includes(id));
-          if (available.length === 2) {
-            const char1 = PARTY_CHARACTERS.find(c => c.id === available[0]);
-            const char2 = PARTY_CHARACTERS.find(c => c.id === available[1]);
-            if (char1 && char2) {
-              pendingUnlockChoices = [char1, char2];
-            }
-          } else if (available.length === 1) {
-            const char = PARTY_CHARACTERS.find(c => c.id === available[0]);
-            if (char) {
-              pendingUnlock = char;
-            }
-          }
-        }
-      }
-      updatedPlayer.defeatedBosses = defeatedBosses;
-
-      const nextScreen = pendingUnlockChoices
-        ? "partyChoice"
-        : pendingUnlock
-          ? "partyUnlock"
-          : (pendingLevelUp ? "levelUp" : "overworld");
+      const nextScreen = pendingUnlock
+        ? "partyUnlock"
+        : (pendingLevelUp ? "levelUp" : "overworld");
 
       return {
         ...s,
@@ -476,7 +486,7 @@ export function useGameState() {
         battle: null,
         screen: nextScreen,
         pendingLevelUp,
-        pendingUnlockChoices,
+        pendingUnlocks,
         pendingUnlock,
       };
     });
@@ -612,20 +622,15 @@ export function useGameState() {
   }, []);
 
   const loadGame = useCallback((playerData: PlayerCharacter) => {
-    const normalizedPlayer = { ...playerData, party: playerData.party || [], defeatedBosses: playerData.defeatedBosses || [] };
+    const normalizedPlayer = {
+      ...playerData,
+      party: playerData.party || [],
+      defeatedBosses: playerData.defeatedBosses || [],
+      spriteId: playerData.spriteId || "samurai",
+      starterCharacterId: playerData.starterCharacterId || "samurai_wind",
+      regionBossDefeats: playerData.regionBossDefeats || {},
+    };
     setState(s => ({ ...s, player: normalizedPlayer, screen: "overworld" }));
-  }, []);
-
-  const selectUnlockChoice = useCallback((charDef: PartyMemberDef) => {
-    setState(s => {
-      if (!s.player || !s.pendingUnlockChoices) return s;
-      return {
-        ...s,
-        pendingUnlock: charDef,
-        pendingUnlockChoices: null,
-        screen: "partyUnlock" as const,
-      };
-    });
   }, []);
 
   const confirmUnlock = useCallback((customName: string) => {
@@ -655,14 +660,43 @@ export function useGameState() {
       };
 
       const newParty = [...s.player.party, newMember];
+      const remaining = s.pendingUnlocks.filter(u => u.id !== def.id);
+
+      if (remaining.length > 0) {
+        return {
+          ...s,
+          player: { ...s.player, party: newParty },
+          pendingUnlock: remaining[0],
+          pendingUnlocks: remaining,
+          screen: "partyUnlock" as const,
+        };
+      }
+
       const nextScreen = s.pendingLevelUp ? "levelUp" : "overworld";
 
       return {
         ...s,
         player: { ...s.player, party: newParty },
         pendingUnlock: null,
-        pendingUnlockChoices: null,
+        pendingUnlocks: [],
         screen: nextScreen,
+      };
+    });
+  }, []);
+
+  const changeRegion = useCallback((regionId: number) => {
+    setState(s => {
+      if (!s.player) return s;
+      const targetRegion = REGIONS[regionId];
+      if (!targetRegion) return s;
+      const firstNode = targetRegion.nodes[0];
+      return {
+        ...s,
+        player: {
+          ...s.player,
+          currentRegion: regionId,
+          currentNode: firstNode.id,
+        },
       };
     });
   }, []);
@@ -693,8 +727,8 @@ export function useGameState() {
     loadGame,
     setAnimating,
     finishPlayerTurn,
-    selectUnlockChoice,
     confirmUnlock,
+    changeRegion,
   };
 }
 
