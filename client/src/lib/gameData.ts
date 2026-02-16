@@ -408,31 +408,56 @@ export function getShopItems(region: Region): ShopItem[] {
   ];
 }
 
+export const BASE_CRIT_CHANCE = 0.05;
+export const BASE_CRIT_DAMAGE = 2.0;
+export const RNG_MIN = 0.90;
+export const RNG_MAX = 1.10;
+export const MIN_DAMAGE = 1;
+export const ELEMENT_ADVANTAGE = 1.3;
+export const ELEMENT_NEUTRAL = 1.0;
+export const ELEMENT_DISADVANTAGE = 0.7;
+
 const ELEMENT_EFFECTIVENESS: Record<string, Record<string, number>> = {
-  Fire: { Ice: 1.3, Shadow: 1.0, Earth: 0.8, Fire: 0.8 },
-  Ice: { Fire: 0.8, Shadow: 1.0, Earth: 1.3, Ice: 0.8 },
-  Shadow: { Fire: 1.0, Ice: 1.0, Earth: 1.0, Shadow: 0.8 },
-  Earth: { Fire: 1.3, Ice: 0.8, Shadow: 1.0, Earth: 0.8 },
+  Fire: { Ice: ELEMENT_ADVANTAGE, Shadow: ELEMENT_NEUTRAL, Earth: ELEMENT_DISADVANTAGE, Fire: ELEMENT_DISADVANTAGE },
+  Ice: { Fire: ELEMENT_DISADVANTAGE, Shadow: ELEMENT_NEUTRAL, Earth: ELEMENT_ADVANTAGE, Ice: ELEMENT_DISADVANTAGE },
+  Shadow: { Fire: ELEMENT_NEUTRAL, Ice: ELEMENT_NEUTRAL, Earth: ELEMENT_NEUTRAL, Shadow: ELEMENT_DISADVANTAGE },
+  Earth: { Fire: ELEMENT_ADVANTAGE, Ice: ELEMENT_DISADVANTAGE, Shadow: ELEMENT_NEUTRAL, Earth: ELEMENT_DISADVANTAGE },
 };
 
 export function getElementMultiplier(attackElement?: string, defenderElement?: string): { multiplier: number; label: string } {
-  if (!attackElement || !defenderElement) return { multiplier: 1.0, label: "" };
-  const mult = ELEMENT_EFFECTIVENESS[attackElement]?.[defenderElement] ?? 1.0;
-  if (mult > 1.0) return { multiplier: mult, label: "Super effective!" };
-  if (mult < 1.0) return { multiplier: mult, label: "Not very effective..." };
-  return { multiplier: 1.0, label: "" };
+  if (!attackElement || !defenderElement) return { multiplier: ELEMENT_NEUTRAL, label: "" };
+  const mult = ELEMENT_EFFECTIVENESS[attackElement]?.[defenderElement] ?? ELEMENT_NEUTRAL;
+  if (mult > ELEMENT_NEUTRAL) return { multiplier: mult, label: "Super effective!" };
+  if (mult < ELEMENT_NEUTRAL) return { multiplier: mult, label: "Not very effective..." };
+  return { multiplier: ELEMENT_NEUTRAL, label: "" };
 }
 
-export function calculateDamage(attacker: PlayerStats, defender: PlayerStats, isMagic: boolean, attackElement?: string, defenderElement?: string): { damage: number; isCrit: boolean; elementLabel: string } {
-  const stat = isMagic ? attacker.int : attacker.atk;
-  const defStat = defender.def;
-  const baseDamage = Math.max(1, stat * 2 - defStat);
-  const variance = 0.85 + Math.random() * 0.3;
-  const critChance = Math.min(0.3, attacker.luck * 0.02);
-  const isCrit = Math.random() < critChance;
-  const critMult = isCrit ? 1.5 : 1;
-  const { multiplier, label } = getElementMultiplier(attackElement, defenderElement);
-  return { damage: Math.floor(baseDamage * variance * critMult * multiplier), isCrit, elementLabel: label };
+export function calculateDamage(
+  attacker: PlayerStats,
+  defender: PlayerStats,
+  isMagic: boolean,
+  attackElement?: string,
+  defenderElement?: string,
+  skillMultiplier: number = 1.0,
+  critChanceModifier: number = 0,
+  critDamageModifier: number = 0,
+): { damage: number; isCrit: boolean; elementLabel: string } {
+  const offense = isMagic ? attacker.int : attacker.atk;
+  const abilityPower = offense * skillMultiplier;
+  const { multiplier: elementMultiplier, label: elementLabel } = getElementMultiplier(attackElement, defenderElement);
+  const elementAdjusted = abilityPower * elementMultiplier;
+  const defense = isMagic ? defender.int : defender.def;
+  const rawDamage = elementAdjusted - defense;
+  let damage = Math.max(rawDamage, MIN_DAMAGE);
+  const finalCritChance = BASE_CRIT_CHANCE + critChanceModifier;
+  const isCrit = Math.random() < finalCritChance;
+  if (isCrit) {
+    damage = damage * (BASE_CRIT_DAMAGE + critDamageModifier);
+  }
+  const variance = RNG_MIN + Math.random() * (RNG_MAX - RNG_MIN);
+  damage = Math.round(damage * variance);
+  damage = Math.max(damage, MIN_DAMAGE);
+  return { damage, isCrit, elementLabel };
 }
 
 export function checkDodge(defender: PlayerStats): boolean {

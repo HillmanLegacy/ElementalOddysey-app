@@ -81,7 +81,8 @@ export function useGameState() {
         battle.animation = "dodge";
       } else {
         const weaponElement = s.player.equipment.weapon?.element || s.player.element;
-        const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element);
+        const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
+        const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element, 1.0, critMod);
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.animation = isCrit ? "critical" : "attack";
         battle.log = [...battle.log, `You deal ${damage}${isCrit ? " CRITICAL" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -150,11 +151,11 @@ export function useGameState() {
 
         for (const target of targets) {
           if (!target || target.currentHp <= 0) continue;
-          const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, true, s.player.element, target.element);
-          const mult = spell.effect.damageMultiplier || 1;
-          const boosted = Math.floor(damage * mult);
-          target.currentHp = Math.max(0, target.currentHp - boosted);
-          battle.log = [...battle.log, `${spell.name} deals ${boosted}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+          const skillMult = spell.effect.damageMultiplier || 1;
+          const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
+          const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, true, s.player.element, target.element, skillMult, critMod);
+          target.currentHp = Math.max(0, target.currentHp - damage);
+          battle.log = [...battle.log, `${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
         }
 
         if (spell.id === "holy_light") {
