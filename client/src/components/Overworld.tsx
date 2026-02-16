@@ -28,7 +28,7 @@ const OVERWORLD_SPRITES: Record<string, {
   },
   knight: {
     idle: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4, fps: 8 },
-    run: { sheet: knightRun, frameWidth: 86, frameHeight: 49, totalFrames: 12, fps: 14 },
+    run: { sheet: knightRun, frameWidth: 86, frameHeight: 49, totalFrames: 6, fps: 14 },
     scale: 3,
   },
   basken: {

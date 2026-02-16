@@ -66,7 +66,8 @@ A browser-based turn-based RPG with a board-style overworld, character selection
 - Turn flow: playerTurn → partyTurn → enemyTurn → playerTurn
 
 ## Party Sprite Assets
-- Knight (Fire): 86x49 frames (2-row sheets), idle(4f top-row only), attack(14f), run(12f), hurt(4f)
+- Knight (Fire): 86x49 frames (2-row sheets), idle(4f top-row only), attack(7f top-row only), run(6f top-row only), hurt(2f top-row only)
+  - NOTE: Knight sheets pack different animations per row; only top row is used for each animation type
 - Ranger (Wind): 64x48 frames, idle(6f), attack(6f), run(6f), hurt(6f)
 - Basken (Lightning): 56x56 frames, idle(5f), attack(8f), run(6f), hurt(3f)
 - Knight2D (Light): 84x84 frames, idle(8f), attack(4f, uses knight2d-attack-1.png), run(8f), hurt(3f)
