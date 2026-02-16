@@ -30,7 +30,7 @@ export const STARTER_CHARACTERS: PartyMemberDef[] = [
     name: "Knight",
     className: "Knight",
     element: "Fire",
-    baseStats: { hp: 120, maxHp: 120, mp: 30, maxMp: 30, atk: 14, def: 12, agi: 6, int: 5, luck: 4 },
+    baseStats: { hp: 85, maxHp: 85, mp: 30, maxMp: 30, atk: 14, def: 12, agi: 6, int: 5, luck: 4 },
     spriteId: "knight",
   },
   {
@@ -38,7 +38,7 @@ export const STARTER_CHARACTERS: PartyMemberDef[] = [
     name: "Samurai",
     className: "Samurai",
     element: "Wind",
-    baseStats: { hp: 100, maxHp: 100, mp: 40, maxMp: 40, atk: 12, def: 8, agi: 12, int: 8, luck: 5 },
+    baseStats: { hp: 70, maxHp: 70, mp: 40, maxMp: 40, atk: 12, def: 8, agi: 12, int: 8, luck: 5 },
     spriteId: "samurai",
   },
   {
@@ -46,7 +46,7 @@ export const STARTER_CHARACTERS: PartyMemberDef[] = [
     name: "Basken",
     className: "Warrior",
     element: "Lightning",
-    baseStats: { hp: 100, maxHp: 100, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
+    baseStats: { hp: 75, maxHp: 75, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
     spriteId: "basken",
   },
 ];
@@ -57,7 +57,7 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
     name: "Ignis",
     className: "Knight",
     element: "Fire",
-    baseStats: { hp: 120, maxHp: 120, mp: 30, maxMp: 30, atk: 14, def: 12, agi: 6, int: 5, luck: 4 },
+    baseStats: { hp: 85, maxHp: 85, mp: 30, maxMp: 30, atk: 14, def: 12, agi: 6, int: 5, luck: 4 },
     spriteId: "knight",
   },
   {
@@ -65,7 +65,7 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
     name: "Sylph",
     className: "Ranger",
     element: "Wind",
-    baseStats: { hp: 80, maxHp: 80, mp: 40, maxMp: 40, atk: 10, def: 6, agi: 14, int: 10, luck: 7 },
+    baseStats: { hp: 60, maxHp: 60, mp: 40, maxMp: 40, atk: 10, def: 6, agi: 14, int: 10, luck: 7 },
     spriteId: "ranger",
   },
   {
@@ -73,7 +73,7 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
     name: "Basken",
     className: "Warrior",
     element: "Lightning",
-    baseStats: { hp: 100, maxHp: 100, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
+    baseStats: { hp: 75, maxHp: 75, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
     spriteId: "basken",
   },
   {
@@ -81,7 +81,7 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
     name: "Lumen",
     className: "Paladin",
     element: "Light",
-    baseStats: { hp: 110, maxHp: 110, mp: 45, maxMp: 45, atk: 11, def: 11, agi: 7, int: 12, luck: 5 },
+    baseStats: { hp: 80, maxHp: 80, mp: 45, maxMp: 45, atk: 11, def: 11, agi: 7, int: 12, luck: 5 },
     spriteId: "knight2d",
   },
   {
@@ -89,7 +89,7 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
     name: "Terra",
     className: "Axe Warrior",
     element: "Earth",
-    baseStats: { hp: 130, maxHp: 130, mp: 25, maxMp: 25, atk: 15, def: 13, agi: 5, int: 4, luck: 5 },
+    baseStats: { hp: 95, maxHp: 95, mp: 25, maxMp: 25, atk: 15, def: 13, agi: 5, int: 4, luck: 5 },
     spriteId: "axewarrior",
   },
 ];
@@ -211,12 +211,12 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   return {
     ...base,
     stats: {
-      hp: Math.floor(40 + lv * 15),
-      maxHp: Math.floor(40 + lv * 15),
+      hp: Math.floor(25 + lv * 12),
+      maxHp: Math.floor(25 + lv * 12),
       atk: Math.floor(5 + lv * 3),
       def: Math.floor(3 + lv * 2),
       agi: Math.floor(4 + lv * 1.5),
-      int: Math.floor(4 + lv * 1.5),
+      int: Math.floor(5 + lv * 2),
       luck: Math.floor(2 + lv),
       mp: Math.floor(20 + lv * 5),
       maxMp: Math.floor(20 + lv * 5),
