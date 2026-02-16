@@ -246,7 +246,11 @@ export default function BattleScreen({
     onDefend();
   }, [onSetAnimating, onDefend]);
 
-  const onPlayerTransitionEnd = useCallback(() => {
+  const runBackHandled = useRef(false);
+
+  const onPlayerTransitionEnd = useCallback((e: React.TransitionEvent) => {
+    if (e.propertyName !== "left" && e.propertyName !== "bottom") return;
+    if (e.propertyName === "bottom") return;
     if (animPhase === "runToEnemy") {
       setAnimPhase("attacking");
       playSfx("swordSwing");
@@ -258,14 +262,15 @@ export default function BattleScreen({
           scheduleTimer(() => setWindAttackVfx(null), 600);
         }
       }
-    } else if (animPhase === "runBack") {
+    } else if (animPhase === "runBack" && !runBackHandled.current) {
+      runBackHandled.current = true;
       setAnimPhase("idle");
       setPendingTargetIdx(null);
       if (battle.phase !== "victory" && battle.phase !== "defeat") {
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn]);
+  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
@@ -354,7 +359,18 @@ export default function BattleScreen({
 
   const onSpriteComplete = useCallback(() => {
     if (animPhase === "attacking") {
+      runBackHandled.current = false;
       setAnimPhase("runBack");
+      scheduleTimer(() => {
+        if (!runBackHandled.current) {
+          runBackHandled.current = true;
+          setAnimPhase("idle");
+          setPendingTargetIdx(null);
+          if (battle.phase !== "victory" && battle.phase !== "defeat") {
+            setTimeout(() => onFinishPlayerTurn(), 1000);
+          }
+        }
+      }, 500);
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
@@ -849,28 +865,13 @@ export default function BattleScreen({
 
   const spriteConfig = getSpriteSheet();
 
-  const getPlayerTransform = (): string => {
-    switch (animPhase) {
-      case "runToEnemy":
-        return "translateX(320px) translateY(-50px)";
-      case "attacking":
-        return "translateX(320px) translateY(-50px)";
-      case "runBack":
-        return "translateX(0) translateY(0)";
-      case "hurt":
-        return "translateX(-12px)";
-      case "fujinSlice": {
-        if (fujinDashPhase === "dash" || fujinDashPhase === "strike") {
-          return "translateX(450px) translateY(-50px)";
-        }
-        return "translateX(0) translateY(0)";
-      }
-      default:
-        return "translateX(0) translateY(0)";
-    }
-  };
+  const PLAYER_POS = { x: 12, y: 18 };
 
-  const isInputBlocked = animPhase !== "idle" || battle.phase !== "playerTurn";
+  const PARTY_POSITIONS = [
+    { x: 4, y: 12 },
+    { x: 12, y: 10 },
+    { x: 20, y: 12 },
+  ];
 
   const ENEMY_POSITIONS = [
     { x: 58, y: 42, z: 0.95 },
@@ -878,6 +879,28 @@ export default function BattleScreen({
     { x: 65, y: 52, z: 1.05 },
     { x: 80, y: 48, z: 0.9 },
   ];
+
+  const getPlayerPosition = (): { x: number; y: number } => {
+    if (animPhase === "fujinSlice" && fujinTargetIdx !== null) {
+      const target = ENEMY_POSITIONS[fujinTargetIdx % ENEMY_POSITIONS.length];
+      if (fujinDashPhase === "dash" || fujinDashPhase === "strike" || fujinDashPhase === "fadeout") {
+        return { x: target.x + 12, y: target.y };
+      }
+      return PLAYER_POS;
+    }
+    if ((animPhase === "runToEnemy" || animPhase === "attacking") && pendingTargetIdx !== null) {
+      const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
+      return { x: target.x - 10, y: target.y };
+    }
+    if (animPhase === "hurt") {
+      return { x: PLAYER_POS.x - 1, y: PLAYER_POS.y };
+    }
+    return PLAYER_POS;
+  };
+
+  const playerPos = getPlayerPosition();
+
+  const isInputBlocked = animPhase !== "idle" || battle.phase !== "playerTurn";
 
   const handleEnemyClick = (idx: number) => {
     if (isInputBlocked) return;
@@ -901,7 +924,7 @@ export default function BattleScreen({
   };
 
   const fujinZoomTarget = fujinTargetIdx !== null ? ENEMY_POSITIONS[fujinTargetIdx % ENEMY_POSITIONS.length] : null;
-  const fujinOrigin = fujinZoomTarget ? `${(12 + fujinZoomTarget.x) / 2}% ${(82 + (100 - fujinZoomTarget.y)) / 2}%` : "50% 50%";
+  const fujinOrigin = fujinZoomTarget ? `${(PLAYER_POS.x + fujinZoomTarget.x) / 2}% ${(100 - (PLAYER_POS.y + fujinZoomTarget.y) / 2)}%` : "50% 50%";
 
   return (
     <div className={`relative w-full h-screen overflow-hidden ${shakeScreen ? "animate-[shake_0.3s_ease-out]" : ""}`}>
@@ -1037,21 +1060,24 @@ export default function BattleScreen({
             ref={playerSpriteRef}
             className="absolute z-20"
             style={{
-              left: "12%",
-              bottom: "18%",
-              transform: getPlayerTransform(),
+              left: `${playerPos.x}%`,
+              bottom: `${playerPos.y}%`,
               opacity: fujinDashPhase === "fadeout" ? 0 : 1,
               transition: animPhase === "fujinSlice"
                 ? fujinDashPhase === "dash"
-                  ? "transform 0.18s cubic-bezier(0.1,0,0.2,1)"
+                  ? "left 0.18s cubic-bezier(0.1,0,0.2,1), bottom 0.18s cubic-bezier(0.1,0,0.2,1)"
                   : fujinDashPhase === "strike"
-                    ? "transform 0.01s"
+                    ? "left 0.01s, bottom 0.01s"
                     : fujinDashPhase === "fadeout"
                       ? "opacity 0.15s ease-out"
                       : fujinDashPhase === "return"
-                        ? "transform 0s, opacity 0.3s ease-in"
-                        : "transform 0.15s ease-out, opacity 0.3s ease-in"
-                : animPhase === "runToEnemy" ? "transform 0.35s ease-in" : animPhase === "runBack" ? "transform 0.35s ease-out" : "transform 0.15s ease-out",
+                        ? "left 0s, bottom 0s, opacity 0.3s ease-in"
+                        : "left 0.15s ease-out, bottom 0.15s ease-out, opacity 0.3s ease-in"
+                : animPhase === "runToEnemy"
+                  ? "left 0.35s ease-in, bottom 0.35s ease-in"
+                  : animPhase === "runBack"
+                    ? "left 0.35s ease-out, bottom 0.35s ease-out"
+                    : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
             onTransitionEnd={onPlayerTransitionEnd}
             data-testid="img-player-character"
@@ -1134,41 +1160,45 @@ export default function BattleScreen({
             </div>
           </div>
 
-          {battle.party.length > 0 && (
-            <div className="absolute z-20 flex gap-2" style={{ left: "2%", bottom: "8%" }}>
-              {battle.party.map((member, idx) => {
-                const spriteInfo = PARTY_SPRITE_MAP[member.spriteId];
-                if (!spriteInfo) return null;
-                const isAttacking = partyAnimIndex === idx && partyAnimPhase === "attacking";
-                const isHurt = partyHurtIndex === idx;
-                const isDead = member.currentHp <= 0;
+          {battle.party.length > 0 && battle.party.map((member, idx) => {
+            const spriteInfo = PARTY_SPRITE_MAP[member.spriteId];
+            if (!spriteInfo) return null;
+            const isAttacking = partyAnimIndex === idx && partyAnimPhase === "attacking";
+            const isHurt = partyHurtIndex === idx;
+            const isDead = member.currentHp <= 0;
+            const partyPos = PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
 
-                return (
-                  <div key={member.id} className={`flex flex-col items-center ${isDead ? 'opacity-30' : ''}`}>
-                    <SpriteAnimator
-                      spriteSheet={isHurt ? spriteInfo.hurt : isAttacking ? spriteInfo.attack : spriteInfo.idle}
-                      frameWidth={spriteInfo.frameWidth}
-                      frameHeight={spriteInfo.frameHeight}
-                      totalFrames={isHurt ? spriteInfo.hurtFrames : isAttacking ? spriteInfo.attackFrames : spriteInfo.idleFrames}
-                      fps={isAttacking ? 12 : 8}
-                      scale={2}
-                      loop={!isAttacking && !isHurt}
-                      onComplete={isAttacking || isHurt ? () => {} : undefined}
+            return (
+              <div
+                key={member.id}
+                className={`absolute z-20 flex flex-col items-center ${isDead ? 'opacity-30' : ''}`}
+                style={{
+                  left: `${partyPos.x}%`,
+                  bottom: `${partyPos.y}%`,
+                }}
+              >
+                <SpriteAnimator
+                  spriteSheet={isHurt ? spriteInfo.hurt : isAttacking ? spriteInfo.attack : spriteInfo.idle}
+                  frameWidth={spriteInfo.frameWidth}
+                  frameHeight={spriteInfo.frameHeight}
+                  totalFrames={isHurt ? spriteInfo.hurtFrames : isAttacking ? spriteInfo.attackFrames : spriteInfo.idleFrames}
+                  fps={isAttacking ? 12 : 8}
+                  scale={2}
+                  loop={!isAttacking && !isHurt}
+                  onComplete={isAttacking || isHurt ? () => {} : undefined}
+                />
+                <div className="mt-1 text-center">
+                  <p className="text-[10px] text-purple-300/70">{member.name}</p>
+                  <div className="w-16 h-1.5 bg-black/40 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-red-500 rounded-full transition-all duration-300"
+                      style={{ width: `${(member.currentHp / member.stats.maxHp) * 100}%` }}
                     />
-                    <div className="mt-1 text-center">
-                      <p className="text-[10px] text-purple-300/70">{member.name}</p>
-                      <div className="w-16 h-1.5 bg-black/40 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-red-500 rounded-full transition-all duration-300"
-                          style={{ width: `${(member.currentHp / member.stats.maxHp) * 100}%` }}
-                        />
-                      </div>
-                    </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+                </div>
+              </div>
+            );
+          })}
 
           <div
             className="absolute z-20 pointer-events-none"
