@@ -211,8 +211,8 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   return {
     ...base,
     stats: {
-      hp: Math.floor(25 + lv * 12),
-      maxHp: Math.floor(25 + lv * 12),
+      hp: Math.floor(13 + lv * 10),
+      maxHp: Math.floor(13 + lv * 10),
       atk: Math.floor(5 + lv * 3),
       def: Math.floor(3 + lv * 2),
       agi: Math.floor(4 + lv * 1.5),
