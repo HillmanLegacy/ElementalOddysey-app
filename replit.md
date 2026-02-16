@@ -66,12 +66,13 @@ A browser-based turn-based RPG with a board-style overworld, character selection
 - Turn flow: playerTurn → partyTurn → enemyTurn → playerTurn
 
 ## Party Sprite Assets
-- Knight (Fire): 86x98 frames, idle(4f), attack(7f), run(6f), hurt(2f)
+- Knight (Fire): 86x49 frames (2-row sheets), idle(8f), attack(14f), run(12f), hurt(4f)
 - Ranger (Wind): 64x48 frames, idle(6f), attack(6f), run(6f), hurt(6f)
 - Basken (Lightning): 56x56 frames, idle(5f), attack(8f), run(6f), hurt(3f)
 - Knight2D (Light): 84x84 frames, idle(8f), attack(4f, uses knight2d-attack-1.png), run(8f), hurt(3f)
 - AxeWarrior (Earth): 94x91 frames, idle(6f), attack(8f), run(6f), hurt(3f)
 - Samurai (Wind): 96x96 frames, idle(10f), attack(10f), run(8f), hurt(3f)
+- SpriteAnimator auto-detects multi-row sheets (calculates cols from image.naturalWidth / frameWidth)
 - All sprite sheets stored as separate per-animation PNGs in client/src/assets/images/
 - PARTY_SPRITE_MAP in BattleScreen.tsx maps spriteId to imported sprite sheets
 - OVERWORLD_SPRITES in Overworld.tsx maps spriteId to overworld idle/run sprites

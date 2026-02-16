@@ -69,10 +69,13 @@ export default function SpriteAnimator({
       ctx.scale(-1, 1);
       ctx.translate(-dw, 0);
     }
+    const cols = Math.floor(img.naturalWidth / frameWidth);
+    const col = cols > 0 ? frame % cols : frame;
+    const row = cols > 0 ? Math.floor(frame / cols) : 0;
     ctx.drawImage(
       img,
-      frame * frameWidth,
-      0,
+      col * frameWidth,
+      row * frameHeight,
       frameWidth,
       frameHeight,
       0,
