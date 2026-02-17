@@ -6,7 +6,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, Settings, X, MapPin, Users } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, Settings, X, MapPin, Users, Sparkles } from "lucide-react";
 import { isRegionUnlocked, getRegionTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -44,6 +44,7 @@ const NODE_ICONS: Record<string, any> = {
   rest: Tent,
   event: Star,
   boss: Crown,
+  shaman: Sparkles,
 };
 
 const REGION_PARTICLES: Record<string, string[]> = {
@@ -154,13 +155,14 @@ interface OverworldProps {
   onNodeSelect: (nodeId: number) => void;
   onShopOpen: (nodeId: number) => void;
   onRest: (nodeId: number) => void;
+  onShamanVisit: (nodeId: number) => void;
   onInventory: () => void;
   onPartyManage: () => void;
   onSave: () => void;
   onRegionChange: (regionId: number) => void;
 }
 
-export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, onInventory, onPartyManage, onSave, onRegionChange }: OverworldProps) {
+export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSave, onRegionChange }: OverworldProps) {
   const region = REGIONS[player.currentRegion];
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
@@ -266,6 +268,8 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
         onShopOpen(node.id);
       } else if (node.type === "rest") {
         onRest(node.id);
+      } else if (node.type === "shaman") {
+        onShamanVisit(node.id);
       } else if (node.type === "event") {
         onRest(node.id);
       }
@@ -282,6 +286,8 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
         onShopOpen(node.id);
       } else if (node.type === "rest") {
         onRest(node.id);
+      } else if (node.type === "shaman") {
+        onShamanVisit(node.id);
       } else if (node.type === "event") {
         onRest(node.id);
       }
@@ -542,6 +548,17 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
                   <Tent className="w-4 h-4 text-green-400" />
                 </div>
                 <div className="absolute -bottom-1 w-6 h-1 rounded-full bg-green-400/20" />
+              </div>
+            ) : node.type === "shaman" ? (
+              <div className="flex flex-col items-center">
+                <div className="w-9 h-9 rounded-full flex items-center justify-center" style={{
+                  backgroundColor: "rgba(168, 85, 247, 0.2)",
+                  border: "2px solid rgba(168, 85, 247, 0.5)",
+                  boxShadow: isHovered && accessible ? "0 0 15px rgba(168, 85, 247, 0.5)" : "0 2px 6px rgba(0,0,0,0.3)",
+                }}>
+                  <Sparkles className="w-4 h-4 text-purple-400" />
+                </div>
+                <div className="absolute -bottom-1 w-6 h-1 rounded-full bg-purple-400/20" />
               </div>
             ) : (
               <div className="flex flex-col items-center">

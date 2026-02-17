@@ -3,25 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import ParticleCanvas from "./ParticleCanvas";
-import { EnergyColors, EnergyShapes } from "@shared/schema";
-import type { EnergyColor, EnergyShape } from "@shared/schema";
 import { COLOR_MAP, ELEMENT_COLORS, STARTER_CHARACTERS } from "@/lib/gameData";
-import { ArrowLeft, ArrowRight, Sparkles, CircleDot, Diamond, CloudLightning, Ghost, Leaf, Waves, Flame, Check, Sword, Wind, Zap } from "lucide-react";
+import { ArrowLeft, ArrowRight, Sparkles, Diamond, CloudLightning, Check, Sword, Wind, Zap, Flame } from "lucide-react";
 import SpriteAnimator from "./SpriteAnimator";
 
 import knightIdle from "@/assets/images/knight-idle-4f.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
-
-const SHAPE_ICONS: Record<string, any> = {
-  Orb: CircleDot,
-  Flame: Flame,
-  Crystal: Diamond,
-  Lightning: CloudLightning,
-  Shadow: Ghost,
-  Leaf: Leaf,
-  Wave: Waves,
-};
 
 const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number }> = {
   knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4 },
@@ -41,6 +29,8 @@ const STARTER_DESCRIPTIONS: Record<string, string> = {
   basken_lightning: "A versatile lightning warrior with good luck and speed. Wields thunder magic in battle.",
 };
 
+import type { EnergyColor, EnergyShape } from "@shared/schema";
+
 interface CharacterCreationProps {
   onComplete: (starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape) => void;
   onBack: () => void;
@@ -50,9 +40,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   const [step, setStep] = useState(0);
   const [selectedStarter, setSelectedStarter] = useState<string>("samurai_wind");
   const [name, setName] = useState("");
-  const [selectedColor, setSelectedColor] = useState<EnergyColor>("Purple");
-  const [selectedShape, setSelectedShape] = useState<EnergyShape>("Orb");
-  const steps = ["Character", "Name", "Energy Color", "Energy Shape", "Confirm"];
+  const steps = ["Character", "Name", "Confirm"];
 
   const starterDef = STARTER_CHARACTERS.find(c => c.id === selectedStarter)!;
   const spriteData = STARTER_SPRITES[starterDef.spriteId];
@@ -162,66 +150,6 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
         );
 
       case 2:
-        return (
-          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Choose Energy Color</h3>
-            <div className="grid grid-cols-5 gap-2">
-              {EnergyColors.map(color => (
-                <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`relative flex flex-col items-center gap-1 p-3 rounded-md transition-all duration-200 ${
-                    selectedColor === color
-                      ? "ring-2 ring-white/50 bg-white/10 scale-105"
-                      : "bg-white/5 hover:bg-white/10"
-                  }`}
-                  data-testid={`button-color-${color.toLowerCase()}`}
-                >
-                  <div
-                    className="w-8 h-8 rounded-full"
-                    style={{
-                      backgroundColor: COLOR_MAP[color],
-                      boxShadow: selectedColor === color ? `0 0 20px ${COLOR_MAP[color]}80` : "none",
-                    }}
-                  />
-                  <span className="text-[10px] text-purple-300/70">{color}</span>
-                  {selectedColor === color && (
-                    <Check className="absolute top-1 right-1 w-3 h-3 text-white/80" />
-                  )}
-                </button>
-              ))}
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Choose Energy Shape</h3>
-            <div className="grid grid-cols-4 gap-2">
-              {EnergyShapes.map(shape => {
-                const Icon = SHAPE_ICONS[shape] || CircleDot;
-                return (
-                  <button
-                    key={shape}
-                    onClick={() => setSelectedShape(shape)}
-                    className={`flex flex-col items-center gap-2 p-4 rounded-md transition-all duration-200 ${
-                      selectedShape === shape
-                        ? "ring-2 ring-white/50 bg-white/10 scale-105"
-                        : "bg-white/5 hover:bg-white/10"
-                    }`}
-                    data-testid={`button-shape-${shape.toLowerCase()}`}
-                  >
-                    <Icon className="w-8 h-8" style={{ color: COLOR_MAP[selectedColor] }} />
-                    <span className="text-xs text-purple-300/70">{shape}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        );
-
-      case 4:
         const displayName = name.trim() || starterDef.name;
         const StarterIcon = STARTER_ICONS[selectedStarter] || Sword;
         return (
@@ -253,8 +181,6 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 <div className="flex items-center justify-center gap-2 mt-1">
                   <StarterIcon className="w-4 h-4" style={{ color: elemColor }} />
                   <span className="text-sm" style={{ color: elemColor }}>{starterDef.element} {starterDef.className}</span>
-                  <span className="text-purple-500/40">|</span>
-                  <span className="text-sm text-purple-300/70">{selectedColor} {selectedShape}</span>
                 </div>
               </div>
               <div className="w-full space-y-1.5 mt-2">
@@ -275,7 +201,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
       <ParticleCanvas
-        colors={[COLOR_MAP[selectedColor], elemColor]}
+        colors={[COLOR_MAP["Purple"], elemColor]}
         count={50}
         speed={0.6}
         style="swirl"
@@ -313,7 +239,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               {step === 0 ? "Menu" : "Back"}
             </Button>
 
-            {step < 4 ? (
+            {step < 2 ? (
               <Button
                 onClick={() => setStep(step + 1)}
                 className="bg-purple-600/80 text-white hover:bg-purple-500/80 border border-purple-400/20"
@@ -324,7 +250,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               </Button>
             ) : (
               <Button
-                onClick={() => onComplete(selectedStarter, name.trim() || starterDef.name, selectedColor, selectedShape)}
+                onClick={() => onComplete(selectedStarter, name.trim() || starterDef.name, "Purple", "Orb")}
                 className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500"
                 data-testid="button-begin-adventure"
               >

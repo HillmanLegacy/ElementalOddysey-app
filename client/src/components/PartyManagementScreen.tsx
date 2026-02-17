@@ -169,14 +169,14 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
                 <div className="bg-black/30 rounded-lg border border-purple-500/10 p-2.5">
                   <h3 className="text-[9px] tracking-wider text-amber-200/60 mb-2">SPELLS</h3>
                   <div className="space-y-1">
-                    {getPartyMemberSpells(selectedMember.element).map(spell => (
+                    {getPartyMemberSpells(selectedMember.element, selectedMember.level || 1, selectedMember.learnedSpells || []).map(spell => (
                       <div key={spell.id} className="flex items-center gap-2 px-1.5 py-1 rounded bg-black/20">
                         <Sparkles className="w-3 h-3 flex-shrink-0" style={{ color: ELEMENT_COLORS[spell.element || selectedMember.element] }} />
                         <span className="text-[10px] text-purple-100 flex-1">{spell.name}</span>
                         <span className="text-[8px] text-blue-300/60">{spell.mpCost}MP</span>
                       </div>
                     ))}
-                    {getPartyMemberSpells(selectedMember.element).length === 0 && (
+                    {getPartyMemberSpells(selectedMember.element, selectedMember.level || 1, selectedMember.learnedSpells || []).length === 0 && (
                       <span className="text-[9px] text-purple-300/30">No spells available</span>
                     )}
                   </div>

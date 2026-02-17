@@ -15,6 +15,7 @@ import InventoryScreen from "@/components/InventoryScreen";
 import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
 import PartyManagementScreen from "@/components/PartyManagementScreen";
+import ShamanScreen from "@/components/ShamanScreen";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
@@ -67,6 +68,7 @@ function Game() {
     buyItem, equipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
     confirmUnlock,
     changeRegion,
+    openShaman, learnShamanSpell,
   } = useGameState();
 
   const { toast } = useToast();
@@ -143,6 +145,7 @@ function Game() {
                 restAtNode();
                 toast({ title: "Rested", description: "HP and MP fully restored!" });
               }}
+              onShamanVisit={openShaman}
               onInventory={() => setScreen("inventory")}
               onPartyManage={() => setShowPartyManagement(true)}
               onSave={handleSave}
@@ -191,6 +194,7 @@ function Game() {
         return (
           <LevelUpScreen
             player={state.player}
+            pendingLevelUp={state.pendingLevelUp}
             statsRemaining={state.pendingLevelUp.statsToAllocate}
             onAllocate={allocateStat}
           />
@@ -223,6 +227,16 @@ function Game() {
             player={state.player}
             onEquip={equipItem}
             onUseItem={useItemOverworld}
+            onBack={() => setScreen("overworld")}
+          />
+        );
+
+      case "shaman":
+        if (!state.player) return null;
+        return (
+          <ShamanScreen
+            player={state.player}
+            onLearnSpell={learnShamanSpell}
             onBack={() => setScreen("overworld")}
           />
         );

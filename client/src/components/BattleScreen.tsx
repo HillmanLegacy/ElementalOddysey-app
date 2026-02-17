@@ -1972,7 +1972,7 @@ export default function BattleScreen({
           {battle.phase === "partyTurn" && battle.phase !== "victory" && battle.phase !== "defeat" && (() => {
             const activeMember = battle.party[battle.activePartyIndex];
             if (!activeMember || activeMember.currentHp <= 0) return null;
-            const partySpells = getPartyMemberSpells(activeMember.element);
+            const partySpells = getPartyMemberSpells(activeMember.element, activeMember.level || 1, activeMember.learnedSpells || []);
             const consumables = player.inventory.filter(i => i.type === "consumable");
             return (
               <div className="animate-[fadeIn_0.2s_ease-out]">

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
-import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember } from "@shared/schema";
-import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, buildTurnQueue } from "./gameData";
+import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember, PendingLevelUp } from "@shared/schema";
+import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, buildTurnQueue, getNewSpellsAtLevel } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 const INITIAL_STATE: GameState = {
@@ -9,6 +9,7 @@ const INITIAL_STATE: GameState = {
   battle: null,
   currentShop: null,
   pendingLevelUp: null,
+  pendingLevelUpQueue: [],
   pendingUnlocks: [],
   pendingUnlock: null,
   textSpeed: "medium",
@@ -97,7 +98,7 @@ export function useGameState() {
         battle.animation = "dodge";
         battle.lastElementLabel = undefined;
       } else {
-        const weaponElement = s.player.equipment.weapon?.element || s.player.element;
+        const weaponElement = s.player.equipment.weapon?.element;
         const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
         const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element, 1.0, critMod);
         target.currentHp = Math.max(0, target.currentHp - damage);
@@ -350,7 +351,7 @@ export function useGameState() {
         battle.log = [...battle.log, `${target.name} dodged ${member.name}'s attack!`];
         battle.lastElementLabel = undefined;
       } else {
-        const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, member.element, target.element);
+        const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, undefined, target.element);
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.lastElementLabel = elementLabel || undefined;
         battle.log = [...battle.log, `${member.name} deals ${damage}${isCrit ? " CRIT" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -607,17 +608,17 @@ export function useGameState() {
 
       const totalXp = s.battle.enemies.reduce((sum, e) => sum + e.xpReward, 0);
       const totalGold = s.battle.enemies.reduce((sum, e) => sum + e.goldReward, 0);
+      const levelUpQueue: PendingLevelUp[] = [];
+
       let newXp = s.player.xp + totalXp;
       let newLevel = s.player.level;
       let xpToNext = s.player.xpToNext;
-      let pendingLevelUp = null;
 
       const baseStats = { ...s.player.stats };
       while (newXp >= xpToNext) {
         newXp -= xpToNext;
         newLevel++;
         xpToNext = xpForLevel(newLevel);
-        pendingLevelUp = { statsToAllocate: 2, perksToChoose: 1 };
         baseStats.maxHp += 5;
         baseStats.hp = baseStats.maxHp;
         baseStats.maxMp += 3;
@@ -627,6 +628,18 @@ export function useGameState() {
         baseStats.agi += 1;
         baseStats.int += 1;
         baseStats.luck += 1;
+        const playerNewSpells = getNewSpellsAtLevel(s.player.element, newLevel);
+        levelUpQueue.push({
+          characterType: "player",
+          characterIndex: 0,
+          characterName: s.player.name,
+          characterSpriteId: s.player.spriteId,
+          characterElement: s.player.element,
+          newSpells: playerNewSpells.map(sp => sp.id),
+          statsToAllocate: 2,
+          perksToChoose: 1,
+          newLevel,
+        });
       }
 
       const newCleared = [...s.player.clearedNodes];
@@ -680,18 +693,59 @@ export function useGameState() {
         }
       }
 
-      const syncedParty = s.player.party.map(pm => {
+      const syncedParty = s.player.party.map((pm, partyIndex) => {
         const bpm = s.battle!.party.find(bp => bp.id === pm.id);
-        if (!bpm) return pm;
+        const isAlive = bpm ? bpm.currentHp > 0 : pm.stats.hp > 0;
+
+        let memberXp = (pm.xp || 0) + (isAlive ? totalXp : 0);
+        let memberLevel = pm.level;
+        let memberXpToNext = pm.xpToNext || xpForLevel(pm.level);
+        const memberStats = { ...pm.stats };
+
+        if (bpm) {
+          memberStats.hp = Math.max(0, Math.min(memberStats.maxHp, bpm.currentHp));
+          memberStats.mp = Math.max(0, Math.min(memberStats.maxMp, bpm.currentMp));
+        }
+
+        while (memberXp >= memberXpToNext && isAlive) {
+          memberXp -= memberXpToNext;
+          memberLevel++;
+          memberXpToNext = xpForLevel(memberLevel);
+          memberStats.maxHp += 4;
+          memberStats.hp = memberStats.maxHp;
+          memberStats.maxMp += 2;
+          memberStats.mp = memberStats.maxMp;
+          memberStats.atk += 1;
+          memberStats.def += 1;
+          memberStats.agi += 1;
+          memberStats.int += 1;
+          memberStats.luck += 1;
+          const memberNewSpells = getNewSpellsAtLevel(pm.element, memberLevel);
+          levelUpQueue.push({
+            characterType: "party",
+            characterIndex: partyIndex,
+            characterName: pm.name,
+            characterSpriteId: pm.spriteId,
+            characterElement: pm.element,
+            newSpells: memberNewSpells.map(sp => sp.id),
+            statsToAllocate: 2,
+            perksToChoose: 1,
+            newLevel: memberLevel,
+          });
+        }
+
         return {
           ...pm,
-          stats: {
-            ...pm.stats,
-            hp: Math.max(0, Math.min(pm.stats.maxHp, bpm.currentHp)),
-            mp: Math.max(0, Math.min(pm.stats.maxMp, bpm.currentMp)),
-          },
+          xp: memberXp,
+          xpToNext: memberXpToNext,
+          level: memberLevel,
+          stats: memberStats,
+          learnedSpells: pm.learnedSpells || [],
         };
       });
+
+      const pendingLevelUp: PendingLevelUp | null = levelUpQueue.length > 0 ? levelUpQueue[0] : null;
+      const pendingLevelUpQueue = levelUpQueue.slice(1);
 
       const updatedPlayer: PlayerCharacter = {
         ...s.player,
@@ -721,6 +775,7 @@ export function useGameState() {
         battle: null,
         screen: nextScreen,
         pendingLevelUp,
+        pendingLevelUpQueue,
         pendingUnlocks,
         pendingUnlock,
       };
@@ -731,25 +786,76 @@ export function useGameState() {
     setState(s => {
       if (!s.player || !s.pendingLevelUp || s.pendingLevelUp.statsToAllocate <= 0) return s;
 
-      const newStats = { ...s.player.stats };
+      const isParty = s.pendingLevelUp.characterType === "party";
+      const targetStats = isParty
+        ? { ...s.player.party[s.pendingLevelUp.characterIndex].stats }
+        : { ...s.player.stats };
+
       if (stat === "hp" || stat === "maxHp") {
-        newStats.maxHp += 10;
-        newStats.hp = newStats.maxHp;
+        targetStats.maxHp += 10;
+        targetStats.hp = targetStats.maxHp;
       } else if (stat === "mp" || stat === "maxMp") {
-        newStats.maxMp += 5;
-        newStats.mp = newStats.maxMp;
+        targetStats.maxMp += 5;
+        targetStats.mp = targetStats.maxMp;
       } else {
-        (newStats as any)[stat] = ((newStats as any)[stat] as number) + 2;
+        (targetStats as any)[stat] = ((targetStats as any)[stat] as number) + 2;
       }
 
       const remaining = s.pendingLevelUp!.statsToAllocate - 1;
-      const pendingLevelUp = remaining > 0 ? { ...s.pendingLevelUp!, statsToAllocate: remaining } : (s.pendingLevelUp!.perksToChoose > 0 ? { statsToAllocate: 0, perksToChoose: s.pendingLevelUp!.perksToChoose } : null);
+      let pendingLevelUp: PendingLevelUp | null;
+      let pendingLevelUpQueue = [...s.pendingLevelUpQueue];
+      let nextScreen: GameState["screen"];
+
+      if (remaining > 0) {
+        pendingLevelUp = { ...s.pendingLevelUp!, statsToAllocate: remaining };
+        nextScreen = "levelUp";
+      } else if (s.pendingLevelUp!.perksToChoose > 0) {
+        pendingLevelUp = { ...s.pendingLevelUp!, statsToAllocate: 0 };
+        nextScreen = "perkSelect";
+      } else if (pendingLevelUpQueue.length > 0) {
+        pendingLevelUp = pendingLevelUpQueue[0];
+        pendingLevelUpQueue = pendingLevelUpQueue.slice(1);
+        nextScreen = "levelUp";
+      } else {
+        pendingLevelUp = null;
+        nextScreen = "overworld";
+      }
+
+      let updatedPlayer;
+      const grantSpells = remaining <= 0 && s.pendingLevelUp!.newSpells && s.pendingLevelUp!.newSpells.length > 0;
+      if (isParty) {
+        const newParty = s.player.party.map((m, idx) => {
+          if (idx !== s.pendingLevelUp!.characterIndex) return m;
+          const updated = { ...m, stats: targetStats };
+          if (grantSpells) {
+            const existing = new Set(m.learnedSpells || []);
+            const combined = [...(m.learnedSpells || [])];
+            for (const spId of s.pendingLevelUp!.newSpells!) {
+              if (!existing.has(spId)) combined.push(spId);
+            }
+            updated.learnedSpells = combined;
+          }
+          return updated;
+        });
+        updatedPlayer = { ...s.player, party: newParty };
+      } else {
+        updatedPlayer = { ...s.player, stats: targetStats };
+        if (grantSpells) {
+          const existing = new Set(updatedPlayer.learnedSpells || []);
+          const combined = [...(updatedPlayer.learnedSpells || [])];
+          for (const spId of s.pendingLevelUp!.newSpells!) {
+            if (!existing.has(spId)) combined.push(spId);
+          }
+          updatedPlayer.learnedSpells = combined;
+        }
+      }
 
       return {
         ...s,
-        player: { ...s.player, stats: newStats },
+        player: updatedPlayer,
         pendingLevelUp,
-        screen: pendingLevelUp ? (pendingLevelUp.statsToAllocate === 0 ? "perkSelect" : "levelUp") : "overworld",
+        pendingLevelUpQueue,
+        screen: nextScreen,
       };
     });
   }, []);
@@ -769,12 +875,56 @@ export function useGameState() {
         if (perk.effect.stat === "maxMp") newStats.mp = newStats.maxMp;
       }
 
+      let pendingLevelUp: PendingLevelUp | null = null;
+      let pendingLevelUpQueue = [...s.pendingLevelUpQueue];
+      let nextScreen: GameState["screen"] = "overworld";
+
+      if (pendingLevelUpQueue.length > 0) {
+        pendingLevelUp = pendingLevelUpQueue[0];
+        pendingLevelUpQueue = pendingLevelUpQueue.slice(1);
+        nextScreen = "levelUp";
+      }
+
       return {
         ...s,
         player: { ...s.player, perks: newPerks, stats: newStats },
-        pendingLevelUp: null,
-        screen: "overworld",
+        pendingLevelUp,
+        pendingLevelUpQueue,
+        screen: nextScreen,
       };
+    });
+  }, []);
+
+  const openShaman = useCallback((nodeId: number) => {
+    setState(s => {
+      if (!s.player) return s;
+      const region = REGIONS[s.player.currentRegion];
+      const node = region.nodes.find(n => n.id === nodeId);
+      if (!node) return s;
+      return { ...s, player: { ...s.player, currentNode: nodeId }, screen: "shaman" };
+    });
+  }, []);
+
+  const learnShamanSpell = useCallback((characterType: "player" | "party", characterIndex: number, spellId: string) => {
+    setState(s => {
+      if (!s.player || s.player.gold < 50) return s;
+      let updatedPlayer = { ...s.player, gold: s.player.gold - 50 };
+
+      if (characterType === "player") {
+        const existing = new Set(updatedPlayer.learnedSpells || []);
+        if (existing.has(spellId)) return s;
+        updatedPlayer.learnedSpells = [...(updatedPlayer.learnedSpells || []), spellId];
+      } else {
+        const newParty = updatedPlayer.party.map((m, idx) => {
+          if (idx !== characterIndex) return m;
+          const existing = new Set(m.learnedSpells || []);
+          if (existing.has(spellId)) return m;
+          return { ...m, learnedSpells: [...(m.learnedSpells || []), spellId] };
+        });
+        updatedPlayer.party = newParty;
+      }
+
+      return { ...s, player: updatedPlayer };
     });
   }, []);
 
@@ -863,11 +1013,17 @@ export function useGameState() {
   const loadGame = useCallback((playerData: PlayerCharacter) => {
     const normalizedPlayer = {
       ...playerData,
-      party: playerData.party || [],
+      party: (playerData.party || []).map(pm => ({
+        ...pm,
+        xp: pm.xp || 0,
+        xpToNext: pm.xpToNext || xpForLevel(pm.level),
+        learnedSpells: pm.learnedSpells || [],
+      })),
       defeatedBosses: playerData.defeatedBosses || [],
       spriteId: playerData.spriteId || "samurai",
       starterCharacterId: playerData.starterCharacterId || "samurai_wind",
       regionBossDefeats: playerData.regionBossDefeats || {},
+      learnedSpells: playerData.learnedSpells || [],
     };
     setState(s => ({ ...s, player: normalizedPlayer, screen: "overworld" }));
   }, []);
@@ -896,6 +1052,9 @@ export function useGameState() {
           luck: Math.floor(def.baseStats.luck * scale),
         },
         spriteId: def.spriteId,
+        xp: 0,
+        xpToNext: xpForLevel(s.player.level),
+        learnedSpells: [],
       };
 
       const newParty = [...s.player.party, newMember];
@@ -960,6 +1119,8 @@ export function useGameState() {
     finishPlayerTurn,
     confirmUnlock,
     changeRegion,
+    openShaman,
+    learnShamanSpell,
   };
 }
 

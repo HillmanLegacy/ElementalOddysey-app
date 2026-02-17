@@ -191,39 +191,38 @@ export function xpForLevel(level: number): number {
 }
 
 const ENEMY_POOL: Omit<Enemy, "stats">[] = [
-  { id: "slime_fire", name: "Fire Demon", element: "Fire", level: 1, xpReward: 25, goldReward: 10, isBoss: false, sprite: "flame" },
-  { id: "slime_water", name: "Aqua Slime", element: "Water", level: 1, xpReward: 25, goldReward: 10, isBoss: false, sprite: "droplets" },
-  { id: "wolf_wind", name: "Storm Wolf", element: "Wind", level: 2, xpReward: 40, goldReward: 15, isBoss: false, sprite: "wind" },
-  { id: "golem_earth", name: "Stone Golem", element: "Earth", level: 3, xpReward: 55, goldReward: 20, isBoss: false, sprite: "mountain" },
+  { id: "slime_fire", name: "Fire Demon", element: "Fire", level: 3, xpReward: 30, goldReward: 12, isBoss: false, sprite: "flame" },
+  { id: "slime_water", name: "Aqua Slime", element: "Water", level: 2, xpReward: 25, goldReward: 10, isBoss: false, sprite: "droplets" },
+  { id: "wolf_wind", name: "Storm Wolf", element: "Wind", level: 3, xpReward: 40, goldReward: 15, isBoss: false, sprite: "wind" },
+  { id: "golem_earth", name: "Stone Golem", element: "Earth", level: 4, xpReward: 55, goldReward: 20, isBoss: false, sprite: "mountain" },
   { id: "wisp_light", name: "Light Wisp", element: "Light", level: 2, xpReward: 35, goldReward: 12, isBoss: false, sprite: "sun" },
-  { id: "shade", name: "Dark Shade", element: "Shadow", level: 3, xpReward: 50, goldReward: 18, isBoss: false, sprite: "ghost" },
-  { id: "spark_bug", name: "Spark Bug", element: "Lightning", level: 2, xpReward: 35, goldReward: 14, isBoss: false, sprite: "zap" },
-  { id: "frost_lizard", name: "Frost Lizard", element: "Ice", level: 2, xpReward: 38, goldReward: 13, isBoss: false, sprite: "snowflake" },
-  { id: "dragon_lord", name: "Dragon Lord", element: "Fire", level: 6, xpReward: 150, goldReward: 60, isBoss: true, sprite: "flame" },
-  { id: "jotem", name: "Jotem", element: "Ice", level: 5, xpReward: 120, goldReward: 50, isBoss: true, sprite: "snowflake" },
-  { id: "kraken", name: "Deep Kraken", element: "Water", level: 5, xpReward: 100, goldReward: 40, isBoss: true, sprite: "droplets" },
-  { id: "shadow_lord", name: "Shadow Lord", element: "Shadow", level: 7, xpReward: 200, goldReward: 80, isBoss: true, sprite: "ghost" },
-  { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 8, xpReward: 250, goldReward: 100, isBoss: true, sprite: "diamond" },
+  { id: "shade", name: "Dark Shade", element: "Shadow", level: 4, xpReward: 50, goldReward: 18, isBoss: false, sprite: "ghost" },
+  { id: "spark_bug", name: "Spark Bug", element: "Lightning", level: 3, xpReward: 35, goldReward: 14, isBoss: false, sprite: "zap" },
+  { id: "frost_lizard", name: "Frost Lizard", element: "Ice", level: 3, xpReward: 38, goldReward: 13, isBoss: false, sprite: "snowflake" },
+  { id: "dragon_lord", name: "Dragon Lord", element: "Fire", level: 8, xpReward: 200, goldReward: 80, isBoss: true, sprite: "flame" },
+  { id: "jotem", name: "Jotem", element: "Ice", level: 7, xpReward: 150, goldReward: 60, isBoss: true, sprite: "snowflake" },
+  { id: "kraken", name: "Deep Kraken", element: "Water", level: 6, xpReward: 120, goldReward: 50, isBoss: true, sprite: "droplets" },
+  { id: "shadow_lord", name: "Shadow Lord", element: "Shadow", level: 9, xpReward: 250, goldReward: 100, isBoss: true, sprite: "ghost" },
+  { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 10, xpReward: 300, goldReward: 120, isBoss: true, sprite: "diamond" },
 ];
 
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number): Enemy {
   const lv = base.level * scaleFactor;
-  const isFireDemon = base.id === "slime_fire";
-  const demonMult = isFireDemon ? 1.15 : 1.0;
   const vary = base.isBoss ? () => 1.0 : () => 0.9 + Math.random() * 0.2;
-  const hp = Math.floor((13 + lv * 10) * vary() * demonMult);
+  const bossMult = base.isBoss ? 1.6 : 1.0;
+  const hp = Math.floor((20 + lv * 14) * vary() * bossMult);
   return {
     ...base,
     stats: {
       hp,
       maxHp: hp,
-      atk: Math.floor((5 + lv * 3) * vary() * demonMult),
-      def: Math.floor((3 + lv * 2) * vary() * demonMult),
-      agi: Math.floor((4 + lv * 1.5) * vary()),
-      int: Math.floor((5 + lv * 2) * vary() * demonMult),
-      luck: Math.floor((2 + lv) * vary()),
-      mp: Math.floor((20 + lv * 5) * vary()),
-      maxMp: Math.floor((20 + lv * 5) * vary()),
+      atk: Math.floor((8 + lv * 4) * vary() * bossMult),
+      def: Math.floor((4 + lv * 2.5) * vary() * bossMult),
+      agi: Math.floor((5 + lv * 2) * vary()),
+      int: Math.floor((7 + lv * 3) * vary() * bossMult),
+      luck: Math.floor((3 + lv * 1.5) * vary()),
+      mp: Math.floor((25 + lv * 8) * vary()),
+      maxMp: Math.floor((25 + lv * 8) * vary()),
     },
   };
 }
@@ -264,9 +263,10 @@ export const REGIONS: Region[] = [
       { id: 1, type: "battle", name: "Cinder Hollow", x: 30, y: 50, connections: [2, 3], region: 0, cleared: false },
       { id: 2, type: "shop", name: "Merchant Camp", x: 20, y: 30, connections: [4], region: 0, cleared: false },
       { id: 3, type: "battle", name: "Flame Ridge", x: 45, y: 55, connections: [4], region: 0, cleared: false },
-      { id: 4, type: "rest", name: "Hot Spring", x: 50, y: 35, connections: [5], region: 0, cleared: false },
+      { id: 4, type: "rest", name: "Hot Spring", x: 50, y: 35, connections: [5, 7], region: 0, cleared: false },
       { id: 5, type: "battle", name: "Magma Cavern", x: 65, y: 50, connections: [6], region: 0, cleared: false },
       { id: 6, type: "boss", name: "Dragon Lord's Sanctum", x: 80, y: 40, connections: [], region: 0, cleared: false },
+      { id: 7, type: "shaman", name: "Shaman's Lair", x: 55, y: 15, connections: [5], region: 0, cleared: false },
     ],
   },
   {
@@ -279,9 +279,10 @@ export const REGIONS: Region[] = [
       { id: 11, type: "battle", name: "Glacier Pass", x: 30, y: 45, connections: [12, 13], region: 1, cleared: false },
       { id: 12, type: "shop", name: "Ice Merchant", x: 25, y: 25, connections: [14], region: 1, cleared: false },
       { id: 13, type: "battle", name: "Blizzard Peak", x: 50, y: 55, connections: [14], region: 1, cleared: false },
-      { id: 14, type: "rest", name: "Warm Cavern", x: 55, y: 30, connections: [15], region: 1, cleared: false },
+      { id: 14, type: "rest", name: "Warm Cavern", x: 55, y: 30, connections: [15, 17], region: 1, cleared: false },
       { id: 15, type: "battle", name: "Crystal Abyss", x: 70, y: 50, connections: [16], region: 1, cleared: false },
       { id: 16, type: "boss", name: "Jotem's Lair", x: 85, y: 35, connections: [], region: 1, cleared: false },
+      { id: 17, type: "shaman", name: "Frost Shaman", x: 60, y: 15, connections: [15], region: 1, cleared: false },
     ],
   },
   {
@@ -364,63 +365,120 @@ export const SPELLS: Spell[] = [
   { id: "iron_wall", name: "Iron Wall", description: "+5 DEF for 2 turns", mpCost: 10, type: "buff", targetType: "self", effect: { stat: "def", amount: 5, duration: 2 } },
 ];
 
-export function getPlayerSpells(player: PlayerCharacter): Spell[] {
+export interface SpellUnlock {
+  spellId: string;
+  level: number;
+}
+
+export const ELEMENT_SPELL_UNLOCKS: Record<Element, SpellUnlock[]> = {
+  Fire: [
+    { spellId: "fire_bolt", level: 1 },
+    { spellId: "power_up", level: 4 },
+  ],
+  Water: [
+    { spellId: "aqua_wave", level: 1 },
+    { spellId: "iron_wall", level: 4 },
+  ],
+  Wind: [
+    { spellId: "wind_blade", level: 1 },
+    { spellId: "gale_slash", level: 3 },
+    { spellId: "fujin_slice", level: 5 },
+    { spellId: "tempest", level: 7 },
+  ],
+  Earth: [
+    { spellId: "earth_quake", level: 1 },
+    { spellId: "iron_wall", level: 3 },
+  ],
+  Lightning: [
+    { spellId: "thunder", level: 1 },
+    { spellId: "speed_up", level: 3 },
+  ],
+  Shadow: [
+    { spellId: "shadow_strike", level: 1 },
+    { spellId: "speed_up", level: 4 },
+  ],
+  Light: [
+    { spellId: "holy_light", level: 1 },
+    { spellId: "heal", level: 3 },
+  ],
+  Ice: [
+    { spellId: "ice_lance", level: 1 },
+    { spellId: "iron_wall", level: 4 },
+  ],
+};
+
+export const SHAMAN_SPELLS: Record<string, string[]> = {
+  knight: ["heal", "iron_wall"],
+  samurai: ["heal", "speed_up"],
+  basken: ["heal", "power_up"],
+  knight2d: ["power_up", "speed_up"],
+  axewarrior: ["heal", "iron_wall"],
+  ranger: ["heal", "speed_up"],
+};
+
+export function getSpellsForLevel(element: Element, level: number): Spell[] {
+  const unlocks = ELEMENT_SPELL_UNLOCKS[element] || [];
   const spells: Spell[] = [];
-
-  const elementSpellMap: Record<Element, string[]> = {
-    Fire: ["fire_bolt"],
-    Water: ["aqua_wave"],
-    Wind: ["wind_blade", "gale_slash", "tempest", "fujin_slice"],
-    Earth: ["earth_quake"],
-    Lightning: ["thunder"],
-    Shadow: ["shadow_strike"],
-    Light: ["holy_light"],
-    Ice: ["ice_lance"],
-  };
-
-  const elementSpells = elementSpellMap[player.element] || [];
-  for (const spellId of elementSpells) {
-    const spell = SPELLS.find(s => s.id === spellId);
-    if (spell) spells.push(spell);
+  for (const unlock of unlocks) {
+    if (level >= unlock.level) {
+      const spell = SPELLS.find(s => s.id === unlock.spellId);
+      if (spell) spells.push(spell);
+    }
   }
+  return spells;
+}
+
+export function getNewSpellsAtLevel(element: Element, level: number): Spell[] {
+  const unlocks = ELEMENT_SPELL_UNLOCKS[element] || [];
+  const spells: Spell[] = [];
+  for (const unlock of unlocks) {
+    if (unlock.level === level) {
+      const spell = SPELLS.find(s => s.id === unlock.spellId);
+      if (spell) spells.push(spell);
+    }
+  }
+  return spells;
+}
+
+export function getPlayerSpells(player: PlayerCharacter): Spell[] {
+  const spells = getSpellsForLevel(player.element, player.level);
+  const learnedIds = new Set(spells.map(s => s.id));
 
   const speedUp = SPELLS.find(s => s.id === "speed_up");
-  if (speedUp) spells.push(speedUp);
+  if (speedUp && !learnedIds.has("speed_up")) {
+    spells.push(speedUp);
+    learnedIds.add("speed_up");
+  }
 
-  if (player.level >= 3) {
-    const healSpell = SPELLS.find(s => s.id === "heal");
-    if (healSpell) spells.push(healSpell);
-  }
-  if (player.level >= 5) {
-    const powerUp = SPELLS.find(s => s.id === "power_up");
-    if (powerUp) spells.push(powerUp);
-  }
-  if (player.level >= 7) {
-    const ironWall = SPELLS.find(s => s.id === "iron_wall");
-    if (ironWall) spells.push(ironWall);
+  if (player.learnedSpells) {
+    for (const spellId of player.learnedSpells) {
+      if (!learnedIds.has(spellId)) {
+        const spell = SPELLS.find(s => s.id === spellId);
+        if (spell) {
+          spells.push(spell);
+          learnedIds.add(spellId);
+        }
+      }
+    }
   }
 
   return spells;
 }
 
-export function getPartyMemberSpells(element: Element): Spell[] {
-  const elementSpellMap: Record<Element, string[]> = {
-    Fire: ["fire_bolt"],
-    Water: ["aqua_wave"],
-    Wind: ["wind_blade", "gale_slash"],
-    Earth: ["earth_quake"],
-    Lightning: ["thunder"],
-    Shadow: ["shadow_strike"],
-    Light: ["holy_light"],
-    Ice: ["ice_lance"],
-  };
+export function getPartyMemberSpells(element: Element, level: number = 1, learnedSpells: string[] = []): Spell[] {
+  const spells = getSpellsForLevel(element, level);
+  const learnedIds = new Set(spells.map(s => s.id));
 
-  const spells: Spell[] = [];
-  const elementSpells = elementSpellMap[element] || [];
-  for (const spellId of elementSpells) {
-    const spell = SPELLS.find(s => s.id === spellId);
-    if (spell) spells.push(spell);
+  for (const spellId of learnedSpells) {
+    if (!learnedIds.has(spellId)) {
+      const spell = SPELLS.find(s => s.id === spellId);
+      if (spell) {
+        spells.push(spell);
+        learnedIds.add(spellId);
+      }
+    }
   }
+
   return spells;
 }
 

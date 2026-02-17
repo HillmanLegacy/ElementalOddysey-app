@@ -1,9 +1,24 @@
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import ParticleCanvas from "./ParticleCanvas";
-import type { PlayerCharacter, PlayerStats } from "@shared/schema";
-import { COLOR_MAP } from "@/lib/gameData";
-import { Star, Heart, Droplets, Swords, Shield, Zap, Brain, Clover } from "lucide-react";
+import SpriteAnimator from "./SpriteAnimator";
+import type { PlayerCharacter, PlayerStats, PendingLevelUp } from "@shared/schema";
+import { ELEMENT_COLORS, PARTY_SPRITE_DATA, SPELLS } from "@/lib/gameData";
+import { Star, Heart, Droplets, Swords, Shield, Zap, Brain, Clover, Sparkles } from "lucide-react";
+import knightIdle from "@/assets/images/knight-idle-4f.png";
+import samuraiIdle from "@/assets/images/samurai-idle.png";
+import baskenIdle from "@/assets/images/basken-idle.png";
+import knight2dIdle from "@/assets/images/knight2d-idle.png";
+import axewarriorIdle from "@/assets/images/axewarrior-idle.png";
+import rangerIdle from "@/assets/images/ranger-idle.png";
+
+const SPRITE_SHEETS: Record<string, string> = {
+  knight: knightIdle,
+  samurai: samuraiIdle,
+  basken: baskenIdle,
+  knight2d: knight2dIdle,
+  axewarrior: axewarriorIdle,
+  ranger: rangerIdle,
+};
 
 const STAT_CONFIG: { key: keyof PlayerStats; label: string; icon: any; color: string }[] = [
   { key: "maxHp", label: "HP", icon: Heart, color: "#ef4444" },
@@ -17,63 +32,221 @@ const STAT_CONFIG: { key: keyof PlayerStats; label: string; icon: any; color: st
 
 interface LevelUpScreenProps {
   player: PlayerCharacter;
+  pendingLevelUp: PendingLevelUp;
   statsRemaining: number;
   onAllocate: (stat: keyof PlayerStats) => void;
 }
 
-export default function LevelUpScreen({ player, statsRemaining, onAllocate }: LevelUpScreenProps) {
+export default function LevelUpScreen({
+  player,
+  pendingLevelUp,
+  statsRemaining,
+  onAllocate,
+}: LevelUpScreenProps) {
+  const spriteData = PARTY_SPRITE_DATA[pendingLevelUp.characterSpriteId]?.idle;
+  const spriteSheetPath = SPRITE_SHEETS[pendingLevelUp.characterSpriteId];
+  const elementColor = ELEMENT_COLORS[pendingLevelUp.characterElement];
+  const characterType = pendingLevelUp.characterType === "player" ? "Hero" : "Ally";
+  const currentStats = pendingLevelUp.characterType === "party"
+    ? player.party[pendingLevelUp.characterIndex]?.stats || player.stats
+    : player.stats;
+  const newSpellNames = (pendingLevelUp.newSpells || [])
+    .map(id => SPELLS.find(s => s.id === id))
+    .filter(Boolean);
+
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
+    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#1a1208] via-[#2a1f0e] to-[#0f0c06]">
+      {/* Torchlight particle effect */}
       <ParticleCanvas
-        colors={["#fbbf24", "#f59e0b", "#eab308", COLOR_MAP[player.energyColor]]}
-        count={80}
-        speed={1.5}
+        colors={["#ff9800", "#ffb74d", "#ffd54f", "#ffe082"]}
+        count={60}
+        speed={1.2}
         style="burst"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
 
+      {/* Vignette overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
+
+      {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-        <div className="text-center mb-6 animate-[fadeIn_0.5s_ease-out]">
-          <Star className="w-12 h-12 text-yellow-400 mx-auto mb-2" />
-          <h1 className="text-4xl font-bold text-yellow-300" data-testid="text-level-up">Level Up!</h1>
-          <p className="text-lg text-purple-300/70 mt-1">Level {player.level}</p>
-          <p className="text-sm text-yellow-400/60 mt-2">
-            Choose {statsRemaining} stat{statsRemaining > 1 ? "s" : ""} to increase
-          </p>
+        {/* Medieval header section */}
+        <div className="text-center mb-8 animate-[fadeIn_0.6s_ease-out]">
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Star className="w-8 h-8 text-yellow-500" style={{ imageRendering: "pixelated" }} />
+            <h1
+              className="text-5xl font-bold text-yellow-300"
+              style={{
+                textShadow: "3px 3px 0px rgba(0,0,0,0.8), 2px 2px 0px rgba(255,200,0,0.3)",
+                imageRendering: "pixelated",
+              }}
+              data-testid="text-level-up"
+            >
+              LEVEL UP!
+            </h1>
+            <Star className="w-8 h-8 text-yellow-500" style={{ imageRendering: "pixelated" }} />
+          </div>
+
+          {/* Character info badge */}
+          <div
+            className="inline-block px-4 py-2 mb-4 border-4 border-yellow-700 bg-yellow-950/60"
+            style={{
+              boxShadow: "inset 0 0 8px rgba(0,0,0,0.5), 4px 4px 0px rgba(0,0,0,0.3)",
+              imageRendering: "pixelated",
+            }}
+          >
+            <p className="text-2xl font-bold text-yellow-300" style={{ imageRendering: "pixelated" }}>
+              {pendingLevelUp.characterName}
+            </p>
+            <p className="text-sm text-yellow-200/80" style={{ imageRendering: "pixelated" }}>
+              {characterType} reaches Level {pendingLevelUp.newLevel}
+            </p>
+          </div>
+
+          {/* Element badge */}
+          <div
+            className="inline-block px-3 py-1 mt-2 border-2"
+            style={{
+              borderColor: elementColor,
+              backgroundColor: elementColor + "20",
+              boxShadow: `inset 0 0 4px ${elementColor}40`,
+            }}
+          >
+            <span
+              className="text-sm font-bold"
+              style={{
+                color: elementColor,
+                textShadow: `0px 0px 3px ${elementColor}80`,
+              }}
+            >
+              {pendingLevelUp.characterElement}
+            </span>
+          </div>
         </div>
 
-        <Card className="w-full max-w-md p-4 bg-[#12122a]/90 border-yellow-500/15 backdrop-blur-sm">
-          <div className="space-y-2">
+        {/* New spells learned banner */}
+        {newSpellNames.length > 0 && (
+          <div
+            className="mb-4 px-4 py-2 border-2 border-amber-500 bg-amber-900/40 animate-[fadeIn_0.8s_ease-out]"
+            style={{ boxShadow: "inset 0 0 8px rgba(255,180,0,0.2), 3px 3px 0px rgba(0,0,0,0.3)" }}
+          >
+            <div className="flex items-center gap-2 justify-center">
+              <Sparkles className="w-4 h-4 text-amber-400" />
+              <span className="text-sm font-bold text-amber-300" style={{ textShadow: "1px 1px 0px rgba(0,0,0,0.8)" }}>
+                New Spell{newSpellNames.length > 1 ? "s" : ""} Learned!
+              </span>
+              <Sparkles className="w-4 h-4 text-amber-400" />
+            </div>
+            <div className="flex gap-3 justify-center mt-1">
+              {newSpellNames.map(spell => spell && (
+                <span
+                  key={spell.id}
+                  className="text-xs font-bold px-2 py-0.5 border"
+                  style={{
+                    color: ELEMENT_COLORS[spell.element || pendingLevelUp.characterElement],
+                    borderColor: ELEMENT_COLORS[spell.element || pendingLevelUp.characterElement] + "60",
+                    backgroundColor: ELEMENT_COLORS[spell.element || pendingLevelUp.characterElement] + "15",
+                    textShadow: `0 0 4px ${ELEMENT_COLORS[spell.element || pendingLevelUp.characterElement]}40`,
+                  }}
+                >
+                  {spell.name}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Character sprite display */}
+        {spriteData && spriteSheetPath && (
+          <div className="mb-8 p-4 border-4 border-yellow-700 bg-black/40" style={{ boxShadow: "inset 0 0 12px rgba(0,0,0,0.8), 4px 4px 0px rgba(0,0,0,0.4)" }}>
+            <SpriteAnimator
+              spriteSheet={spriteSheetPath}
+              frameWidth={spriteData.frameWidth}
+              frameHeight={spriteData.frameHeight}
+              totalFrames={spriteData.totalFrames}
+              fps={8}
+              scale={4}
+              loop={true}
+              style={{ imageRendering: "pixelated" }}
+            />
+          </div>
+        )}
+
+        {/* Stats allocation section */}
+        <div
+          className="w-full max-w-2xl p-6 border-4 border-yellow-700 bg-amber-900/30"
+          style={{
+            boxShadow: "inset 0 0 16px rgba(0,0,0,0.8), 6px 6px 0px rgba(0,0,0,0.5)",
+            imageRendering: "pixelated",
+          }}
+        >
+          {/* Instructions */}
+          <p
+            className="text-center text-yellow-200 mb-4 font-bold text-sm"
+            style={{
+              textShadow: "2px 2px 0px rgba(0,0,0,0.8)",
+              imageRendering: "pixelated",
+            }}
+          >
+            Allocate {statsRemaining} Stat{statsRemaining !== 1 ? "s" : ""} →
+          </p>
+
+          {/* Stat buttons grid */}
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
             {STAT_CONFIG.map(({ key, label, icon: Icon, color }) => {
-              const value = player.stats[key];
+              const value = currentStats[key];
               const increase = key === "maxHp" ? "+10" : key === "maxMp" ? "+5" : "+2";
               return (
                 <Button
                   key={key}
-                  variant="ghost"
-                  className="w-full flex items-center justify-between h-auto py-3 hover:bg-white/5"
                   onClick={() => onAllocate(key)}
+                  disabled={statsRemaining === 0}
+                  className="flex flex-col items-center justify-center h-auto py-3 px-2 relative overflow-hidden border-2 border-yellow-700 bg-yellow-900/40 hover:bg-yellow-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                  style={{
+                    boxShadow: "inset 0 0 6px rgba(0,0,0,0.6), 2px 2px 0px rgba(0,0,0,0.4)",
+                    imageRendering: "pixelated",
+                  }}
                   data-testid={`button-allocate-${key}`}
                 >
-                  <div className="flex items-center gap-3">
-                    <Icon className="w-5 h-5" style={{ color }} />
-                    <span className="text-sm font-medium text-purple-200">{label}</span>
+                  <Icon className="w-5 h-5 mb-1" style={{ color, imageRendering: "pixelated" }} />
+                  <span
+                    className="text-xs font-bold text-yellow-200"
+                    style={{
+                      textShadow: "1px 1px 0px rgba(0,0,0,0.8)",
+                      imageRendering: "pixelated",
+                    }}
+                  >
+                    {label}
+                  </span>
+                  <div className="text-xs text-yellow-300/70 mt-1" style={{ imageRendering: "pixelated" }}>
+                    {value}
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-purple-300/70">{value}</span>
-                    <span className="text-xs text-green-400 bg-green-900/30 px-2 py-0.5 rounded">{increase}</span>
+                  <div
+                    className="text-[10px] font-bold px-1 py-0.5 bg-green-900/60 border border-green-700 text-green-300 mt-0.5"
+                    style={{
+                      boxShadow: "inset 0 0 2px rgba(0,0,0,0.4)",
+                      imageRendering: "pixelated",
+                    }}
+                  >
+                    {increase}
                   </div>
                 </Button>
               );
             })}
           </div>
-        </Card>
+        </div>
       </div>
 
+      {/* Animations */}
       <style>{`
         @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
         }
       `}</style>
     </div>

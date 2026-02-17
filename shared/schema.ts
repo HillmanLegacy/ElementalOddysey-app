@@ -70,6 +70,7 @@ export interface PlayerCharacter {
   spriteId: string;
   starterCharacterId: string;
   regionBossDefeats: Record<string, number>;
+  learnedSpells?: string[];
 }
 
 export interface InventoryItem {
@@ -110,7 +111,7 @@ export interface Enemy {
 
 export interface OverworldNode {
   id: number;
-  type: "battle" | "shop" | "event" | "boss" | "rest";
+  type: "battle" | "shop" | "event" | "boss" | "rest" | "shaman";
   name: string;
   x: number;
   y: number;
@@ -182,6 +183,9 @@ export interface PartyMember {
   level: number;
   stats: PlayerStats;
   spriteId: string;
+  xp: number;
+  xpToNext: number;
+  learnedSpells?: string[];
 }
 
 export interface BattlePartyMember {
@@ -229,12 +233,25 @@ export interface ShopItem extends InventoryItem {
   stock: number;
 }
 
+export interface PendingLevelUp {
+  characterType: "player" | "party";
+  characterIndex: number;
+  characterName: string;
+  characterSpriteId: string;
+  characterElement: Element;
+  statsToAllocate: number;
+  perksToChoose: number;
+  newLevel: number;
+  newSpells?: string[];
+}
+
 export interface GameState {
-  screen: "menu" | "intro" | "creation" | "overworld" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect" | "partyUnlock";
+  screen: "menu" | "intro" | "creation" | "overworld" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect" | "partyUnlock" | "shaman";
   player: PlayerCharacter | null;
   battle: BattleState | null;
   currentShop: ShopItem[] | null;
-  pendingLevelUp: { statsToAllocate: number; perksToChoose: number } | null;
+  pendingLevelUp: PendingLevelUp | null;
+  pendingLevelUpQueue: PendingLevelUp[];
   pendingUnlocks: PartyMemberDef[];
   pendingUnlock: PartyMemberDef | null;
   textSpeed: "slow" | "medium" | "fast";
