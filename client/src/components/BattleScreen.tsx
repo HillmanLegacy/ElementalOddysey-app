@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
@@ -115,7 +114,7 @@ interface BattleScreenProps {
   onPartyMemberUseItem: (partyIndex: number, itemId: string) => void;
   onAdvancePartyTurn: () => void;
   onFinishPartyTurn: () => void;
-  onEnemyAttack: (enemyIndex: number) => { dodged: boolean; target: { type: "player" | "party"; index: number } };
+  onEnemyAttack: (enemyIndex: number, preSelectedTarget?: { type: "player" | "party"; index: number }) => { dodged: boolean; target: { type: "player" | "party"; index: number } };
   onEnemyTurnEnd: () => void;
   onEndBattle: (victory: boolean) => void;
   onSetAnimating: () => void;
@@ -137,7 +136,8 @@ export default function BattleScreen({
   const [playerFlash, setPlayerFlash] = useState(false);
   const [fireHitSfx, setFireHitSfx] = useState(false);
   const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash">>({});
-  const [fireballAnim, setFireballAnim] = useState<{ fromX: number; fromY: number; active: boolean } | null>(null);
+  const [fireballAnim, setFireballAnim] = useState<{ fromX: number; fromY: number; toX: number; toY: number; active: boolean } | null>(null);
+  const [potionVfx, setPotionVfx] = useState<{ x: number; y: number; color: string; active: boolean } | null>(null);
   const [bossOffset, setBossOffset] = useState<{ x: number; y: number } | null>(null);
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
   const [frostBreathAnim, setFrostBreathAnim] = useState<{ fromX: number; fromY: number; active: boolean } | null>(null);
@@ -172,7 +172,6 @@ export default function BattleScreen({
   const hpPercent = (battle.playerHp / player.stats.maxHp) * 100;
   const mpPercent = (battle.playerMp / player.stats.maxMp) * 100;
   const isLowHp = hpPercent < 25;
-  const latestLog = battle.log.slice(-3);
 
   const clearEnemyTurnTimers = useCallback(() => {
     enemyTurnTimers.current.forEach(id => clearTimeout(id));
@@ -295,6 +294,11 @@ export default function BattleScreen({
         const tidx = pendingTargetIdx;
         setEnemyHitIdx(tidx);
         playSfx("hitMetal");
+        if (battle.lastElementLabel === "Super effective!") {
+          scheduleTimer(() => playSfx("effectiveHit", 0.6), 200);
+        } else if (battle.lastElementLabel === "Not very effective...") {
+          scheduleTimer(() => playSfx("notEffectiveHit", 0.6), 200);
+        }
         const hitEnemy = battle.enemies[tidx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
           setEnemyAnimStates(prev => ({ ...prev, [tidx]: "hurt" }));
@@ -326,6 +330,11 @@ export default function BattleScreen({
           playSfx("hitCombo");
         } else {
           playSfx("stabRing");
+        }
+        if (battle.lastElementLabel === "Super effective!") {
+          scheduleTimer(() => playSfx("effectiveHit", 0.6), 200);
+        } else if (battle.lastElementLabel === "Not very effective...") {
+          scheduleTimer(() => playSfx("notEffectiveHit", 0.6), 200);
         }
         const hitEnemy = battle.enemies[targetIdx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
@@ -360,7 +369,32 @@ export default function BattleScreen({
         spawnDamageNumber(matched[1], 22, 35, isFire ? "#ff6b2b" : "#ef4444");
       }
     }
-  }, [battle.log.length, animPhase, pendingTargetIdx, battle.enemies, battle.animation, spawnDamageNumber]);
+  }, [battle.log.length, animPhase, pendingTargetIdx, battle.enemies, battle.animation, spawnDamageNumber, battle.lastElementLabel, scheduleTimer]);
+
+  const lastItemUsedRef = useRef<typeof battle.lastItemUsed>(undefined);
+  useEffect(() => {
+    if (!battle.lastItemUsed || battle.lastItemUsed === lastItemUsedRef.current) return;
+    lastItemUsedRef.current = battle.lastItemUsed;
+    const item = battle.lastItemUsed;
+    const isHp = item.stat === "hp";
+    const color = isHp ? "rgba(239,68,68,0.8)" : "rgba(96,165,250,0.8)";
+
+    let vfxX: number, vfxY: number;
+    if (item.targetType === "player" || item.targetIndex < 0) {
+      vfxX = 12;
+      vfxY = 18;
+    } else {
+      const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
+      const pos = partyPos[item.targetIndex % partyPos.length];
+      vfxX = pos.x;
+      vfxY = pos.y;
+    }
+
+    playSfx(isHp ? "potionHeal" : "potionMana", 0.7);
+    setPotionVfx({ x: vfxX, y: vfxY + 8, color, active: true });
+    spawnDamageNumber(`+${item.amount} ${isHp ? "HP" : "MP"}`, vfxX + 2, 100 - vfxY - 10, isHp ? "#ef4444" : "#60a5fa");
+    scheduleTimer(() => setPotionVfx(null), 800);
+  }, [battle.lastItemUsed, scheduleTimer, spawnDamageNumber]);
 
   const onSpriteComplete = useCallback(() => {
     if (animPhase === "attacking") {
@@ -558,13 +592,35 @@ export default function BattleScreen({
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
       playSfx("fireballLaunch", 0.8);
 
+      const aliveParty = battle.party.filter(p => p.currentHp > 0);
+      const totalTargets = 1 + aliveParty.length;
+      const targetRoll = Math.floor(Math.random() * totalTargets);
+      let preTarget: { type: "player" | "party"; index: number };
+      if (targetRoll === 0 || aliveParty.length === 0) {
+        preTarget = { type: "player", index: -1 };
+      } else {
+        const pt = aliveParty[targetRoll - 1];
+        preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+      }
+
+      let targetX: number, targetY: number;
+      if (preTarget.type === "party" && preTarget.index >= 0) {
+        const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
+        const tp = partyPos[preTarget.index % partyPos.length];
+        targetX = tp.x;
+        targetY = tp.y;
+      } else {
+        targetX = 12;
+        targetY = 18;
+      }
+
       scheduleTimer(() => {
-        setFireballAnim({ fromX: pos.x, fromY: pos.y, active: true });
+        setFireballAnim({ fromX: pos.x, fromY: pos.y, toX: targetX, toY: targetY, active: true });
       }, 450);
 
       scheduleTimer(() => {
         setFireballAnim(null);
-        const result = onEnemyAttack(enemyIdx);
+        const result = onEnemyAttack(enemyIdx, preTarget);
         if (!result.dodged) {
           setShakeScreen(true);
           if (result.target.type === "party") {
@@ -1663,6 +1719,8 @@ export default function BattleScreen({
                 height: 64,
                 ["--fb-start-x" as string]: `${fireballAnim.fromX}%`,
                 ["--fb-start-y" as string]: `${fireballAnim.fromY}%`,
+                ["--fb-end-x" as string]: `${fireballAnim.toX}%`,
+                ["--fb-end-y" as string]: `${fireballAnim.toY}%`,
                 animation: "fireballFly 0.5s ease-in forwards",
                 filter: "drop-shadow(0 0 12px rgba(255,120,20,0.8)) drop-shadow(0 0 24px rgba(255,60,0,0.5))",
                 pointerEvents: "none",
@@ -1700,6 +1758,45 @@ export default function BattleScreen({
               />
             </div>
           )}
+
+          {potionVfx && potionVfx.active && (
+            <div
+              className="absolute z-50 pointer-events-none"
+              style={{
+                left: `${potionVfx.x}%`,
+                bottom: `${potionVfx.y}%`,
+                width: 60,
+                height: 80,
+                transform: "translateX(-50%)",
+              }}
+            >
+              {[...Array(8)].map((_, i) => (
+                <div
+                  key={i}
+                  style={{
+                    position: "absolute",
+                    width: 8 + Math.random() * 6,
+                    height: 8 + Math.random() * 6,
+                    borderRadius: "50%",
+                    background: potionVfx.color,
+                    left: `${20 + Math.random() * 60}%`,
+                    bottom: "0%",
+                    opacity: 0.9,
+                    animation: `potionBubble ${0.5 + Math.random() * 0.4}s ease-out ${i * 0.06}s forwards`,
+                    boxShadow: `0 0 8px ${potionVfx.color}`,
+                  }}
+                />
+              ))}
+              <div
+                style={{
+                  position: "absolute",
+                  inset: 0,
+                  background: `radial-gradient(ellipse at center bottom, ${potionVfx.color.replace("0.8", "0.3")} 0%, transparent 70%)`,
+                  animation: "fadeIn 0.2s ease-out forwards, fadeOut 0.3s ease-in 0.5s forwards",
+                }}
+              />
+            </div>
+          )}
         </div>
 
       </div>
@@ -1716,17 +1813,6 @@ export default function BattleScreen({
         )}
 
         <div className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-4">
-          <Card className="p-2 bg-black/60 border-purple-500/10 backdrop-blur-md mb-2 max-h-14 overflow-y-auto">
-            {latestLog.map((msg, i) => (
-              <p
-                key={i}
-                className={`text-[11px] leading-tight ${i === latestLog.length - 1 ? "text-purple-100" : "text-purple-400/40"}`}
-                data-testid={`text-battle-log-${i}`}
-              >
-                {msg}
-              </p>
-            ))}
-          </Card>
 
           {battle.phase === "victory" && (
             <div className="text-center py-3 animate-[fadeIn_0.5s_ease-out]">

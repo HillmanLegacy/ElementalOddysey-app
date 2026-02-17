@@ -26,6 +26,11 @@ import stabWhoosh1 from "@/assets/audio/stab-whoosh-1.mp3";
 import stabWhoosh2 from "@/assets/audio/stab-whoosh-2.mp3";
 import fireballLaunch from "@/assets/audio/fire-demon-fireball.wav";
 import explosionMedium from "@/assets/audio/explosion-medium.wav";
+import effectiveChime from "@/assets/audio/effective-chime.wav";
+import notEffective from "@/assets/audio/not-effective.wav";
+import potionHeal from "@/assets/audio/potion-heal.wav";
+import potionMana from "@/assets/audio/potion-mana.wav";
+import drinkSlurp from "@/assets/audio/drink-slurp.wav";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
@@ -40,6 +45,10 @@ const SFX_GROUPS = {
   stabWhoosh: [stabWhoosh1, stabWhoosh2],
   fireballLaunch: [fireballLaunch],
   explosion: [explosionMedium],
+  effectiveHit: [effectiveChime],
+  notEffectiveHit: [notEffective],
+  potionHeal: [drinkSlurp, potionHeal],
+  potionMana: [drinkSlurp, potionMana],
 } as const;
 
 export type SfxName = keyof typeof SFX_GROUPS;

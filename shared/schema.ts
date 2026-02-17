@@ -220,6 +220,8 @@ export interface BattleState {
   activePartyIndex: number;
   turnQueue: TurnQueueEntry[];
   turnQueueIndex: number;
+  lastElementLabel?: string;
+  lastItemUsed?: { stat: "hp" | "mp"; amount: number; targetType: "player" | "party"; targetIndex: number };
 }
 
 export interface ShopItem extends InventoryItem {

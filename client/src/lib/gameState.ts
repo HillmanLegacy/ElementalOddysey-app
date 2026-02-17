@@ -95,12 +95,14 @@ export function useGameState() {
       if (dodged) {
         battle.log = [...battle.log, `${target.name} dodged the attack!`];
         battle.animation = "dodge";
+        battle.lastElementLabel = undefined;
       } else {
         const weaponElement = s.player.equipment.weapon?.element || s.player.element;
         const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
         const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element, 1.0, critMod);
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.animation = isCrit ? "critical" : "attack";
+        battle.lastElementLabel = elementLabel || undefined;
         battle.log = [...battle.log, `You deal ${damage}${isCrit ? " CRITICAL" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
 
         if (s.player.perks.includes("shadow_lifesteal")) {
@@ -216,6 +218,7 @@ export function useGameState() {
         const hasAoe = spell.targetType === "allEnemies" || (s.player.perks.includes("fire_aoe") && s.player.element === "Fire");
         const targets = hasAoe ? battle.enemies.filter(e => e.currentHp > 0) : (targetIndex !== undefined ? [battle.enemies[targetIndex]] : []);
 
+        let lastLabel = "";
         for (const target of targets) {
           if (!target || target.currentHp <= 0) continue;
           const skillMult = spell.effect.damageMultiplier || 1;
@@ -223,7 +226,9 @@ export function useGameState() {
           const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, true, s.player.element, target.element, skillMult, critMod);
           target.currentHp = Math.max(0, target.currentHp - damage);
           battle.log = [...battle.log, `${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+          if (elementLabel) lastLabel = elementLabel;
         }
+        battle.lastElementLabel = lastLabel || undefined;
 
         if (spell.id === "holy_light") {
           battle.playerHp = Math.min(s.player.stats.maxHp, battle.playerHp + 15);
@@ -272,13 +277,15 @@ export function useGameState() {
       newInventory.splice(itemIndex, 1);
 
       if (item.effect.type === "heal") {
-        if (item.effect.stat === "hp") {
+        const stat = (item.effect.stat === "hp" || item.effect.stat === "mp") ? item.effect.stat : "hp";
+        if (stat === "hp") {
           battle.playerHp = Math.min(s.player.stats.maxHp, battle.playerHp + (item.effect.amount || 0));
           battle.log = [...battle.log, `Used ${item.name}! Healed ${item.effect.amount} HP.`];
-        } else if (item.effect.stat === "mp") {
+        } else {
           battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + (item.effect.amount || 0));
           battle.log = [...battle.log, `Used ${item.name}! Restored ${item.effect.amount} MP.`];
         }
+        battle.lastItemUsed = { stat, amount: item.effect.amount || 0, targetType: "player", targetIndex: -1 };
       }
 
       battle.phase = "enemyTurn";
@@ -341,9 +348,11 @@ export function useGameState() {
       const dodged = checkDodge(target.stats);
       if (dodged) {
         battle.log = [...battle.log, `${target.name} dodged ${member.name}'s attack!`];
+        battle.lastElementLabel = undefined;
       } else {
         const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, member.element, target.element);
         target.currentHp = Math.max(0, target.currentHp - damage);
+        battle.lastElementLabel = elementLabel || undefined;
         battle.log = [...battle.log, `${member.name} deals ${damage}${isCrit ? " CRIT" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
       }
 
@@ -383,12 +392,14 @@ export function useGameState() {
       member.currentMp -= spell.mpCost;
 
       if (spell.type === "damage") {
+        let lastLabel = "";
         if (spell.targetType === "allEnemies") {
           battle.enemies.forEach(e => {
             if (e.currentHp <= 0) return;
             const { damage, isCrit, elementLabel } = calculateDamage(member.stats, e.stats, true, spell.element || member.element, e.element, spell.effect.damageMultiplier);
             e.currentHp = Math.max(0, e.currentHp - damage);
             battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${e.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+            if (elementLabel) lastLabel = elementLabel;
           });
         } else if (targetIndex !== undefined) {
           const target = battle.enemies[targetIndex];
@@ -396,8 +407,10 @@ export function useGameState() {
             const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, true, spell.element || member.element, target.element, spell.effect.damageMultiplier);
             target.currentHp = Math.max(0, target.currentHp - damage);
             battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+            if (elementLabel) lastLabel = elementLabel;
           }
         }
+        battle.lastElementLabel = lastLabel || undefined;
       } else if (spell.type === "heal") {
         const amount = spell.effect.amount || 0;
         member.currentHp = Math.min(member.stats.maxHp, member.currentHp + amount);
@@ -437,7 +450,8 @@ export function useGameState() {
       newInventory.splice(itemIndex, 1);
 
       if (item.effect.type === "heal") {
-        if (item.effect.stat === "hp") {
+        const stat = (item.effect.stat === "hp" || item.effect.stat === "mp") ? item.effect.stat : "hp";
+        if (stat === "hp") {
           const heal = item.effect.amount || 0;
           if (member.currentHp <= 0) {
             battle.log = [...battle.log, `${member.name} is unconscious!`];
@@ -445,10 +459,11 @@ export function useGameState() {
           }
           member.currentHp = Math.min(member.stats.maxHp, member.currentHp + heal);
           battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${heal} HP!`];
-        } else if (item.effect.stat === "mp") {
+        } else {
           battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + (item.effect.amount || 0));
           battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${item.effect.amount} MP!`];
         }
+        battle.lastItemUsed = { stat, amount: item.effect.amount || 0, targetType: "party", targetIndex: partyIndex };
       }
 
       return { ...s, battle, player: { ...s.player, inventory: newInventory } };
@@ -476,7 +491,7 @@ export function useGameState() {
   const lastEnemyDodgedRef = useRef(false);
   const lastEnemyTargetRef = useRef<{ type: "player" | "party"; index: number }>({ type: "player", index: -1 });
 
-  const enemyAttack = useCallback((enemyIndex: number) => {
+  const enemyAttack = useCallback((enemyIndex: number, preSelectedTarget?: { type: "player" | "party"; index: number }) => {
     lastEnemyDodgedRef.current = false;
     lastEnemyTargetRef.current = { type: "player", index: -1 };
     setState(s => {
@@ -488,11 +503,23 @@ export function useGameState() {
       const enemy = battle.enemies[enemyIndex];
       if (!enemy || enemy.currentHp <= 0) return s;
 
-      const aliveParty = battle.party.filter(p => p.currentHp > 0);
-      const totalTargets = 1 + aliveParty.length;
-      const targetRoll = Math.floor(Math.random() * totalTargets);
+      let chosenTarget: { type: "player" | "party"; index: number };
+      if (preSelectedTarget) {
+        chosenTarget = preSelectedTarget;
+      } else {
+        const aliveParty = battle.party.filter(p => p.currentHp > 0);
+        const totalTargets = 1 + aliveParty.length;
+        const targetRoll = Math.floor(Math.random() * totalTargets);
+        if (targetRoll === 0 || aliveParty.length === 0) {
+          chosenTarget = { type: "player", index: -1 };
+        } else {
+          const partyTarget = aliveParty[targetRoll - 1];
+          const partyIdx = battle.party.findIndex(p => p.id === partyTarget.id);
+          chosenTarget = { type: "party", index: partyIdx };
+        }
+      }
 
-      if (targetRoll === 0 || aliveParty.length === 0) {
+      if (chosenTarget.type === "player") {
         lastEnemyTargetRef.current = { type: "player", index: -1 };
         const dodged = checkDodge(buffedStats);
         if (dodged) {
@@ -506,20 +533,35 @@ export function useGameState() {
           battle.animation = "enemyAttack";
         }
       } else {
-        const partyTarget = aliveParty[targetRoll - 1];
-        const partyIdx = battle.party.findIndex(p => p.id === partyTarget.id);
+        const partyIdx = chosenTarget.index;
+        const partyTarget = battle.party[partyIdx];
         lastEnemyTargetRef.current = { type: "party", index: partyIdx };
 
-        const dodged = checkDodge(partyTarget.stats);
-        if (dodged) {
-          battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
-          lastEnemyDodgedRef.current = true;
+        if (!partyTarget || partyTarget.currentHp <= 0) {
+          lastEnemyTargetRef.current = { type: "player", index: -1 };
+          const dodged = checkDodge(buffedStats);
+          if (dodged) {
+            battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
+            lastEnemyDodgedRef.current = true;
+          } else {
+            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
+            const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
+            battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
+            battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
+            battle.animation = "enemyAttack";
+          }
         } else {
-          const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, Math.random() > 0.5, enemy.element, partyTarget.element);
-          const actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
-          battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
-          battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${isCrit ? " CRIT" : ""} to ${partyTarget.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
-          battle.animation = "enemyAttack";
+          const dodged = checkDodge(partyTarget.stats);
+          if (dodged) {
+            battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
+            lastEnemyDodgedRef.current = true;
+          } else {
+            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, Math.random() > 0.5, enemy.element, partyTarget.element);
+            const actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
+            battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
+            battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${isCrit ? " CRIT" : ""} to ${partyTarget.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+            battle.animation = "enemyAttack";
+          }
         }
       }
 
