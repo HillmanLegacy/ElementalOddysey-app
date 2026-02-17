@@ -111,10 +111,10 @@ export function useGameState() {
 
       if (battle.phase === "victory" || battle.phase === "defeat") return s;
 
-      const aliveParty = battle.party.filter(p => p.currentHp > 0);
-      if (aliveParty.length > 0) {
+      const firstAliveIdx = battle.party.findIndex(p => p.currentHp > 0);
+      if (firstAliveIdx !== -1) {
         battle.phase = "partyTurn";
-        battle.activePartyIndex = 0;
+        battle.activePartyIndex = firstAliveIdx;
       } else {
         battle.phase = "enemyTurn";
       }
@@ -175,10 +175,12 @@ export function useGameState() {
 
   const playerDefend = useCallback(() => {
     setState(s => {
-      if (!s.battle || s.battle.phase !== "animating") return s;
+      if (!s.battle || s.battle.phase !== "animating" || !s.player) return s;
       const battle = { ...s.battle };
       battle.defending = true;
-      battle.log = [...battle.log, "You raise your guard!"];
+      const mpRestore = Math.floor(s.player.stats.maxMp * 0.1);
+      battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + mpRestore);
+      battle.log = [...battle.log, `You raise your guard! Restored ${mpRestore} MP.`];
       battle.animation = "defend";
       return { ...s, battle };
     });
@@ -242,7 +244,7 @@ export function useGameState() {
     });
   }, []);
 
-  const partyMemberAttack = useCallback((partyIndex: number) => {
+  const partyMemberAttack = useCallback((partyIndex: number, targetIndex: number) => {
     setState(s => {
       if (!s.battle || !s.player || s.battle.phase !== "partyTurn") return s;
 
@@ -250,15 +252,8 @@ export function useGameState() {
       const member = battle.party[partyIndex];
       if (!member || member.currentHp <= 0) return s;
 
-      const aliveEnemies = battle.enemies.filter(e => e.currentHp > 0);
-      if (aliveEnemies.length === 0) {
-        battle.phase = "victory";
-        battle.animation = "victory";
-        return { ...s, battle };
-      }
-
-      const target = aliveEnemies.reduce((lowest, e) => e.currentHp < lowest.currentHp ? e : lowest);
-      const targetIndex = battle.enemies.indexOf(target);
+      const target = battle.enemies[targetIndex];
+      if (!target || target.currentHp <= 0) return s;
 
       const dodged = checkDodge(target.stats);
       if (dodged) {
@@ -275,6 +270,34 @@ export function useGameState() {
         battle.animation = "victory";
       }
 
+      return { ...s, battle };
+    });
+  }, []);
+
+  const partyMemberDefend = useCallback((partyIndex: number) => {
+    setState(s => {
+      if (!s.battle || s.battle.phase !== "partyTurn") return s;
+      const battle = { ...s.battle, party: s.battle.party.map(p => ({ ...p })) };
+      const member = battle.party[partyIndex];
+      if (!member || member.currentHp <= 0) return s;
+      member.defending = true;
+      battle.log = [...battle.log, `${member.name} is defending!`];
+      return { ...s, battle };
+    });
+  }, []);
+
+  const advancePartyTurn = useCallback(() => {
+    setState(s => {
+      if (!s.battle || s.battle.phase !== "partyTurn") return s;
+      const battle = { ...s.battle };
+      if (battle.phase === "victory" || battle.phase === "defeat") return s;
+
+      const nextIdx = battle.party.findIndex((p, i) => i > battle.activePartyIndex && p.currentHp > 0);
+      if (nextIdx !== -1) {
+        battle.activePartyIndex = nextIdx;
+      } else {
+        battle.phase = "enemyTurn";
+      }
       return { ...s, battle };
     });
   }, []);
@@ -436,10 +459,18 @@ export function useGameState() {
         regionBossDefeats[regionKey] = prevDefeats + 1;
         const newDefeats = regionBossDefeats[regionKey];
 
-        if (s.player.currentRegion === 0 && prevDefeats === 0) {
-          const unchosen = STARTER_CHARACTERS.filter(c => c.id !== s.player!.starterCharacterId);
-          pendingUnlocks = unchosen;
-          pendingUnlock = unchosen[0] || null;
+        if (s.player.currentRegion === 0) {
+          const alreadyInParty = new Set(s.player.party.map(p => p.id));
+          const unchosen = STARTER_CHARACTERS.filter(c => c.id !== s.player!.starterCharacterId && !alreadyInParty.has(c.id));
+          if (unchosen.length > 0) {
+            if (unchosen.length === 1) {
+              pendingUnlocks = [unchosen[0]];
+              pendingUnlock = unchosen[0];
+            } else {
+              pendingUnlocks = unchosen;
+              pendingUnlock = null;
+            }
+          }
         }
 
         if (newDefeats >= 3) {
@@ -661,18 +692,6 @@ export function useGameState() {
       };
 
       const newParty = [...s.player.party, newMember];
-      const remaining = s.pendingUnlocks.filter(u => u.id !== def.id);
-
-      if (remaining.length > 0) {
-        return {
-          ...s,
-          player: { ...s.player, party: newParty },
-          pendingUnlock: remaining[0],
-          pendingUnlocks: remaining,
-          screen: "partyUnlock" as const,
-        };
-      }
-
       const nextScreen = s.pendingLevelUp ? "levelUp" : "overworld";
 
       return {
@@ -715,6 +734,8 @@ export function useGameState() {
     useItem,
     useItemOverworld,
     partyMemberAttack,
+    partyMemberDefend,
+    advancePartyTurn,
     finishPartyTurn,
     enemyAttack,
     enemyTurnEnd,

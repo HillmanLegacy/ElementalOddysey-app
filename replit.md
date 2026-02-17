@@ -14,8 +14,8 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 -   **Persistent Saves**: A backend API facilitates saving and loading game progress.
 -   **Character System**: Players select from three starter characters (Knight/Fire, Samurai/Wind, Basken/Lightning), each with unique elements, stats, and sprites. The `starterCharacterId` tracks the initial choice, and `spriteId` manages visual appearance.
 -   **Overworld & Progression**: A board-style node map features battle, shop, rest, and boss nodes. Region progression requires defeating each boss three times, with enemy scaling occurring after each defeat until the next region unlocks.
--   **Party System**: Defeating the first region boss unlocks the remaining starter characters as party members. Party members auto-attack, scale with the player's level, and enemies can target them.
--   **Combat System**: Turn-based combat with player actions (Attack, Defend, Magic, Item) and a dedicated "partyTurn" phase for party member auto-attacks.
+-   **Party System**: Defeating region bosses unlocks new party members one at a time. First boss defeat with 2+ unchosen starters shows a selection screen (CharacterSelectUnlock), subsequent defeats auto-unlock the remaining character. Party members are player-controlled with Attack/Defend options during their turn.
+-   **Combat System**: Turn-based combat with player actions (Attack, Defend, Magic, Item), followed by a "partyTurn" phase where each alive party member gets Attack/Defend options with target selection. Uses `activePartyIndex` and `advancePartyTurn` to step through party members sequentially.
 -   **Leveling & Perks**: Players allocate stat points and select perks upon leveling up.
 -   **Inventory & Equipment**: Separate tabs for consumables (usable in overworld for healing) and equipable items.
 -   **Spell/Magic System**: Element-locked spells defined in `gameData.ts`, with optional cinematic animations. Spells have MP costs and element-specific effects. Buffs are tracked with turn countdowns.
@@ -26,7 +26,7 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 -   **Animation System**:
     -   **Battle Animations**: Event-driven animation queue manages player and enemy actions (e.g., attack, run, hurt).
     -   **Animated Enemy Sprites**: Specific enemies (Fire Demon, Dragon Lord, Frost Lizard, Jotem) feature detailed sprite animations for idle, attack, hurt, and death states, some with multiple attack patterns (e.g., Dragon Lord's close-range vs. dark magic attacks).
-    -   **Special VFX**: Cinematic spell animations like "Fujin's Slice" (Wind Special) involve camera zooms, sprite transformations, and staggered visual effects. Wind VFX utilize sprite sheets for slashes and a vortex texture for broader effects.
+    -   **Special VFX**: Cinematic spell animations like "Fujin's Slice" (Wind Special) involve camera zooms, sprite transformations, and staggered visual effects. Tempest spell uses camera zoom (scale 1.3 to enemy area), per-enemy tornado VFX with conic gradients, and ambient particles. Wind VFX utilize sprite sheets for slashes.
 -   **Sound System**: An audio engine (`sfx.ts`) manages pooled HTMLAudio playback for various in-game sound effects (sword swings, hits, magic, grunts) with volume control.
 
 ## External Dependencies

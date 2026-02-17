@@ -106,7 +106,7 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
           </div>
 
           <p className="text-xs text-purple-400/50 text-center mb-4">
-            Joins at Level {playerLevel} &middot; Auto-attacks in battle
+            Joins at Level {playerLevel} &middot; Player-controlled in battle
           </p>
 
           <Button

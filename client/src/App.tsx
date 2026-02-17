@@ -13,6 +13,7 @@ import PerkSelectScreen from "@/components/PerkSelectScreen";
 import ShopScreen from "@/components/ShopScreen";
 import InventoryScreen from "@/components/InventoryScreen";
 import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
+import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
@@ -60,7 +61,7 @@ function Game() {
   const {
     state, setState, setScreen, createCharacter, updatePlayer,
     startBattle, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
-    partyMemberAttack, finishPartyTurn,
+    partyMemberAttack, partyMemberDefend, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, allocateStat, selectPerk, openShop,
     buyItem, equipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
     confirmUnlock,
@@ -155,6 +156,8 @@ function Game() {
             onDefend={playerDefend}
             onUseItem={useItem}
             onPartyMemberAttack={partyMemberAttack}
+            onPartyMemberDefend={partyMemberDefend}
+            onAdvancePartyTurn={advancePartyTurn}
             onFinishPartyTurn={finishPartyTurn}
             onEnemyAttack={enemyAttack}
             onEnemyTurnEnd={enemyTurnEnd}
@@ -206,14 +209,31 @@ function Game() {
         );
 
       case "partyUnlock":
-        if (!state.player || !state.pendingUnlock) return null;
-        return (
-          <CharacterUnlockScreen
-            character={state.pendingUnlock}
-            playerLevel={state.player.level}
-            onConfirm={confirmUnlock}
-          />
-        );
+        if (!state.player) return null;
+        if (state.pendingUnlock) {
+          return (
+            <CharacterUnlockScreen
+              character={state.pendingUnlock}
+              playerLevel={state.player.level}
+              onConfirm={confirmUnlock}
+            />
+          );
+        }
+        if (state.pendingUnlocks && state.pendingUnlocks.length > 0) {
+          return (
+            <CharacterSelectUnlock
+              characters={state.pendingUnlocks}
+              playerLevel={state.player.level}
+              onSelect={(charDef) => {
+                setState(s => ({
+                  ...s,
+                  pendingUnlock: charDef,
+                }));
+              }}
+            />
+          );
+        }
+        return null;
 
       default:
         return null;

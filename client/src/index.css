@@ -313,16 +313,16 @@
     transform: scale(1.5);
     opacity: 1;
   }
-  70% {
-    left: 18%;
-    bottom: 22%;
-    transform: scale(2.2);
+  80% {
+    left: 16%;
+    bottom: 20%;
+    transform: scale(2);
     opacity: 1;
   }
   100% {
     left: 14%;
-    bottom: 20%;
-    transform: scale(0.5);
+    bottom: 18%;
+    transform: scale(0.8);
     opacity: 0;
   }
 }

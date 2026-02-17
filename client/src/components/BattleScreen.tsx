@@ -95,11 +95,11 @@ const ENEMY_SPRITES: Record<string, string> = {
 
 const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; scale?: number }> = {
   samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 4, runFrames: 8, scale: 3.5 },
-  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, run: knightRun, frameWidth: 86, frameHeight: 49, idleFrames: 4, attackFrames: 7, hurtFrames: 2, runFrames: 6, scale: 5 },
-  basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, runFrames: 6, scale: 5 },
-  ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6 },
-  knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3 },
-  axewarrior: { idle: axewarriorIdle, attack: axewarriorAttack, hurt: axewarriorHurt, frameWidth: 94, frameHeight: 91, idleFrames: 6, attackFrames: 8, hurtFrames: 3 },
+  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, run: knightRun, frameWidth: 86, frameHeight: 49, idleFrames: 4, attackFrames: 7, hurtFrames: 2, runFrames: 6, scale: 3.5 },
+  basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, runFrames: 6, scale: 3.5 },
+  ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6, scale: 3.5 },
+  knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3, scale: 3.5 },
+  axewarrior: { idle: axewarriorIdle, attack: axewarriorAttack, hurt: axewarriorHurt, frameWidth: 94, frameHeight: 91, idleFrames: 6, attackFrames: 8, hurtFrames: 3, scale: 3.5 },
 };
 
 interface BattleScreenProps {
@@ -109,7 +109,9 @@ interface BattleScreenProps {
   onCastSpell: (spell: Spell, targetIndex?: number) => void;
   onDefend: () => void;
   onUseItem: (itemId: string) => void;
-  onPartyMemberAttack: (partyIndex: number) => void;
+  onPartyMemberAttack: (partyIndex: number, targetIndex: number) => void;
+  onPartyMemberDefend: (partyIndex: number) => void;
+  onAdvancePartyTurn: () => void;
   onFinishPartyTurn: () => void;
   onEnemyAttack: (enemyIndex: number) => { dodged: boolean; target: { type: "player" | "party"; index: number } };
   onEnemyTurnEnd: () => void;
@@ -121,7 +123,7 @@ interface BattleScreenProps {
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice";
 
 export default function BattleScreen({
-  player, battle, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
+  player, battle, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
 }: BattleScreenProps) {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
@@ -147,7 +149,9 @@ export default function BattleScreen({
   const [fujinDashPhase, setFujinDashPhase] = useState<"none" | "windup" | "dash" | "strike" | "fadeout" | "return">("none");
   const [partyAnimIndex, setPartyAnimIndex] = useState(-1);
   const [partyAnimPhase, setPartyAnimPhase] = useState<"idle" | "attacking" | "done">("idle");
+  const [partyAction, setPartyAction] = useState<"menu" | "selectTarget">("menu");
   const [partyHurtIndex, setPartyHurtIndex] = useState(-1);
+  const [dodgeBlur, setDodgeBlur] = useState<{ type: "player" | "party"; index: number } | null>(null);
   const [windAttackVfx, setWindAttackVfx] = useState<number | null>(null);
   const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
   const [tempestVortexActive, setTempestVortexActive] = useState(false);
@@ -228,10 +232,11 @@ export default function BattleScreen({
       setWindSpellVfx({ type: "tempest", targets: aliveTargets });
       playSfx("whoosh");
       scheduleTimer(() => playSfx("swordSwing"), 300);
+      scheduleTimer(() => playSfx("whoosh"), 600);
       scheduleTimer(() => {
         setWindSpellVfx(null);
         setTempestVortexActive(false);
-      }, 1200);
+      }, 1800);
     }
     onCastSpell(spell);
     setSelectedSpell(null);
@@ -257,10 +262,6 @@ export default function BattleScreen({
       playSfx("gruntAttack", 0.7);
       if (pendingTargetIdx !== null) {
         onAttack(pendingTargetIdx);
-        if (player.element === "Wind") {
-          setWindAttackVfx(pendingTargetIdx);
-          scheduleTimer(() => setWindAttackVfx(null), 600);
-        }
       }
     } else if (animPhase === "runBack" && !runBackHandled.current) {
       runBackHandled.current = true;
@@ -499,6 +500,9 @@ export default function BattleScreen({
             setShakeScreen(true);
             playSfx("stabRing");
             scheduleTimer(() => setShakeScreen(false), 600);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
           }
         }, 900);
 
@@ -528,6 +532,9 @@ export default function BattleScreen({
             }
             playSfx("hitCombo");
             scheduleTimer(() => setShakeScreen(false), 500);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
           }
         }, 1200);
 
@@ -565,6 +572,9 @@ export default function BattleScreen({
           }
           playSfx("hitMetal");
           scheduleTimer(() => setShakeScreen(false), 500);
+        } else {
+          setDodgeBlur(result.target);
+          scheduleTimer(() => setDodgeBlur(null), 600);
         }
       }, 950);
 
@@ -595,6 +605,9 @@ export default function BattleScreen({
           }
           playSfx("hitMetal");
           scheduleTimer(() => setShakeScreen(false), 500);
+        } else {
+          setDodgeBlur(result.target);
+          scheduleTimer(() => setDodgeBlur(null), 600);
         }
       }, 900);
 
@@ -630,6 +643,9 @@ export default function BattleScreen({
             }
             playSfx("stabRing");
             scheduleTimer(() => setShakeScreen(false), 600);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
           }
         }, 1000);
 
@@ -658,6 +674,9 @@ export default function BattleScreen({
             }
             playSfx("hitCombo");
             scheduleTimer(() => setShakeScreen(false), 600);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
           }
         }, 700);
 
@@ -687,6 +706,9 @@ export default function BattleScreen({
             }
             playSfx("hitCombo");
             scheduleTimer(() => setShakeScreen(false), 500);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
           }
         }, 1200);
 
@@ -713,6 +735,9 @@ export default function BattleScreen({
           setAnimPhase("hurt");
         }
         playSfx("hitMetal", 0.6);
+      } else {
+        setDodgeBlur(result.target);
+        scheduleTimer(() => setDodgeBlur(null), 600);
       }
       scheduleTimer(() => {
         setAnimPhase("idle");
@@ -721,70 +746,17 @@ export default function BattleScreen({
     }
   }, [isDragonLord, isFrostLizard, isJotem, scheduleTimer, onEnemyAttack]);
 
-  const partyTurnTimers = useRef<number[]>([]);
-  const partyTurnCancelled = useRef(false);
-
   useEffect(() => {
     if (battle.phase !== "partyTurn") {
       setPartyAnimIndex(-1);
       setPartyAnimPhase("idle");
-      partyTurnCancelled.current = true;
-      partyTurnTimers.current.forEach(id => clearTimeout(id));
-      partyTurnTimers.current = [];
+      setPartyAction("menu");
       return;
     }
 
-    partyTurnCancelled.current = false;
-
-    const schedulePartyTimer = (fn: () => void, ms: number) => {
-      const id = window.setTimeout(() => {
-        if (!partyTurnCancelled.current) fn();
-      }, ms);
-      partyTurnTimers.current.push(id);
-      return id;
-    };
-
-    const alivePartyMembers = battle.party
-      .map((p, i) => ({ ...p, idx: i }))
-      .filter(p => p.currentHp > 0);
-
-    if (alivePartyMembers.length === 0) {
-      onFinishPartyTurn();
-      return;
-    }
-
-    let currentIdx = 0;
-
-    const attackNext = () => {
-      if (partyTurnCancelled.current) return;
-      if (currentIdx >= alivePartyMembers.length) {
-        setPartyAnimIndex(-1);
-        setPartyAnimPhase("idle");
-        schedulePartyTimer(() => onFinishPartyTurn(), 400);
-        return;
-      }
-
-      const member = alivePartyMembers[currentIdx];
-      setPartyAnimIndex(member.idx);
-      setPartyAnimPhase("attacking");
-
-      schedulePartyTimer(() => {
-        if (partyTurnCancelled.current) return;
-        onPartyMemberAttack(member.idx);
-        setPartyAnimPhase("idle");
-        currentIdx++;
-        schedulePartyTimer(attackNext, 600);
-      }, 500);
-    };
-
-    schedulePartyTimer(attackNext, 300);
-
-    return () => {
-      partyTurnCancelled.current = true;
-      partyTurnTimers.current.forEach(id => clearTimeout(id));
-      partyTurnTimers.current = [];
-    };
-  }, [battle.phase, battle.party, onFinishPartyTurn, onPartyMemberAttack]);
+    setPartyAnimIndex(battle.activePartyIndex);
+    setPartyAction("menu");
+  }, [battle.phase, battle.activePartyIndex]);
 
   useEffect(() => {
     if (battle.phase === "enemyTurn" && prevPhaseRef.current !== "enemyTurn") {
@@ -890,7 +862,7 @@ export default function BattleScreen({
     }
     if ((animPhase === "runToEnemy" || animPhase === "attacking") && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
-      return { x: target.x - 10, y: target.y };
+      return { x: target.x - 15, y: target.y };
     }
     if (animPhase === "hurt") {
       return { x: PLAYER_POS.x - 1, y: PLAYER_POS.y };
@@ -903,6 +875,23 @@ export default function BattleScreen({
   const isInputBlocked = animPhase !== "idle" || battle.phase !== "playerTurn";
 
   const handleEnemyClick = (idx: number) => {
+    if (battle.phase === "partyTurn" && partyAction === "selectTarget") {
+      const target = battle.enemies[idx];
+      if (!target || target.currentHp <= 0) return;
+      if (battle.phase === "victory" || battle.phase === "defeat") return;
+      const pIdx = battle.activePartyIndex;
+      const member = battle.party[pIdx];
+      if (!member || member.currentHp <= 0) return;
+      setPartyAnimPhase("attacking");
+      setPartyAction("menu");
+      onPartyMemberAttack(pIdx, idx);
+      setTimeout(() => {
+        setPartyAnimPhase("idle");
+        if (battle.enemies.every(e => e.currentHp <= 0)) return;
+        onAdvancePartyTurn();
+      }, 600);
+      return;
+    }
     if (isInputBlocked) return;
     if (selectedAction === "attack") {
       handleAttackTarget(idx);
@@ -973,26 +962,36 @@ export default function BattleScreen({
       {tempestVortexActive && (
         <div className="absolute inset-0 z-[55] pointer-events-none">
           <div
-            className="absolute inset-0 animate-[tempestVignette_1.5s_ease-out_forwards]"
+            className="absolute inset-0 animate-[tempestVignette_1.8s_ease-out_forwards]"
             style={{
-              background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,40,0,0.5) 100%)",
+              background: "radial-gradient(ellipse at center, transparent 20%, rgba(0,40,0,0.6) 100%)",
             }}
           />
-          <div className="absolute inset-0 overflow-hidden" style={{ opacity: 0.25, mixBlendMode: "screen" }}>
-            <div className="absolute w-[200%] h-[200%] -left-[50%] -top-[50%] animate-[spin_2s_linear_infinite]">
-              <img src={vfxWindVortex} alt="" className="w-full h-full" style={{ filter: "hue-rotate(80deg) brightness(2)" }} />
-            </div>
-          </div>
+          {Array.from({ length: 30 }).map((_, i) => (
+            <div
+              key={i}
+              className="absolute rounded-full"
+              style={{
+                left: `${40 + Math.random() * 40}%`,
+                top: `${Math.random() * 100}%`,
+                width: `${2 + Math.random() * 4}px`,
+                height: `${2 + Math.random() * 4}px`,
+                background: `rgba(${150 + Math.random() * 100}, 255, ${150 + Math.random() * 100}, ${0.4 + Math.random() * 0.4})`,
+                animation: `tempestParticle ${0.6 + Math.random() * 1.2}s ease-in-out ${Math.random() * 0.5}s infinite`,
+                boxShadow: `0 0 ${4 + Math.random() * 6}px rgba(100, 255, 100, 0.5)`,
+              }}
+            />
+          ))}
         </div>
       )}
       <div
         style={{
           position: "absolute",
           inset: 0,
-          transform: fujinZoom ? "scale(1.45)" : "scale(1)",
-          transformOrigin: fujinOrigin,
-          transition: fujinZoom ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
-          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : tempestVortexActive ? "contrast(1.05) saturate(1.1)" : "none",
+          transform: fujinZoom ? "scale(1.45)" : tempestVortexActive ? "scale(1.3)" : "scale(1)",
+          transformOrigin: fujinZoom ? fujinOrigin : tempestVortexActive ? "70% 55%" : "50% 50%",
+          transition: fujinZoom ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : tempestVortexActive ? "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
+          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : tempestVortexActive ? "contrast(1.1) saturate(1.15)" : "none",
         }}
       >
       <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" />
@@ -1063,6 +1062,7 @@ export default function BattleScreen({
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               opacity: fujinDashPhase === "fadeout" ? 0 : 1,
+              filter: dodgeBlur && dodgeBlur.type === "player" ? "blur(3px) opacity(0.6)" : "none",
               transition: animPhase === "fujinSlice"
                 ? fujinDashPhase === "dash"
                   ? "left 0.18s cubic-bezier(0.1,0,0.2,1), bottom 0.18s cubic-bezier(0.1,0,0.2,1)"
@@ -1086,7 +1086,7 @@ export default function BattleScreen({
               <div className="absolute inset-0 z-30 animate-[flashDamage_0.4s_ease-out]" style={{ background: "radial-gradient(circle, rgba(239,68,68,0.5) 0%, transparent 70%)" }} />
             )}
             {fireHitSfx && (
-              <div className="absolute z-30" style={{ top: "-60%", left: "-55%", width: "210%", height: "210%", pointerEvents: "none" }}>
+              <div className="absolute z-30" style={{ top: "-30%", left: "-55%", width: "210%", height: "210%", pointerEvents: "none" }}>
                 <SpriteAnimator
                   spriteSheet={sfxFireBurst}
                   frameWidth={96}
@@ -1175,6 +1175,8 @@ export default function BattleScreen({
                 style={{
                   left: `${partyPos.x}%`,
                   bottom: `${partyPos.y}%`,
+                  filter: dodgeBlur && dodgeBlur.type === "party" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
+                  transition: "filter 0.2s ease",
                 }}
               >
                 <SpriteAnimator
@@ -1260,7 +1262,10 @@ export default function BattleScreen({
           {battle.enemies.map((enemy, idx) => {
             const isDead = enemy.currentHp <= 0;
             const enemyHpPct = (enemy.currentHp / enemy.stats.hp) * 100;
-            const isTargetable = !isDead && !isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"));
+            const isTargetable = !isDead && (
+              (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
+              (battle.phase === "partyTurn" && partyAction === "selectTarget")
+            );
             const isHit = enemyHitIdx === idx;
             const spriteImg = getEnemySprite(enemy.id);
             const isBoss = enemy.isBoss;
@@ -1303,50 +1308,63 @@ export default function BattleScreen({
                 </div>
 
                 <div className={`relative ${isDead ? "" : "animate-[idleBob_2.8s_ease-in-out_infinite]"}`} style={{ animationDelay: `${idx * 0.5}s` }}>
-                  {isTargetable && (
-                    <div className="absolute -inset-3 rounded-lg border border-yellow-400/30 animate-pulse z-0" style={{ boxShadow: "0 0 15px rgba(250,204,21,0.15)" }} />
-                  )}
+                  
                   {isHit && (
                     <div className="absolute inset-0 z-20 animate-[flashDamage_0.3s_ease-out]" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.7) 0%, transparent 70%)" }} />
                   )}
-                  {windAttackVfx === idx && (
-                    <div className="absolute z-25 pointer-events-none" style={{ top: "-60%", left: "-50%", width: "200%", height: "200%", filter: "drop-shadow(0 0 8px rgba(100,255,100,0.6))" }}>
-                      <SpriteAnimator
-                        spriteSheet={vfxWindSlash1}
-                        frameWidth={128}
-                        frameHeight={128}
-                        totalFrames={9}
-                        fps={16}
-                        scale={2.5}
-                        loop={false}
-                        onComplete={() => setWindAttackVfx(null)}
-                        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
-                      />
-                    </div>
-                  )}
-                  {windSpellVfx && windSpellVfx.targets.includes(idx) && (
+                  
+                  {windSpellVfx && windSpellVfx.targets.includes(idx) && windSpellVfx.type !== "tempest" && (
                     <div className="absolute z-25 pointer-events-none" style={{
-                      top: windSpellVfx.type === "tempest" ? "-80%" : "-60%",
-                      left: windSpellVfx.type === "tempest" ? "-70%" : "-50%",
-                      width: windSpellVfx.type === "tempest" ? "240%" : "200%",
-                      height: windSpellVfx.type === "tempest" ? "240%" : "200%",
+                      top: "-60%",
+                      left: "-50%",
+                      width: "200%",
+                      height: "200%",
                       filter: "drop-shadow(0 0 10px rgba(100,255,100,0.7))",
                     }}>
-                      {windSpellVfx.type === "tempest" && (
-                        <div className="absolute inset-0 animate-[spin_0.8s_linear_infinite]" style={{ opacity: 0.6 }}>
-                          <img src={vfxWindVortex} alt="" className="w-full h-full" style={{ mixBlendMode: "screen", filter: "hue-rotate(80deg) brightness(1.5)" }} />
-                        </div>
-                      )}
                       <SpriteAnimator
                         spriteSheet={windSpellVfx.type === "windBlade" ? vfxWindSlash2 : vfxWindSlash3}
                         frameWidth={128}
                         frameHeight={128}
                         totalFrames={windSpellVfx.type === "windBlade" ? 7 : 9}
-                        fps={windSpellVfx.type === "tempest" ? 12 : 14}
-                        scale={windSpellVfx.type === "tempest" ? 3 : 2.5}
-                        loop={windSpellVfx.type === "tempest"}
+                        fps={14}
+                        scale={2.5}
+                        loop={false}
                         style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
                       />
+                    </div>
+                  )}
+                  {windSpellVfx && windSpellVfx.targets.includes(idx) && windSpellVfx.type === "tempest" && (
+                    <div className="absolute z-25 pointer-events-none" style={{
+                      top: "-150%",
+                      left: "-60%",
+                      width: "220%",
+                      height: "300%",
+                    }}>
+                      <div className="absolute inset-0 animate-[tornadoSpin_0.6s_linear_infinite]" style={{
+                        background: "conic-gradient(from 0deg, transparent 0%, rgba(100,255,100,0.3) 25%, transparent 50%, rgba(100,255,100,0.2) 75%, transparent 100%)",
+                        borderRadius: "50%",
+                        filter: "blur(2px)",
+                      }} />
+                      <div className="absolute inset-[10%] animate-[tornadoSpin_0.4s_linear_infinite_reverse]" style={{
+                        background: "conic-gradient(from 90deg, transparent 0%, rgba(150,255,150,0.4) 30%, transparent 55%, rgba(150,255,150,0.3) 80%, transparent 100%)",
+                        borderRadius: "50%",
+                        filter: "blur(1px)",
+                      }} />
+                      <div className="absolute inset-[25%] animate-[tornadoSpin_0.3s_linear_infinite]" style={{
+                        background: "conic-gradient(from 180deg, transparent 0%, rgba(200,255,200,0.5) 35%, transparent 60%, rgba(200,255,200,0.4) 85%, transparent 100%)",
+                        borderRadius: "50%",
+                      }} />
+                      {Array.from({ length: 8 }).map((_, pi) => (
+                        <div key={pi} className="absolute rounded-full" style={{
+                          left: `${30 + Math.random() * 40}%`,
+                          top: `${10 + Math.random() * 80}%`,
+                          width: `${3 + Math.random() * 5}px`,
+                          height: `${3 + Math.random() * 5}px`,
+                          background: `rgba(150, 255, 150, ${0.5 + Math.random() * 0.5})`,
+                          animation: `tempestParticle ${0.4 + Math.random() * 0.8}s ease-in-out ${Math.random() * 0.3}s infinite`,
+                          boxShadow: "0 0 6px rgba(100,255,100,0.6)",
+                        }} />
+                      ))}
                     </div>
                   )}
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
@@ -1392,7 +1410,12 @@ export default function BattleScreen({
                           : enemyAnimStates[idx] === "hurt" ? 10
                           : 8
                         }
-                        scale={3}
+                        scale={
+                          (enemyAnimStates[idx] === "death" || isDead) ? 1.4
+                          : enemyAnimStates[idx] === "attack" ? 2.5
+                          : enemyAnimStates[idx] === "hurt" ? 1.7
+                          : 3
+                        }
                         loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
                         preloadSheets={[dragonLordIdle, dragonLordWalk, dragonLordAttack, dragonLordHurt, dragonLordDeath]}
@@ -1771,10 +1794,58 @@ export default function BattleScreen({
             </div>
           )}
 
-          {(battle.phase === "enemyTurn" || battle.phase === "partyTurn" || (battle.phase === "animating" && animPhase !== "idle")) && battle.phase !== "victory" && battle.phase !== "defeat" && (
+          {battle.phase === "partyTurn" && battle.phase !== "victory" && battle.phase !== "defeat" && (() => {
+            const activeMember = battle.party[battle.activePartyIndex];
+            if (!activeMember || activeMember.currentHp <= 0) return null;
+            return (
+              <div className="animate-[fadeIn_0.2s_ease-out]">
+                <p className="text-xs text-purple-300/50 text-center mb-1.5" style={{ color: ELEMENT_COLORS[activeMember.element] }}>
+                  {activeMember.name}'s Turn
+                </p>
+                {partyAction === "menu" && (
+                  <div className="flex gap-2 justify-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-red-950/40 border-red-500/30 text-red-200 hover:bg-red-900/60 text-xs px-3"
+                      onClick={() => setPartyAction("selectTarget")}
+                    >
+                      <Swords className="w-3 h-3 mr-1" /> Attack
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="bg-blue-950/40 border-blue-500/30 text-blue-200 hover:bg-blue-900/60 text-xs px-3"
+                      onClick={() => {
+                        onPartyMemberDefend(battle.activePartyIndex);
+                        setTimeout(() => onAdvancePartyTurn(), 400);
+                      }}
+                    >
+                      <Shield className="w-3 h-3 mr-1" /> Defend
+                    </Button>
+                  </div>
+                )}
+                {partyAction === "selectTarget" && (
+                  <div className="text-center">
+                    <p className="text-xs text-yellow-300/70 animate-pulse">Select a target</p>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-xs text-purple-400/60 mt-1"
+                      onClick={() => setPartyAction("menu")}
+                    >
+                      <ArrowLeft className="w-3 h-3 mr-1" /> Back
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          {(battle.phase === "enemyTurn" || (battle.phase === "animating" && animPhase !== "idle")) && battle.phase !== "victory" && battle.phase !== "defeat" && (
             <div className="text-center py-2">
               <p className="text-sm text-purple-300/60 animate-pulse">
-                {battle.phase === "partyTurn" ? "Party attacking..." : battle.phase === "enemyTurn" ? "Enemies attacking..." : ""}
+                {battle.phase === "enemyTurn" ? "Enemies attacking..." : ""}
               </p>
             </div>
           )}
@@ -1855,6 +1926,17 @@ export default function BattleScreen({
           10% { opacity: 1; }
           70% { opacity: 1; }
           100% { opacity: 0; }
+        }
+        @keyframes tornadoSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+        @keyframes tempestParticle {
+          0% { transform: translate(0, 0) scale(1); opacity: 0.8; }
+          25% { transform: translate(-15px, -20px) scale(1.3); opacity: 1; }
+          50% { transform: translate(10px, -35px) scale(0.8); opacity: 0.6; }
+          75% { transform: translate(-5px, -50px) scale(1.1); opacity: 0.9; }
+          100% { transform: translate(0, -60px) scale(0.5); opacity: 0; }
         }
       `}</style>
     </div>
