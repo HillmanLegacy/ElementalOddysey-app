@@ -1270,22 +1270,29 @@ export default function BattleScreen({
             const bossTranslate = isBossMoving ? `translate(${bossOffset.x}%, ${bossOffset.y}%)` : "";
 
             return (
-              <button
+              <div
                 key={idx}
-                className={`absolute flex flex-col items-center ${isDead ? "opacity-10 pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
+                className="absolute"
                 style={{
                   left: `${pos.x}%`,
                   bottom: `${pos.y}%`,
-                  transform: `scale(${isDead ? 0.4 : pos.z}) ${isTargetable ? "translateY(-4px)" : ""} ${bossTranslate}`,
+                  transform: "translateX(-50%)",
                   zIndex: Math.floor(pos.y),
+                }}
+              >
+              <button
+                className={`${isDead ? "opacity-10 pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
+                style={{
+                  transform: `scale(${isDead ? 0.4 : pos.z}) ${isTargetable ? "translateY(-4px)" : ""} ${bossTranslate}`,
                   transition: "transform 0.5s ease, opacity 0.3s ease",
                 }}
                 onClick={() => handleEnemyClick(idx)}
                 disabled={isDead || !isTargetable}
                 data-testid={`button-enemy-${idx}`}
               >
+                <div className="flex flex-col items-center">
                 {isTargetable && (
-                  <div className="absolute -top-6 left-1/2 -translate-x-1/2 z-30">
+                  <div className="z-30 mb-1">
                     <Target className="w-5 h-5 text-yellow-400 animate-bounce drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
                   </div>
                 )}
@@ -1528,7 +1535,9 @@ export default function BattleScreen({
                   <Progress value={enemyHpPct} className="h-1.5 bg-black/60" />
                   <p className="text-[7px] text-center text-red-300/50 mt-0.5" data-testid={`text-enemy-hp-${idx}`}>{enemy.currentHp}/{enemy.stats.hp}</p>
                 </div>
+                </div>
               </button>
+              </div>
             );
           })}
 
