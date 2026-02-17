@@ -6,7 +6,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, Settings, X, MapPin } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, Settings, X, MapPin, Users } from "lucide-react";
 import { isRegionUnlocked, getRegionTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -155,11 +155,12 @@ interface OverworldProps {
   onShopOpen: (nodeId: number) => void;
   onRest: (nodeId: number) => void;
   onInventory: () => void;
+  onPartyManage: () => void;
   onSave: () => void;
   onRegionChange: (regionId: number) => void;
 }
 
-export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, onInventory, onSave, onRegionChange }: OverworldProps) {
+export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, onInventory, onPartyManage, onSave, onRegionChange }: OverworldProps) {
   const region = REGIONS[player.currentRegion];
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
@@ -656,6 +657,17 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
                 <Backpack className="w-4 h-4 text-amber-400/60" />
                 <span className="tracking-wide">Inventory</span>
               </button>
+              {player.party.length > 0 && (
+                <button
+                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-sm text-amber-100/80 transition-colors"
+                  style={{ background: "rgba(140,100,30,0.15)" }}
+                  onClick={() => { setMenuOpen(false); onPartyManage(); }}
+                  data-testid="button-menu-party"
+                >
+                  <Users className="w-4 h-4 text-amber-400/60" />
+                  <span className="tracking-wide">Party</span>
+                </button>
+              )}
               <button
                 className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-sm text-amber-100/80 transition-colors"
                 style={{ background: "rgba(140,100,30,0.15)" }}

@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember } from "@shared/schema";
-import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier } from "./gameData";
+import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, buildTurnQueue } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 const INITIAL_STATE: GameState = {
@@ -55,11 +55,27 @@ export function useGameState() {
         id: pm.id,
         name: pm.name,
         element: pm.element,
+        level: pm.level,
         stats: { ...pm.stats },
         currentHp: pm.stats.hp,
+        currentMp: pm.stats.mp,
         defending: false,
         spriteId: pm.spriteId,
       }));
+
+      const queue = buildTurnQueue(s.player.stats.agi || 10, battle.party, battle.enemies);
+      battle.turnQueue = queue;
+      battle.turnQueueIndex = 0;
+      if (queue.length > 0) {
+        const first = queue[0];
+        if (first.type === "player") battle.phase = "playerTurn";
+        else if (first.type === "party") {
+          battle.phase = "partyTurn";
+          battle.activePartyIndex = first.index;
+        } else {
+          battle.phase = "enemyTurn";
+        }
+      }
 
       return { ...s, battle, screen: "battle", player: { ...s.player, currentNode: nodeId } };
     });
@@ -104,23 +120,74 @@ export function useGameState() {
     });
   }, []);
 
+  const advanceTurnQueue = useCallback((battle: BattleState, player: PlayerCharacter): BattleState => {
+    if (battle.phase === "victory" || battle.phase === "defeat") return battle;
+
+    let nextIdx = battle.turnQueueIndex + 1;
+
+    while (nextIdx < battle.turnQueue.length) {
+      const entry = battle.turnQueue[nextIdx];
+      if (entry.type === "player" && battle.playerHp > 0) break;
+      if (entry.type === "party" && battle.party[entry.index]?.currentHp > 0) break;
+      if (entry.type === "enemy" && battle.enemies[entry.index]?.currentHp > 0) break;
+      nextIdx++;
+    }
+
+    if (nextIdx >= battle.turnQueue.length) {
+      const queue = buildTurnQueue(player.stats.agi || 10, battle.party, battle.enemies);
+      battle.turnQueue = queue;
+      battle.turnQueueIndex = 0;
+      battle.turnCount++;
+
+      battle.defending = false;
+      battle.party = battle.party.map(p => ({ ...p, defending: false }));
+
+      if (player.perks.includes("water_regen") && battle.playerHp > 0) {
+        battle.playerHp = Math.min(player.stats.maxHp, battle.playerHp + 5);
+        battle.log = [...battle.log, "Tidal Heal restores 5 HP!"];
+      }
+
+      battle.buffs = battle.buffs
+        .map(b => ({ ...b, turnsRemaining: b.turnsRemaining - 1 }))
+        .filter(b => b.turnsRemaining > 0);
+
+      let startIdx = 0;
+      while (startIdx < queue.length) {
+        const entry = queue[startIdx];
+        if (entry.type === "player" && battle.playerHp > 0) break;
+        if (entry.type === "party" && battle.party[entry.index]?.currentHp > 0) break;
+        if (entry.type === "enemy" && battle.enemies[entry.index]?.currentHp > 0) break;
+        startIdx++;
+      }
+      battle.turnQueueIndex = startIdx;
+      nextIdx = startIdx;
+    } else {
+      battle.turnQueueIndex = nextIdx;
+    }
+
+    if (nextIdx < battle.turnQueue.length) {
+      const entry = battle.turnQueue[nextIdx];
+      if (entry.type === "player") {
+        battle.phase = "playerTurn";
+      } else if (entry.type === "party") {
+        battle.phase = "partyTurn";
+        battle.activePartyIndex = entry.index;
+      } else {
+        battle.phase = "enemyTurn";
+      }
+    }
+
+    return battle;
+  }, []);
+
   const finishPlayerTurn = useCallback(() => {
     setState(s => {
       if (!s.battle || !s.player) return s;
       const battle = { ...s.battle };
-
       if (battle.phase === "victory" || battle.phase === "defeat") return s;
-
-      const firstAliveIdx = battle.party.findIndex(p => p.currentHp > 0);
-      if (firstAliveIdx !== -1) {
-        battle.phase = "partyTurn";
-        battle.activePartyIndex = firstAliveIdx;
-      } else {
-        battle.phase = "enemyTurn";
-      }
-      return { ...s, battle };
+      return { ...s, battle: advanceTurnQueue(battle, s.player) };
     });
-  }, []);
+  }, [advanceTurnQueue]);
 
   const castSpell = useCallback((spell: Spell, targetIndex?: number) => {
     setState(s => {
@@ -220,7 +287,7 @@ export function useGameState() {
     });
   }, []);
 
-  const useItemOverworld = useCallback((itemId: string) => {
+  const useItemOverworld = useCallback((itemId: string, targetPartyIndex?: number) => {
     setState(s => {
       if (!s.player || s.screen !== "inventory") return s;
       const itemIndex = s.player.inventory.findIndex(i => i.id === itemId);
@@ -228,10 +295,26 @@ export function useGameState() {
       const item = s.player.inventory[itemIndex];
       if (item.type !== "consumable") return s;
 
-      const newStats = { ...s.player.stats };
       const newInventory = [...s.player.inventory];
       newInventory.splice(itemIndex, 1);
 
+      if (targetPartyIndex !== undefined && targetPartyIndex >= 0 && s.player.party[targetPartyIndex]) {
+        const newParty = s.player.party.map((m, idx) => {
+          if (idx !== targetPartyIndex) return m;
+          const newMemberStats = { ...m.stats };
+          if (item.effect.type === "heal") {
+            if (item.effect.stat === "hp") {
+              newMemberStats.hp = Math.min(newMemberStats.maxHp, newMemberStats.hp + (item.effect.amount || 0));
+            } else if (item.effect.stat === "mp") {
+              newMemberStats.mp = Math.min(newMemberStats.maxMp, newMemberStats.mp + (item.effect.amount || 0));
+            }
+          }
+          return { ...m, stats: newMemberStats };
+        });
+        return { ...s, player: { ...s.player, party: newParty, inventory: newInventory } };
+      }
+
+      const newStats = { ...s.player.stats };
       if (item.effect.type === "heal") {
         if (item.effect.stat === "hp") {
           newStats.hp = Math.min(newStats.maxHp, newStats.hp + (item.effect.amount || 0));
@@ -286,31 +369,109 @@ export function useGameState() {
     });
   }, []);
 
-  const advancePartyTurn = useCallback(() => {
+  const partyMemberCastSpell = useCallback((partyIndex: number, spell: Spell, targetIndex?: number) => {
     setState(s => {
-      if (!s.battle || s.battle.phase !== "partyTurn") return s;
-      const battle = { ...s.battle };
-      if (battle.phase === "victory" || battle.phase === "defeat") return s;
+      if (!s.battle || !s.player || s.battle.phase !== "partyTurn") return s;
+      const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })), party: s.battle.party.map(p => ({ ...p })) };
+      const member = battle.party[partyIndex];
+      if (!member || member.currentHp <= 0) return s;
 
-      const nextIdx = battle.party.findIndex((p, i) => i > battle.activePartyIndex && p.currentHp > 0);
-      if (nextIdx !== -1) {
-        battle.activePartyIndex = nextIdx;
-      } else {
-        battle.phase = "enemyTurn";
+      if (member.currentMp < spell.mpCost) {
+        battle.log = [...battle.log, `${member.name} doesn't have enough MP!`];
+        return { ...s, battle };
       }
+      member.currentMp -= spell.mpCost;
+
+      if (spell.type === "damage") {
+        if (spell.targetType === "allEnemies") {
+          battle.enemies.forEach(e => {
+            if (e.currentHp <= 0) return;
+            const { damage, isCrit, elementLabel } = calculateDamage(member.stats, e.stats, true, spell.element || member.element, e.element, spell.effect.damageMultiplier);
+            e.currentHp = Math.max(0, e.currentHp - damage);
+            battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${e.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+          });
+        } else if (targetIndex !== undefined) {
+          const target = battle.enemies[targetIndex];
+          if (target && target.currentHp > 0) {
+            const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, true, spell.element || member.element, target.element, spell.effect.damageMultiplier);
+            target.currentHp = Math.max(0, target.currentHp - damage);
+            battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+          }
+        }
+      } else if (spell.type === "heal") {
+        const amount = spell.effect.amount || 0;
+        member.currentHp = Math.min(member.stats.maxHp, member.currentHp + amount);
+        battle.log = [...battle.log, `${member.name} heals for ${amount} HP!`];
+      } else if (spell.type === "buff") {
+        battle.buffs = [...battle.buffs, {
+          name: spell.name,
+          stat: spell.effect.stat || "atk",
+          amount: spell.effect.amount || 0,
+          turnsRemaining: spell.effect.duration || 2,
+        }];
+        battle.log = [...battle.log, `${member.name} casts ${spell.name}!`];
+      }
+
+      const allDead = battle.enemies.every(e => e.currentHp <= 0);
+      if (allDead) {
+        battle.phase = "victory";
+        battle.animation = "victory";
+      }
+
       return { ...s, battle };
     });
   }, []);
+
+  const partyMemberUseItem = useCallback((partyIndex: number, itemId: string) => {
+    setState(s => {
+      if (!s.battle || !s.player || s.battle.phase !== "partyTurn") return s;
+      const battle = { ...s.battle, party: s.battle.party.map(p => ({ ...p })) };
+      const member = battle.party[partyIndex];
+      if (!member || member.currentHp <= 0) return s;
+
+      const itemIndex = s.player.inventory.findIndex(i => i.id === itemId && i.type === "consumable");
+      if (itemIndex === -1) return s;
+      const item = s.player.inventory[itemIndex];
+
+      const newInventory = [...s.player.inventory];
+      newInventory.splice(itemIndex, 1);
+
+      if (item.effect.type === "heal") {
+        if (item.effect.stat === "hp") {
+          const heal = item.effect.amount || 0;
+          if (member.currentHp <= 0) {
+            battle.log = [...battle.log, `${member.name} is unconscious!`];
+            return { ...s, battle };
+          }
+          member.currentHp = Math.min(member.stats.maxHp, member.currentHp + heal);
+          battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${heal} HP!`];
+        } else if (item.effect.stat === "mp") {
+          battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + (item.effect.amount || 0));
+          battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${item.effect.amount} MP!`];
+        }
+      }
+
+      return { ...s, battle, player: { ...s.player, inventory: newInventory } };
+    });
+  }, []);
+
+  const advancePartyTurn = useCallback(() => {
+    setState(s => {
+      if (!s.battle || !s.player || s.battle.phase !== "partyTurn") return s;
+      const battle = { ...s.battle };
+      if (battle.phase === "victory" || battle.phase === "defeat") return s;
+      return { ...s, battle: advanceTurnQueue(battle, s.player) };
+    });
+  }, [advanceTurnQueue]);
 
   const finishPartyTurn = useCallback(() => {
     setState(s => {
-      if (!s.battle || s.battle.phase !== "partyTurn") return s;
+      if (!s.battle || !s.player || s.battle.phase !== "partyTurn") return s;
       const battle = { ...s.battle };
       if (battle.phase === "victory" || battle.phase === "defeat") return s;
-      battle.phase = "enemyTurn";
-      return { ...s, battle };
+      return { ...s, battle: advanceTurnQueue(battle, s.player) };
     });
-  }, []);
+  }, [advanceTurnQueue]);
 
   const lastEnemyDodgedRef = useRef(false);
   const lastEnemyTargetRef = useRef<{ type: "player" | "party"; index: number }>({ type: "player", index: -1 });
@@ -372,9 +533,8 @@ export function useGameState() {
       if (!s.battle || !s.player || (s.battle.phase !== "enemyTurn" && s.battle.phase !== "animating")) return s;
 
       const battle = { ...s.battle, buffs: [...s.battle.buffs], party: s.battle.party.map(p => ({ ...p })) };
-      let hp = battle.playerHp;
 
-      if (hp <= 0) {
+      if (battle.playerHp <= 0) {
         battle.phase = "defeat";
         battle.animation = "defeat";
         battle.defending = false;
@@ -382,38 +542,25 @@ export function useGameState() {
         return { ...s, battle };
       }
 
-      if (s.player.perks.includes("water_regen")) {
-        hp = Math.min(s.player.stats.maxHp, hp + 5);
-        battle.log = [...battle.log, "Tidal Heal restores 5 HP!"];
-      }
-
-      battle.buffs = battle.buffs
-        .map(b => ({ ...b, turnsRemaining: b.turnsRemaining - 1 }))
-        .filter(b => {
-          if (b.turnsRemaining <= 0) {
-            battle.log = [...battle.log, `${b.name} wore off.`];
-            return false;
-          }
-          return true;
-        });
-
-      battle.party.forEach(p => { p.defending = false; });
-
-      battle.playerHp = hp;
-      battle.defending = false;
-      battle.turnCount++;
-      battle.phase = "playerTurn";
-
-      return { ...s, battle };
+      return { ...s, battle: advanceTurnQueue(battle, s.player) };
     });
-  }, []);
+  }, [advanceTurnQueue]);
 
   const endBattle = useCallback((victory: boolean) => {
     setState(s => {
       if (!s.player || !s.battle) return s;
 
       if (!victory) {
-        return { ...s, screen: "overworld", battle: null, player: { ...s.player, stats: { ...s.player.stats, hp: s.player.stats.maxHp, mp: s.player.stats.maxMp } } };
+        return {
+          ...s,
+          screen: "overworld",
+          battle: null,
+          player: {
+            ...s.player,
+            stats: { ...s.player.stats, hp: s.player.stats.maxHp, mp: s.player.stats.maxMp },
+            party: s.player.party.map(m => ({ ...m, stats: { ...m.stats, hp: m.stats.maxHp, mp: m.stats.maxMp } })),
+          },
+        };
       }
 
       const totalXp = s.battle.enemies.reduce((sum, e) => sum + e.xpReward, 0);
@@ -491,6 +638,19 @@ export function useGameState() {
         }
       }
 
+      const syncedParty = s.player.party.map(pm => {
+        const bpm = s.battle!.party.find(bp => bp.id === pm.id);
+        if (!bpm) return pm;
+        return {
+          ...pm,
+          stats: {
+            ...pm.stats,
+            hp: Math.max(0, Math.min(pm.stats.maxHp, bpm.currentHp)),
+            mp: Math.max(0, Math.min(pm.stats.maxMp, bpm.currentMp)),
+          },
+        };
+      });
+
       const updatedPlayer: PlayerCharacter = {
         ...s.player,
         xp: newXp,
@@ -501,6 +661,7 @@ export function useGameState() {
         currentRegion,
         currentNode,
         regionBossDefeats,
+        party: syncedParty,
         stats: {
           ...baseStats,
           hp: Math.min(baseStats.maxHp, s.battle.playerHp),
@@ -645,6 +806,10 @@ export function useGameState() {
         player: {
           ...s.player,
           stats: { ...s.player.stats, hp: s.player.stats.maxHp, mp: s.player.stats.maxMp },
+          party: s.player.party.map(m => ({
+            ...m,
+            stats: { ...m.stats, hp: m.stats.maxHp, mp: m.stats.maxMp },
+          })),
           clearedNodes: s.player.clearedNodes.includes(s.player.currentNode)
             ? s.player.clearedNodes
             : [...s.player.clearedNodes, s.player.currentNode],
@@ -735,6 +900,8 @@ export function useGameState() {
     useItemOverworld,
     partyMemberAttack,
     partyMemberDefend,
+    partyMemberCastSpell,
+    partyMemberUseItem,
     advancePartyTurn,
     finishPartyTurn,
     enemyAttack,

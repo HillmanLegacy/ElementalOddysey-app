@@ -14,6 +14,7 @@ import ShopScreen from "@/components/ShopScreen";
 import InventoryScreen from "@/components/InventoryScreen";
 import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
+import PartyManagementScreen from "@/components/PartyManagementScreen";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
@@ -61,7 +62,7 @@ function Game() {
   const {
     state, setState, setScreen, createCharacter, updatePlayer,
     startBattle, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
-    partyMemberAttack, partyMemberDefend, advancePartyTurn, finishPartyTurn,
+    partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, allocateStat, selectPerk, openShop,
     buyItem, equipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
     confirmUnlock,
@@ -93,6 +94,8 @@ function Game() {
       toast({ title: "Save Failed", description: "Could not save game.", variant: "destructive" });
     }
   };
+
+  const [showPartyManagement, setShowPartyManagement] = useState(false);
 
   const handleContinue = () => {
     if (saves && saves.length > 0) {
@@ -127,22 +130,36 @@ function Game() {
       case "overworld":
         if (!state.player) return null;
         return (
-          <Overworld
-            player={state.player}
-            onNodeSelect={startBattle}
-            onShopOpen={(nodeId: number) => {
-              updatePlayer({ currentNode: nodeId, clearedNodes: state.player!.clearedNodes.includes(nodeId) ? state.player!.clearedNodes : [...state.player!.clearedNodes, nodeId] });
-              openShop();
-            }}
-            onRest={(nodeId: number) => {
-              updatePlayer({ currentNode: nodeId });
-              restAtNode();
-              toast({ title: "Rested", description: "HP and MP fully restored!" });
-            }}
-            onInventory={() => setScreen("inventory")}
-            onSave={handleSave}
-            onRegionChange={changeRegion}
-          />
+          <>
+            <Overworld
+              player={state.player}
+              onNodeSelect={startBattle}
+              onShopOpen={(nodeId: number) => {
+                updatePlayer({ currentNode: nodeId, clearedNodes: state.player!.clearedNodes.includes(nodeId) ? state.player!.clearedNodes : [...state.player!.clearedNodes, nodeId] });
+                openShop();
+              }}
+              onRest={(nodeId: number) => {
+                updatePlayer({ currentNode: nodeId });
+                restAtNode();
+                toast({ title: "Rested", description: "HP and MP fully restored!" });
+              }}
+              onInventory={() => setScreen("inventory")}
+              onPartyManage={() => setShowPartyManagement(true)}
+              onSave={handleSave}
+              onRegionChange={changeRegion}
+            />
+            {showPartyManagement && state.player && (
+              <div className="absolute inset-0 z-50">
+                <PartyManagementScreen
+                  player={state.player}
+                  onRemoveMember={(memberId) => {
+                    updatePlayer({ party: state.player!.party.filter(m => m.id !== memberId) });
+                  }}
+                  onClose={() => setShowPartyManagement(false)}
+                />
+              </div>
+            )}
+          </>
         );
 
       case "battle":
@@ -157,6 +174,8 @@ function Game() {
             onUseItem={useItem}
             onPartyMemberAttack={partyMemberAttack}
             onPartyMemberDefend={partyMemberDefend}
+            onPartyMemberCastSpell={partyMemberCastSpell}
+            onPartyMemberUseItem={partyMemberUseItem}
             onAdvancePartyTurn={advancePartyTurn}
             onFinishPartyTurn={finishPartyTurn}
             onEnemyAttack={enemyAttack}

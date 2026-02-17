@@ -1,4 +1,4 @@
-import type { Enemy, Region, OverworldNode, Perk, ShopItem, PlayerStats, PlayerCharacter, Element, EnergyColor, EnergyShape, BattleState, Spell, PartyMemberDef } from "@shared/schema";
+import type { Enemy, Region, OverworldNode, Perk, ShopItem, PlayerStats, PlayerCharacter, Element, EnergyColor, EnergyShape, BattleState, Spell, PartyMemberDef, TurnQueueEntry, BattlePartyMember } from "@shared/schema";
 
 export const COLOR_MAP: Record<string, string> = {
   Red: "#ef4444",
@@ -208,18 +208,22 @@ const ENEMY_POOL: Omit<Enemy, "stats">[] = [
 
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number): Enemy {
   const lv = base.level * scaleFactor;
+  const isFireDemon = base.id === "slime_fire";
+  const demonMult = isFireDemon ? 1.15 : 1.0;
+  const vary = base.isBoss ? () => 1.0 : () => 0.9 + Math.random() * 0.2;
+  const hp = Math.floor((13 + lv * 10) * vary() * demonMult);
   return {
     ...base,
     stats: {
-      hp: Math.floor(13 + lv * 10),
-      maxHp: Math.floor(13 + lv * 10),
-      atk: Math.floor(5 + lv * 3),
-      def: Math.floor(3 + lv * 2),
-      agi: Math.floor(4 + lv * 1.5),
-      int: Math.floor(5 + lv * 2),
-      luck: Math.floor(2 + lv),
-      mp: Math.floor(20 + lv * 5),
-      maxMp: Math.floor(20 + lv * 5),
+      hp,
+      maxHp: hp,
+      atk: Math.floor((5 + lv * 3) * vary() * demonMult),
+      def: Math.floor((3 + lv * 2) * vary() * demonMult),
+      agi: Math.floor((4 + lv * 1.5) * vary()),
+      int: Math.floor((5 + lv * 2) * vary() * demonMult),
+      luck: Math.floor((2 + lv) * vary()),
+      mp: Math.floor((20 + lv * 5) * vary()),
+      maxMp: Math.floor((20 + lv * 5) * vary()),
     },
   };
 }
@@ -399,6 +403,27 @@ export function getPlayerSpells(player: PlayerCharacter): Spell[] {
   return spells;
 }
 
+export function getPartyMemberSpells(element: Element): Spell[] {
+  const elementSpellMap: Record<Element, string[]> = {
+    Fire: ["fire_bolt"],
+    Water: ["aqua_wave"],
+    Wind: ["wind_blade", "gale_slash"],
+    Earth: ["earth_quake"],
+    Lightning: ["thunder"],
+    Shadow: ["shadow_strike"],
+    Light: ["holy_light"],
+    Ice: ["ice_lance"],
+  };
+
+  const spells: Spell[] = [];
+  const elementSpells = elementSpellMap[element] || [];
+  for (const spellId of elementSpells) {
+    const spell = SPELLS.find(s => s.id === spellId);
+    if (spell) spells.push(spell);
+  }
+  return spells;
+}
+
 export function getShopItems(region: Region): ShopItem[] {
   const tier = region.id + 1;
   return [
@@ -467,6 +492,27 @@ export function checkDodge(defender: PlayerStats): boolean {
   return Math.random() < dodgeChance;
 }
 
+export function buildTurnQueue(
+  playerAgi: number,
+  party: BattlePartyMember[],
+  enemies: (Enemy & { currentHp: number })[]
+): TurnQueueEntry[] {
+  const entries: TurnQueueEntry[] = [];
+  entries.push({ type: "player", index: 0, agi: playerAgi });
+  party.forEach((p, i) => {
+    if (p.currentHp > 0) {
+      entries.push({ type: "party", index: i, agi: p.stats.agi || 10 });
+    }
+  });
+  enemies.forEach((e, i) => {
+    if (e.currentHp > 0) {
+      entries.push({ type: "enemy", index: i, agi: e.stats.agi || 10 });
+    }
+  });
+  entries.sort((a, b) => b.agi - a.agi);
+  return entries;
+}
+
 export function initBattle(enemies: Enemy[]): BattleState {
   return {
     phase: "start",
@@ -484,5 +530,7 @@ export function initBattle(enemies: Enemy[]): BattleState {
     turnCount: 0,
     party: [],
     activePartyIndex: 0,
+    turnQueue: [],
+    turnQueueIndex: 0,
   };
 }

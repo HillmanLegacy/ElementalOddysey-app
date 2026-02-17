@@ -24,6 +24,8 @@ import gruntHurt3 from "@/assets/audio/grunt-hurt-3.mp3";
 import gruntHurt4 from "@/assets/audio/grunt-hurt-4.mp3";
 import stabWhoosh1 from "@/assets/audio/stab-whoosh-1.mp3";
 import stabWhoosh2 from "@/assets/audio/stab-whoosh-2.mp3";
+import fireballLaunch from "@/assets/audio/fire-demon-fireball.wav";
+import explosionMedium from "@/assets/audio/explosion-medium.wav";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
@@ -36,6 +38,8 @@ const SFX_GROUPS = {
   gruntAttack: [gruntAttack1, gruntAttack2, gruntAttack3, gruntAttack4],
   gruntHurt: [gruntHurt1, gruntHurt2, gruntHurt3, gruntHurt4],
   stabWhoosh: [stabWhoosh1, stabWhoosh2],
+  fireballLaunch: [fireballLaunch],
+  explosion: [explosionMedium],
 } as const;
 
 export type SfxName = keyof typeof SFX_GROUPS;

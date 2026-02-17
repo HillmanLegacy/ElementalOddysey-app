@@ -5,7 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
-import { ELEMENT_COLORS, getPlayerSpells } from "@/lib/gameData";
+import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells } from "@/lib/gameData";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
 import { playSfx } from "@/lib/sfx";
@@ -111,6 +111,8 @@ interface BattleScreenProps {
   onUseItem: (itemId: string) => void;
   onPartyMemberAttack: (partyIndex: number, targetIndex: number) => void;
   onPartyMemberDefend: (partyIndex: number) => void;
+  onPartyMemberCastSpell: (partyIndex: number, spell: Spell, targetIndex?: number) => void;
+  onPartyMemberUseItem: (partyIndex: number, itemId: string) => void;
   onAdvancePartyTurn: () => void;
   onFinishPartyTurn: () => void;
   onEnemyAttack: (enemyIndex: number) => { dodged: boolean; target: { type: "player" | "party"; index: number } };
@@ -123,7 +125,7 @@ interface BattleScreenProps {
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice";
 
 export default function BattleScreen({
-  player, battle, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
+  player, battle, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
 }: BattleScreenProps) {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
@@ -148,10 +150,12 @@ export default function BattleScreen({
   const [fujinTargetIdx, setFujinTargetIdx] = useState<number | null>(null);
   const [fujinDashPhase, setFujinDashPhase] = useState<"none" | "windup" | "dash" | "strike" | "fadeout" | "return">("none");
   const [partyAnimIndex, setPartyAnimIndex] = useState(-1);
-  const [partyAnimPhase, setPartyAnimPhase] = useState<"idle" | "attacking" | "done">("idle");
-  const [partyAction, setPartyAction] = useState<"menu" | "selectTarget">("menu");
+  const [partyAnimPhase, setPartyAnimPhase] = useState<"idle" | "runToEnemy" | "attacking" | "runBack" | "done">("idle");
+  const [partyTargetIdx, setPartyTargetIdx] = useState<number | null>(null);
+  const [partyAction, setPartyAction] = useState<"menu" | "selectTarget" | "selectMagicTarget" | "showSpells" | "showItems">("menu");
+  const [partySelectedSpell, setPartySelectedSpell] = useState<Spell | null>(null);
   const [partyHurtIndex, setPartyHurtIndex] = useState(-1);
-  const [dodgeBlur, setDodgeBlur] = useState<{ type: "player" | "party"; index: number } | null>(null);
+  const [dodgeBlur, setDodgeBlur] = useState<{ type: "player" | "party" | "enemy"; index: number } | null>(null);
   const [windAttackVfx, setWindAttackVfx] = useState<number | null>(null);
   const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
   const [tempestVortexActive, setTempestVortexActive] = useState(false);
@@ -552,7 +556,7 @@ export default function BattleScreen({
       }
     } else if (enemy.element === "Fire" && !enemy.isBoss) {
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-      playSfx("stabWhoosh");
+      playSfx("fireballLaunch", 0.8);
 
       scheduleTimer(() => {
         setFireballAnim({ fromX: pos.x, fromY: pos.y, active: true });
@@ -570,19 +574,19 @@ export default function BattleScreen({
             setFireHitSfx(true);
             setAnimPhase("hurt");
           }
-          playSfx("hitMetal");
+          playSfx("explosion", 0.7);
           scheduleTimer(() => setShakeScreen(false), 500);
         } else {
           setDodgeBlur(result.target);
           scheduleTimer(() => setDodgeBlur(null), 600);
         }
-      }, 950);
+      }, 750);
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
         setAnimPhase("idle");
         scheduleTimer(onDone, 300);
-      }, 1100);
+      }, 900);
     } else if (isFrostLizard(enemy)) {
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
       playSfx("magicRing", 0.6);
@@ -751,45 +755,48 @@ export default function BattleScreen({
       setPartyAnimIndex(-1);
       setPartyAnimPhase("idle");
       setPartyAction("menu");
+      setPartyTargetIdx(null);
+      setPartySelectedSpell(null);
       return;
     }
 
     setPartyAnimIndex(battle.activePartyIndex);
     setPartyAction("menu");
+    setPartySelectedSpell(null);
   }, [battle.phase, battle.activePartyIndex]);
 
-  useEffect(() => {
-    if (battle.phase === "enemyTurn" && prevPhaseRef.current !== "enemyTurn") {
-      const aliveEnemyIndices = battle.enemies
-        .map((e, i) => ({ enemy: e, idx: i }))
-        .filter(({ enemy }) => enemy.currentHp > 0);
+  const prevQueueIdxRef = useRef(-1);
 
-      if (aliveEnemyIndices.length === 0) {
+  useEffect(() => {
+    const isNewEnemyTurn = battle.phase === "enemyTurn" && (
+      prevPhaseRef.current !== "enemyTurn" || prevQueueIdxRef.current !== battle.turnQueueIndex
+    );
+    if (isNewEnemyTurn) {
+      prevQueueIdxRef.current = battle.turnQueueIndex;
+      const currentEntry = battle.turnQueue[battle.turnQueueIndex];
+      if (!currentEntry || currentEntry.type !== "enemy") {
         onEnemyTurnEnd();
         prevPhaseRef.current = battle.phase;
         return;
       }
 
-      let currentSeq = 0;
-      const runNextEnemy = () => {
-        if (currentSeq >= aliveEnemyIndices.length || battle.playerHp <= 0) {
-          scheduleTimer(() => {
-            onEnemyTurnEnd();
-          }, 1000);
-          return;
-        }
-        const { enemy, idx } = aliveEnemyIndices[currentSeq];
-        currentSeq++;
-        animateEnemyAttack(idx, enemy, runNextEnemy);
-      };
+      const enemyIdx = currentEntry.index;
+      const enemy = battle.enemies[enemyIdx];
+      if (!enemy || enemy.currentHp <= 0) {
+        scheduleTimer(() => onEnemyTurnEnd(), 200);
+        prevPhaseRef.current = battle.phase;
+        return;
+      }
 
-      runNextEnemy();
+      animateEnemyAttack(enemyIdx, enemy, () => {
+        scheduleTimer(() => onEnemyTurnEnd(), 800);
+      });
 
       prevPhaseRef.current = battle.phase;
       return;
     }
     prevPhaseRef.current = battle.phase;
-  }, [battle.phase, onEnemyTurnEnd, battle.enemies, scheduleTimer, animateEnemyAttack]);
+  }, [battle.phase, battle.turnQueueIndex, onEnemyTurnEnd, battle.enemies, scheduleTimer, animateEnemyAttack]);
 
   useEffect(() => {
     return () => clearEnemyTurnTimers();
@@ -874,6 +881,8 @@ export default function BattleScreen({
 
   const isInputBlocked = animPhase !== "idle" || battle.phase !== "playerTurn";
 
+  const partyRunBackHandled = useRef(false);
+
   const handleEnemyClick = (idx: number) => {
     if (battle.phase === "partyTurn" && partyAction === "selectTarget") {
       const target = battle.enemies[idx];
@@ -882,14 +891,20 @@ export default function BattleScreen({
       const pIdx = battle.activePartyIndex;
       const member = battle.party[pIdx];
       if (!member || member.currentHp <= 0) return;
-      setPartyAnimPhase("attacking");
+      setPartyTargetIdx(idx);
+      setPartyAnimPhase("runToEnemy");
       setPartyAction("menu");
-      onPartyMemberAttack(pIdx, idx);
-      setTimeout(() => {
-        setPartyAnimPhase("idle");
-        if (battle.enemies.every(e => e.currentHp <= 0)) return;
-        onAdvancePartyTurn();
-      }, 600);
+      return;
+    }
+    if (battle.phase === "partyTurn" && partyAction === "selectMagicTarget" && partySelectedSpell) {
+      const target = battle.enemies[idx];
+      if (!target || target.currentHp <= 0) return;
+      const pIdx = battle.activePartyIndex;
+      onPartyMemberCastSpell(pIdx, partySelectedSpell, idx);
+      playSfx("magicRing");
+      setPartySelectedSpell(null);
+      setPartyAction("menu");
+      setTimeout(() => onAdvancePartyTurn(), 600);
       return;
     }
     if (isInputBlocked) return;
@@ -913,7 +928,13 @@ export default function BattleScreen({
   };
 
   const fujinZoomTarget = fujinTargetIdx !== null ? ENEMY_POSITIONS[fujinTargetIdx % ENEMY_POSITIONS.length] : null;
-  const fujinOrigin = fujinZoomTarget ? `${(PLAYER_POS.x + fujinZoomTarget.x) / 2}% ${(100 - (PLAYER_POS.y + fujinZoomTarget.y) / 2)}%` : "50% 50%";
+  const fujinOrigin = (() => {
+    if (!fujinZoomTarget) return "50% 50%";
+    if (fujinDashPhase === "dash" || fujinDashPhase === "strike" || fujinDashPhase === "fadeout") {
+      return `${playerPos.x}% ${100 - playerPos.y}%`;
+    }
+    return `${(PLAYER_POS.x + fujinZoomTarget.x) / 2}% ${(100 - (PLAYER_POS.y + fujinZoomTarget.y) / 2)}%`;
+  })();
 
   return (
     <div className={`relative w-full h-screen overflow-hidden ${shakeScreen ? "animate-[shake_0.3s_ease-out]" : ""}`}>
@@ -1163,41 +1184,91 @@ export default function BattleScreen({
           {battle.party.length > 0 && battle.party.map((member, idx) => {
             const spriteInfo = PARTY_SPRITE_MAP[member.spriteId];
             if (!spriteInfo) return null;
-            const isAttacking = partyAnimIndex === idx && partyAnimPhase === "attacking";
+            const isActiveParty = partyAnimIndex === idx;
+            const isRunning = isActiveParty && (partyAnimPhase === "runToEnemy" || partyAnimPhase === "runBack");
+            const isAttacking = isActiveParty && partyAnimPhase === "attacking";
             const isHurt = partyHurtIndex === idx;
             const isDead = member.currentHp <= 0;
-            const partyPos = PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
+            const basePos = PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
+
+            let posX = basePos.x;
+            let posY = basePos.y;
+            if (isActiveParty && partyTargetIdx !== null) {
+              const tgt = ENEMY_POSITIONS[partyTargetIdx % ENEMY_POSITIONS.length];
+              if (partyAnimPhase === "runToEnemy" || partyAnimPhase === "attacking") {
+                posX = tgt.x - 15;
+                posY = tgt.y;
+              }
+            }
+
+            const spriteSheet = isRunning && spriteInfo.run
+              ? spriteInfo.run
+              : isHurt ? spriteInfo.hurt
+              : isAttacking ? spriteInfo.attack
+              : spriteInfo.idle;
+            const spriteFrames = isRunning && spriteInfo.runFrames
+              ? spriteInfo.runFrames
+              : isHurt ? spriteInfo.hurtFrames
+              : isAttacking ? spriteInfo.attackFrames
+              : spriteInfo.idleFrames;
 
             return (
               <div
                 key={member.id}
                 className={`absolute z-20 flex flex-col items-center ${isDead ? 'opacity-30' : ''}`}
                 style={{
-                  left: `${partyPos.x}%`,
-                  bottom: `${partyPos.y}%`,
+                  left: `${posX}%`,
+                  bottom: `${posY}%`,
                   filter: dodgeBlur && dodgeBlur.type === "party" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
-                  transition: "filter 0.2s ease",
+                  transition: isRunning
+                    ? "left 0.35s ease-in, bottom 0.35s ease-in, filter 0.2s ease"
+                    : "left 0.35s ease-out, bottom 0.35s ease-out, filter 0.2s ease",
+                }}
+                onTransitionEnd={(e) => {
+                  if (e.propertyName !== "left") return;
+                  if (!isActiveParty) return;
+                  if (partyAnimPhase === "runToEnemy") {
+                    setPartyAnimPhase("attacking");
+                    playSfx("swordSwing");
+                    if (partyTargetIdx !== null) {
+                      onPartyMemberAttack(battle.activePartyIndex, partyTargetIdx);
+                    }
+                    scheduleTimer(() => {
+                      partyRunBackHandled.current = false;
+                      setPartyAnimPhase("runBack");
+                      scheduleTimer(() => {
+                        if (!partyRunBackHandled.current) {
+                          partyRunBackHandled.current = true;
+                          setPartyAnimPhase("idle");
+                          setPartyTargetIdx(null);
+                          scheduleTimer(() => {
+                            if (battle.enemies.every(e => e.currentHp <= 0)) return;
+                            onAdvancePartyTurn();
+                          }, 600);
+                        }
+                      }, 500);
+                    }, 400);
+                  } else if (partyAnimPhase === "runBack" && !partyRunBackHandled.current) {
+                    partyRunBackHandled.current = true;
+                    setPartyAnimPhase("idle");
+                    setPartyTargetIdx(null);
+                    scheduleTimer(() => {
+                      if (battle.enemies.every(e => e.currentHp <= 0)) return;
+                      onAdvancePartyTurn();
+                    }, 600);
+                  }
                 }}
               >
                 <SpriteAnimator
-                  spriteSheet={isHurt ? spriteInfo.hurt : isAttacking ? spriteInfo.attack : spriteInfo.idle}
+                  spriteSheet={spriteSheet}
                   frameWidth={spriteInfo.frameWidth}
                   frameHeight={spriteInfo.frameHeight}
-                  totalFrames={isHurt ? spriteInfo.hurtFrames : isAttacking ? spriteInfo.attackFrames : spriteInfo.idleFrames}
-                  fps={isAttacking ? 12 : 8}
-                  scale={2}
+                  totalFrames={spriteFrames}
+                  fps={isAttacking ? 14 : isRunning ? 14 : 8}
+                  scale={spriteInfo.scale || 3.5}
                   loop={!isAttacking && !isHurt}
                   onComplete={isAttacking || isHurt ? () => {} : undefined}
                 />
-                <div className="mt-1 text-center">
-                  <p className="text-[10px] text-purple-300/70">{member.name}</p>
-                  <div className="w-16 h-1.5 bg-black/40 rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-red-500 rounded-full transition-all duration-300"
-                      style={{ width: `${(member.currentHp / member.stats.maxHp) * 100}%` }}
-                    />
-                  </div>
-                </div>
               </div>
             );
           })}
@@ -1241,19 +1312,36 @@ export default function BattleScreen({
                 </div>
               )}
               {battle.party.length > 0 && (
-                <div className="mt-2 space-y-1 border-t border-purple-500/10 pt-2">
-                  {battle.party.map(member => (
-                    <div key={member.id} className="flex items-center gap-2">
-                      <span className="text-[10px] text-purple-300/60 w-12 truncate">{member.name}</span>
-                      <div className="flex-1 h-1.5 bg-black/40 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-red-500/80 rounded-full transition-all duration-300"
-                          style={{ width: `${Math.max(0, (member.currentHp / member.stats.maxHp) * 100)}%` }}
-                        />
+                <div className="mt-1.5 space-y-1 border-t border-purple-500/15 pt-1.5">
+                  {battle.party.map(member => {
+                    const mHpPct = Math.max(0, (member.currentHp / member.stats.maxHp) * 100);
+                    const mMpPct = Math.max(0, (member.currentMp / member.stats.maxMp) * 100);
+                    const mLowHp = mHpPct <= 25;
+                    const mDead = member.currentHp <= 0;
+                    const isActive = battle.phase === "partyTurn" && battle.party[battle.activePartyIndex]?.id === member.id;
+                    return (
+                      <div key={member.id} className={`rounded px-1.5 py-1 ${isActive ? "bg-yellow-500/10 border border-yellow-500/20" : "bg-white/[0.03]"} ${mDead ? "opacity-40" : ""}`}>
+                        <div className="flex items-center justify-between mb-0.5">
+                          <span className={`text-[9px] font-semibold truncate max-w-[60px] ${isActive ? "text-yellow-200" : "text-purple-200/80"}`}>{member.name}</span>
+                          <span className="text-[7px] text-purple-400/50">Lv.{member.level}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mb-0.5">
+                          <Heart className="w-2 h-2 text-red-400 flex-shrink-0" />
+                          <div className="flex-1 h-1 bg-black/50 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full transition-all duration-300 ${mLowHp ? "animate-pulse bg-red-500" : "bg-red-400"}`} style={{ width: `${mHpPct}%` }} />
+                          </div>
+                          <span className="text-[7px] text-red-300/70 min-w-[28px] text-right">{member.currentHp}/{member.stats.maxHp}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Droplets className="w-2 h-2 text-blue-400 flex-shrink-0" />
+                          <div className="flex-1 h-1 bg-black/50 rounded-full overflow-hidden">
+                            <div className="h-full bg-blue-400 rounded-full transition-all duration-300" style={{ width: `${mMpPct}%` }} />
+                          </div>
+                          <span className="text-[7px] text-blue-300/70 min-w-[28px] text-right">{member.currentMp}/{member.stats.maxMp}</span>
+                        </div>
                       </div>
-                      <span className="text-[10px] text-purple-200/60">{member.currentHp}</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </div>
@@ -1264,7 +1352,7 @@ export default function BattleScreen({
             const enemyHpPct = (enemy.currentHp / enemy.stats.hp) * 100;
             const isTargetable = !isDead && (
               (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
-              (battle.phase === "partyTurn" && partyAction === "selectTarget")
+              (battle.phase === "partyTurn" && (partyAction === "selectTarget" || partyAction === "selectMagicTarget"))
             );
             const isHit = enemyHitIdx === idx;
             const spriteImg = getEnemySprite(enemy.id);
@@ -1289,7 +1377,8 @@ export default function BattleScreen({
                 className={`${isDead ? "opacity-10 pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
                 style={{
                   transform: `scale(${isDead ? 0.4 : pos.z}) ${isTargetable ? "translateY(-4px)" : ""} ${bossTranslate}`,
-                  transition: "transform 0.5s ease, opacity 0.3s ease",
+                  transition: "transform 0.5s ease, opacity 0.3s ease, filter 0.2s ease",
+                  filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
                 }}
                 onClick={() => handleEnemyClick(idx)}
                 disabled={isDead || !isTargetable}
@@ -1797,13 +1886,15 @@ export default function BattleScreen({
           {battle.phase === "partyTurn" && battle.phase !== "victory" && battle.phase !== "defeat" && (() => {
             const activeMember = battle.party[battle.activePartyIndex];
             if (!activeMember || activeMember.currentHp <= 0) return null;
+            const partySpells = getPartyMemberSpells(activeMember.element);
+            const consumables = player.inventory.filter(i => i.type === "consumable");
             return (
               <div className="animate-[fadeIn_0.2s_ease-out]">
                 <p className="text-xs text-purple-300/50 text-center mb-1.5" style={{ color: ELEMENT_COLORS[activeMember.element] }}>
                   {activeMember.name}'s Turn
                 </p>
                 {partyAction === "menu" && (
-                  <div className="flex gap-2 justify-center">
+                  <div className="flex gap-2 justify-center flex-wrap">
                     <Button
                       size="sm"
                       variant="outline"
@@ -1823,16 +1914,97 @@ export default function BattleScreen({
                     >
                       <Shield className="w-3 h-3 mr-1" /> Defend
                     </Button>
+                    {partySpells.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-purple-950/40 border-purple-500/30 text-purple-200 hover:bg-purple-900/60 text-xs px-3"
+                        onClick={() => setPartyAction("showSpells")}
+                      >
+                        <Sparkles className="w-3 h-3 mr-1" /> Magic
+                      </Button>
+                    )}
+                    {consumables.length > 0 && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-green-950/40 border-green-500/30 text-green-200 hover:bg-green-900/60 text-xs px-3"
+                        onClick={() => setPartyAction("showItems")}
+                      >
+                        <Package className="w-3 h-3 mr-1" /> Item
+                      </Button>
+                    )}
                   </div>
                 )}
-                {partyAction === "selectTarget" && (
+                {partyAction === "showSpells" && (
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {partySpells.map(spell => (
+                      <Button
+                        key={spell.id}
+                        size="sm"
+                        variant="ghost"
+                        className={`w-full text-xs justify-start px-2 py-1 ${activeMember.currentMp < spell.mpCost ? "opacity-40" : "text-purple-200 hover:bg-purple-900/40"}`}
+                        disabled={activeMember.currentMp < spell.mpCost}
+                        onClick={() => {
+                          if (spell.targetType === "enemy") {
+                            setPartySelectedSpell(spell);
+                            setPartyAction("selectMagicTarget");
+                          } else if (spell.targetType === "allEnemies") {
+                            onPartyMemberCastSpell(battle.activePartyIndex, spell);
+                            playSfx("magicRing");
+                            setTimeout(() => onAdvancePartyTurn(), 600);
+                            setPartyAction("menu");
+                          } else {
+                            onPartyMemberCastSpell(battle.activePartyIndex, spell);
+                            playSfx("magicRing");
+                            setTimeout(() => onAdvancePartyTurn(), 600);
+                            setPartyAction("menu");
+                          }
+                        }}
+                      >
+                        <Sparkles className="w-3 h-3 mr-1.5 flex-shrink-0" style={{ color: ELEMENT_COLORS[spell.element || activeMember.element] }} />
+                        <span className="flex-1 text-left">{spell.name}</span>
+                        <span className="text-blue-400/60 ml-1">{spell.mpCost}MP</span>
+                      </Button>
+                    ))}
+                    <Button size="sm" variant="ghost" className="text-xs text-purple-400/60 w-full" onClick={() => setPartyAction("menu")}>
+                      <ArrowLeft className="w-3 h-3 mr-1" /> Back
+                    </Button>
+                  </div>
+                )}
+                {partyAction === "showItems" && (
+                  <div className="space-y-1 max-h-32 overflow-y-auto">
+                    {consumables.map(item => (
+                      <Button
+                        key={item.id}
+                        size="sm"
+                        variant="ghost"
+                        className="w-full text-xs justify-start px-2 py-1 text-green-200 hover:bg-green-900/40"
+                        onClick={() => {
+                          onPartyMemberUseItem(battle.activePartyIndex, item.id);
+                          setPartyAction("menu");
+                          setTimeout(() => onAdvancePartyTurn(), 400);
+                        }}
+                      >
+                        <Heart className="w-3 h-3 mr-1.5 flex-shrink-0 text-red-400" />
+                        <span className="flex-1 text-left">{item.name}</span>
+                      </Button>
+                    ))}
+                    <Button size="sm" variant="ghost" className="text-xs text-purple-400/60 w-full" onClick={() => setPartyAction("menu")}>
+                      <ArrowLeft className="w-3 h-3 mr-1" /> Back
+                    </Button>
+                  </div>
+                )}
+                {(partyAction === "selectTarget" || partyAction === "selectMagicTarget") && (
                   <div className="text-center">
-                    <p className="text-xs text-yellow-300/70 animate-pulse">Select a target</p>
+                    <p className="text-xs text-yellow-300/70 animate-pulse">
+                      {partyAction === "selectMagicTarget" ? `Cast ${partySelectedSpell?.name} - Select target` : "Select a target"}
+                    </p>
                     <Button
                       size="sm"
                       variant="ghost"
                       className="text-xs text-purple-400/60 mt-1"
-                      onClick={() => setPartyAction("menu")}
+                      onClick={() => { setPartyAction("menu"); setPartySelectedSpell(null); }}
                     >
                       <ArrowLeft className="w-3 h-3 mr-1" /> Back
                     </Button>

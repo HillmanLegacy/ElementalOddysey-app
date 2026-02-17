@@ -188,10 +188,18 @@ export interface BattlePartyMember {
   id: string;
   name: string;
   element: Element;
+  level: number;
   stats: PlayerStats;
   currentHp: number;
+  currentMp: number;
   defending: boolean;
   spriteId: string;
+}
+
+export interface TurnQueueEntry {
+  type: "player" | "party" | "enemy";
+  index: number;
+  agi: number;
 }
 
 export interface BattleState {
@@ -210,6 +218,8 @@ export interface BattleState {
   turnCount: number;
   party: BattlePartyMember[];
   activePartyIndex: number;
+  turnQueue: TurnQueueEntry[];
+  turnQueueIndex: number;
 }
 
 export interface ShopItem extends InventoryItem {
