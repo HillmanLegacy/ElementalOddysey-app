@@ -154,7 +154,7 @@ function Game() {
               onRegionChange={changeRegion}
             />
             {showPartyManagement && state.player && (
-              <div className="absolute inset-0 z-50">
+              <div className="absolute inset-0 z-[300]">
                 <PartyManagementScreen
                   player={state.player}
                   onRemoveMember={(memberId) => {
