@@ -221,39 +221,39 @@ export default function BattleScreen({
     if (evt.id <= lastDmgEventIdRef.current) return;
     lastDmgEventIdRef.current = evt.id;
 
-    const ENEMY_POS = [
+    const ENEMY_POS_DMG = [
       { x: 58, y: 42 },
       { x: 72, y: 36 },
       { x: 65, y: 52 },
       { x: 80, y: 48 },
     ];
-    const PLAYER_DMG_POS = { x: 14, y: 30 };
-    const PARTY_DMG_POS = [
-      { x: 6, y: 55 },
-      { x: 14, y: 58 },
-      { x: 22, y: 55 },
-    ];
+    const PLAYER_BOTTOM = 18;
+    const PARTY_BOTTOMS = [12, 10, 12];
 
     let posX: number, posY: number;
     let color = "#ef4444";
 
     if (evt.targetType === "enemy") {
-      const ep = ENEMY_POS[evt.targetIndex % ENEMY_POS.length];
+      const ep = ENEMY_POS_DMG[evt.targetIndex % ENEMY_POS_DMG.length];
       posX = ep.x + (Math.random() * 6 - 3);
       posY = 100 - ep.y - 15 + (Math.random() * 4 - 2);
       color = evt.isCrit ? "#fbbf24" : "#ef4444";
     } else if (evt.targetType === "player") {
-      posX = PLAYER_DMG_POS.x;
-      posY = PLAYER_DMG_POS.y;
+      posX = 12 + (Math.random() * 4 - 2);
+      posY = 100 - PLAYER_BOTTOM - 18;
       color = evt.element === "Fire" ? "#ff6b2b" : "#ef4444";
     } else {
-      const pp = PARTY_DMG_POS[evt.targetIndex % PARTY_DMG_POS.length];
-      posX = pp.x;
-      posY = pp.y;
+      const partyX = [4, 12, 20];
+      const idx = evt.targetIndex % PARTY_BOTTOMS.length;
+      posX = partyX[idx] + (Math.random() * 4 - 2);
+      posY = 100 - PARTY_BOTTOMS[idx] - 16;
       color = "#ef4444";
     }
 
-    const text = (evt.isCrit ? "CRIT " : "") + evt.amount;
+    if (evt.isHeal) {
+      color = "#22c55e";
+    }
+    const text = evt.isHeal ? `+${evt.amount}` : (evt.isCrit ? "CRIT " : "") + evt.amount;
     const id = damageIdRef.current++;
     setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color }]);
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);

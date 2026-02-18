@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ParticleCanvas from "./ParticleCanvas";
+import LavaOverworldBg from "./LavaOverworldBg";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
@@ -312,13 +313,8 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
 
   return (
     <div className="relative w-full h-screen overflow-hidden" data-testid="overworld-screen">
-      {bgImage ? (
-        <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
-          <img src={bgImage} alt="" className="w-full h-full object-cover" style={{ imageRendering: "pixelated" }} />
-          <div className="absolute inset-0" style={{
-            background: "radial-gradient(ellipse at 30% 60%, rgba(255, 80, 20, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 40%, rgba(255, 120, 40, 0.06) 0%, transparent 50%)",
-          }} />
-        </div>
+      {isFireRegion ? (
+        <LavaOverworldBg />
       ) : (
         <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
           <div className="absolute inset-0" style={{

@@ -123,6 +123,7 @@ export function useGameState() {
           const heal = Math.floor(damage * 0.1);
           battle.playerHp = Math.min(s.player.stats.maxHp, battle.playerHp + heal);
           battle.log = [...battle.log, `Soul Drain heals ${heal} HP!`];
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: heal, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
         }
       }
 
@@ -161,6 +162,7 @@ export function useGameState() {
       if (player.perks.includes("water_regen") && battle.playerHp > 0) {
         battle.playerHp = Math.min(player.stats.maxHp, battle.playerHp + 5);
         battle.log = [...battle.log, "Tidal Heal restores 5 HP!"];
+        battle.lastDamageEvent = { id: ++damageEventCounter, amount: 5, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       }
 
       battle.buffs = battle.buffs
@@ -227,6 +229,7 @@ export function useGameState() {
       } else if (spell.type === "heal" && spell.effect.stat === "hp" && spell.effect.amount) {
         battle.playerHp = Math.min(s.player.stats.maxHp, battle.playerHp + spell.effect.amount);
         battle.log = [...battle.log, `${spell.name}! Restored ${spell.effect.amount} HP!`];
+        battle.lastDamageEvent = { id: ++damageEventCounter, amount: spell.effect.amount, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       } else if (spell.type === "damage") {
         const buffedStats = getBuffedStats(s.player.stats, battle.buffs);
         const hasAoe = spell.targetType === "allEnemies" || (s.player.perks.includes("fire_aoe") && s.player.element === "Fire");
@@ -249,6 +252,7 @@ export function useGameState() {
         if (spell.id === "holy_light") {
           battle.playerHp = Math.min(s.player.stats.maxHp, battle.playerHp + 15);
           battle.log = [...battle.log, `Holy Light heals 15 HP!`];
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: 15, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
         }
       }
 
@@ -269,6 +273,7 @@ export function useGameState() {
       const mpRestore = Math.floor(s.player.stats.maxMp * 0.1);
       battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + mpRestore);
       battle.log = [...battle.log, `You raise your guard! Restored ${mpRestore} MP.`];
+      battle.lastDamageEvent = { id: ++damageEventCounter, amount: mpRestore, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       battle.animation = "defend";
       return { ...s, battle };
     });
@@ -302,6 +307,7 @@ export function useGameState() {
           battle.log = [...battle.log, `Used ${item.name}! Restored ${item.effect.amount} MP.`];
         }
         battle.lastItemUsed = { stat, amount: item.effect.amount || 0, targetType: "player", targetIndex: -1 };
+        battle.lastDamageEvent = { id: ++damageEventCounter, amount: item.effect.amount || 0, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       }
 
       battle.phase = "enemyTurn";
@@ -434,6 +440,7 @@ export function useGameState() {
         const amount = spell.effect.amount || 0;
         member.currentHp = Math.min(member.stats.maxHp, member.currentHp + amount);
         battle.log = [...battle.log, `${member.name} heals for ${amount} HP!`];
+        battle.lastDamageEvent = { id: ++damageEventCounter, amount, targetType: "party", targetIndex: partyIndex, isCrit: false, isHeal: true };
       } else if (spell.type === "buff") {
         battle.buffs = [...battle.buffs, {
           name: spell.name,
@@ -478,9 +485,11 @@ export function useGameState() {
           }
           member.currentHp = Math.min(member.stats.maxHp, member.currentHp + heal);
           battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${heal} HP!`];
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: heal, targetType: "party", targetIndex: partyIndex, isCrit: false, isHeal: true };
         } else {
           battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + (item.effect.amount || 0));
           battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${item.effect.amount} MP!`];
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: item.effect.amount || 0, targetType: "party", targetIndex: partyIndex, isCrit: false, isHeal: true };
         }
         battle.lastItemUsed = { stat, amount: item.effect.amount || 0, targetType: "party", targetIndex: partyIndex };
       }

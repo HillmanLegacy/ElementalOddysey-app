@@ -231,7 +231,7 @@ export interface BattleState {
   turnQueueIndex: number;
   lastElementLabel?: string;
   lastItemUsed?: { stat: "hp" | "mp"; amount: number; targetType: "player" | "party"; targetIndex: number };
-  lastDamageEvent?: { id: number; amount: number; targetType: "enemy" | "player" | "party"; targetIndex: number; isCrit: boolean; element?: string; label?: string };
+  lastDamageEvent?: { id: number; amount: number; targetType: "enemy" | "player" | "party"; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean };
 }
 
 export interface ShopItem extends InventoryItem {
