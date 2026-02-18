@@ -918,9 +918,9 @@ export default function BattleScreen({
 
       scheduleTimer(() => {
         setFireballAnim(null);
-        playSfx("explosion", 0.7);
         const result = onEnemyAttack(enemyIdx, preTarget);
         if (!result.dodged) {
+          playSfx("explosion", 0.7);
           setShakeScreen(true);
           if (result.target.type === "party") {
             setPartyHurtIndex(result.target.index);
