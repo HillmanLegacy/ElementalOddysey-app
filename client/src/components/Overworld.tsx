@@ -654,7 +654,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
       </div>
 
       {menuOpen && (
-        <div className="absolute inset-0 z-50" onClick={() => setMenuOpen(false)}>
+        <div className="absolute inset-0 z-[200]" onClick={() => setMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/40" />
           <div
             className="absolute top-0 right-0 h-full w-56 bg-black/85 backdrop-blur-md border-l border-white/10 flex flex-col"
@@ -706,7 +706,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
       )}
 
       {hutMenuOpen && (
-        <div className="absolute inset-0 z-50 flex items-center justify-center" onClick={() => setHutMenuOpen(false)}>
+        <div className="absolute inset-0 z-[200] flex items-center justify-center" onClick={() => setHutMenuOpen(false)}>
           <div className="absolute inset-0 bg-black/60" />
           <div
             className="relative w-72 bg-gradient-to-b from-amber-950/95 to-stone-950/95 backdrop-blur-md rounded-xl border border-amber-700/40 overflow-hidden"

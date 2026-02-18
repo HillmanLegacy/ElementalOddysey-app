@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SpriteAnimator from "./SpriteAnimator";
 import ParticleCanvas from "./ParticleCanvas";
-import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells } from "@/lib/gameData";
-import type { PlayerCharacter, PartyMember } from "@shared/schema";
-import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, ArrowLeft, UserMinus, Sparkles } from "lucide-react";
+import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells, ELEMENT_SPELL_UNLOCKS } from "@/lib/gameData";
+import type { PlayerCharacter, PartyMember, Spell } from "@shared/schema";
+import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, ArrowLeft, UserMinus, Sparkles, Crown } from "lucide-react";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import knightIdle from "@/assets/images/knight-idle-4f.png";
@@ -32,13 +32,63 @@ const STAT_ICONS = [
   { key: "luck", label: "LCK", icon: Clover, color: "text-green-400" },
 ];
 
-export default function PartyManagementScreen({ player, onRemoveMember, onClose }: PartyManagementScreenProps) {
-  const [selectedMember, setSelectedMember] = useState<PartyMember | null>(player.party[0] || null);
+interface DisplayMember {
+  id: string;
+  name: string;
+  element: string;
+  level: number;
+  stats: any;
+  spriteId: string;
+  className?: string;
+  isPlayer: boolean;
+  learnedSpells?: string[];
+}
 
-  const activeParty = player.party;
+export default function PartyManagementScreen({ player, onRemoveMember, onClose }: PartyManagementScreenProps) {
+  const playerAsMember: DisplayMember = {
+    id: "__player__",
+    name: player.name,
+    element: player.element,
+    level: player.level,
+    stats: player.stats,
+    spriteId: player.spriteId,
+    isPlayer: true,
+    learnedSpells: player.learnedSpells || [],
+  };
+
+  const partyMembers: DisplayMember[] = player.party.map(pm => ({
+    id: pm.id,
+    name: pm.name,
+    element: pm.element,
+    level: pm.level,
+    stats: pm.stats,
+    spriteId: pm.spriteId,
+    className: pm.className,
+    isPlayer: false,
+    learnedSpells: pm.learnedSpells || [],
+  }));
+
+  const allMembers = [playerAsMember, ...partyMembers];
+
+  const [selectedId, setSelectedId] = useState<string>("__player__");
+  const selectedMember = allMembers.find(m => m.id === selectedId) || allMembers[0];
 
   const getSpriteSheet = (spriteId: string) => IDLE_SHEETS[spriteId] || samuraiIdle;
   const getSpriteInfo = (spriteId: string) => PARTY_SPRITE_DATA[spriteId]?.idle || { frameWidth: 96, frameHeight: 96, totalFrames: 10 };
+
+  const getSpells = (member: DisplayMember): Spell[] => {
+    if (member.isPlayer) {
+      const elementSpells = ELEMENT_SPELL_UNLOCKS[member.element as keyof typeof ELEMENT_SPELL_UNLOCKS] || [];
+      const unlockedIds = elementSpells
+        .filter((s: { level: number }) => s.level <= member.level)
+        .map((s: { spellId: string }) => s.spellId);
+      return getPartyMemberSpells(member.element as any, member.level, member.learnedSpells || [])
+        .length > 0
+        ? getPartyMemberSpells(member.element as any, member.level, member.learnedSpells || [])
+        : [];
+    }
+    return getPartyMemberSpells(member.element as any, member.level || 1, member.learnedSpells || []);
+  };
 
   return (
     <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#12082a] to-[#0a0a1a]">
@@ -52,24 +102,19 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
             </Button>
             <h1 className="text-sm font-bold tracking-wider text-amber-200/90">PARTY</h1>
           </div>
-          <span className="text-[10px] text-purple-300/40">{activeParty.length}/3 Members</span>
+          <span className="text-[10px] text-purple-300/40">{allMembers.length} Members</span>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
           <div className="w-[140px] border-r border-purple-500/10 overflow-y-auto bg-black/20">
-            {activeParty.length === 0 && (
-              <div className="p-3 text-center text-[10px] text-purple-300/30">
-                No party members yet. Defeat bosses to unlock allies!
-              </div>
-            )}
-            {activeParty.map(member => {
+            {allMembers.map(member => {
               const spriteInfo = getSpriteInfo(member.spriteId);
-              const isSelected = selectedMember?.id === member.id;
+              const isSelected = selectedId === member.id;
               return (
                 <button
                   key={member.id}
                   className={`w-full flex items-center gap-2 px-2 py-2 text-left transition-colors border-b border-purple-500/5 ${isSelected ? "bg-purple-500/15 border-l-2 border-l-amber-400/60" : "hover:bg-purple-500/5"}`}
-                  onClick={() => setSelectedMember(member)}
+                  onClick={() => setSelectedId(member.id)}
                 >
                   <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center overflow-hidden">
                     <SpriteAnimator
@@ -83,8 +128,11 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
                     />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-[10px] font-semibold text-purple-100 truncate">{member.name}</div>
-                    <div className="text-[8px]" style={{ color: ELEMENT_COLORS[member.element] }}>{member.element}</div>
+                    <div className="flex items-center gap-1">
+                      <div className="text-[10px] font-semibold text-purple-100 truncate">{member.name}</div>
+                      {member.isPlayer && <Crown className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />}
+                    </div>
+                    <div className="text-[8px]" style={{ color: ELEMENT_COLORS[member.element as keyof typeof ELEMENT_COLORS] }}>{member.element}</div>
                   </div>
                 </button>
               );
@@ -107,28 +155,34 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
                     />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h2 className="text-sm font-bold text-amber-200/90 tracking-wide">{selectedMember.name}</h2>
+                    <div className="flex items-center gap-2">
+                      <h2 className="text-sm font-bold text-amber-200/90 tracking-wide">{selectedMember.name}</h2>
+                      {selectedMember.isPlayer && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/20">LEADER</span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-semibold" style={{ color: ELEMENT_COLORS[selectedMember.element] }}>
+                      <span className="text-[10px] font-semibold" style={{ color: ELEMENT_COLORS[selectedMember.element as keyof typeof ELEMENT_COLORS] }}>
                         {selectedMember.element}
                       </span>
                       <span className="text-[9px] text-purple-300/40">Lv.{selectedMember.level}</span>
-                      <span className="text-[9px] text-purple-300/40">{selectedMember.className}</span>
+                      {selectedMember.className && <span className="text-[9px] text-purple-300/40">{selectedMember.className}</span>}
                     </div>
-                    <div className="mt-1.5 flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-[10px] text-red-300/70 hover:text-red-300 hover:bg-red-500/10 h-6 px-2"
-                        onClick={() => {
-                          onRemoveMember(selectedMember.id);
-                          const remaining = activeParty.filter(m => m.id !== selectedMember.id);
-                          setSelectedMember(remaining[0] || null);
-                        }}
-                      >
-                        <UserMinus className="w-3 h-3 mr-1" /> Remove from Party
-                      </Button>
-                    </div>
+                    {!selectedMember.isPlayer && (
+                      <div className="mt-1.5 flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-[10px] text-red-300/70 hover:text-red-300 hover:bg-red-500/10 h-6 px-2"
+                          onClick={() => {
+                            onRemoveMember(selectedMember.id);
+                            setSelectedId("__player__");
+                          }}
+                        >
+                          <UserMinus className="w-3 h-3 mr-1" /> Remove from Party
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -169,14 +223,14 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
                 <div className="bg-black/30 rounded-lg border border-purple-500/10 p-2.5">
                   <h3 className="text-[9px] tracking-wider text-amber-200/60 mb-2">SPELLS</h3>
                   <div className="space-y-1">
-                    {getPartyMemberSpells(selectedMember.element, selectedMember.level || 1, selectedMember.learnedSpells || []).map(spell => (
+                    {getSpells(selectedMember).map(spell => (
                       <div key={spell.id} className="flex items-center gap-2 px-1.5 py-1 rounded bg-black/20">
-                        <Sparkles className="w-3 h-3 flex-shrink-0" style={{ color: ELEMENT_COLORS[spell.element || selectedMember.element] }} />
+                        <Sparkles className="w-3 h-3 flex-shrink-0" style={{ color: ELEMENT_COLORS[spell.element as keyof typeof ELEMENT_COLORS || selectedMember.element as keyof typeof ELEMENT_COLORS] }} />
                         <span className="text-[10px] text-purple-100 flex-1">{spell.name}</span>
                         <span className="text-[8px] text-blue-300/60">{spell.mpCost}MP</span>
                       </div>
                     ))}
-                    {getPartyMemberSpells(selectedMember.element, selectedMember.level || 1, selectedMember.learnedSpells || []).length === 0 && (
+                    {getSpells(selectedMember).length === 0 && (
                       <span className="text-[9px] text-purple-300/30">No spells available</span>
                     )}
                   </div>
@@ -185,7 +239,7 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
             ) : (
               <div className="flex items-center justify-center h-full">
                 <p className="text-[10px] text-purple-300/30 text-center">
-                  {activeParty.length === 0 ? "Defeat region bosses to unlock party members!" : "Select a party member to view details"}
+                  Select a party member to view details
                 </p>
               </div>
             )}

@@ -219,10 +219,23 @@ export default function BattleScreen({
 
   const startFujinSliceRef = useRef<((targetIdx: number, spell: Spell) => void) | null>(null);
 
+  const pendingWindBlade = useRef<{ targetIdx: number; spell: Spell } | null>(null);
+  const castingNeedsRunBack = useRef(false);
+
   const handleSpellTarget = useCallback((targetIdx: number) => {
     if (!selectedSpell) return;
     if (selectedSpell.animation === "fujinSlice" && startFujinSliceRef.current) {
       startFujinSliceRef.current(targetIdx, selectedSpell);
+      return;
+    }
+    if (selectedSpell.animation === "windBlade") {
+      pendingWindBlade.current = { targetIdx, spell: selectedSpell };
+      setSelectedAction(null);
+      setPendingTargetIdx(targetIdx);
+      onSetAnimating();
+      setAnimPhase("runToEnemy");
+      setSelectedSpell(null);
+      setShowSpells(false);
       return;
     }
     setSelectedAction(null);
@@ -230,11 +243,6 @@ export default function BattleScreen({
     onSetAnimating();
     setAnimPhase("casting");
     playSfx("magicRing", 0.6);
-    if (selectedSpell.animation === "windBlade") {
-      setWindSpellVfx({ type: "windBlade", targets: [targetIdx] });
-      playSfx("whoosh");
-      scheduleTimer(() => setWindSpellVfx(null), 700);
-    }
     onCastSpell(selectedSpell, targetIdx);
     setSelectedSpell(null);
     setShowSpells(false);
@@ -280,11 +288,23 @@ export default function BattleScreen({
     if (e.propertyName !== "left" && e.propertyName !== "bottom") return;
     if (e.propertyName === "bottom") return;
     if (animPhase === "runToEnemy") {
-      setAnimPhase("attacking");
-      playSfx("swordSwing");
-      playSfx("gruntAttack", 0.7);
-      if (pendingTargetIdx !== null) {
-        onAttack(pendingTargetIdx);
+      if (pendingWindBlade.current) {
+        const { targetIdx, spell } = pendingWindBlade.current;
+        pendingWindBlade.current = null;
+        castingNeedsRunBack.current = true;
+        setAnimPhase("casting");
+        playSfx("magicRing", 0.6);
+        setWindSpellVfx({ type: "windBlade", targets: [targetIdx] });
+        playSfx("whoosh");
+        scheduleTimer(() => setWindSpellVfx(null), 700);
+        onCastSpell(spell, targetIdx);
+      } else {
+        setAnimPhase("attacking");
+        playSfx("swordSwing");
+        playSfx("gruntAttack", 0.7);
+        if (pendingTargetIdx !== null) {
+          onAttack(pendingTargetIdx);
+        }
       }
     } else if (animPhase === "runBack" && !runBackHandled.current) {
       runBackHandled.current = true;
@@ -294,7 +314,7 @@ export default function BattleScreen({
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer]);
+  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
@@ -433,10 +453,26 @@ export default function BattleScreen({
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
-      setAnimPhase("idle");
-      setPendingTargetIdx(null);
-      if (battle.phase !== "victory" && battle.phase !== "defeat") {
-        setTimeout(() => onFinishPlayerTurn(), 1000);
+      if (castingNeedsRunBack.current) {
+        castingNeedsRunBack.current = false;
+        runBackHandled.current = false;
+        setAnimPhase("runBack");
+        scheduleTimer(() => {
+          if (!runBackHandled.current) {
+            runBackHandled.current = true;
+            setAnimPhase("idle");
+            setPendingTargetIdx(null);
+            if (battle.phase !== "victory" && battle.phase !== "defeat") {
+              setTimeout(() => onFinishPlayerTurn(), 1000);
+            }
+          }
+        }, 500);
+      } else {
+        setAnimPhase("idle");
+        setPendingTargetIdx(null);
+        if (battle.phase !== "victory" && battle.phase !== "defeat") {
+          setTimeout(() => onFinishPlayerTurn(), 1000);
+        }
       }
     } else if (animPhase === "defending") {
       setAnimPhase("idle");
@@ -1093,7 +1129,7 @@ export default function BattleScreen({
       }
       return PLAYER_POS;
     }
-    if ((animPhase === "runToEnemy" || animPhase === "attacking") && pendingTargetIdx !== null) {
+    if ((animPhase === "runToEnemy" || animPhase === "attacking" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
       return { x: target.x - 8, y: target.y };
     }
