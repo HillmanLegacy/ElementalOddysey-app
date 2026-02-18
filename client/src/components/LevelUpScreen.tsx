@@ -55,8 +55,7 @@ export default function LevelUpScreen({
     .filter(Boolean);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#1a1208] via-[#2a1f0e] to-[#0f0c06]">
-      {/* Torchlight particle effect */}
+    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#1a1208] via-[#2a1f0e] to-[#0f0c06]">
       <ParticleCanvas
         colors={["#ff9800", "#ffb74d", "#ffd54f", "#ffe082"]}
         count={60}
@@ -64,83 +63,94 @@ export default function LevelUpScreen({
         style="burst"
       />
 
-      {/* Vignette overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
 
-      {/* Main content */}
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-        {/* Medieval header section */}
-        <div className="text-center mb-8 animate-[fadeIn_0.6s_ease-out]">
-          <div className="flex items-center justify-center gap-2 mb-3">
-            <Star className="w-8 h-8 text-yellow-500" style={{ imageRendering: "pixelated" }} />
-            <h1
-              className="text-5xl font-bold text-yellow-300"
+      <div className="relative z-10 flex flex-col items-center h-full px-4 py-3 overflow-y-auto">
+        <div className="flex items-center gap-3 mb-2 animate-[fadeIn_0.6s_ease-out]">
+          {spriteData && spriteSheetPath && (
+            <div className="p-2 border-2 border-yellow-700 bg-black/40 shrink-0" style={{ boxShadow: "inset 0 0 8px rgba(0,0,0,0.8)" }}>
+              <SpriteAnimator
+                spriteSheet={spriteSheetPath}
+                frameWidth={spriteData.frameWidth}
+                frameHeight={spriteData.frameHeight}
+                totalFrames={spriteData.totalFrames}
+                fps={8}
+                scale={2.5}
+                loop={true}
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+          )}
+
+          <div className="text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <Star className="w-5 h-5 text-yellow-500" style={{ imageRendering: "pixelated" }} />
+              <h1
+                className="text-3xl font-bold text-yellow-300"
+                style={{
+                  textShadow: "2px 2px 0px rgba(0,0,0,0.8), 1px 1px 0px rgba(255,200,0,0.3)",
+                  imageRendering: "pixelated",
+                }}
+                data-testid="text-level-up"
+              >
+                LEVEL UP!
+              </h1>
+              <Star className="w-5 h-5 text-yellow-500" style={{ imageRendering: "pixelated" }} />
+            </div>
+
+            <div
+              className="inline-block px-3 py-1 mb-1 border-2 border-yellow-700 bg-yellow-950/60"
               style={{
-                textShadow: "3px 3px 0px rgba(0,0,0,0.8), 2px 2px 0px rgba(255,200,0,0.3)",
+                boxShadow: "inset 0 0 6px rgba(0,0,0,0.5), 2px 2px 0px rgba(0,0,0,0.3)",
                 imageRendering: "pixelated",
               }}
-              data-testid="text-level-up"
             >
-              LEVEL UP!
-            </h1>
-            <Star className="w-8 h-8 text-yellow-500" style={{ imageRendering: "pixelated" }} />
-          </div>
+              <p className="text-lg font-bold text-yellow-300" style={{ imageRendering: "pixelated" }}>
+                {pendingLevelUp.characterName}
+              </p>
+              <p className="text-xs text-yellow-200/80" style={{ imageRendering: "pixelated" }}>
+                {characterType} reaches Level {pendingLevelUp.newLevel}
+              </p>
+            </div>
 
-          {/* Character info badge */}
-          <div
-            className="inline-block px-4 py-2 mb-4 border-4 border-yellow-700 bg-yellow-950/60"
-            style={{
-              boxShadow: "inset 0 0 8px rgba(0,0,0,0.5), 4px 4px 0px rgba(0,0,0,0.3)",
-              imageRendering: "pixelated",
-            }}
-          >
-            <p className="text-2xl font-bold text-yellow-300" style={{ imageRendering: "pixelated" }}>
-              {pendingLevelUp.characterName}
-            </p>
-            <p className="text-sm text-yellow-200/80" style={{ imageRendering: "pixelated" }}>
-              {characterType} reaches Level {pendingLevelUp.newLevel}
-            </p>
-          </div>
-
-          {/* Element badge */}
-          <div
-            className="inline-block px-3 py-1 mt-2 border-2"
-            style={{
-              borderColor: elementColor,
-              backgroundColor: elementColor + "20",
-              boxShadow: `inset 0 0 4px ${elementColor}40`,
-            }}
-          >
-            <span
-              className="text-sm font-bold"
+            <div
+              className="inline-block px-2 py-0.5 ml-2 border-2"
               style={{
-                color: elementColor,
-                textShadow: `0px 0px 3px ${elementColor}80`,
+                borderColor: elementColor,
+                backgroundColor: elementColor + "20",
+                boxShadow: `inset 0 0 4px ${elementColor}40`,
               }}
             >
-              {pendingLevelUp.characterElement}
-            </span>
+              <span
+                className="text-xs font-bold"
+                style={{
+                  color: elementColor,
+                  textShadow: `0px 0px 3px ${elementColor}80`,
+                }}
+              >
+                {pendingLevelUp.characterElement}
+              </span>
+            </div>
           </div>
         </div>
 
-        {/* New spells learned banner */}
         {newSpellNames.length > 0 && (
           <div
-            className="mb-4 px-4 py-2 border-2 border-amber-500 bg-amber-900/40 animate-[fadeIn_0.8s_ease-out]"
-            style={{ boxShadow: "inset 0 0 8px rgba(255,180,0,0.2), 3px 3px 0px rgba(0,0,0,0.3)" }}
+            className="mb-2 px-3 py-1.5 border-2 border-amber-500 bg-amber-900/40 animate-[fadeIn_0.8s_ease-out]"
+            style={{ boxShadow: "inset 0 0 8px rgba(255,180,0,0.2), 2px 2px 0px rgba(0,0,0,0.3)" }}
           >
             <div className="flex items-center gap-2 justify-center">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span className="text-sm font-bold text-amber-300" style={{ textShadow: "1px 1px 0px rgba(0,0,0,0.8)" }}>
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span className="text-xs font-bold text-amber-300" style={{ textShadow: "1px 1px 0px rgba(0,0,0,0.8)" }}>
                 New Spell{newSpellNames.length > 1 ? "s" : ""} Learned!
               </span>
-              <Sparkles className="w-4 h-4 text-amber-400" />
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             </div>
-            <div className="flex gap-3 justify-center mt-1">
+            <div className="flex gap-2 justify-center mt-0.5">
               {newSpellNames.map(spell => spell && (
                 <span
                   key={spell.id}
-                  className="text-xs font-bold px-2 py-0.5 border"
+                  className="text-[10px] font-bold px-1.5 py-0.5 border"
                   style={{
                     color: ELEMENT_COLORS[spell.element || pendingLevelUp.characterElement],
                     borderColor: ELEMENT_COLORS[spell.element || pendingLevelUp.characterElement] + "60",
@@ -155,43 +165,24 @@ export default function LevelUpScreen({
           </div>
         )}
 
-        {/* Character sprite display */}
-        {spriteData && spriteSheetPath && (
-          <div className="mb-8 p-4 border-4 border-yellow-700 bg-black/40" style={{ boxShadow: "inset 0 0 12px rgba(0,0,0,0.8), 4px 4px 0px rgba(0,0,0,0.4)" }}>
-            <SpriteAnimator
-              spriteSheet={spriteSheetPath}
-              frameWidth={spriteData.frameWidth}
-              frameHeight={spriteData.frameHeight}
-              totalFrames={spriteData.totalFrames}
-              fps={8}
-              scale={4}
-              loop={true}
-              style={{ imageRendering: "pixelated" }}
-            />
-          </div>
-        )}
-
-        {/* Stats allocation section */}
         <div
-          className="w-full max-w-2xl p-6 border-4 border-yellow-700 bg-amber-900/30"
+          className="w-full max-w-xl p-3 border-3 border-yellow-700 bg-amber-900/30"
           style={{
-            boxShadow: "inset 0 0 16px rgba(0,0,0,0.8), 6px 6px 0px rgba(0,0,0,0.5)",
+            boxShadow: "inset 0 0 12px rgba(0,0,0,0.8), 4px 4px 0px rgba(0,0,0,0.5)",
             imageRendering: "pixelated",
           }}
         >
-          {/* Instructions */}
           <p
-            className="text-center text-yellow-200 mb-4 font-bold text-sm"
+            className="text-center text-yellow-200 mb-2 font-bold text-xs"
             style={{
               textShadow: "2px 2px 0px rgba(0,0,0,0.8)",
               imageRendering: "pixelated",
             }}
           >
-            Allocate {statsRemaining} Stat{statsRemaining !== 1 ? "s" : ""} →
+            Allocate {statsRemaining} Stat{statsRemaining !== 1 ? "s" : ""}
           </p>
 
-          {/* Stat buttons grid */}
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div className="grid grid-cols-4 gap-2">
             {STAT_CONFIG.map(({ key, label, icon: Icon, color }) => {
               const value = currentStats[key];
               const increase = key === "maxHp" ? "+10" : key === "maxMp" ? "+5" : "+2";
@@ -200,16 +191,16 @@ export default function LevelUpScreen({
                   key={key}
                   onClick={() => onAllocate(key)}
                   disabled={statsRemaining === 0}
-                  className="flex flex-col items-center justify-center h-auto py-3 px-2 relative overflow-hidden border-2 border-yellow-700 bg-yellow-900/40 hover:bg-yellow-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center justify-center h-auto py-2 px-1.5 relative overflow-hidden border-2 border-yellow-700 bg-yellow-900/40 hover:bg-yellow-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{
                     boxShadow: "inset 0 0 6px rgba(0,0,0,0.6), 2px 2px 0px rgba(0,0,0,0.4)",
                     imageRendering: "pixelated",
                   }}
                   data-testid={`button-allocate-${key}`}
                 >
-                  <Icon className="w-5 h-5 mb-1" style={{ color, imageRendering: "pixelated" }} />
+                  <Icon className="w-4 h-4 mb-0.5" style={{ color, imageRendering: "pixelated" }} />
                   <span
-                    className="text-xs font-bold text-yellow-200"
+                    className="text-[10px] font-bold text-yellow-200"
                     style={{
                       textShadow: "1px 1px 0px rgba(0,0,0,0.8)",
                       imageRendering: "pixelated",
@@ -217,11 +208,11 @@ export default function LevelUpScreen({
                   >
                     {label}
                   </span>
-                  <div className="text-xs text-yellow-300/70 mt-1" style={{ imageRendering: "pixelated" }}>
+                  <div className="text-[10px] text-yellow-300/70" style={{ imageRendering: "pixelated" }}>
                     {value}
                   </div>
                   <div
-                    className="text-[10px] font-bold px-1 py-0.5 bg-green-900/60 border border-green-700 text-green-300 mt-0.5"
+                    className="text-[9px] font-bold px-1 bg-green-900/60 border border-green-700 text-green-300"
                     style={{
                       boxShadow: "inset 0 0 2px rgba(0,0,0,0.4)",
                       imageRendering: "pixelated",
@@ -236,7 +227,6 @@ export default function LevelUpScreen({
         </div>
       </div>
 
-      {/* Animations */}
       <style>{`
         @keyframes fadeIn {
           from {
