@@ -6,7 +6,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, Settings, X, MapPin, Users, Sparkles } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, X, Users, Sparkles, Home, Shield, Package, Moon } from "lucide-react";
 import { isRegionUnlocked, getRegionTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -45,6 +45,7 @@ const NODE_ICONS: Record<string, any> = {
   event: Star,
   boss: Crown,
   shaman: Sparkles,
+  hut: Home,
 };
 
 const REGION_PARTICLES: Record<string, string[]> = {
@@ -115,30 +116,6 @@ const REGION_THEMES: Record<string, RegionThemeConfig> = {
   },
 };
 
-interface PathPoint {
-  x: number;
-  y: number;
-}
-
-function generatePathPoints(nodes: OverworldNode[]): PathPoint[] {
-  const sorted = [...nodes].sort((a, b) => a.x - b.x);
-  const points: PathPoint[] = [];
-
-  for (let i = 0; i < sorted.length; i++) {
-    const node = sorted[i];
-    points.push({ x: node.x, y: node.y });
-
-    if (i < sorted.length - 1) {
-      const next = sorted[i + 1];
-      const midX = (node.x + next.x) / 2;
-      const midY = (node.y + next.y) / 2;
-      const curveOffset = ((i % 2 === 0) ? -5 : 5);
-      points.push({ x: midX, y: midY + curveOffset });
-    }
-  }
-  return points;
-}
-
 function getNodePosition(node: OverworldNode): { x: number; y: number } {
   return { x: node.x, y: node.y };
 }
@@ -167,9 +144,10 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hutMenuOpen, setHutMenuOpen] = useState(false);
   const [charPos, setCharPos] = useState<{ x: number; y: number }>(() => {
     const currentNode = region.nodes.find(n => n.id === player.currentNode);
-    return currentNode ? getNodePosition(currentNode) : { x: 15, y: 70 };
+    return currentNode ? getNodePosition(currentNode) : { x: 8, y: 82 };
   });
   const [isMoving, setIsMoving] = useState(false);
   const [facingRight, setFacingRight] = useState(true);
@@ -244,9 +222,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
   const isAdjacentToCurrentNode = (node: OverworldNode): boolean => {
     const currentNodeData = region.nodes.find(n => n.id === player.currentNode);
     if (!currentNodeData) return false;
-    if (currentNodeData.connections.includes(node.id)) return true;
-    if (node.connections.includes(currentNodeData.id)) return true;
-    return false;
+    return currentNodeData.connections.includes(node.id);
   };
 
   const canAccessNode = (node: OverworldNode): boolean => {
@@ -262,17 +238,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
     if (!canAccessNode(node) || isMoving) return;
 
     if (node.id === player.currentNode) {
-      if (node.type === "battle" || node.type === "boss") {
-        onNodeSelect(node.id);
-      } else if (node.type === "shop") {
-        onShopOpen(node.id);
-      } else if (node.type === "rest") {
-        onRest(node.id);
-      } else if (node.type === "shaman") {
-        onShamanVisit(node.id);
-      } else if (node.type === "event") {
-        onRest(node.id);
-      }
+      triggerNodeAction(node);
       return;
     }
 
@@ -280,35 +246,48 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
     setFacingRight(targetPos.x > charPos.x);
 
     moveCharacterTo(targetPos, () => {
-      if (node.type === "battle" || node.type === "boss") {
-        onNodeSelect(node.id);
-      } else if (node.type === "shop") {
-        onShopOpen(node.id);
-      } else if (node.type === "rest") {
-        onRest(node.id);
-      } else if (node.type === "shaman") {
-        onShamanVisit(node.id);
-      } else if (node.type === "event") {
-        onRest(node.id);
+      if (node.type === "hut") {
+        setHutMenuOpen(true);
+      } else {
+        triggerNodeAction(node);
       }
     });
   };
 
+  const triggerNodeAction = (node: OverworldNode) => {
+    if (node.type === "hut") {
+      setHutMenuOpen(true);
+    } else if (node.type === "battle" || node.type === "boss") {
+      onNodeSelect(node.id);
+    } else if (node.type === "shop") {
+      onShopOpen(node.id);
+    } else if (node.type === "rest") {
+      onRest(node.id);
+    } else if (node.type === "shaman") {
+      onShamanVisit(node.id);
+    } else if (node.type === "event") {
+      onRest(node.id);
+    }
+  };
+
   const regionColors = REGION_PARTICLES[region.theme] || REGION_PARTICLES.Fire;
 
-  const pathD = useMemo(() => {
-    const sorted = [...region.nodes].sort((a, b) => a.x - b.x);
-    if (sorted.length < 2) return "";
-
-    let d = `M ${sorted[0].x} ${sorted[0].y}`;
-    for (let i = 1; i < sorted.length; i++) {
-      const prev = sorted[i - 1];
-      const curr = sorted[i];
-      const cpx = (prev.x + curr.x) / 2;
-      const cpy = (prev.y + curr.y) / 2 + ((i % 2 === 0) ? -4 : 4);
-      d += ` Q ${cpx} ${cpy} ${curr.x} ${curr.y}`;
+  const edges = useMemo(() => {
+    const edgeSet = new Set<string>();
+    const result: { from: OverworldNode; to: OverworldNode }[] = [];
+    for (const node of region.nodes) {
+      for (const connId of node.connections) {
+        const key = [Math.min(node.id, connId), Math.max(node.id, connId)].join("-");
+        if (!edgeSet.has(key)) {
+          edgeSet.add(key);
+          const toNode = region.nodes.find(n => n.id === connId);
+          if (toNode) {
+            result.push({ from: node, to: toNode });
+          }
+        }
+      }
     }
-    return d;
+    return result;
   }, [region.nodes]);
 
   const sortedNodes = useMemo(() => [...region.nodes].sort((a, b) => a.y - b.y), [region.nodes]);
@@ -322,13 +301,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
 
   const bgImage = REGION_BACKGROUNDS[region.theme];
   const isFireRegion = region.theme === "Fire";
-
-  const firePathStyle = {
-    stroke: "#4a3020",
-    strokeBorder: "#2a1810",
-    dashColor: "rgba(200, 100, 40, 0.3)",
-    glow: "rgba(200, 80, 20, 0.15)",
-  };
+  const elemColor = ELEMENT_COLORS[region.theme];
 
   return (
     <div className="relative w-full h-screen overflow-hidden" data-testid="overworld-screen">
@@ -393,33 +366,36 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
             <filter id="pathShadow">
               <feDropShadow dx="0" dy="0.3" stdDeviation="0.3" floodColor="rgba(0,0,0,0.5)" />
             </filter>
-            {isFireRegion && (
-              <filter id="pathGlow">
-                <feGaussianBlur stdDeviation="0.8" result="blur" />
-                <feFlood floodColor={firePathStyle.glow} result="color" />
-                <feComposite in="color" in2="blur" operator="in" result="glow" />
-                <feMerge>
-                  <feMergeNode in="glow" />
-                  <feMergeNode in="SourceGraphic" />
-                </feMerge>
-              </filter>
-            )}
+            <filter id="pathGlow">
+              <feGaussianBlur stdDeviation="0.6" result="blur" />
+              <feFlood floodColor={`${elemColor}30`} result="color" />
+              <feComposite in="color" in2="blur" operator="in" result="glow" />
+              <feMerge>
+                <feMergeNode in="glow" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
           </defs>
 
-          {isFireRegion ? (
-            <>
-              <path d={pathD} fill="none" stroke={firePathStyle.strokeBorder} strokeWidth="4" strokeLinecap="round" strokeLinejoin="round" filter="url(#pathShadow)" />
-              <path d={pathD} fill="none" stroke={firePathStyle.stroke} strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" filter="url(#pathGlow)" />
-              <path d={pathD} fill="none" stroke="rgba(180, 120, 60, 0.25)" strokeWidth="1.2" strokeLinecap="round" strokeDasharray="2,3" />
-              <path d={pathD} fill="none" stroke={firePathStyle.dashColor} strokeWidth="0.4" strokeLinecap="round" strokeDasharray="0.5,4" />
-            </>
-          ) : (
-            <>
-              <path d={pathD} fill="none" stroke={theme.pathBorder} strokeWidth="3.5" strokeLinecap="round" strokeLinejoin="round" filter="url(#pathShadow)" />
-              <path d={pathD} fill="none" stroke={theme.pathColor} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d={pathD} fill="none" stroke={`${theme.pathColor}40`} strokeWidth="0.6" strokeLinecap="round" strokeDasharray="1.5,2.5" />
-            </>
-          )}
+          {edges.map((edge, i) => {
+            const dx = edge.to.x - edge.from.x;
+            const dy = edge.to.y - edge.from.y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            const perpX = -dy / dist * 2;
+            const perpY = dx / dist * 2;
+            const mx = (edge.from.x + edge.to.x) / 2 + perpX * ((i % 3 === 0) ? 1 : (i % 3 === 1) ? -0.5 : 0.3);
+            const my = (edge.from.y + edge.to.y) / 2 + perpY * ((i % 3 === 0) ? 1 : (i % 3 === 1) ? -0.5 : 0.3);
+
+            const pathD = `M ${edge.from.x} ${edge.from.y} Q ${mx} ${my} ${edge.to.x} ${edge.to.y}`;
+
+            return (
+              <g key={`edge-${i}`}>
+                <path d={pathD} fill="none" stroke={theme.pathBorder} strokeWidth="3" strokeLinecap="round" filter="url(#pathShadow)" />
+                <path d={pathD} fill="none" stroke={theme.pathColor} strokeWidth="1.8" strokeLinecap="round" filter="url(#pathGlow)" />
+                <path d={pathD} fill="none" stroke={`${theme.pathColor}50`} strokeWidth="0.5" strokeLinecap="round" strokeDasharray="1.5,3" />
+              </g>
+            );
+          })}
         </svg>
       </div>
 
@@ -428,29 +404,36 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
         const isCleared = player.clearedNodes.includes(node.id);
         const accessible = canAccessNode(node);
         const isHovered = hoveredNode === node.id;
+        const isCurrent = node.id === player.currentNode;
         const isBoss = node.type === "boss";
-        const elemColor = ELEMENT_COLORS[region.theme];
+        const isHut = node.type === "hut";
 
-        const markerSize = isBoss ? "w-11 h-11" : "w-9 h-9";
+        const markerSize = isBoss ? "w-11 h-11" : isHut ? "w-10 h-10" : "w-9 h-9";
         const iconSize = isBoss ? "w-5 h-5" : "w-4 h-4";
 
-        const bgColor = isCleared
-          ? "rgba(34, 197, 94, 0.25)"
-          : accessible
-            ? isBoss ? "rgba(250, 204, 21, 0.25)" : `${elemColor}30`
-            : "rgba(55, 65, 81, 0.25)";
+        const bgColor = isHut
+          ? "rgba(180, 140, 60, 0.35)"
+          : isCleared
+            ? "rgba(34, 197, 94, 0.25)"
+            : accessible
+              ? isBoss ? "rgba(250, 204, 21, 0.25)" : `${elemColor}30`
+              : "rgba(55, 65, 81, 0.25)";
 
-        const borderColor = isCleared
-          ? "rgba(34, 197, 94, 0.7)"
-          : accessible
-            ? isBoss ? "rgba(250, 204, 21, 0.7)" : `${elemColor}90`
-            : "rgba(55, 65, 81, 0.5)";
+        const borderColor = isHut
+          ? "rgba(220, 180, 80, 0.8)"
+          : isCleared
+            ? "rgba(34, 197, 94, 0.7)"
+            : accessible
+              ? isBoss ? "rgba(250, 204, 21, 0.7)" : `${elemColor}90`
+              : "rgba(55, 65, 81, 0.5)";
 
-        const iconColor = isCleared
-          ? "#22c55e"
-          : accessible
-            ? isBoss ? "#facc15" : elemColor
-            : "#374151";
+        const iconColor = isHut
+          ? "#dca840"
+          : isCleared
+            ? "#22c55e"
+            : accessible
+              ? isBoss ? "#facc15" : elemColor
+              : "#374151";
 
         return (
           <button
@@ -495,6 +478,27 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
                   </div>
                 )}
               </div>
+            ) : node.type === "hut" ? (
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  <div className={`${markerSize} rounded-lg flex items-center justify-center backdrop-blur-sm`}
+                    style={{
+                      backgroundColor: bgColor,
+                      border: `2.5px solid ${borderColor}`,
+                      boxShadow: isHovered || isCurrent
+                        ? `0 0 20px rgba(220, 180, 80, 0.5), 0 4px 12px rgba(0,0,0,0.4)`
+                        : `0 2px 8px rgba(0,0,0,0.3)`,
+                    }}
+                  >
+                    <Home className={iconSize} style={{ color: iconColor }} />
+                  </div>
+                  {isCurrent && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(220, 180, 80, 0.9)", boxShadow: "0 0 8px rgba(220, 180, 80, 0.6)" }}>
+                      <Star className="w-2.5 h-2.5 text-yellow-900" fill="currentColor" />
+                    </div>
+                  )}
+                </div>
+              </div>
             ) : node.type === "battle" ? (
               <div className="flex flex-col items-center">
                 <div className="relative">
@@ -533,7 +537,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
                     </div>
                   </div>
                   <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-4 rounded-sm" style={{
-                    background: "linear-gradient(135deg, #c2451a, #f09030)",
+                    background: `linear-gradient(135deg, ${elemColor}cc, ${elemColor}88)`,
                     borderRadius: "2px 2px 0 0",
                   }} />
                 </div>
@@ -702,6 +706,95 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
         </div>
       )}
 
+      {hutMenuOpen && (
+        <div className="absolute inset-0 z-50 flex items-center justify-center" onClick={() => setHutMenuOpen(false)}>
+          <div className="absolute inset-0 bg-black/60" />
+          <div
+            className="relative w-72 bg-gradient-to-b from-amber-950/95 to-stone-950/95 backdrop-blur-md rounded-xl border border-amber-700/40 overflow-hidden"
+            style={{ fontFamily: "'Cinzel', serif", boxShadow: "0 0 40px rgba(180, 140, 50, 0.15), 0 8px 32px rgba(0,0,0,0.5)" }}
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="px-5 pt-4 pb-3 border-b border-amber-700/30 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Home className="w-5 h-5 text-amber-400" />
+                <span className="text-sm font-semibold tracking-wider text-amber-200">THE HUT</span>
+              </div>
+              <Button size="icon" variant="ghost" className="text-amber-400/60 h-7 w-7" onClick={() => setHutMenuOpen(false)}>
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="p-4 space-y-2">
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
+                style={{ background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))", border: "1px solid rgba(34, 197, 94, 0.25)" }}
+                onClick={() => {
+                  setHutMenuOpen(false);
+                  const hutNode = region.nodes.find(n => n.type === "hut");
+                  if (hutNode) onRest(hutNode.id);
+                }}
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(34, 197, 94, 0.2)" }}>
+                  <Moon className="w-4 h-4 text-green-400" />
+                </div>
+                <div>
+                  <span className="tracking-wide text-green-300 font-medium">Rest</span>
+                  <p className="text-[10px] text-green-400/50 mt-0.5">Restore HP & MP</p>
+                </div>
+              </button>
+
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
+                style={{ background: "linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(168, 85, 247, 0.05))", border: "1px solid rgba(168, 85, 247, 0.25)" }}
+                onClick={() => { setHutMenuOpen(false); onInventory(); }}
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(168, 85, 247, 0.2)" }}>
+                  <Package className="w-4 h-4 text-purple-400" />
+                </div>
+                <div>
+                  <span className="tracking-wide text-purple-300 font-medium">Items & Equipment</span>
+                  <p className="text-[10px] text-purple-400/50 mt-0.5">Use items, equip gear</p>
+                </div>
+              </button>
+
+              {player.party.length > 0 && (
+                <button
+                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
+                  style={{ background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05))", border: "1px solid rgba(59, 130, 246, 0.25)" }}
+                  onClick={() => { setHutMenuOpen(false); onPartyManage(); }}
+                >
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(59, 130, 246, 0.2)" }}>
+                    <Users className="w-4 h-4 text-blue-400" />
+                  </div>
+                  <div>
+                    <span className="tracking-wide text-blue-300 font-medium">Party</span>
+                    <p className="text-[10px] text-blue-400/50 mt-0.5">Manage party members</p>
+                  </div>
+                </button>
+              )}
+
+              <button
+                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
+                style={{ background: "linear-gradient(135deg, rgba(250, 204, 21, 0.15), rgba(250, 204, 21, 0.05))", border: "1px solid rgba(250, 204, 21, 0.25)" }}
+                onClick={() => { setHutMenuOpen(false); onSave(); }}
+              >
+                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(250, 204, 21, 0.2)" }}>
+                  <Save className="w-4 h-4 text-yellow-400" />
+                </div>
+                <div>
+                  <span className="tracking-wide text-yellow-300 font-medium">Save Game</span>
+                  <p className="text-[10px] text-yellow-400/50 mt-0.5">Save your progress</p>
+                </div>
+              </button>
+            </div>
+
+            <div className="px-5 py-2 border-t border-amber-700/20">
+              <p className="text-[9px] text-amber-400/30 text-center tracking-wider">A safe haven for weary travelers</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="absolute bottom-0 left-0 right-0 z-30 bg-black/50 backdrop-blur-sm border-t border-white/5">
         <div className="flex items-center justify-between px-3 py-1.5">
           <Button size="icon" variant="ghost"
@@ -764,7 +857,9 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
           }}>
             <Card className="px-2.5 py-1.5 bg-black/80 border-white/10 backdrop-blur-sm" style={{ boxShadow: "0 4px 15px rgba(0,0,0,0.5)" }}>
               <p className="text-[11px] font-semibold text-white whitespace-nowrap">{node.name}</p>
-              <p className="text-[9px] capitalize whitespace-nowrap" style={{ color: ELEMENT_COLORS[region.theme] + "aa" }}>{node.type}{player.clearedNodes.includes(node.id) ? " - Cleared" : ""}</p>
+              <p className="text-[9px] capitalize whitespace-nowrap" style={{ color: ELEMENT_COLORS[region.theme] + "aa" }}>
+                {node.type === "hut" ? "Base Camp" : node.type}{player.clearedNodes.includes(node.id) ? " - Cleared" : ""}
+              </p>
             </Card>
           </div>
         );
