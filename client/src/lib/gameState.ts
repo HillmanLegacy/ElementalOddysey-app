@@ -879,15 +879,48 @@ export function useGameState() {
     setState(s => {
       if (!s.player || !s.pendingLevelUp) return s;
 
+      if (!perkId) {
+        let pendingLevelUp: PendingLevelUp | null = null;
+        let pendingLevelUpQueue = [...s.pendingLevelUpQueue];
+        let nextScreen: GameState["screen"] = "overworld";
+        if (pendingLevelUpQueue.length > 0) {
+          pendingLevelUp = pendingLevelUpQueue[0];
+          pendingLevelUpQueue = pendingLevelUpQueue.slice(1);
+          nextScreen = "levelUp";
+        }
+        return { ...s, pendingLevelUp, pendingLevelUpQueue, screen: nextScreen };
+      }
+
       const perk = PERKS.find(p => p.id === perkId);
       if (!perk) return s;
 
-      const newPerks = [...s.player.perks, perkId];
-      const newStats = { ...s.player.stats };
-      if (perk.effect.stat && perk.effect.amount) {
-        (newStats as any)[perk.effect.stat] += perk.effect.amount;
-        if (perk.effect.stat === "maxHp") newStats.hp = newStats.maxHp;
-        if (perk.effect.stat === "maxMp") newStats.mp = newStats.maxMp;
+      const isParty = s.pendingLevelUp.characterType === "party";
+      let updatedPlayer = { ...s.player };
+
+      if (isParty) {
+        const idx = s.pendingLevelUp.characterIndex;
+        const member = updatedPlayer.party[idx];
+        if (!member) return s;
+        const memberPerks = [...(member.perks || []), perkId];
+        const memberStats = { ...member.stats };
+        if (perk.effect.stat && perk.effect.amount) {
+          (memberStats as any)[perk.effect.stat] += perk.effect.amount;
+          if (perk.effect.stat === "maxHp") memberStats.hp = memberStats.maxHp;
+          if (perk.effect.stat === "maxMp") memberStats.mp = memberStats.maxMp;
+        }
+        const newParty = updatedPlayer.party.map((m, i) =>
+          i === idx ? { ...m, perks: memberPerks, stats: memberStats } : m
+        );
+        updatedPlayer = { ...updatedPlayer, party: newParty };
+      } else {
+        const newPerks = [...updatedPlayer.perks, perkId];
+        const newStats = { ...updatedPlayer.stats };
+        if (perk.effect.stat && perk.effect.amount) {
+          (newStats as any)[perk.effect.stat] += perk.effect.amount;
+          if (perk.effect.stat === "maxHp") newStats.hp = newStats.maxHp;
+          if (perk.effect.stat === "maxMp") newStats.mp = newStats.maxMp;
+        }
+        updatedPlayer = { ...updatedPlayer, perks: newPerks, stats: newStats };
       }
 
       let pendingLevelUp: PendingLevelUp | null = null;
@@ -902,7 +935,7 @@ export function useGameState() {
 
       return {
         ...s,
-        player: { ...s.player, perks: newPerks, stats: newStats },
+        player: updatedPlayer,
         pendingLevelUp,
         pendingLevelUpQueue,
         screen: nextScreen,
@@ -1033,6 +1066,7 @@ export function useGameState() {
         xp: pm.xp || 0,
         xpToNext: pm.xpToNext || xpForLevel(pm.level),
         learnedSpells: pm.learnedSpells || [],
+        perks: pm.perks || [],
       })),
       defeatedBosses: playerData.defeatedBosses || [],
       spriteId: playerData.spriteId || "samurai",
@@ -1070,6 +1104,7 @@ export function useGameState() {
         xp: 0,
         xpToNext: xpForLevel(s.player.level),
         learnedSpells: [],
+        perks: [],
       };
 
       const newParty = [...s.player.party, newMember];

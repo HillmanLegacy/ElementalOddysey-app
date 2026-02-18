@@ -203,10 +203,11 @@ function Game() {
         );
 
       case "perkSelect":
-        if (!state.player) return null;
+        if (!state.player || !state.pendingLevelUp) return null;
         return (
           <PerkSelectScreen
             player={state.player}
+            pendingLevelUp={state.pendingLevelUp}
             onSelect={selectPerk}
           />
         );

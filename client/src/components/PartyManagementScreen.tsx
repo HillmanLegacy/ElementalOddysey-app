@@ -68,6 +68,7 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
     className: pm.className,
     isPlayer: false,
     learnedSpells: pm.learnedSpells || [],
+    perks: pm.perks || [],
   }));
 
   const allMembers = [playerAsMember, ...partyMembers];
