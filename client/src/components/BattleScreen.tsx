@@ -643,8 +643,30 @@ export default function BattleScreen({
           scheduleTimer(onDone, 300);
         }, 1200);
       } else {
+        const aliveParty = battle.party.filter(p => p.currentHp > 0);
+        const totalTargets = 1 + aliveParty.length;
+        const targetRoll = Math.floor(Math.random() * totalTargets);
+        let preTarget: { type: "player" | "party"; index: number };
+        if (targetRoll === 0 || aliveParty.length === 0) {
+          preTarget = { type: "player", index: -1 };
+        } else {
+          const pt = aliveParty[targetRoll - 1];
+          preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+        }
+
+        let walkToX: number, walkToY: number;
+        if (preTarget.type === "party" && preTarget.index >= 0) {
+          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
+          const tp = partyPos[preTarget.index % partyPos.length];
+          walkToX = tp.x + 10;
+          walkToY = tp.y;
+        } else {
+          walkToX = PLAYER_POS.x + 10;
+          walkToY = PLAYER_POS.y;
+        }
+
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: -(pos.x - 30), y: -(pos.y - 25) });
+        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
@@ -652,7 +674,7 @@ export default function BattleScreen({
         }, 600);
 
         scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx);
+          const result = onEnemyAttack(enemyIdx, preTarget);
           if (!result.dodged) {
             setShakeScreen(true);
             if (result.target.type === "party") {
@@ -839,8 +861,30 @@ export default function BattleScreen({
           scheduleTimer(onDone, 300);
         }, 1100);
       } else {
+        const aliveParty = battle.party.filter(p => p.currentHp > 0);
+        const totalTargets = 1 + aliveParty.length;
+        const targetRoll = Math.floor(Math.random() * totalTargets);
+        let preTarget: { type: "player" | "party"; index: number };
+        if (targetRoll === 0 || aliveParty.length === 0) {
+          preTarget = { type: "player", index: -1 };
+        } else {
+          const pt = aliveParty[targetRoll - 1];
+          preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+        }
+
+        let walkToX: number, walkToY: number;
+        if (preTarget.type === "party" && preTarget.index >= 0) {
+          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
+          const tp = partyPos[preTarget.index % partyPos.length];
+          walkToX = tp.x + 10;
+          walkToY = tp.y;
+        } else {
+          walkToX = PLAYER_POS.x + 10;
+          walkToY = PLAYER_POS.y;
+        }
+
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: -(pos.x - 30), y: -(pos.y - 25) });
+        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
@@ -848,7 +892,7 @@ export default function BattleScreen({
         }, 600);
 
         scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx);
+          const result = onEnemyAttack(enemyIdx, preTarget);
           if (!result.dodged) {
             setShakeScreen(true);
             if (result.target.type === "party") {
