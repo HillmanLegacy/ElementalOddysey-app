@@ -903,13 +903,14 @@ export default function BattleScreen({
       }
 
       let targetX: number, targetY: number;
+      const spriteVerticalOffset = 15;
       if (preTarget.type === "party" && preTarget.index >= 0) {
         const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
         targetX = tp.x;
-        targetY = tp.y;
+        targetY = tp.y + spriteVerticalOffset;
       } else {
-        targetX = 12;
-        targetY = 18;
+        targetX = PLAYER_POS.x;
+        targetY = PLAYER_POS.y + spriteVerticalOffset;
       }
 
       scheduleTimer(() => {
@@ -2225,11 +2226,11 @@ export default function BattleScreen({
               style={{
                 left: `${fireballExplosion.x}%`,
                 bottom: `${fireballExplosion.y}%`,
-                width: 120,
-                height: 120,
-                transform: "translate(-50%, 50%)",
+                width: 140,
+                height: 140,
+                marginLeft: -70,
+                marginBottom: -70,
                 pointerEvents: "none",
-                animation: "fireballExplosion 0.5s ease-out forwards",
               }}
             >
               <div
@@ -2239,7 +2240,7 @@ export default function BattleScreen({
                   borderRadius: "50%",
                   background: "radial-gradient(circle, rgba(255,255,200,1) 0%, rgba(255,160,40,0.9) 25%, rgba(255,80,0,0.7) 50%, rgba(200,40,0,0.4) 75%, transparent 100%)",
                   filter: "drop-shadow(0 0 20px rgba(255,100,0,0.9)) drop-shadow(0 0 40px rgba(255,50,0,0.6))",
-                  animation: "fireballExplosion 0.5s ease-out forwards",
+                  animation: "fireballExplosionScale 0.5s ease-out forwards",
                 }}
               />
             </div>
