@@ -797,9 +797,11 @@ export function useGameState() {
         },
       };
 
-      const nextScreen = (pendingUnlock || pendingUnlocks.length > 0)
-        ? "partyUnlock"
-        : (pendingLevelUp ? "levelUp" : "overworld");
+      const nextScreen = pendingLevelUp
+        ? "levelUp"
+        : (pendingUnlock || pendingUnlocks.length > 0)
+          ? "partyUnlock"
+          : "overworld";
 
       return {
         ...s,
@@ -850,7 +852,7 @@ export function useGameState() {
         nextScreen = "levelUp";
       } else {
         pendingLevelUp = null;
-        nextScreen = "overworld";
+        nextScreen = (s.pendingUnlock || s.pendingUnlocks.length > 0) ? "partyUnlock" : "overworld";
       }
 
       let updatedPlayer;
@@ -899,11 +901,13 @@ export function useGameState() {
       if (!perkId) {
         let pendingLevelUp: PendingLevelUp | null = null;
         let pendingLevelUpQueue = [...s.pendingLevelUpQueue];
-        let nextScreen: GameState["screen"] = "overworld";
+        let nextScreen: GameState["screen"];
         if (pendingLevelUpQueue.length > 0) {
           pendingLevelUp = pendingLevelUpQueue[0];
           pendingLevelUpQueue = pendingLevelUpQueue.slice(1);
           nextScreen = "levelUp";
+        } else {
+          nextScreen = (s.pendingUnlock || s.pendingUnlocks.length > 0) ? "partyUnlock" : "overworld";
         }
         return { ...s, pendingLevelUp, pendingLevelUpQueue, screen: nextScreen };
       }
@@ -942,12 +946,14 @@ export function useGameState() {
 
       let pendingLevelUp: PendingLevelUp | null = null;
       let pendingLevelUpQueue = [...s.pendingLevelUpQueue];
-      let nextScreen: GameState["screen"] = "overworld";
+      let nextScreen: GameState["screen"];
 
       if (pendingLevelUpQueue.length > 0) {
         pendingLevelUp = pendingLevelUpQueue[0];
         pendingLevelUpQueue = pendingLevelUpQueue.slice(1);
         nextScreen = "levelUp";
+      } else {
+        nextScreen = (s.pendingUnlock || s.pendingUnlocks.length > 0) ? "partyUnlock" : "overworld";
       }
 
       return {
@@ -1108,13 +1114,14 @@ export function useGameState() {
       if (!s.player || !s.pendingUnlock) return s;
 
       const def = s.pendingUnlock;
-      const scale = 1 + (s.player.level - 1) * 0.15;
+      const memberLevel = Math.max(1, s.player.level - 2);
+      const scale = 1 + (memberLevel - 1) * 0.15;
       const newMember: PartyMember = {
         id: def.id,
         name: customName.trim() || def.name,
         className: def.className,
         element: def.element,
-        level: s.player.level,
+        level: memberLevel,
         stats: {
           hp: Math.floor(def.baseStats.hp * scale),
           maxHp: Math.floor(def.baseStats.maxHp * scale),
@@ -1128,7 +1135,7 @@ export function useGameState() {
         },
         spriteId: def.spriteId,
         xp: 0,
-        xpToNext: xpForLevel(s.player.level),
+        xpToNext: xpForLevel(memberLevel),
         learnedSpells: [],
         perks: [],
       };

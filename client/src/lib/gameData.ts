@@ -207,14 +207,15 @@ const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 7, xpReward: 250, goldReward: 100, isBoss: true, sprite: "diamond" },
 ];
 
-export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number): Enemy {
-  const lv = base.level * scaleFactor;
+export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number, levelBonus: number = 0): Enemy {
+  const lv = base.level * scaleFactor + levelBonus;
   const vary = base.isBoss ? () => 1.0 : () => 0.9 + Math.random() * 0.2;
 
   if (base.isBoss) {
     const hp = Math.floor((50 + lv * 25) * vary());
     return {
       ...base,
+      level: Math.floor(lv),
       stats: {
         hp,
         maxHp: hp,
@@ -232,6 +233,7 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   const hp = Math.floor((18 + lv * 10) * vary());
   return {
     ...base,
+    level: Math.floor(lv),
     stats: {
       hp,
       maxHp: hp,
@@ -249,25 +251,53 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
 export function getEnemiesForNode(node: OverworldNode, region: Region, tier: number = 0): Enemy[] {
   const regionElement = region.theme;
   const baseScale = 1 + region.id * 0.5;
-  const tierScale = 1 + tier * 0.25;
-  const scale = baseScale * tierScale;
-  const pool = ENEMY_POOL.filter(e => {
-    if (node.type === "boss") return e.isBoss;
-    return !e.isBoss;
-  });
 
-  const preferredPool = pool.filter(e => e.element === regionElement);
-  const selectedPool = preferredPool.length > 0 ? preferredPool : pool;
+  const bossPool = ENEMY_POOL.filter(e => e.isBoss);
+  const lesserPool = ENEMY_POOL.filter(e => !e.isBoss);
+  const preferredLesser = lesserPool.filter(e => e.element === regionElement);
+  const selectedLesser = preferredLesser.length > 0 ? preferredLesser : lesserPool;
+  const preferredBoss = bossPool.filter(e => e.element === regionElement);
+  const selectedBoss = preferredBoss.length > 0 ? preferredBoss : bossPool;
 
-  const count = node.type === "boss" ? 1 : 1 + Math.floor(Math.random() * 2);
   const enemies: Enemy[] = [];
-  for (let i = 0; i < count; i++) {
-    const base = selectedPool[Math.floor(Math.random() * selectedPool.length)];
-    const enemy = generateEnemyStats(base, scale);
-    enemy.xpReward = Math.floor(enemy.xpReward * tierScale);
-    enemy.goldReward = Math.floor(enemy.goldReward * tierScale);
-    enemies.push(enemy);
+
+  if (node.type === "boss") {
+    const bossBase = selectedBoss[Math.floor(Math.random() * selectedBoss.length)];
+    const bossLevelBonus = tier;
+    const boss = generateEnemyStats(bossBase, baseScale, bossLevelBonus);
+    boss.xpReward = Math.floor(boss.xpReward * (1 + tier * 0.25));
+    boss.goldReward = Math.floor(boss.goldReward * (1 + tier * 0.25));
+    enemies.push(boss);
+
+    const lesserCount = tier >= 2 ? 2 : tier >= 1 ? 1 : 0;
+    for (let i = 0; i < lesserCount; i++) {
+      const base = selectedLesser[Math.floor(Math.random() * selectedLesser.length)];
+      const enemyLevelBonus = tier * (1 + Math.floor(Math.random() * 2));
+      const enemy = generateEnemyStats(base, baseScale, enemyLevelBonus);
+      enemy.xpReward = Math.floor(enemy.xpReward * (1 + tier * 0.25));
+      enemy.goldReward = Math.floor(enemy.goldReward * (1 + tier * 0.25));
+      enemies.push(enemy);
+    }
+  } else {
+    let count: number;
+    if (tier >= 2) {
+      count = 2 + Math.floor(Math.random() * 2);
+    } else if (tier >= 1) {
+      count = 1 + Math.floor(Math.random() * 3);
+    } else {
+      count = 1 + Math.floor(Math.random() * 2);
+    }
+
+    for (let i = 0; i < count; i++) {
+      const base = selectedLesser[Math.floor(Math.random() * selectedLesser.length)];
+      const enemyLevelBonus = tier * (1 + Math.floor(Math.random() * 2));
+      const enemy = generateEnemyStats(base, baseScale, enemyLevelBonus);
+      enemy.xpReward = Math.floor(enemy.xpReward * (1 + tier * 0.25));
+      enemy.goldReward = Math.floor(enemy.goldReward * (1 + tier * 0.25));
+      enemies.push(enemy);
+    }
   }
+
   return enemies;
 }
 
