@@ -313,16 +313,25 @@
     transform: scale(1.5);
     opacity: 1;
   }
-  80% {
-    left: var(--fb-end-x, 16%);
-    bottom: var(--fb-end-y, 20%);
+  100% {
+    left: var(--fb-end-x, 12%);
+    bottom: var(--fb-end-y, 18%);
     transform: scale(2);
     opacity: 1;
   }
+}
+
+@keyframes fireballExplosion {
+  0% {
+    transform: translate(-50%, 50%) scale(0.3);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-50%, 50%) scale(1.2);
+    opacity: 1;
+  }
   100% {
-    left: var(--fb-end-x, 14%);
-    bottom: var(--fb-end-y, 18%);
-    transform: scale(0.8);
+    transform: translate(-50%, 50%) scale(1.8);
     opacity: 0;
   }
 }

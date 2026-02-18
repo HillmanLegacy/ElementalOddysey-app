@@ -160,6 +160,7 @@ export default function BattleScreen({
   const [fireHitSfx, setFireHitSfx] = useState(false);
   const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash">>({});
   const [fireballAnim, setFireballAnim] = useState<{ fromX: number; fromY: number; toX: number; toY: number; active: boolean } | null>(null);
+  const [fireballExplosion, setFireballExplosion] = useState<{ x: number; y: number; active: boolean } | null>(null);
   const [potionVfx, setPotionVfx] = useState<{ x: number; y: number; color: string; active: boolean } | null>(null);
   const [bossOffset, setBossOffset] = useState<{ x: number; y: number } | null>(null);
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
@@ -917,6 +918,8 @@ export default function BattleScreen({
 
       scheduleTimer(() => {
         setFireballAnim(null);
+        setFireballExplosion({ x: targetX, y: targetY, active: true });
+        playSfx("explosion", 0.7);
         const result = onEnemyAttack(enemyIdx, preTarget);
         if (!result.dodged) {
           setShakeScreen(true);
@@ -927,19 +930,19 @@ export default function BattleScreen({
             setFireHitSfx(true);
             setAnimPhase("hurt");
           }
-          playSfx("explosion", 0.7);
           scheduleTimer(() => setShakeScreen(false), 500);
         } else {
           setDodgeBlur(result.target);
           scheduleTimer(() => setDodgeBlur(null), 600);
         }
-      }, 750);
+        scheduleTimer(() => setFireballExplosion(null), 500);
+      }, 950);
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
         setAnimPhase("idle");
         scheduleTimer(onDone, 300);
-      }, 900);
+      }, 1500);
     } else if (isFrostLizard(enemy)) {
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
       playSfx("magicRing", 0.6);
@@ -2212,6 +2215,32 @@ export default function BattleScreen({
                 src={demonFireball}
                 alt="fireball"
                 style={{ width: 96, height: 64, imageRendering: "pixelated" }}
+              />
+            </div>
+          )}
+
+          {fireballExplosion && fireballExplosion.active && (
+            <div
+              className="absolute z-45"
+              style={{
+                left: `${fireballExplosion.x}%`,
+                bottom: `${fireballExplosion.y}%`,
+                width: 120,
+                height: 120,
+                transform: "translate(-50%, 50%)",
+                pointerEvents: "none",
+                animation: "fireballExplosion 0.5s ease-out forwards",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  borderRadius: "50%",
+                  background: "radial-gradient(circle, rgba(255,255,200,1) 0%, rgba(255,160,40,0.9) 25%, rgba(255,80,0,0.7) 50%, rgba(200,40,0,0.4) 75%, transparent 100%)",
+                  filter: "drop-shadow(0 0 20px rgba(255,100,0,0.9)) drop-shadow(0 0 40px rgba(255,50,0,0.6))",
+                  animation: "fireballExplosion 0.5s ease-out forwards",
+                }}
               />
             </div>
           )}
