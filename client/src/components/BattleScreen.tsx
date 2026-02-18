@@ -1553,23 +1553,25 @@ export default function BattleScreen({
             const pos = ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
 
             const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
-            const bossTranslate = isBossMoving ? `translate(${bossOffset.x}%, ${bossOffset.y}%)` : "";
+            const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
+            const bossBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
 
             return (
               <div
                 key={idx}
                 className="absolute"
                 style={{
-                  left: `${pos.x}%`,
-                  bottom: `${pos.y}%`,
+                  left: `${bossLeft}%`,
+                  bottom: `${bossBottom}%`,
                   transform: "translateX(-50%)",
                   zIndex: Math.floor(pos.y),
+                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
                 }}
               >
               <button
                 className={`${isDead ? "opacity-10 pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
                 style={{
-                  transform: `scale(${isDead ? 0.4 : pos.z}) ${isTargetable ? "translateY(-4px)" : ""} ${bossTranslate}`,
+                  transform: `scale(${isDead ? 0.4 : pos.z}) ${isTargetable ? "translateY(-4px)" : ""}`,
                   transition: "transform 0.5s ease, opacity 0.3s ease, filter 0.2s ease",
                   filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
                 }}
