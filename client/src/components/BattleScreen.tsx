@@ -1502,74 +1502,200 @@ export default function BattleScreen({
           <div
             className="absolute z-20 pointer-events-none"
             style={{
-              left: "2%",
-              bottom: "50%",
-              width: "140px",
+              left: "50%",
+              top: "6px",
+              transform: "translateX(-50%)",
+              width: "96%",
+              maxWidth: "960px",
             }}
           >
-            <div className="bg-black/70 backdrop-blur-sm rounded-md px-2 py-1.5 border border-purple-500/15">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-semibold text-purple-200" data-testid="text-player-battle-name">{player.name}</span>
-                <span className="text-[8px] text-purple-400/60">Lv.{player.level}</span>
-              </div>
-              <div className="mb-1">
-                <div className="flex items-center gap-1 mb-0.5">
-                  <Heart className="w-2.5 h-2.5 text-red-400 flex-shrink-0" />
-                  <div className="flex-1 h-1.5 bg-black/50 rounded-full overflow-hidden">
-                    <div className={`h-full rounded-full transition-all ${isLowHp ? "animate-pulse bg-red-500" : "bg-red-400"}`} style={{ width: `${hpPercent}%` }} />
-                  </div>
-                  <span className="text-[8px] text-red-300 min-w-[36px] text-right" data-testid="text-player-hp">{battle.playerHp}/{player.stats.maxHp}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Droplets className="w-2.5 h-2.5 text-blue-400 flex-shrink-0" />
-                  <div className="flex-1 h-1 bg-black/50 rounded-full overflow-hidden">
-                    <div className="h-full bg-blue-400 rounded-full transition-all" style={{ width: `${mpPercent}%` }} />
-                  </div>
-                  <span className="text-[8px] text-blue-300 min-w-[36px] text-right" data-testid="text-player-mp">{battle.playerMp}/{player.stats.maxMp}</span>
-                </div>
-              </div>
-              {battle.buffs.length > 0 && (
-                <div className="flex flex-wrap gap-0.5 mt-1">
-                  {battle.buffs.map((buff, i) => (
-                    <span key={i} className="text-[7px] px-1 py-0.5 rounded bg-yellow-600/30 text-yellow-300 border border-yellow-500/20 leading-none">
-                      {buff.name} ({buff.turnsRemaining})
-                    </span>
-                  ))}
-                </div>
-              )}
-              {battle.party.length > 0 && (
-                <div className="mt-1.5 space-y-1 border-t border-purple-500/15 pt-1.5">
-                  {battle.party.map(member => {
-                    const mHpPct = Math.max(0, (member.currentHp / member.stats.maxHp) * 100);
-                    const mMpPct = Math.max(0, (member.currentMp / member.stats.maxMp) * 100);
-                    const mLowHp = mHpPct <= 25;
-                    const mDead = member.currentHp <= 0;
-                    const isActive = battle.phase === "partyTurn" && battle.party[battle.activePartyIndex]?.id === member.id;
-                    return (
-                      <div key={member.id} className={`rounded px-1.5 py-1 ${isActive ? "bg-yellow-500/10 border border-yellow-500/20" : "bg-white/[0.03]"} ${mDead ? "opacity-40" : ""}`}>
-                        <div className="flex items-center justify-between mb-0.5">
-                          <span className={`text-[9px] font-semibold truncate max-w-[60px] ${isActive ? "text-yellow-200" : "text-purple-200/80"}`}>{member.name}</span>
-                          <span className="text-[7px] text-purple-400/50">Lv.{member.level}</span>
+            <div className="flex gap-2 items-stretch">
+              {[
+                {
+                  name: player.name,
+                  level: player.level,
+                  hp: battle.playerHp,
+                  maxHp: player.stats.maxHp,
+                  mp: battle.playerMp,
+                  maxMp: player.stats.maxMp,
+                  element: player.element,
+                  isPlayer: true,
+                  isDead: battle.playerHp <= 0,
+                  isActive: battle.phase === "playerTurn",
+                  buffs: battle.buffs,
+                },
+                ...battle.party.map((member, idx) => ({
+                  name: member.name,
+                  level: member.level || 1,
+                  hp: member.currentHp,
+                  maxHp: member.stats.maxHp,
+                  mp: member.currentMp,
+                  maxMp: member.stats.maxMp,
+                  element: member.element,
+                  isPlayer: false,
+                  isDead: member.currentHp <= 0,
+                  isActive: battle.phase === "partyTurn" && battle.activePartyIndex === idx,
+                  buffs: [] as typeof battle.buffs,
+                })),
+              ].map((char, i) => {
+                const charHpPct = Math.max(0, (char.hp / char.maxHp) * 100);
+                const charMpPct = Math.max(0, (char.mp / char.maxMp) * 100);
+                const charLowHp = charHpPct <= 25;
+                return (
+                  <div
+                    key={i}
+                    className={`flex-1 min-w-0 relative overflow-hidden rounded-b-lg ${char.isDead ? "opacity-40" : ""}`}
+                    style={{
+                      background: "linear-gradient(180deg, rgba(30,20,10,0.92) 0%, rgba(20,12,6,0.88) 100%)",
+                      borderLeft: "2px solid",
+                      borderRight: "2px solid",
+                      borderBottom: "3px solid",
+                      borderImageSource: `linear-gradient(180deg, ${char.isActive ? "#c9a44c" : "#5a4a2a"} 0%, ${char.isActive ? "#8b6914" : "#2a1f0f"} 100%)`,
+                      borderImageSlice: 1,
+                      boxShadow: char.isActive
+                        ? `0 0 12px ${ELEMENT_COLORS[char.element]}40, inset 0 0 20px ${ELEMENT_COLORS[char.element]}10`
+                        : "0 2px 8px rgba(0,0,0,0.5)",
+                    }}
+                  >
+                    <div
+                      className="absolute inset-0 opacity-[0.06]"
+                      style={{
+                        backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(139,109,20,0.3) 4px, rgba(139,109,20,0.3) 5px)`,
+                      }}
+                    />
+
+                    <div className="relative px-2.5 py-1.5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5">
+                          <div
+                            className="w-2 h-2 rounded-full flex-shrink-0"
+                            style={{
+                              backgroundColor: ELEMENT_COLORS[char.element],
+                              boxShadow: `0 0 6px ${ELEMENT_COLORS[char.element]}80`,
+                            }}
+                          />
+                          <span
+                            className="text-[11px] font-bold tracking-wide truncate max-w-[80px]"
+                            style={{
+                              color: char.isActive ? "#e8d5a0" : "#b8a880",
+                              textShadow: char.isActive ? "0 0 8px rgba(232,213,160,0.4)" : "none",
+                              fontFamily: "Georgia, 'Times New Roman', serif",
+                            }}
+                            data-testid={char.isPlayer ? "text-player-battle-name" : undefined}
+                          >
+                            {char.name}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1 mb-0.5">
-                          <Heart className="w-2 h-2 text-red-400 flex-shrink-0" />
-                          <div className="flex-1 h-1 bg-black/50 rounded-full overflow-hidden">
-                            <div className={`h-full rounded-full transition-all duration-300 ${mLowHp ? "animate-pulse bg-red-500" : "bg-red-400"}`} style={{ width: `${mHpPct}%` }} />
+                        <span
+                          className="text-[9px] font-semibold"
+                          style={{
+                            color: "#8b7a50",
+                            fontFamily: "Georgia, 'Times New Roman', serif",
+                          }}
+                        >
+                          Lv.{char.level}
+                        </span>
+                      </div>
+
+                      <div className="mb-1">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <Heart className="w-3 h-3 flex-shrink-0" style={{ color: charLowHp ? "#ef4444" : "#c44040" }} />
+                          <div
+                            className="flex-1 h-2.5 rounded-sm overflow-hidden relative"
+                            style={{
+                              background: "linear-gradient(180deg, #1a0808 0%, #0d0404 100%)",
+                              border: "1px solid #3a2020",
+                              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)",
+                            }}
+                          >
+                            <div
+                              className={`h-full rounded-sm transition-all duration-300 relative ${charLowHp ? "animate-pulse" : ""}`}
+                              style={{
+                                width: `${charHpPct}%`,
+                                background: charLowHp
+                                  ? "linear-gradient(180deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%)"
+                                  : "linear-gradient(180deg, #dc4444 0%, #b91c1c 50%, #8b1a1a 100%)",
+                                boxShadow: charLowHp
+                                  ? "0 0 6px rgba(239,68,68,0.5), inset 0 1px 0 rgba(255,255,255,0.15)"
+                                  : "inset 0 1px 0 rgba(255,255,255,0.15)",
+                              }}
+                            />
+                            <div className="absolute inset-0 rounded-sm" style={{
+                              background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%)",
+                            }} />
                           </div>
-                          <span className="text-[7px] text-red-300/70 min-w-[28px] text-right">{member.currentHp}/{member.stats.maxHp}</span>
+                          <span
+                            className="text-[9px] min-w-[40px] text-right font-semibold"
+                            style={{ color: charLowHp ? "#fca5a5" : "#d4a0a0", fontFamily: "Georgia, serif" }}
+                            data-testid={char.isPlayer ? "text-player-hp" : undefined}
+                          >
+                            {char.hp}/{char.maxHp}
+                          </span>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Droplets className="w-2 h-2 text-blue-400 flex-shrink-0" />
-                          <div className="flex-1 h-1 bg-black/50 rounded-full overflow-hidden">
-                            <div className="h-full bg-blue-400 rounded-full transition-all duration-300" style={{ width: `${mMpPct}%` }} />
+
+                        <div className="flex items-center gap-1.5">
+                          <Droplets className="w-3 h-3 flex-shrink-0" style={{ color: "#4488cc" }} />
+                          <div
+                            className="flex-1 h-2 rounded-sm overflow-hidden relative"
+                            style={{
+                              background: "linear-gradient(180deg, #080818 0%, #04040d 100%)",
+                              border: "1px solid #202040",
+                              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)",
+                            }}
+                          >
+                            <div
+                              className="h-full rounded-sm transition-all duration-300 relative"
+                              style={{
+                                width: `${charMpPct}%`,
+                                background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)",
+                                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)",
+                              }}
+                            />
+                            <div className="absolute inset-0 rounded-sm" style={{
+                              background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%)",
+                            }} />
                           </div>
-                          <span className="text-[7px] text-blue-300/70 min-w-[28px] text-right">{member.currentMp}/{member.stats.maxMp}</span>
+                          <span
+                            className="text-[9px] min-w-[40px] text-right font-semibold"
+                            style={{ color: "#93b8d8", fontFamily: "Georgia, serif" }}
+                            data-testid={char.isPlayer ? "text-player-mp" : undefined}
+                          >
+                            {char.mp}/{char.maxMp}
+                          </span>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
-              )}
+
+                      {char.buffs.length > 0 && (
+                        <div className="flex flex-wrap gap-0.5 mt-1">
+                          {char.buffs.map((buff, bi) => (
+                            <span
+                              key={bi}
+                              className="text-[7px] px-1 py-0.5 rounded leading-none"
+                              style={{
+                                background: "linear-gradient(180deg, rgba(139,109,20,0.3) 0%, rgba(80,60,10,0.3) 100%)",
+                                color: "#e8d5a0",
+                                border: "1px solid rgba(139,109,20,0.3)",
+                              }}
+                            >
+                              {buff.name} ({buff.turnsRemaining})
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {char.isActive && (
+                      <div
+                        className="absolute bottom-0 left-0 right-0 h-[2px]"
+                        style={{
+                          background: `linear-gradient(90deg, transparent 0%, ${ELEMENT_COLORS[char.element]} 30%, ${ELEMENT_COLORS[char.element]} 70%, transparent 100%)`,
+                          boxShadow: `0 0 8px ${ELEMENT_COLORS[char.element]}60`,
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 
