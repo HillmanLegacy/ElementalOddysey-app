@@ -111,7 +111,7 @@ export interface Enemy {
 
 export interface OverworldNode {
   id: number;
-  type: "battle" | "shop" | "event" | "boss" | "rest" | "shaman";
+  type: "battle" | "shop" | "event" | "boss" | "rest" | "shaman" | "hut";
   name: string;
   x: number;
   y: number;
