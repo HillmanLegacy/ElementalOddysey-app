@@ -199,6 +199,8 @@ export interface BattlePartyMember {
   defending: boolean;
   spriteId: string;
   learnedSpells: string[];
+  xp: number;
+  xpToNext: number;
 }
 
 export interface TurnQueueEntry {

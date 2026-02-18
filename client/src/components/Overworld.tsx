@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
@@ -826,9 +825,6 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
                   <>
                     <span className="text-[9px] text-white/40 mr-1">Clear</span>
                     {dots}
-                    <span className="text-[9px] text-white/30 ml-2">XP</span>
-                    <Progress value={(player.xp / player.xpToNext) * 100} className="h-1 w-16 bg-black/30" />
-                    <span className="text-[9px] text-white/30">{player.xp}/{player.xpToNext}</span>
                   </>
                 );
               })()}

@@ -1500,16 +1500,17 @@ export default function BattleScreen({
           })}
 
           <div
-            className="absolute z-20 pointer-events-none"
+            className="absolute z-20 pointer-events-none transition-all duration-300"
             style={{
               left: "50%",
-              top: "6px",
+              top: "0px",
               transform: "translateX(-50%)",
-              width: "96%",
-              maxWidth: "960px",
+              width: "98%",
+              maxWidth: "980px",
+              opacity: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") ? 0 : 1,
             }}
           >
-            <div className="flex gap-2 items-stretch">
+            <div className="flex gap-1.5 items-stretch">
               {[
                 {
                   name: player.name,
@@ -1523,6 +1524,8 @@ export default function BattleScreen({
                   isDead: battle.playerHp <= 0,
                   isActive: battle.phase === "playerTurn",
                   buffs: battle.buffs,
+                  xp: player.xp,
+                  xpToNext: player.xpToNext,
                 },
                 ...battle.party.map((member, idx) => ({
                   name: member.name,
@@ -1536,163 +1539,193 @@ export default function BattleScreen({
                   isDead: member.currentHp <= 0,
                   isActive: battle.phase === "partyTurn" && battle.activePartyIndex === idx,
                   buffs: [] as typeof battle.buffs,
+                  xp: member.xp || 0,
+                  xpToNext: member.xpToNext || 100,
                 })),
               ].map((char, i) => {
                 const charHpPct = Math.max(0, (char.hp / char.maxHp) * 100);
                 const charMpPct = Math.max(0, (char.mp / char.maxMp) * 100);
+                const charXpPct = char.xpToNext > 0 ? Math.min(100, (char.xp / char.xpToNext) * 100) : 0;
                 const charLowHp = charHpPct <= 25;
+                const elColor = ELEMENT_COLORS[char.element];
                 return (
                   <div
                     key={i}
-                    className={`flex-1 min-w-0 relative overflow-hidden rounded-b-lg ${char.isDead ? "opacity-40" : ""}`}
-                    style={{
-                      background: "linear-gradient(180deg, rgba(30,20,10,0.92) 0%, rgba(20,12,6,0.88) 100%)",
-                      borderLeft: "2px solid",
-                      borderRight: "2px solid",
-                      borderBottom: "3px solid",
-                      borderImageSource: `linear-gradient(180deg, ${char.isActive ? "#c9a44c" : "#5a4a2a"} 0%, ${char.isActive ? "#8b6914" : "#2a1f0f"} 100%)`,
-                      borderImageSlice: 1,
-                      boxShadow: char.isActive
-                        ? `0 0 12px ${ELEMENT_COLORS[char.element]}40, inset 0 0 20px ${ELEMENT_COLORS[char.element]}10`
-                        : "0 2px 8px rgba(0,0,0,0.5)",
-                    }}
+                    className={`flex-1 min-w-0 relative ${char.isDead ? "opacity-40" : ""}`}
                   >
                     <div
-                      className="absolute inset-0 opacity-[0.06]"
+                      className="relative overflow-hidden rounded-b-lg"
                       style={{
-                        backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(139,109,20,0.3) 4px, rgba(139,109,20,0.3) 5px)`,
+                        background: char.isActive
+                          ? `linear-gradient(135deg, rgba(15,15,25,0.95) 0%, rgba(20,18,30,0.95) 100%)`
+                          : `linear-gradient(135deg, rgba(12,12,20,0.92) 0%, rgba(16,14,24,0.92) 100%)`,
+                        border: `1px solid ${char.isActive ? elColor + "50" : "rgba(80,70,100,0.25)"}`,
+                        borderTop: "none",
+                        boxShadow: char.isActive
+                          ? `0 4px 20px rgba(0,0,0,0.6), 0 0 15px ${elColor}20, inset 0 1px 0 rgba(255,255,255,0.04)`
+                          : "0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
                       }}
-                    />
-
-                    <div className="relative px-2.5 py-1.5">
-                      <div className="flex items-center justify-between mb-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <div
-                            className="w-2 h-2 rounded-full flex-shrink-0"
-                            style={{
-                              backgroundColor: ELEMENT_COLORS[char.element],
-                              boxShadow: `0 0 6px ${ELEMENT_COLORS[char.element]}80`,
-                            }}
-                          />
-                          <span
-                            className="text-[11px] font-bold tracking-wide truncate max-w-[80px]"
-                            style={{
-                              color: char.isActive ? "#e8d5a0" : "#b8a880",
-                              textShadow: char.isActive ? "0 0 8px rgba(232,213,160,0.4)" : "none",
-                              fontFamily: "Georgia, 'Times New Roman', serif",
-                            }}
-                            data-testid={char.isPlayer ? "text-player-battle-name" : undefined}
-                          >
-                            {char.name}
-                          </span>
-                        </div>
-                        <span
-                          className="text-[9px] font-semibold"
-                          style={{
-                            color: "#8b7a50",
-                            fontFamily: "Georgia, 'Times New Roman', serif",
-                          }}
-                        >
-                          Lv.{char.level}
-                        </span>
-                      </div>
-
-                      <div className="mb-1">
-                        <div className="flex items-center gap-1.5 mb-1">
-                          <Heart className="w-3 h-3 flex-shrink-0" style={{ color: charLowHp ? "#ef4444" : "#c44040" }} />
-                          <div
-                            className="flex-1 h-2.5 rounded-sm overflow-hidden relative"
-                            style={{
-                              background: "linear-gradient(180deg, #1a0808 0%, #0d0404 100%)",
-                              border: "1px solid #3a2020",
-                              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)",
-                            }}
-                          >
+                    >
+                      <div className="px-3 py-2">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
                             <div
-                              className={`h-full rounded-sm transition-all duration-300 relative ${charLowHp ? "animate-pulse" : ""}`}
+                              className="w-1.5 h-6 rounded-full flex-shrink-0"
                               style={{
-                                width: `${charHpPct}%`,
-                                background: charLowHp
-                                  ? "linear-gradient(180deg, #dc2626 0%, #991b1b 50%, #7f1d1d 100%)"
-                                  : "linear-gradient(180deg, #dc4444 0%, #b91c1c 50%, #8b1a1a 100%)",
-                                boxShadow: charLowHp
-                                  ? "0 0 6px rgba(239,68,68,0.5), inset 0 1px 0 rgba(255,255,255,0.15)"
-                                  : "inset 0 1px 0 rgba(255,255,255,0.15)",
+                                background: `linear-gradient(180deg, ${elColor} 0%, ${elColor}80 100%)`,
+                                boxShadow: `0 0 8px ${elColor}60`,
                               }}
                             />
-                            <div className="absolute inset-0 rounded-sm" style={{
-                              background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%)",
-                            }} />
+                            <div>
+                              <span
+                                className="text-xs font-semibold tracking-wide truncate block max-w-[90px] leading-tight"
+                                style={{
+                                  color: char.isActive ? "#f0eaff" : "#c4bdd4",
+                                  textShadow: char.isActive ? `0 0 12px ${elColor}40` : "none",
+                                }}
+                                data-testid={char.isPlayer ? "text-player-battle-name" : undefined}
+                              >
+                                {char.name}
+                              </span>
+                              <span className="text-[8px] text-slate-500 leading-none">Lv.{char.level}</span>
+                            </div>
                           </div>
-                          <span
-                            className="text-[9px] min-w-[40px] text-right font-semibold"
-                            style={{ color: charLowHp ? "#fca5a5" : "#d4a0a0", fontFamily: "Georgia, serif" }}
-                            data-testid={char.isPlayer ? "text-player-hp" : undefined}
-                          >
-                            {char.hp}/{char.maxHp}
-                          </span>
+                          {char.buffs.length > 0 && (
+                            <div className="flex gap-0.5 flex-wrap justify-end max-w-[60px]">
+                              {char.buffs.map((buff, bi) => (
+                                <span
+                                  key={bi}
+                                  className="text-[6px] px-1 py-0.5 rounded-full leading-none"
+                                  style={{
+                                    background: `${elColor}20`,
+                                    color: elColor,
+                                    border: `1px solid ${elColor}30`,
+                                  }}
+                                >
+                                  {buff.name}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
-                        <div className="flex items-center gap-1.5">
-                          <Droplets className="w-3 h-3 flex-shrink-0" style={{ color: "#4488cc" }} />
-                          <div
-                            className="flex-1 h-2 rounded-sm overflow-hidden relative"
-                            style={{
-                              background: "linear-gradient(180deg, #080818 0%, #04040d 100%)",
-                              border: "1px solid #202040",
-                              boxShadow: "inset 0 1px 3px rgba(0,0,0,0.6)",
-                            }}
-                          >
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[8px] font-bold text-red-400 w-3 flex-shrink-0">HP</span>
                             <div
-                              className="h-full rounded-sm transition-all duration-300 relative"
+                              className="flex-1 h-3 rounded-full overflow-hidden relative"
                               style={{
-                                width: `${charMpPct}%`,
-                                background: "linear-gradient(180deg, #3b82f6 0%, #2563eb 50%, #1d4ed8 100%)",
-                                boxShadow: "inset 0 1px 0 rgba(255,255,255,0.15)",
-                              }}
-                            />
-                            <div className="absolute inset-0 rounded-sm" style={{
-                              background: "linear-gradient(180deg, rgba(255,255,255,0.08) 0%, transparent 50%)",
-                            }} />
-                          </div>
-                          <span
-                            className="text-[9px] min-w-[40px] text-right font-semibold"
-                            style={{ color: "#93b8d8", fontFamily: "Georgia, serif" }}
-                            data-testid={char.isPlayer ? "text-player-mp" : undefined}
-                          >
-                            {char.mp}/{char.maxMp}
-                          </span>
-                        </div>
-                      </div>
-
-                      {char.buffs.length > 0 && (
-                        <div className="flex flex-wrap gap-0.5 mt-1">
-                          {char.buffs.map((buff, bi) => (
-                            <span
-                              key={bi}
-                              className="text-[7px] px-1 py-0.5 rounded leading-none"
-                              style={{
-                                background: "linear-gradient(180deg, rgba(139,109,20,0.3) 0%, rgba(80,60,10,0.3) 100%)",
-                                color: "#e8d5a0",
-                                border: "1px solid rgba(139,109,20,0.3)",
+                                background: "rgba(0,0,0,0.5)",
+                                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03)",
                               }}
                             >
-                              {buff.name} ({buff.turnsRemaining})
+                              <div
+                                className="absolute inset-0 h-full rounded-full transition-all duration-[800ms] ease-out"
+                                style={{
+                                  width: `${Math.min(100, charHpPct + 3)}%`,
+                                  background: "rgba(220,50,50,0.2)",
+                                }}
+                              />
+                              <div
+                                className={`h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden ${charLowHp ? "animate-pulse" : ""}`}
+                                style={{
+                                  width: `${charHpPct}%`,
+                                  background: charLowHp
+                                    ? "linear-gradient(180deg, #ef4444 0%, #dc2626 40%, #b91c1c 100%)"
+                                    : charHpPct > 50
+                                      ? "linear-gradient(180deg, #4ade80 0%, #22c55e 40%, #16a34a 100%)"
+                                      : "linear-gradient(180deg, #fbbf24 0%, #f59e0b 40%, #d97706 100%)",
+                                  boxShadow: charLowHp
+                                    ? "0 0 10px rgba(239,68,68,0.5)"
+                                    : charHpPct > 50
+                                      ? "0 0 6px rgba(34,197,94,0.3)"
+                                      : "0 0 6px rgba(245,158,11,0.3)",
+                                }}
+                              >
+                                <div className="absolute inset-0" style={{
+                                  background: "linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)",
+                                }} />
+                              </div>
+                            </div>
+                            <span
+                              className="text-[9px] min-w-[44px] text-right font-mono tabular-nums"
+                              style={{ color: charLowHp ? "#fca5a5" : "#a8a0b8" }}
+                              data-testid={char.isPlayer ? "text-player-hp" : undefined}
+                            >
+                              {char.hp}/{char.maxHp}
                             </span>
-                          ))}
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[8px] font-bold text-blue-400 w-3 flex-shrink-0">MP</span>
+                            <div
+                              className="flex-1 h-2 rounded-full overflow-hidden relative"
+                              style={{
+                                background: "rgba(0,0,0,0.5)",
+                                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03)",
+                              }}
+                            >
+                              <div
+                                className="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+                                style={{
+                                  width: `${charMpPct}%`,
+                                  background: "linear-gradient(180deg, #60a5fa 0%, #3b82f6 40%, #2563eb 100%)",
+                                  boxShadow: "0 0 6px rgba(59,130,246,0.3)",
+                                }}
+                              >
+                                <div className="absolute inset-0" style={{
+                                  background: "linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)",
+                                }} />
+                              </div>
+                            </div>
+                            <span
+                              className="text-[9px] min-w-[44px] text-right font-mono tabular-nums"
+                              style={{ color: "#7ca0c4" }}
+                              data-testid={char.isPlayer ? "text-player-mp" : undefined}
+                            >
+                              {char.mp}/{char.maxMp}
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[8px] font-bold text-amber-400 w-3 flex-shrink-0">XP</span>
+                            <div
+                              className="flex-1 h-1.5 rounded-full overflow-hidden relative"
+                              style={{
+                                background: "rgba(0,0,0,0.4)",
+                                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
+                              }}
+                            >
+                              <div
+                                className="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+                                style={{
+                                  width: `${charXpPct}%`,
+                                  background: "linear-gradient(180deg, #fbbf24 0%, #f59e0b 40%, #d97706 100%)",
+                                  boxShadow: "0 0 4px rgba(251,191,36,0.3)",
+                                }}
+                              >
+                                <div className="absolute inset-0" style={{
+                                  background: "linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 50%)",
+                                }} />
+                              </div>
+                            </div>
+                            <span className="text-[8px] min-w-[44px] text-right font-mono tabular-nums text-amber-500/60">
+                              {char.xp}/{char.xpToNext}
+                            </span>
+                          </div>
                         </div>
+                      </div>
+
+                      {char.isActive && (
+                        <div
+                          className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+                          style={{
+                            background: `linear-gradient(90deg, transparent 0%, ${elColor} 20%, ${elColor} 80%, transparent 100%)`,
+                            boxShadow: `0 0 10px ${elColor}80, 0 0 20px ${elColor}40`,
+                          }}
+                        />
                       )}
                     </div>
-
-                    {char.isActive && (
-                      <div
-                        className="absolute bottom-0 left-0 right-0 h-[2px]"
-                        style={{
-                          background: `linear-gradient(90deg, transparent 0%, ${ELEMENT_COLORS[char.element]} 30%, ${ELEMENT_COLORS[char.element]} 70%, transparent 100%)`,
-                          boxShadow: `0 0 8px ${ELEMENT_COLORS[char.element]}60`,
-                        }}
-                      />
-                    )}
                   </div>
                 );
               })}
@@ -2136,7 +2169,14 @@ export default function BattleScreen({
           />
         )}
 
-        <div className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-4">
+        <div
+          className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-4 transition-all duration-300"
+          style={{
+            opacity: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") && battle.phase !== "victory" && battle.phase !== "defeat" ? 0 : 1,
+            transform: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") && battle.phase !== "victory" && battle.phase !== "defeat" ? "translateY(20px)" : "translateY(0)",
+            pointerEvents: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") ? "none" : "auto",
+          }}
+        >
 
           {battle.phase === "victory" && showVictoryUI && (
             <div className="text-center py-3 animate-[fadeIn_0.8s_ease-out]">
