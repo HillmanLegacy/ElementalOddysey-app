@@ -518,6 +518,21 @@ export default function BattleScreen({
         setTimeout(() => setEnemyHitIdx(null), 400);
       }
 
+      const dodgeMatch = msg.match(/(.+?) dodged (?:the attack|.+'s attack)!/);
+      if (dodgeMatch) {
+        const isPlayerAttacking = (animPhase === "attacking" || animPhase === "runBack") && pendingTargetIdx !== null;
+        const isPartyAttacking = partyAnimPhase === "attacking" || partyAnimPhase === "runBack";
+        if (isPlayerAttacking || isPartyAttacking) {
+          const targetIdx = pendingTargetIdx ?? 0;
+          const enemyIdx = battle.enemies.findIndex(e => e.name === dodgeMatch[1]);
+          const dodgeIdx = enemyIdx >= 0 ? enemyIdx : targetIdx;
+          setDodgeBlur({ type: "enemy", index: dodgeIdx });
+          scheduleTimer(() => setDodgeBlur(null), 600);
+          const ep = ENEMY_SLOTS[dodgeIdx % ENEMY_SLOTS.length];
+          spawnDamageNumber("MISS", ep.x, 100 - ep.y - 15, "#aaaaaa");
+        }
+      }
+
       if (matched && battle.animation === "enemyAttack") {
         const attackingEnemy = battle.enemies.find(e => e.currentHp > 0);
         const isFire = attackingEnemy?.element === "Fire";
@@ -528,7 +543,7 @@ export default function BattleScreen({
         playSfx("gruntHurt", 0.8);
       }
     }
-  }, [battle.log.length, animPhase, pendingTargetIdx, battle.enemies, battle.animation, spawnDamageNumber, battle.lastElementLabel, scheduleTimer]);
+  }, [battle.log.length, animPhase, partyAnimPhase, pendingTargetIdx, battle.enemies, battle.animation, spawnDamageNumber, battle.lastElementLabel, scheduleTimer]);
 
   const lastItemUsedRef = useRef<typeof battle.lastItemUsed>(undefined);
   useEffect(() => {
