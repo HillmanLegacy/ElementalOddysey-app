@@ -1966,9 +1966,9 @@ export default function BattleScreen({
                   </div>
                 )}
 
-                <div className="text-center mb-1 z-10">
-                  <p className="text-[10px] font-bold text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" data-testid={`text-enemy-name-${idx}`}>{enemy.name}</p>
-                  <p className="text-[8px] drop-shadow-lg" style={{ color: ELEMENT_COLORS[enemy.element] }}>Lv.{enemy.level}</p>
+                <div className="flex items-center justify-center gap-1 mb-1 z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                  <span className="text-[7px] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ color: ELEMENT_COLORS[enemy.element], imageRendering: "pixelated" }}>Lv{enemy.level}</span>
+                  <span className="text-[8px] text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" data-testid={`text-enemy-name-${idx}`} style={{ imageRendering: "pixelated" }}>{enemy.name}</span>
                 </div>
 
                 <div className={`relative ${isDead ? "" : "animate-[idleBob_2.8s_ease-in-out_infinite]"}`} style={{ animationDelay: `${idx * 0.5}s` }}>
