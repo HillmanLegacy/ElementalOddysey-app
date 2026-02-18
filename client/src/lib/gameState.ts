@@ -15,7 +15,10 @@ const INITIAL_STATE: GameState = {
   textSpeed: "medium",
   musicVolume: 70,
   sfxVolume: 80,
+  showDamageNumbers: true,
 };
+
+let damageEventCounter = 0;
 
 export function useGameState() {
   const [state, setState] = useState<GameState>(INITIAL_STATE);
@@ -107,6 +110,7 @@ export function useGameState() {
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.animation = isCrit ? "critical" : "attack";
         battle.lastElementLabel = elementLabel || undefined;
+        battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: targetIndex, isCrit, element: weaponElement, label: elementLabel || undefined };
         battle.log = [...battle.log, `You deal ${damage}${isCrit ? " CRITICAL" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
 
         if (s.player.perks.includes("shadow_lifesteal")) {
@@ -228,7 +232,9 @@ export function useGameState() {
           const skillMult = spell.effect.damageMultiplier || 1;
           const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
           const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, true, s.player.element, target.element, skillMult, critMod);
+          const tIdx = battle.enemies.indexOf(target);
           target.currentHp = Math.max(0, target.currentHp - damage);
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: tIdx >= 0 ? tIdx : 0, isCrit, element: spell.element || s.player.element, label: elementLabel || undefined };
           battle.log = [...battle.log, `${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
           if (elementLabel) lastLabel = elementLabel;
         }
@@ -357,6 +363,7 @@ export function useGameState() {
         const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, undefined, target.element);
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.lastElementLabel = elementLabel || undefined;
+        battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: targetIndex, isCrit, label: elementLabel || undefined };
         battle.log = [...battle.log, `${member.name} deals ${damage}${isCrit ? " CRIT" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
       }
 
@@ -398,10 +405,11 @@ export function useGameState() {
       if (spell.type === "damage") {
         let lastLabel = "";
         if (spell.targetType === "allEnemies") {
-          battle.enemies.forEach(e => {
+          battle.enemies.forEach((e, eIdx) => {
             if (e.currentHp <= 0) return;
             const { damage, isCrit, elementLabel } = calculateDamage(member.stats, e.stats, true, spell.element || member.element, e.element, spell.effect.damageMultiplier);
             e.currentHp = Math.max(0, e.currentHp - damage);
+            battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: eIdx, isCrit, element: spell.element || member.element, label: elementLabel || undefined };
             battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${e.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
             if (elementLabel) lastLabel = elementLabel;
           });
@@ -410,6 +418,7 @@ export function useGameState() {
           if (target && target.currentHp > 0) {
             const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, true, spell.element || member.element, target.element, spell.effect.damageMultiplier);
             target.currentHp = Math.max(0, target.currentHp - damage);
+            battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: targetIndex, isCrit, element: spell.element || member.element, label: elementLabel || undefined };
             battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
             if (elementLabel) lastLabel = elementLabel;
           }
@@ -533,6 +542,7 @@ export function useGameState() {
           const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
           const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
           battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined };
           battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
           battle.animation = "enemyAttack";
         }
@@ -551,6 +561,7 @@ export function useGameState() {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
             const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
             battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
+            battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
             battle.animation = "enemyAttack";
           }
@@ -563,6 +574,7 @@ export function useGameState() {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, Math.random() > 0.5, enemy.element, partyTarget.element);
             const actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
             battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
+            battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "party", targetIndex: partyIdx, isCrit, element: enemy.element, label: elementLabel || undefined };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${isCrit ? " CRIT" : ""} to ${partyTarget.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
             battle.animation = "enemyAttack";
           }

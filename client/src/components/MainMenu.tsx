@@ -12,7 +12,8 @@ interface MainMenuProps {
   textSpeed: GameState["textSpeed"];
   musicVolume: number;
   sfxVolume: number;
-  onSettingsChange: (settings: Partial<Pick<GameState, "textSpeed" | "musicVolume" | "sfxVolume">>) => void;
+  showDamageNumbers: boolean;
+  onSettingsChange: (settings: Partial<Pick<GameState, "textSpeed" | "musicVolume" | "sfxVolume" | "showDamageNumbers">>) => void;
 }
 
 function MedievalBackground() {
@@ -226,7 +227,7 @@ function MedievalBackground() {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
 }
 
-export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, musicVolume, sfxVolume, onSettingsChange }: MainMenuProps) {
+export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, musicVolume, sfxVolume, showDamageNumbers, onSettingsChange }: MainMenuProps) {
   const [showOptions, setShowOptions] = useState(false);
   const [titleVisible, setTitleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
@@ -386,6 +387,21 @@ export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, mu
                     className="w-full"
                     data-testid="slider-sfx"
                   />
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <label className="text-xs" style={{ color: "#8a7040" }}>Damage Numbers</label>
+                  <button
+                    className="px-3 py-1 rounded text-xs font-semibold transition-all"
+                    style={showDamageNumbers
+                      ? { background: "rgba(140,100,30,0.6)", color: "#e8d5a0", border: "1px solid rgba(180,140,50,0.3)" }
+                      : { background: "transparent", color: "#8a7040", border: "1px solid rgba(100,80,30,0.2)" }
+                    }
+                    onClick={() => onSettingsChange({ showDamageNumbers: !showDamageNumbers })}
+                    data-testid="button-damage-numbers"
+                  >
+                    {showDamageNumbers ? "On" : "Off"}
+                  </button>
                 </div>
               </div>
             </Card>

@@ -122,12 +122,13 @@ interface BattleScreenProps {
   onEndBattle: (victory: boolean) => void;
   onSetAnimating: () => void;
   onFinishPlayerTurn: () => void;
+  showDamageNumbers: boolean;
 }
 
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice";
 
 export default function BattleScreen({
-  player, battle, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
+  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
 }: BattleScreenProps) {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
@@ -205,10 +206,56 @@ export default function BattleScreen({
   }, [battle.phase]);
 
   const spawnDamageNumber = useCallback((text: string, x: number, y: number, color: string) => {
+    if (!showDamageNumbers) return;
     const id = damageIdRef.current++;
     setDamageNumbers(prev => [...prev, { id, text, x, y, color }]);
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
-  }, []);
+  }, [showDamageNumbers]);
+
+  const lastDmgEventIdRef = useRef(0);
+  useEffect(() => {
+    if (!battle.lastDamageEvent || !showDamageNumbers) return;
+    const evt = battle.lastDamageEvent;
+    if (evt.id <= lastDmgEventIdRef.current) return;
+    lastDmgEventIdRef.current = evt.id;
+
+    const ENEMY_POS = [
+      { x: 58, y: 42 },
+      { x: 72, y: 36 },
+      { x: 65, y: 52 },
+      { x: 80, y: 48 },
+    ];
+    const PLAYER_DMG_POS = { x: 14, y: 30 };
+    const PARTY_DMG_POS = [
+      { x: 6, y: 55 },
+      { x: 14, y: 58 },
+      { x: 22, y: 55 },
+    ];
+
+    let posX: number, posY: number;
+    let color = "#ef4444";
+
+    if (evt.targetType === "enemy") {
+      const ep = ENEMY_POS[evt.targetIndex % ENEMY_POS.length];
+      posX = ep.x + (Math.random() * 6 - 3);
+      posY = 100 - ep.y - 15 + (Math.random() * 4 - 2);
+      color = evt.isCrit ? "#fbbf24" : "#ef4444";
+    } else if (evt.targetType === "player") {
+      posX = PLAYER_DMG_POS.x;
+      posY = PLAYER_DMG_POS.y;
+      color = evt.element === "Fire" ? "#ff6b2b" : "#ef4444";
+    } else {
+      const pp = PARTY_DMG_POS[evt.targetIndex % PARTY_DMG_POS.length];
+      posX = pp.x;
+      posY = pp.y;
+      color = "#ef4444";
+    }
+
+    const text = (evt.isCrit ? "CRIT " : "") + evt.amount;
+    const id = damageIdRef.current++;
+    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color }]);
+    setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
+  }, [battle.lastDamageEvent, showDamageNumbers]);
 
   const handleAttackTarget = useCallback((targetIdx: number) => {
     setSelectedAction(null);
@@ -349,12 +396,6 @@ export default function BattleScreen({
             });
           }, 500);
         }
-        spawnDamageNumber(
-          (isCrit ? "CRIT " : "") + matched[1],
-          60 + tidx * 15,
-          30 + tidx * 5,
-          isCrit ? "#fbbf24" : "#ef4444"
-        );
         if (isCrit) {
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 400);
@@ -386,13 +427,6 @@ export default function BattleScreen({
             });
           }, 500);
         }
-        const dmgColor = animPhase === "fujinSlice" ? "#4ade80" : "#a855f7";
-        spawnDamageNumber(
-          matched[1],
-          55 + targetIdx * 15,
-          28 + targetIdx * 8,
-          dmgColor
-        );
         setShakeScreen(true);
         setTimeout(() => setShakeScreen(false), 500);
         setTimeout(() => setEnemyHitIdx(null), 400);
@@ -406,7 +440,6 @@ export default function BattleScreen({
           setTimeout(() => setPlayerFlash(false), 500);
         }
         playSfx("gruntHurt", 0.8);
-        spawnDamageNumber(matched[1], 22, 35, isFire ? "#ff6b2b" : "#ef4444");
       }
     }
   }, [battle.log.length, animPhase, pendingTargetIdx, battle.enemies, battle.animation, spawnDamageNumber, battle.lastElementLabel, scheduleTimer]);

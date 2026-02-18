@@ -117,6 +117,7 @@ function Game() {
             textSpeed={state.textSpeed}
             musicVolume={state.musicVolume}
             sfxVolume={state.sfxVolume}
+            showDamageNumbers={state.showDamageNumbers}
             onSettingsChange={(settings) => setState(s => ({ ...s, ...settings }))}
           />
         );
@@ -171,6 +172,7 @@ function Game() {
           <BattleScreen
             player={state.player}
             battle={state.battle}
+            showDamageNumbers={state.showDamageNumbers}
             onAttack={playerAttack}
             onCastSpell={castSpell}
             onDefend={playerDefend}
