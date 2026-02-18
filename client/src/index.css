@@ -321,21 +321,6 @@
   }
 }
 
-@keyframes fireballExplosionScale {
-  0% {
-    transform: scale(0.3);
-    opacity: 1;
-  }
-  30% {
-    transform: scale(1.2);
-    opacity: 1;
-  }
-  100% {
-    transform: scale(1.8);
-    opacity: 0;
-  }
-}
-
 @keyframes potionBubble {
   0% {
     transform: translateY(0) scale(1);
