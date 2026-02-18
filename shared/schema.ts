@@ -66,6 +66,7 @@ export interface PlayerCharacter {
   currentNode: number;
   clearedNodes: number[];
   party: PartyMember[];
+  benchedParty: PartyMember[];
   defeatedBosses: number[];
   spriteId: string;
   starterCharacterId: string;

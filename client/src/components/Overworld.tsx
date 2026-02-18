@@ -6,7 +6,7 @@ import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, X, Users, Sparkles, Home, Shield, Package, Moon } from "lucide-react";
-import { isRegionUnlocked, getRegionTier } from "@/lib/gameData";
+import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
 import knightIdle from "@/assets/images/knight-idle-4f.png";
@@ -139,7 +139,8 @@ interface OverworldProps {
 }
 
 export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSave, onRegionChange }: OverworldProps) {
-  const region = REGIONS[player.currentRegion];
+  const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
+  const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -196,7 +197,8 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
       setIsMoving(false);
       setFacingRight(true);
       moveCallbackRef.current = null;
-      const newRegion = REGIONS[player.currentRegion];
+      const newTier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
+      const newRegion = getRegionForTier(player.currentRegion, newTier);
       const firstNode = newRegion.nodes[0];
       const pos = getNodePosition(firstNode);
       setCharPos(pos);

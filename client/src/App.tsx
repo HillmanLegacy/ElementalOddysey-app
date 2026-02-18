@@ -157,7 +157,20 @@ function Game() {
                 <PartyManagementScreen
                   player={state.player}
                   onRemoveMember={(memberId) => {
-                    updatePlayer({ party: state.player!.party.filter(m => m.id !== memberId) });
+                    const member = state.player!.party.find(m => m.id === memberId);
+                    if (!member) return;
+                    updatePlayer({
+                      party: state.player!.party.filter(m => m.id !== memberId),
+                      benchedParty: [...(state.player!.benchedParty || []), member],
+                    });
+                  }}
+                  onAddMember={(memberId) => {
+                    const member = (state.player!.benchedParty || []).find(m => m.id === memberId);
+                    if (!member) return;
+                    updatePlayer({
+                      party: [...state.player!.party, member],
+                      benchedParty: (state.player!.benchedParty || []).filter(m => m.id !== memberId),
+                    });
                   }}
                   onClose={() => setShowPartyManagement(false)}
                 />

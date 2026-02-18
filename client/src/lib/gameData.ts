@@ -179,6 +179,7 @@ export function createNewPlayer(starterDef: PartyMemberDef, name: string, color:
     currentNode: 0,
     clearedNodes: [],
     party: [],
+    benchedParty: [],
     defeatedBosses: [],
     spriteId: starterDef.spriteId,
     starterCharacterId: starterDef.id,
@@ -360,6 +361,62 @@ export const REGIONS: Region[] = [
     ],
   },
 ];
+
+export const REGION_TIER_VARIANTS: Record<number, Record<number, Region>> = {
+  0: {
+    1: {
+      id: 0,
+      name: "Molten Wastes",
+      theme: "Fire",
+      unlocked: true,
+      nodes: [
+        { id: 0, type: "hut", name: "Charred Outpost", x: 10, y: 78, connections: [1, 2], region: 0, cleared: false },
+        { id: 1, type: "battle", name: "Sulfur Flats", x: 22, y: 62, connections: [0, 3, 4], region: 0, cleared: false },
+        { id: 2, type: "battle", name: "Magma Shelf", x: 12, y: 45, connections: [0, 5], region: 0, cleared: false },
+        { id: 3, type: "battle", name: "Obsidian Crossing", x: 35, y: 75, connections: [1, 6], region: 0, cleared: false },
+        { id: 4, type: "shop", name: "Forgemaster's Market", x: 32, y: 50, connections: [1, 5, 7], region: 0, cleared: false },
+        { id: 5, type: "battle", name: "Cinder Basin", x: 20, y: 32, connections: [2, 4, 8], region: 0, cleared: false },
+        { id: 6, type: "battle", name: "Pyroclast Ridge", x: 48, y: 68, connections: [3, 9], region: 0, cleared: false },
+        { id: 7, type: "battle", name: "Smelter Ruins", x: 46, y: 42, connections: [4, 9, 10], region: 0, cleared: false },
+        { id: 8, type: "shaman", name: "Flame Oracle's Cave", x: 30, y: 18, connections: [5, 10], region: 0, cleared: false },
+        { id: 9, type: "rest", name: "Lava Spring", x: 58, y: 58, connections: [6, 7, 11], region: 0, cleared: false },
+        { id: 10, type: "battle", name: "Crucible Depths", x: 52, y: 30, connections: [7, 8, 12], region: 0, cleared: false },
+        { id: 11, type: "battle", name: "Hellfire Chasm", x: 72, y: 52, connections: [9, 12, 13], region: 0, cleared: false },
+        { id: 12, type: "battle", name: "Eruption Path", x: 68, y: 32, connections: [10, 11, 13], region: 0, cleared: false },
+        { id: 13, type: "boss", name: "Dragon Lord's Caldera", x: 85, y: 42, connections: [11, 12], region: 0, cleared: false },
+      ],
+    },
+    2: {
+      id: 0,
+      name: "Infernal Core",
+      theme: "Fire",
+      unlocked: true,
+      nodes: [
+        { id: 0, type: "hut", name: "Ashen Refuge", x: 8, y: 85, connections: [1, 2], region: 0, cleared: false },
+        { id: 1, type: "battle", name: "Brimstone Gate", x: 20, y: 70, connections: [0, 3, 4], region: 0, cleared: false },
+        { id: 2, type: "battle", name: "Ember Vein", x: 15, y: 50, connections: [0, 5], region: 0, cleared: false },
+        { id: 3, type: "battle", name: "Hellmouth Pass", x: 38, y: 78, connections: [1, 6], region: 0, cleared: false },
+        { id: 4, type: "shop", name: "Demonsmith Bazaar", x: 35, y: 52, connections: [1, 5, 7], region: 0, cleared: false },
+        { id: 5, type: "battle", name: "Molten Abyss", x: 22, y: 35, connections: [2, 4, 8], region: 0, cleared: false },
+        { id: 6, type: "battle", name: "Scoriac Plateau", x: 52, y: 72, connections: [3, 9], region: 0, cleared: false },
+        { id: 7, type: "battle", name: "Furnace Heart", x: 50, y: 45, connections: [4, 9, 10], region: 0, cleared: false },
+        { id: 8, type: "shaman", name: "Inferno Sage's Altar", x: 34, y: 20, connections: [5, 10], region: 0, cleared: false },
+        { id: 9, type: "rest", name: "Ember Pool", x: 62, y: 60, connections: [6, 7, 11], region: 0, cleared: false },
+        { id: 10, type: "battle", name: "Core Tunnels", x: 55, y: 32, connections: [7, 8, 12], region: 0, cleared: false },
+        { id: 11, type: "battle", name: "Apocalypse Rift", x: 75, y: 55, connections: [9, 12, 13], region: 0, cleared: false },
+        { id: 12, type: "battle", name: "Annihilation Way", x: 72, y: 35, connections: [10, 11, 13], region: 0, cleared: false },
+        { id: 13, type: "boss", name: "Dragon Lord's Throne", x: 88, y: 45, connections: [11, 12], region: 0, cleared: false },
+      ],
+    },
+  },
+};
+
+export function getRegionForTier(regionId: number, tier: number): Region {
+  if (tier > 0 && REGION_TIER_VARIANTS[regionId]?.[tier]) {
+    return REGION_TIER_VARIANTS[regionId][tier];
+  }
+  return REGIONS[regionId];
+}
 
 export function isRegionUnlocked(regionId: number, regionBossDefeats: Record<string, number>): boolean {
   if (regionId === 0) return true;

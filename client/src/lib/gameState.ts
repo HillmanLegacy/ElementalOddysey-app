@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember, PendingLevelUp } from "@shared/schema";
-import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, buildTurnQueue, getNewSpellsAtLevel } from "./gameData";
+import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, getRegionForTier, buildTurnQueue, getNewSpellsAtLevel } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 const INITIAL_STATE: GameState = {
@@ -44,11 +44,11 @@ export function useGameState() {
   const startBattle = useCallback((nodeId: number) => {
     setState(s => {
       if (!s.player) return s;
-      const region = REGIONS[s.player.currentRegion];
+      const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
+      const region = getRegionForTier(s.player.currentRegion, tier);
       const node = region.nodes.find(n => n.id === nodeId);
       if (!node || (node.type !== "battle" && node.type !== "boss")) return s;
 
-      const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
       const enemies = getEnemiesForNode(node, region, tier);
       const battle = initBattle(enemies);
       battle.playerHp = s.player.stats.hp;
@@ -662,7 +662,9 @@ export function useGameState() {
         newCleared.push(s.player.currentNode);
       }
 
-      const isBossNode = REGIONS[s.player.currentRegion].nodes.find(n => n.id === s.player!.currentNode)?.type === "boss";
+      const currentTier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
+      const currentRegionData = getRegionForTier(s.player.currentRegion, currentTier);
+      const isBossNode = currentRegionData.nodes.find(n => n.id === s.player!.currentNode)?.type === "boss";
       const regionBossDefeats = { ...(s.player.regionBossDefeats || {}) };
       let currentRegion = s.player.currentRegion;
       let finalCleared = newCleared;
@@ -676,34 +678,49 @@ export function useGameState() {
         regionBossDefeats[regionKey] = prevDefeats + 1;
         const newDefeats = regionBossDefeats[regionKey];
 
-        if (s.player.currentRegion === 0) {
-          const alreadyInParty = new Set(s.player.party.map(p => p.id));
-          const unchosen = STARTER_CHARACTERS.filter(c => c.id !== s.player!.starterCharacterId && !alreadyInParty.has(c.id));
-          if (unchosen.length > 0) {
-            if (unchosen.length === 1) {
-              pendingUnlocks = [unchosen[0]];
-              pendingUnlock = unchosen[0];
-            } else {
-              pendingUnlocks = unchosen;
-              pendingUnlock = null;
+        if (newDefeats >= 3) {
+          const allOwnedIds = new Set([
+            ...s.player.party.map(p => p.id),
+            ...(s.player.benchedParty || []).map(p => p.id),
+          ]);
+
+          if (s.player.currentRegion === 0) {
+            const unchosen = STARTER_CHARACTERS.filter(c => c.id !== s.player!.starterCharacterId && !allOwnedIds.has(c.id));
+            if (unchosen.length > 0) {
+              if (unchosen.length === 1) {
+                pendingUnlocks = [unchosen[0]];
+                pendingUnlock = unchosen[0];
+              } else {
+                pendingUnlocks = unchosen;
+                pendingUnlock = null;
+              }
+            }
+          } else {
+            const available = PARTY_CHARACTERS.filter(c => c.id !== s.player!.starterCharacterId && !allOwnedIds.has(c.id));
+            if (available.length > 0) {
+              if (available.length === 1) {
+                pendingUnlocks = [available[0]];
+                pendingUnlock = available[0];
+              } else {
+                pendingUnlocks = available;
+                pendingUnlock = null;
+              }
             }
           }
-        }
 
-        if (newDefeats >= 3) {
           if (currentRegion < REGIONS.length - 1) {
             currentRegion++;
           }
-          const newRegion = REGIONS[currentRegion];
+          const newRegion = getRegionForTier(currentRegion, 0);
           currentNode = newRegion.nodes[0].id;
           finalCleared = newCleared.filter(nId => {
             const inNewRegion = newRegion.nodes.some(n => n.id === nId);
             return !inNewRegion;
           });
         } else {
-          const thisRegion = REGIONS[s.player.currentRegion];
-          currentNode = thisRegion.nodes[0].id;
-          const regionNodeIds = thisRegion.nodes.map(n => n.id);
+          const newTierForRegion = getRegionForTier(s.player.currentRegion, newDefeats);
+          currentNode = newTierForRegion.nodes[0].id;
+          const regionNodeIds = newTierForRegion.nodes.map(n => n.id);
           finalCleared = newCleared.filter(nId => !regionNodeIds.includes(nId));
         }
       }
@@ -946,7 +963,8 @@ export function useGameState() {
   const openShaman = useCallback((nodeId: number) => {
     setState(s => {
       if (!s.player) return s;
-      const region = REGIONS[s.player.currentRegion];
+      const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
+      const region = getRegionForTier(s.player.currentRegion, tier);
       const node = region.nodes.find(n => n.id === nodeId);
       if (!node) return s;
       return { ...s, player: { ...s.player, currentNode: nodeId }, screen: "shaman" };
@@ -979,7 +997,8 @@ export function useGameState() {
   const openShop = useCallback(() => {
     setState(s => {
       if (!s.player) return s;
-      const region = REGIONS[s.player.currentRegion];
+      const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
+      const region = getRegionForTier(s.player.currentRegion, tier);
       const items = getShopItems(region);
       return { ...s, currentShop: items, screen: "shop" };
     });
@@ -1068,6 +1087,13 @@ export function useGameState() {
         learnedSpells: pm.learnedSpells || [],
         perks: pm.perks || [],
       })),
+      benchedParty: (playerData.benchedParty || []).map(pm => ({
+        ...pm,
+        xp: pm.xp || 0,
+        xpToNext: pm.xpToNext || xpForLevel(pm.level),
+        learnedSpells: pm.learnedSpells || [],
+        perks: pm.perks || [],
+      })),
       defeatedBosses: playerData.defeatedBosses || [],
       spriteId: playerData.spriteId || "samurai",
       starterCharacterId: playerData.starterCharacterId || "samurai_wind",
@@ -1123,7 +1149,8 @@ export function useGameState() {
   const changeRegion = useCallback((regionId: number) => {
     setState(s => {
       if (!s.player) return s;
-      const targetRegion = REGIONS[regionId];
+      const targetTier = getRegionTier(regionId, s.player.regionBossDefeats || {});
+      const targetRegion = getRegionForTier(regionId, targetTier);
       if (!targetRegion) return s;
       const firstNode = targetRegion.nodes[0];
       return {

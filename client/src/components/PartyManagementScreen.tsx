@@ -4,7 +4,7 @@ import SpriteAnimator from "./SpriteAnimator";
 import ParticleCanvas from "./ParticleCanvas";
 import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells, ELEMENT_SPELL_UNLOCKS, PERKS } from "@/lib/gameData";
 import type { PlayerCharacter, PartyMember, Spell } from "@shared/schema";
-import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, ArrowLeft, UserMinus, Sparkles, Crown } from "lucide-react";
+import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, ArrowLeft, UserMinus, UserPlus, Sparkles, Crown } from "lucide-react";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import knightIdle from "@/assets/images/knight-idle-4f.png";
@@ -19,6 +19,7 @@ const IDLE_SHEETS: Record<string, string> = {
 interface PartyManagementScreenProps {
   player: PlayerCharacter;
   onRemoveMember: (memberId: string) => void;
+  onAddMember: (memberId: string) => void;
   onClose: () => void;
 }
 
@@ -41,11 +42,12 @@ interface DisplayMember {
   spriteId: string;
   className?: string;
   isPlayer: boolean;
+  isBenched: boolean;
   learnedSpells?: string[];
   perks?: string[];
 }
 
-export default function PartyManagementScreen({ player, onRemoveMember, onClose }: PartyManagementScreenProps) {
+export default function PartyManagementScreen({ player, onRemoveMember, onAddMember, onClose }: PartyManagementScreenProps) {
   const playerAsMember: DisplayMember = {
     id: "__player__",
     name: player.name,
@@ -54,11 +56,12 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
     stats: player.stats,
     spriteId: player.spriteId,
     isPlayer: true,
+    isBenched: false,
     learnedSpells: player.learnedSpells || [],
     perks: player.perks || [],
   };
 
-  const partyMembers: DisplayMember[] = player.party.map(pm => ({
+  const activeMembers: DisplayMember[] = player.party.map(pm => ({
     id: pm.id,
     name: pm.name,
     element: pm.element,
@@ -67,11 +70,26 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
     spriteId: pm.spriteId,
     className: pm.className,
     isPlayer: false,
+    isBenched: false,
     learnedSpells: pm.learnedSpells || [],
     perks: pm.perks || [],
   }));
 
-  const allMembers = [playerAsMember, ...partyMembers];
+  const benchedMembers: DisplayMember[] = (player.benchedParty || []).map(pm => ({
+    id: pm.id,
+    name: pm.name,
+    element: pm.element,
+    level: pm.level,
+    stats: pm.stats,
+    spriteId: pm.spriteId,
+    className: pm.className,
+    isPlayer: false,
+    isBenched: true,
+    learnedSpells: pm.learnedSpells || [],
+    perks: pm.perks || [],
+  }));
+
+  const allMembers = [playerAsMember, ...activeMembers, ...benchedMembers];
 
   const [selectedId, setSelectedId] = useState<string>("__player__");
   const selectedMember = allMembers.find(m => m.id === selectedId) || allMembers[0];
@@ -81,16 +99,42 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
 
   const getSpells = (member: DisplayMember): Spell[] => {
     if (member.isPlayer) {
-      const elementSpells = ELEMENT_SPELL_UNLOCKS[member.element as keyof typeof ELEMENT_SPELL_UNLOCKS] || [];
-      const unlockedIds = elementSpells
-        .filter((s: { level: number }) => s.level <= member.level)
-        .map((s: { spellId: string }) => s.spellId);
-      return getPartyMemberSpells(member.element as any, member.level, member.learnedSpells || [])
-        .length > 0
-        ? getPartyMemberSpells(member.element as any, member.level, member.learnedSpells || [])
-        : [];
+      return getPartyMemberSpells(member.element as any, member.level, member.learnedSpells || []);
     }
     return getPartyMemberSpells(member.element as any, member.level || 1, member.learnedSpells || []);
+  };
+
+  const renderMemberButton = (member: DisplayMember) => {
+    const spriteInfo = getSpriteInfo(member.spriteId);
+    const isSelected = selectedId === member.id;
+    return (
+      <button
+        key={member.id}
+        className={`w-full flex items-center gap-2 px-2 py-2 text-left transition-colors border-b border-purple-500/5 ${
+          isSelected ? "bg-purple-500/15 border-l-2 border-l-amber-400/60" : "hover:bg-purple-500/5"
+        } ${member.isBenched ? "opacity-50" : ""}`}
+        onClick={() => setSelectedId(member.id)}
+      >
+        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center overflow-hidden">
+          <SpriteAnimator
+            spriteSheet={getSpriteSheet(member.spriteId)}
+            frameWidth={spriteInfo.frameWidth}
+            frameHeight={spriteInfo.frameHeight}
+            totalFrames={spriteInfo.totalFrames}
+            fps={6}
+            scale={0.5}
+            loop
+          />
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1">
+            <div className="text-[10px] font-semibold text-purple-100 truncate">{member.name}</div>
+            {member.isPlayer && <Crown className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />}
+          </div>
+          <div className="text-[8px]" style={{ color: ELEMENT_COLORS[member.element as keyof typeof ELEMENT_COLORS] }}>{member.element}</div>
+        </div>
+      </button>
+    );
   };
 
   return (
@@ -105,41 +149,22 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
             </Button>
             <h1 className="text-sm font-bold tracking-wider text-amber-200/90">PARTY</h1>
           </div>
-          <span className="text-[10px] text-purple-300/40">{allMembers.length} Members</span>
+          <span className="text-[10px] text-purple-300/40">{1 + activeMembers.length} Active{benchedMembers.length > 0 ? ` · ${benchedMembers.length} Benched` : ""}</span>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
           <div className="w-[140px] border-r border-purple-500/10 overflow-y-auto bg-black/20">
-            {allMembers.map(member => {
-              const spriteInfo = getSpriteInfo(member.spriteId);
-              const isSelected = selectedId === member.id;
-              return (
-                <button
-                  key={member.id}
-                  className={`w-full flex items-center gap-2 px-2 py-2 text-left transition-colors border-b border-purple-500/5 ${isSelected ? "bg-purple-500/15 border-l-2 border-l-amber-400/60" : "hover:bg-purple-500/5"}`}
-                  onClick={() => setSelectedId(member.id)}
-                >
-                  <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center overflow-hidden">
-                    <SpriteAnimator
-                      spriteSheet={getSpriteSheet(member.spriteId)}
-                      frameWidth={spriteInfo.frameWidth}
-                      frameHeight={spriteInfo.frameHeight}
-                      totalFrames={spriteInfo.totalFrames}
-                      fps={6}
-                      scale={0.5}
-                      loop
-                    />
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1">
-                      <div className="text-[10px] font-semibold text-purple-100 truncate">{member.name}</div>
-                      {member.isPlayer && <Crown className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />}
-                    </div>
-                    <div className="text-[8px]" style={{ color: ELEMENT_COLORS[member.element as keyof typeof ELEMENT_COLORS] }}>{member.element}</div>
-                  </div>
-                </button>
-              );
-            })}
+            {renderMemberButton(playerAsMember)}
+            {activeMembers.map(m => renderMemberButton(m))}
+
+            {benchedMembers.length > 0 && (
+              <>
+                <div className="px-2 py-1.5 bg-black/30 border-b border-purple-500/10">
+                  <span className="text-[8px] tracking-wider text-purple-300/30 uppercase">Benched</span>
+                </div>
+                {benchedMembers.map(m => renderMemberButton(m))}
+              </>
+            )}
           </div>
 
           <div className="flex-1 overflow-y-auto p-3">
@@ -163,6 +188,9 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
                       {selectedMember.isPlayer && (
                         <span className="text-[8px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/20">LEADER</span>
                       )}
+                      {selectedMember.isBenched && (
+                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-gray-500/15 text-gray-400 border border-gray-500/20">BENCHED</span>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span className="text-[10px] font-semibold" style={{ color: ELEMENT_COLORS[selectedMember.element as keyof typeof ELEMENT_COLORS] }}>
@@ -173,17 +201,31 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
                     </div>
                     {!selectedMember.isPlayer && (
                       <div className="mt-1.5 flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          className="text-[10px] text-red-300/70 hover:text-red-300 hover:bg-red-500/10 h-6 px-2"
-                          onClick={() => {
-                            onRemoveMember(selectedMember.id);
-                            setSelectedId("__player__");
-                          }}
-                        >
-                          <UserMinus className="w-3 h-3 mr-1" /> Remove from Party
-                        </Button>
+                        {selectedMember.isBenched ? (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-[10px] text-green-300/70 hover:text-green-300 hover:bg-green-500/10 h-6 px-2"
+                            onClick={() => {
+                              onAddMember(selectedMember.id);
+                              setSelectedId(selectedMember.id);
+                            }}
+                          >
+                            <UserPlus className="w-3 h-3 mr-1" /> Add to Party
+                          </Button>
+                        ) : (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="text-[10px] text-red-300/70 hover:text-red-300 hover:bg-red-500/10 h-6 px-2"
+                            onClick={() => {
+                              onRemoveMember(selectedMember.id);
+                              setSelectedId("__player__");
+                            }}
+                          >
+                            <UserMinus className="w-3 h-3 mr-1" /> Bench
+                          </Button>
+                        )}
                       </div>
                     )}
                   </div>
