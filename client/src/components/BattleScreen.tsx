@@ -27,6 +27,9 @@ import demonHurt from "@/assets/images/demon-hurt.png";
 import demonDeath from "@/assets/images/demon-death.png";
 import demonFireball from "@/assets/images/demon-fireball.png";
 
+import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
+import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
+
 import fireSlimeImg from "@/assets/images/enemy-fire-slime.png";
 import aquaSlimeImg from "@/assets/images/enemy-aqua-slime.png";
 import stormWolfImg from "@/assets/images/enemy-storm-wolf.png";
@@ -160,6 +163,7 @@ export default function BattleScreen({
   const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
   const [tempestVortexActive, setTempestVortexActive] = useState(false);
   const [showVictoryUI, setShowVictoryUI] = useState(false);
+  const [dragonFireVfx, setDragonFireVfx] = useState<{ type: "burst" | "pillar"; x: number; y: number } | null>(null);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
   const prevPhaseRef = useRef(battle.phase);
@@ -186,6 +190,12 @@ export default function BattleScreen({
   }, []);
 
   useEffect(() => {
+    if (battle.phase === "victory" || battle.phase === "defeat") {
+      setDragonFireVfx(null);
+      setDarkMagicSfx(false);
+      setFireHitSfx(false);
+      setFrostHitSfx(false);
+    }
     if (battle.phase === "victory") {
       const timer = setTimeout(() => setShowVictoryUI(true), 1200);
       return () => clearTimeout(timer);
@@ -529,9 +539,82 @@ export default function BattleScreen({
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
 
     if (isDragonLord(enemy)) {
-      const useDarkMagic = Math.random() < 0.4;
+      const attackRoll = Math.random();
+      const attackType = attackRoll < 0.30 ? "fireBurst" : attackRoll < 0.55 ? "firePillar" : attackRoll < 0.75 ? "darkMagic" : "melee";
 
-      if (useDarkMagic) {
+      const getTargetPos = (result: { dodged: boolean; target: { type: "player" | "party"; index: number } }) => {
+        if (result.target.type === "party" && result.target.index >= 0) {
+          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
+          const tp = partyPos[result.target.index % partyPos.length];
+          return { x: tp.x, y: tp.y };
+        }
+        return { x: 12, y: 18 };
+      };
+
+      if (attackType === "fireBurst") {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        playSfx("fireballLaunch", 0.8);
+
+        scheduleTimer(() => {
+          const result = onEnemyAttack(enemyIdx);
+          const tp = getTargetPos(result);
+          if (!result.dodged) {
+            setDragonFireVfx({ type: "burst", x: tp.x, y: tp.y });
+            playSfx("stabRing");
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 600);
+            } else {
+              setAnimPhase("hurt");
+            }
+            setShakeScreen(true);
+            scheduleTimer(() => setShakeScreen(false), 500);
+            scheduleTimer(() => setDragonFireVfx(null), 900);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
+          }
+        }, 700);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setAnimPhase("idle");
+          scheduleTimer(onDone, 300);
+        }, 1400);
+
+      } else if (attackType === "firePillar") {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        playSfx("magicRing", 0.8);
+
+        scheduleTimer(() => {
+          const result = onEnemyAttack(enemyIdx);
+          const tp = getTargetPos(result);
+          if (!result.dodged) {
+            setDragonFireVfx({ type: "pillar", x: tp.x, y: tp.y });
+            playSfx("hitCombo");
+            scheduleTimer(() => playSfx("stabRing"), 200);
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 700);
+            } else {
+              setAnimPhase("hurt");
+            }
+            setShakeScreen(true);
+            scheduleTimer(() => setShakeScreen(false), 600);
+            scheduleTimer(() => setDragonFireVfx(null), 1200);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
+          }
+        }, 800);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setAnimPhase("idle");
+          scheduleTimer(onDone, 300);
+        }, 1600);
+
+      } else if (attackType === "darkMagic") {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
         playSfx("magicRing", 0.7);
 
@@ -1769,6 +1852,32 @@ export default function BattleScreen({
             </div>
           )}
 
+          {dragonFireVfx && (
+            <div
+              className="absolute z-50"
+              style={{
+                left: `${dragonFireVfx.x}%`,
+                bottom: `${dragonFireVfx.y + 5}%`,
+                transform: "translateX(-50%)",
+                pointerEvents: "none",
+                filter: "drop-shadow(0 0 16px rgba(255,100,0,0.8)) drop-shadow(0 0 32px rgba(255,60,0,0.5))",
+                animation: "dragonFireAppear 0.3s ease-out",
+              }}
+            >
+              <SpriteAnimator
+                spriteSheet={dragonFireVfx.type === "burst" ? vfxFireBurst : vfxFirePillar}
+                frameWidth={dragonFireVfx.type === "burst" ? 128 : 192}
+                frameHeight={dragonFireVfx.type === "burst" ? 128 : 128}
+                totalFrames={dragonFireVfx.type === "burst" ? 7 : 12}
+                fps={dragonFireVfx.type === "burst" ? 14 : 16}
+                scale={dragonFireVfx.type === "burst" ? 2 : 2.5}
+                loop={false}
+                onComplete={() => setDragonFireVfx(null)}
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+          )}
+
           {potionVfx && potionVfx.active && (
             <div
               className="absolute z-50 pointer-events-none"
@@ -2205,6 +2314,11 @@ export default function BattleScreen({
           50% { transform: translate(10px, -35px) scale(0.8); opacity: 0.6; }
           75% { transform: translate(-5px, -50px) scale(1.1); opacity: 0.9; }
           100% { transform: translate(0, -60px) scale(0.5); opacity: 0; }
+        }
+        @keyframes dragonFireAppear {
+          0% { opacity: 0; transform: scale(0.3); }
+          40% { opacity: 1; transform: scale(1.15); }
+          100% { opacity: 1; transform: scale(1); }
         }
       `}</style>
     </div>
