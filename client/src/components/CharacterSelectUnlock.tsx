@@ -1,9 +1,19 @@
 import { Button } from "@/components/ui/button";
 import SpriteAnimator from "./SpriteAnimator";
 import ParticleCanvas from "./ParticleCanvas";
-import { ELEMENT_COLORS, PARTY_SPRITE_DATA } from "@/lib/gameData";
+import { ELEMENT_COLORS } from "@/lib/gameData";
 import type { PartyMemberDef } from "@shared/schema";
 import { Sparkles } from "lucide-react";
+
+import knightIdle from "@/assets/images/knight-idle-4f.png";
+import samuraiIdle from "@/assets/images/samurai-idle.png";
+import baskenIdle from "@/assets/images/basken-idle.png";
+
+const UNLOCK_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number }> = {
+  knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4 },
+  samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10 },
+  basken: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5 },
+};
 
 interface CharacterSelectUnlockProps {
   characters: PartyMemberDef[];
@@ -34,9 +44,10 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
 
         <div className="flex gap-6 mb-4">
           {characters.map((char, i) => {
-            const spriteData = PARTY_SPRITE_DATA[char.spriteId];
+            const spriteData = UNLOCK_SPRITES[char.spriteId];
             const elementColor = ELEMENT_COLORS[char.element];
-            const scale = 1 + (playerLevel - 1) * 0.15;
+            const memberLevel = Math.max(1, playerLevel - 2);
+            const scale = 1 + (memberLevel - 1) * 0.15;
             const scaledAtk = Math.floor(char.baseStats.atk * scale);
             const scaledDef = Math.floor(char.baseStats.def * scale);
             const scaledHp = Math.floor(char.baseStats.maxHp * scale);
@@ -56,10 +67,10 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
                   />
                   {spriteData && (
                     <SpriteAnimator
-                      spriteSheet={new URL(`../assets/images/${spriteData.idle.sheet}`, import.meta.url).href}
-                      frameWidth={spriteData.idle.frameWidth}
-                      frameHeight={spriteData.idle.frameHeight}
-                      totalFrames={spriteData.idle.totalFrames}
+                      spriteSheet={spriteData.sheet}
+                      frameWidth={spriteData.frameWidth}
+                      frameHeight={spriteData.frameHeight}
+                      totalFrames={spriteData.totalFrames}
                       fps={8}
                       scale={3}
                       loop

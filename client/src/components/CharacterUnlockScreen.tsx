@@ -4,9 +4,19 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import SpriteAnimator from "./SpriteAnimator";
 import ParticleCanvas from "./ParticleCanvas";
-import { ELEMENT_COLORS, PARTY_SPRITE_DATA } from "@/lib/gameData";
+import { ELEMENT_COLORS } from "@/lib/gameData";
 import type { PartyMemberDef } from "@shared/schema";
 import { Sparkles, Swords, Shield, Zap, Heart } from "lucide-react";
+
+import knightIdle from "@/assets/images/knight-idle-4f.png";
+import samuraiIdle from "@/assets/images/samurai-idle.png";
+import baskenIdle from "@/assets/images/basken-idle.png";
+
+const UNLOCK_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number }> = {
+  knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4 },
+  samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10 },
+  basken: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5 },
+};
 
 interface CharacterUnlockScreenProps {
   character: PartyMemberDef;
@@ -16,10 +26,11 @@ interface CharacterUnlockScreenProps {
 
 export default function CharacterUnlockScreen({ character, playerLevel, onConfirm }: CharacterUnlockScreenProps) {
   const [customName, setCustomName] = useState("");
-  const spriteData = PARTY_SPRITE_DATA[character.spriteId];
+  const spriteData = UNLOCK_SPRITES[character.spriteId];
   const elementColor = ELEMENT_COLORS[character.element];
 
-  const scale = 1 + (playerLevel - 1) * 0.15;
+  const memberLevel = Math.max(1, playerLevel - 2);
+  const scale = 1 + (memberLevel - 1) * 0.15;
   const scaledStats = {
     hp: Math.floor(character.baseStats.maxHp * scale),
     atk: Math.floor(character.baseStats.atk * scale),
@@ -58,10 +69,10 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
                 style={{ backgroundColor: elementColor }}
               />
               <SpriteAnimator
-                spriteSheet={new URL(`../assets/images/${spriteData.idle.sheet}`, import.meta.url).href}
-                frameWidth={spriteData.idle.frameWidth}
-                frameHeight={spriteData.idle.frameHeight}
-                totalFrames={spriteData.idle.totalFrames}
+                spriteSheet={spriteData.sheet}
+                frameWidth={spriteData.frameWidth}
+                frameHeight={spriteData.frameHeight}
+                totalFrames={spriteData.totalFrames}
                 fps={8}
                 scale={4}
                 loop
@@ -106,7 +117,7 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
           </div>
 
           <p className="text-xs text-purple-400/50 text-center mb-4">
-            Joins at Level {playerLevel} &middot; Player-controlled in battle
+            Joins at Level {Math.max(1, playerLevel - 2)} &middot; Player-controlled in battle
           </p>
 
           <Button
