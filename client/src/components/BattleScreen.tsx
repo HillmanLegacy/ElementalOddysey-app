@@ -615,11 +615,38 @@ export default function BattleScreen({
         }, 1600);
 
       } else if (attackType === "darkMagic") {
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-        playSfx("magicRing", 0.7);
+        const aliveParty = battle.party.filter(p => p.currentHp > 0);
+        const totalTargets = 1 + aliveParty.length;
+        const targetRoll = Math.floor(Math.random() * totalTargets);
+        let preTarget: { type: "player" | "party"; index: number };
+        if (targetRoll === 0 || aliveParty.length === 0) {
+          preTarget = { type: "player", index: -1 };
+        } else {
+          const pt = aliveParty[targetRoll - 1];
+          preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+        }
+
+        let walkToX: number, walkToY: number;
+        if (preTarget.type === "party" && preTarget.index >= 0) {
+          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
+          const tp = partyPos[preTarget.index % partyPos.length];
+          walkToX = tp.x + 8;
+          walkToY = tp.y;
+        } else {
+          walkToX = PLAYER_POS.x + 8;
+          walkToY = PLAYER_POS.y;
+        }
+
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
+        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
 
         scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx);
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+          playSfx("magicRing", 0.7);
+        }, 600);
+
+        scheduleTimer(() => {
+          const result = onEnemyAttack(enemyIdx, preTarget);
           if (!result.dodged) {
             if (result.target.type === "party") {
               setPartyHurtIndex(result.target.index);
@@ -635,13 +662,19 @@ export default function BattleScreen({
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
           }
-        }, 900);
+        }, 1200);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
+          setBossOffset({ x: 0, y: 0 });
+        }, 1500);
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setBossOffset(null);
           setAnimPhase("idle");
           scheduleTimer(onDone, 300);
-        }, 1200);
+        }, 2100);
       } else {
         const aliveParty = battle.party.filter(p => p.currentHp > 0);
         const totalTargets = 1 + aliveParty.length;

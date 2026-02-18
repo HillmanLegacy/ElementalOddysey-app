@@ -766,7 +766,7 @@ export function useGameState() {
         },
       };
 
-      const nextScreen = pendingUnlock
+      const nextScreen = (pendingUnlock || pendingUnlocks.length > 0)
         ? "partyUnlock"
         : (pendingLevelUp ? "levelUp" : "overworld");
 
