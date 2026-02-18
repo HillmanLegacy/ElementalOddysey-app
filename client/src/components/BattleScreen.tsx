@@ -2178,111 +2178,131 @@ export default function BattleScreen({
                   {activeMember.name}'s Turn
                 </p>
                 {partyAction === "menu" && (
-                  <div className="flex gap-2 justify-center flex-wrap">
+                  <div className="grid grid-cols-4 gap-2 mb-1">
                     <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-red-950/40 border-red-500/30 text-red-200 hover:bg-red-900/60 text-xs px-3"
                       onClick={() => setPartyAction("selectTarget")}
+                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-red-900/30 text-red-300 border border-red-500/20"
                     >
-                      <Swords className="w-3 h-3 mr-1" /> Attack
+                      <Swords className="w-4 h-4" />
+                      <span className="text-[10px]">Attack</span>
                     </Button>
                     <Button
-                      size="sm"
-                      variant="outline"
-                      className="bg-blue-950/40 border-blue-500/30 text-blue-200 hover:bg-blue-900/60 text-xs px-3"
                       onClick={() => {
                         onPartyMemberDefend(battle.activePartyIndex);
                         setTimeout(() => onAdvancePartyTurn(), 400);
                       }}
+                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-blue-900/30 text-blue-300 border border-blue-500/20"
                     >
-                      <Shield className="w-3 h-3 mr-1" /> Defend
+                      <Shield className="w-4 h-4" />
+                      <span className="text-[10px]">Defend</span>
                     </Button>
-                    {partySpells.length > 0 && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="bg-purple-950/40 border-purple-500/30 text-purple-200 hover:bg-purple-900/60 text-xs px-3"
-                        onClick={() => setPartyAction("showSpells")}
-                      >
-                        <Sparkles className="w-3 h-3 mr-1" /> Magic
-                      </Button>
-                    )}
-                    {consumables.length > 0 && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="bg-green-950/40 border-green-500/30 text-green-200 hover:bg-green-900/60 text-xs px-3"
-                        onClick={() => setPartyAction("showItems")}
-                      >
-                        <Package className="w-3 h-3 mr-1" /> Item
-                      </Button>
-                    )}
+                    <Button
+                      onClick={() => setPartyAction("showSpells")}
+                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-purple-900/30 text-purple-300 border border-purple-500/20"
+                      disabled={partySpells.length === 0}
+                    >
+                      <Sparkles className="w-4 h-4" />
+                      <span className="text-[10px]">Magic</span>
+                    </Button>
+                    <Button
+                      onClick={() => setPartyAction("showItems")}
+                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-green-900/30 text-green-300 border border-green-500/20"
+                      disabled={consumables.length === 0}
+                    >
+                      <Package className="w-4 h-4" />
+                      <span className="text-[10px]">Item</span>
+                    </Button>
                   </div>
                 )}
                 {partyAction === "showSpells" && (
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {partySpells.map(spell => (
-                      <Button
-                        key={spell.id}
-                        size="sm"
-                        variant="ghost"
-                        className={`w-full text-xs justify-start px-2 py-1 ${activeMember.currentMp < spell.mpCost ? "opacity-40" : "text-purple-200 hover:bg-purple-900/40"}`}
-                        disabled={activeMember.currentMp < spell.mpCost}
-                        onClick={() => {
-                          if (spell.targetType === "enemy") {
-                            setPartySelectedSpell(spell);
-                            setPartyAction("selectMagicTarget");
-                          } else if (spell.targetType === "allEnemies") {
-                            onPartyMemberCastSpell(battle.activePartyIndex, spell);
-                            playSfx("magicRing");
-                            setTimeout(() => onAdvancePartyTurn(), 600);
-                            setPartyAction("menu");
-                          } else {
-                            onPartyMemberCastSpell(battle.activePartyIndex, spell);
-                            playSfx("magicRing");
-                            setTimeout(() => onAdvancePartyTurn(), 600);
-                            setPartyAction("menu");
-                          }
-                        }}
-                      >
-                        <Sparkles className="w-3 h-3 mr-1.5 flex-shrink-0" style={{ color: ELEMENT_COLORS[spell.element || activeMember.element] }} />
-                        <span className="flex-1 text-left">{spell.name}</span>
-                        <span className="text-blue-400/60 ml-1">{spell.mpCost}MP</span>
+                  <div className="space-y-1 mb-1">
+                    <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                      <span className="text-xs text-purple-300 flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Spells
+                      </span>
+                      <Button size="sm" variant="ghost" className="text-xs text-purple-400" onClick={() => setPartyAction("menu")}>
+                        <ArrowLeft className="w-3 h-3 mr-1" /> Back
                       </Button>
-                    ))}
-                    <Button size="sm" variant="ghost" className="text-xs text-purple-400/60 w-full" onClick={() => setPartyAction("menu")}>
-                      <ArrowLeft className="w-3 h-3 mr-1" /> Back
-                    </Button>
+                    </div>
+                    {partySpells.length === 0 ? (
+                      <p className="text-xs text-purple-400/50 text-center py-2">No spells learned</p>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto">
+                        {partySpells.map(spell => {
+                          const canCast = activeMember.currentMp >= spell.mpCost;
+                          return (
+                            <Button
+                              key={spell.id}
+                              variant="ghost"
+                              className={`w-full justify-start text-xs h-auto py-1.5 px-2 ${canCast ? "text-purple-200" : "text-purple-500/40"}`}
+                              disabled={!canCast}
+                              onClick={() => {
+                                if (spell.targetType === "enemy") {
+                                  setPartySelectedSpell(spell);
+                                  setPartyAction("selectMagicTarget");
+                                } else if (spell.targetType === "allEnemies") {
+                                  onPartyMemberCastSpell(battle.activePartyIndex, spell);
+                                  playSfx("magicRing");
+                                  setTimeout(() => onAdvancePartyTurn(), 600);
+                                  setPartyAction("menu");
+                                } else {
+                                  onPartyMemberCastSpell(battle.activePartyIndex, spell);
+                                  playSfx("magicRing");
+                                  setTimeout(() => onAdvancePartyTurn(), 600);
+                                  setPartyAction("menu");
+                                }
+                              }}
+                            >
+                              <div className="flex flex-col items-start w-full">
+                                <div className="flex items-center gap-1 w-full justify-between">
+                                  <span className="font-medium flex items-center gap-1">
+                                    <Zap className="w-3 h-3" style={{ color: spell.element ? ELEMENT_COLORS[spell.element] : "#a855f7" }} />
+                                    {spell.name}
+                                  </span>
+                                  <span className="text-[9px] text-blue-300">{spell.mpCost} MP</span>
+                                </div>
+                                <span className="text-[9px] text-purple-400/60">{spell.description}</span>
+                              </div>
+                            </Button>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
                 )}
                 {partyAction === "showItems" && (
-                  <div className="space-y-1 max-h-32 overflow-y-auto">
-                    {consumables.map(item => (
-                      <Button
-                        key={item.id}
-                        size="sm"
-                        variant="ghost"
-                        className="w-full text-xs justify-start px-2 py-1 text-green-200 hover:bg-green-900/40"
-                        onClick={() => {
-                          onPartyMemberUseItem(battle.activePartyIndex, item.id);
-                          setPartyAction("menu");
-                          setTimeout(() => onAdvancePartyTurn(), 400);
-                        }}
-                      >
-                        <Heart className="w-3 h-3 mr-1.5 flex-shrink-0 text-red-400" />
-                        <span className="flex-1 text-left">{item.name}</span>
+                  <div className="space-y-1 mb-1">
+                    <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
+                      <span className="text-xs text-purple-300">Items</span>
+                      <Button size="sm" variant="ghost" className="text-xs text-purple-400" onClick={() => setPartyAction("menu")}>
+                        <ArrowLeft className="w-3 h-3 mr-1" /> Back
                       </Button>
-                    ))}
-                    <Button size="sm" variant="ghost" className="text-xs text-purple-400/60 w-full" onClick={() => setPartyAction("menu")}>
-                      <ArrowLeft className="w-3 h-3 mr-1" /> Back
-                    </Button>
+                    </div>
+                    {consumables.length === 0 ? (
+                      <p className="text-xs text-purple-400/50 text-center py-2">No items</p>
+                    ) : (
+                      consumables.map(item => (
+                        <Button
+                          key={item.id}
+                          variant="ghost"
+                          className="w-full justify-start text-xs text-purple-200 h-auto py-1.5"
+                          onClick={() => {
+                            onPartyMemberUseItem(battle.activePartyIndex, item.id);
+                            setPartyAction("menu");
+                            setTimeout(() => onAdvancePartyTurn(), 400);
+                          }}
+                        >
+                          <Heart className="w-3 h-3 mr-2 text-red-400" />
+                          {item.name} - {item.description}
+                        </Button>
+                      ))
+                    )}
                   </div>
                 )}
                 {(partyAction === "selectTarget" || partyAction === "selectMagicTarget") && (
                   <div className="text-center">
-                    <p className="text-xs text-yellow-300/70 animate-pulse">
-                      {partyAction === "selectMagicTarget" ? `Cast ${partySelectedSpell?.name} - Select target` : "Select a target"}
+                    <p className="text-center text-[11px] text-yellow-300/70 mb-1 animate-pulse">
+                      {partyAction === "selectMagicTarget" ? `Select a target for ${partySelectedSpell?.name}` : "Select a target to attack"}
                     </p>
                     <Button
                       size="sm"
