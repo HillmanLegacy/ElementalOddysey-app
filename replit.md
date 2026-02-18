@@ -15,7 +15,7 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 -   **Character System**: Players select from three starter characters (Knight/Fire, Samurai/Wind, Basken/Lightning), each with unique elements, stats, and sprites. The `starterCharacterId` tracks the initial choice, and `spriteId` manages visual appearance.
 -   **Overworld & Progression**: A board-style node map features battle, shop, rest, shaman, and boss nodes. Region progression requires defeating each boss three times, with enemy scaling occurring after each defeat until the next region unlocks.
 -   **Party System**: Defeating region bosses unlocks new party members one at a time. First boss defeat with 2+ unchosen starters shows a selection screen (CharacterSelectUnlock), subsequent defeats auto-unlock the remaining character. Party members have individual MP pools tracked via `BattlePartyMember.currentMp`. Party management screen accessible from overworld hamburger menu shows stats, spells, and allows removing members.
--   **Combat System**: AGI-based turn queue determines combat order each round (`buildTurnQueue` sorts all combatants by AGI). All party members have full menu access (Attack/Defend/Magic/Item) with element-specific spells via `getPartyMemberSpells`. Party member MP is tracked independently from player MP.
+-   **Combat System**: AGI-based turn queue determines combat order each round (`buildTurnQueue` sorts all combatants by AGI). All party members have full menu access (Attack/Defend/Magic/Item) with element-specific spells via `getPartyMemberSpells`. Party member MP is tracked independently from player MP. Victory screen shows with 1.2s delay after final kill for smooth transition.
 -   **Per-Character XP & Leveling**: Each character (player + party members) gains XP independently. Level-up queue (`PendingLevelUp`) processes multiple characters sequentially through stat allocation and perk selection. Medieval-themed level-up screen shows character sprite, name, element badge, and new spell notifications.
 -   **Inventory & Equipment**: Separate tabs for consumables (usable in overworld for healing with party member targeting) and equipable items.
 -   **Spell/Magic System**: Level-based spell unlocks defined via `ELEMENT_SPELL_UNLOCKS` in `gameData.ts`. Each element has spells that unlock at specific levels. Characters can also learn additional spells from the Shaman's Lair (costs gold). `SHAMAN_SPELLS` maps spriteId to learnable spells. Player and party members track `learnedSpells` arrays for shaman-taught spells. Spells have MP costs and element-specific effects with optional cinematic animations. Buffs are tracked with turn countdowns.
@@ -37,6 +37,18 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 -   **Express.js**: Backend web framework.
 -   **PostgreSQL**: Relational database for persistent storage.
 -   **Drizzle ORM**: TypeScript ORM for PostgreSQL.
+
+## Damage & Balance System
+- **Damage Formula (ratio-based)**: `baseDamage = (offense²) / (offense + defense) * skillMultiplier`
+  - Physical: offense = ATK, defense = DEF
+  - Magical: offense = INT, defense = INT
+  - Element multipliers applied after base calculation (1.3x advantage, 0.7x disadvantage)
+  - Crits: 5% base chance, 2x damage multiplier; variance ±10%
+- **Enemy Tiers**:
+  - Lesser enemies (level 1-2): HP = 18+lv*10, ATK = 5+lv*2.5, DEF = 3+lv*1.5
+  - Bosses (level 4-7): HP = 50+lv*25, ATK = 8+lv*3, DEF = 5+lv*2
+  - Region scaling: baseScale = 1 + regionId * 0.5, tierScale = 1 + tier * 0.25
+- **Balance targets**: Lesser enemies die in 3-4 hits, bosses require strategy/leveling, player never deals less than MIN_DAMAGE (1)
 
 ## Battle Position System
 - All battle positions use percentage-based coordinates (left%, bottom%) relative to the battle container

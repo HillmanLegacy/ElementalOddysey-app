@@ -62,6 +62,7 @@ export function useGameState() {
         currentMp: pm.stats.mp,
         defending: false,
         spriteId: pm.spriteId,
+        learnedSpells: pm.learnedSpells || [],
       }));
 
       const queue = buildTurnQueue(s.player.stats.agi || 10, battle.party, battle.enemies);

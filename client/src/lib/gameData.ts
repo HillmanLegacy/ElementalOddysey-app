@@ -191,46 +191,64 @@ export function xpForLevel(level: number): number {
 }
 
 const ENEMY_POOL: Omit<Enemy, "stats">[] = [
-  { id: "slime_fire", name: "Fire Demon", element: "Fire", level: 3, xpReward: 30, goldReward: 12, isBoss: false, sprite: "flame" },
-  { id: "slime_water", name: "Aqua Slime", element: "Water", level: 2, xpReward: 25, goldReward: 10, isBoss: false, sprite: "droplets" },
-  { id: "wolf_wind", name: "Storm Wolf", element: "Wind", level: 3, xpReward: 40, goldReward: 15, isBoss: false, sprite: "wind" },
-  { id: "golem_earth", name: "Stone Golem", element: "Earth", level: 4, xpReward: 55, goldReward: 20, isBoss: false, sprite: "mountain" },
-  { id: "wisp_light", name: "Light Wisp", element: "Light", level: 2, xpReward: 35, goldReward: 12, isBoss: false, sprite: "sun" },
-  { id: "shade", name: "Dark Shade", element: "Shadow", level: 4, xpReward: 50, goldReward: 18, isBoss: false, sprite: "ghost" },
-  { id: "spark_bug", name: "Spark Bug", element: "Lightning", level: 3, xpReward: 35, goldReward: 14, isBoss: false, sprite: "zap" },
-  { id: "frost_lizard", name: "Frost Lizard", element: "Ice", level: 3, xpReward: 38, goldReward: 13, isBoss: false, sprite: "snowflake" },
-  { id: "dragon_lord", name: "Dragon Lord", element: "Fire", level: 8, xpReward: 200, goldReward: 80, isBoss: true, sprite: "flame" },
-  { id: "jotem", name: "Jotem", element: "Ice", level: 7, xpReward: 150, goldReward: 60, isBoss: true, sprite: "snowflake" },
-  { id: "kraken", name: "Deep Kraken", element: "Water", level: 6, xpReward: 120, goldReward: 50, isBoss: true, sprite: "droplets" },
-  { id: "shadow_lord", name: "Shadow Lord", element: "Shadow", level: 9, xpReward: 250, goldReward: 100, isBoss: true, sprite: "ghost" },
-  { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 10, xpReward: 300, goldReward: 120, isBoss: true, sprite: "diamond" },
+  { id: "slime_fire", name: "Fire Demon", element: "Fire", level: 1, xpReward: 18, goldReward: 8, isBoss: false, sprite: "flame" },
+  { id: "slime_water", name: "Aqua Slime", element: "Water", level: 1, xpReward: 15, goldReward: 7, isBoss: false, sprite: "droplets" },
+  { id: "wolf_wind", name: "Storm Wolf", element: "Wind", level: 1, xpReward: 20, goldReward: 9, isBoss: false, sprite: "wind" },
+  { id: "golem_earth", name: "Stone Golem", element: "Earth", level: 2, xpReward: 28, goldReward: 12, isBoss: false, sprite: "mountain" },
+  { id: "wisp_light", name: "Light Wisp", element: "Light", level: 1, xpReward: 16, goldReward: 7, isBoss: false, sprite: "sun" },
+  { id: "shade", name: "Dark Shade", element: "Shadow", level: 2, xpReward: 25, goldReward: 11, isBoss: false, sprite: "ghost" },
+  { id: "spark_bug", name: "Spark Bug", element: "Lightning", level: 1, xpReward: 18, goldReward: 8, isBoss: false, sprite: "zap" },
+  { id: "frost_lizard", name: "Frost Lizard", element: "Ice", level: 1, xpReward: 19, goldReward: 8, isBoss: false, sprite: "snowflake" },
+  { id: "dragon_lord", name: "Dragon Lord", element: "Fire", level: 4, xpReward: 120, goldReward: 50, isBoss: true, sprite: "flame" },
+  { id: "jotem", name: "Jotem", element: "Ice", level: 4, xpReward: 120, goldReward: 50, isBoss: true, sprite: "snowflake" },
+  { id: "kraken", name: "Deep Kraken", element: "Water", level: 5, xpReward: 150, goldReward: 60, isBoss: true, sprite: "droplets" },
+  { id: "shadow_lord", name: "Shadow Lord", element: "Shadow", level: 6, xpReward: 200, goldReward: 80, isBoss: true, sprite: "ghost" },
+  { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 7, xpReward: 250, goldReward: 100, isBoss: true, sprite: "diamond" },
 ];
 
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number): Enemy {
   const lv = base.level * scaleFactor;
   const vary = base.isBoss ? () => 1.0 : () => 0.9 + Math.random() * 0.2;
-  const bossMult = base.isBoss ? 1.6 : 1.0;
-  const hp = Math.floor((20 + lv * 14) * vary() * bossMult);
+
+  if (base.isBoss) {
+    const hp = Math.floor((50 + lv * 25) * vary());
+    return {
+      ...base,
+      stats: {
+        hp,
+        maxHp: hp,
+        atk: Math.floor((8 + lv * 3) * vary()),
+        def: Math.floor((5 + lv * 2) * vary()),
+        agi: Math.floor((4 + lv * 1.5) * vary()),
+        int: Math.floor((7 + lv * 2.5) * vary()),
+        luck: Math.floor((3 + lv) * vary()),
+        mp: Math.floor((30 + lv * 10) * vary()),
+        maxMp: Math.floor((30 + lv * 10) * vary()),
+      },
+    };
+  }
+
+  const hp = Math.floor((18 + lv * 10) * vary());
   return {
     ...base,
     stats: {
       hp,
       maxHp: hp,
-      atk: Math.floor((8 + lv * 4) * vary() * bossMult),
-      def: Math.floor((4 + lv * 2.5) * vary() * bossMult),
-      agi: Math.floor((5 + lv * 2) * vary()),
-      int: Math.floor((7 + lv * 3) * vary() * bossMult),
-      luck: Math.floor((3 + lv * 1.5) * vary()),
-      mp: Math.floor((25 + lv * 8) * vary()),
-      maxMp: Math.floor((25 + lv * 8) * vary()),
+      atk: Math.floor((5 + lv * 2.5) * vary()),
+      def: Math.floor((3 + lv * 1.5) * vary()),
+      agi: Math.floor((4 + lv * 1.5) * vary()),
+      int: Math.floor((4 + lv * 2) * vary()),
+      luck: Math.floor((2 + lv) * vary()),
+      mp: Math.floor((15 + lv * 5) * vary()),
+      maxMp: Math.floor((15 + lv * 5) * vary()),
     },
   };
 }
 
 export function getEnemiesForNode(node: OverworldNode, region: Region, tier: number = 0): Enemy[] {
   const regionElement = region.theme;
-  const baseScale = 1 + region.id * 0.3;
-  const tierScale = 1 + tier * 0.4;
+  const baseScale = 1 + region.id * 0.5;
+  const tierScale = 1 + tier * 0.25;
   const scale = baseScale * tierScale;
   const pool = ENEMY_POOL.filter(e => {
     if (node.type === "boss") return e.isBoss;
@@ -240,7 +258,7 @@ export function getEnemiesForNode(node: OverworldNode, region: Region, tier: num
   const preferredPool = pool.filter(e => e.element === regionElement);
   const selectedPool = preferredPool.length > 0 ? preferredPool : pool;
 
-  const count = node.type === "boss" ? 1 : 1 + Math.floor(Math.random() * 3);
+  const count = node.type === "boss" ? 1 : 1 + Math.floor(Math.random() * 2);
   const enemies: Enemy[] = [];
   for (let i = 0; i < count; i++) {
     const base = selectedPool[Math.floor(Math.random() * selectedPool.length)];
@@ -528,12 +546,13 @@ export function calculateDamage(
   critDamageModifier: number = 0,
 ): { damage: number; isCrit: boolean; elementLabel: string } {
   const offense = isMagic ? attacker.int : attacker.atk;
-  const abilityPower = offense * skillMultiplier;
-  const { multiplier: elementMultiplier, label: elementLabel } = getElementMultiplier(attackElement, defenderElement);
-  const elementAdjusted = abilityPower * elementMultiplier;
   const defense = isMagic ? defender.int : defender.def;
-  const rawDamage = elementAdjusted - defense;
-  let damage = Math.max(rawDamage, MIN_DAMAGE);
+  const { multiplier: elementMultiplier, label: elementLabel } = getElementMultiplier(attackElement, defenderElement);
+
+  const baseDamage = (offense * offense) / (offense + defense) * skillMultiplier;
+  const elementAdjusted = baseDamage * elementMultiplier;
+
+  let damage = Math.max(elementAdjusted, MIN_DAMAGE);
   const finalCritChance = BASE_CRIT_CHANCE + critChanceModifier;
   const isCrit = Math.random() < finalCritChance;
   if (isCrit) {

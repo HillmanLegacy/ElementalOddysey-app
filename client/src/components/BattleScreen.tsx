@@ -159,6 +159,7 @@ export default function BattleScreen({
   const [windAttackVfx, setWindAttackVfx] = useState<number | null>(null);
   const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
   const [tempestVortexActive, setTempestVortexActive] = useState(false);
+  const [showVictoryUI, setShowVictoryUI] = useState(false);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
   const prevPhaseRef = useRef(battle.phase);
@@ -183,6 +184,15 @@ export default function BattleScreen({
     enemyTurnTimers.current.push(id);
     return id;
   }, []);
+
+  useEffect(() => {
+    if (battle.phase === "victory") {
+      const timer = setTimeout(() => setShowVictoryUI(true), 1200);
+      return () => clearTimeout(timer);
+    } else {
+      setShowVictoryUI(false);
+    }
+  }, [battle.phase]);
 
   const spawnDamageNumber = useCallback((text: string, x: number, y: number, color: string) => {
     const id = damageIdRef.current++;
@@ -1814,8 +1824,8 @@ export default function BattleScreen({
 
         <div className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-4">
 
-          {battle.phase === "victory" && (
-            <div className="text-center py-3 animate-[fadeIn_0.5s_ease-out]">
+          {battle.phase === "victory" && showVictoryUI && (
+            <div className="text-center py-3 animate-[fadeIn_0.8s_ease-out]">
               <Trophy className="w-10 h-10 text-yellow-400 mx-auto mb-1 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]" />
               <h2 className="text-xl font-bold text-yellow-300 mb-1" data-testid="text-victory">Victory!</h2>
               <p className="text-xs text-purple-300/70 mb-2">
