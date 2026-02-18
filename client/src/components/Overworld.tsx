@@ -5,7 +5,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, X, Users, Sparkles, Home, Shield, Package, Moon } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, X, Users, Sparkles, Home, Shield, Package, Moon, Lock } from "lucide-react";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -226,12 +226,18 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
     return currentNodeData.connections.includes(node.id);
   };
 
+  const allBattlesCleared = useMemo(() => {
+    const battleNodes = region.nodes.filter(n => n.type === "battle");
+    return battleNodes.every(n => player.clearedNodes.includes(n.id));
+  }, [region.nodes, player.clearedNodes]);
+
   const canAccessNode = (node: OverworldNode): boolean => {
     if (node.id === player.currentNode) return true;
     const currentNodeData = region.nodes.find(n => n.id === player.currentNode);
     if (!currentNodeData) {
       return node.id === region.nodes[0].id;
     }
+    if (node.type === "boss" && !allBattlesCleared) return false;
     return isAdjacentToCurrentNode(node);
   };
 
@@ -477,7 +483,11 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
                           : "0 2px 8px rgba(0,0,0,0.3)",
                       }}
                     >
-                      <Crown className="w-6 h-6" style={{ color: accessible ? "#facc15" : "#374151" }} />
+                      {!allBattlesCleared && !isCleared ? (
+                        <Lock className="w-5 h-5" style={{ color: "#6b7280" }} />
+                      ) : (
+                        <Crown className="w-6 h-6" style={{ color: accessible ? "#facc15" : "#374151" }} />
+                      )}
                     </div>
                     {accessible && !isCleared && (
                       <Flame className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 text-yellow-400 animate-pulse" />
