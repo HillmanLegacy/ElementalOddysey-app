@@ -1310,7 +1310,7 @@ export default function BattleScreen({
           filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : tempestVortexActive ? "contrast(1.1) saturate(1.15)" : "none",
         }}
       >
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" style={{ filter: "contrast(1.12) saturate(1.15)" }} />
 
       <div className="absolute inset-0" style={{ perspective: "800px", perspectiveOrigin: "50% 35%" }}>
         <div
@@ -1347,6 +1347,16 @@ export default function BattleScreen({
           />
         </div>
       </div>
+
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)",
+        backgroundSize: "4px 4px",
+        zIndex: 2,
+      }} />
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(180deg, transparent, transparent 1px, rgba(0,0,0,0.04) 1px, rgba(0,0,0,0.04) 2px)",
+        zIndex: 2,
+      }} />
 
       <ParticleCanvas
         colors={battle.phase === "victory" ? ["#fbbf24", "#f59e0b", "#eab308"] : [elementColor, "#a855f7", "#6b21a8"]}

@@ -307,19 +307,19 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
   return (
     <div className="relative w-full h-screen overflow-hidden" data-testid="overworld-screen">
       {bgImage ? (
-        <div className="absolute inset-0">
-          <img src={bgImage} alt="" className="w-full h-full object-cover" style={{ imageRendering: "auto" }} />
+        <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
+          <img src={bgImage} alt="" className="w-full h-full object-cover" style={{ imageRendering: "pixelated" }} />
           <div className="absolute inset-0" style={{
             background: "radial-gradient(ellipse at 30% 60%, rgba(255, 80, 20, 0.08) 0%, transparent 50%), radial-gradient(ellipse at 70% 40%, rgba(255, 120, 40, 0.06) 0%, transparent 50%)",
           }} />
         </div>
       ) : (
-        <>
+        <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
           <div className="absolute inset-0" style={{
             background: `linear-gradient(180deg, ${theme.sky[0]} 0%, ${theme.sky[1]} 15%, ${theme.sky[2]} 30%, ${theme.sky[3]} 55%, ${theme.sky[4]} 80%)`,
           }} />
           <div className="absolute inset-0" style={{ top: "15%" }}>
-            <svg className="w-full h-full" viewBox="0 0 100 60" preserveAspectRatio="none">
+            <svg className="w-full h-full" viewBox="0 0 100 60" preserveAspectRatio="none" style={{ shapeRendering: "crispEdges" }}>
               <path d={`M0 20 Q10 12 25 16 Q40 8 55 14 Q70 6 85 12 Q95 9 100 15 L100 60 L0 60 Z`}
                 fill={theme.mountainColor} opacity="0.6" />
               <path d={`M0 28 Q15 20 30 24 Q50 16 65 22 Q80 14 100 20 L100 60 L0 60 Z`}
@@ -356,8 +356,19 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
           <div className="absolute inset-0 pointer-events-none" style={{
             background: `radial-gradient(ellipse at 80% 20%, ${theme.ambientLight} 0%, transparent 60%)`,
           }} />
-        </>
+        </div>
       )}
+
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)",
+        backgroundSize: "4px 4px",
+        zIndex: 1,
+      }} />
+
+      <div className="absolute inset-0 pointer-events-none" style={{
+        backgroundImage: "repeating-linear-gradient(180deg, transparent, transparent 1px, rgba(0,0,0,0.04) 1px, rgba(0,0,0,0.04) 2px)",
+        zIndex: 1,
+      }} />
 
       <ParticleCanvas colors={regionColors} count={isFireRegion ? 40 : 30} speed={isFireRegion ? 0.4 : 0.3} style="ambient" />
 
