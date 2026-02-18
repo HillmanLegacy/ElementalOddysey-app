@@ -300,6 +300,17 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
 
   const sortedNodes = useMemo(() => [...region.nodes].sort((a, b) => a.y - b.y), [region.nodes]);
 
+  const CAMERA_ZOOM = 1.8;
+  const cameraTransform = useMemo(() => {
+    const z = CAMERA_ZOOM;
+    const rawTx = 50 - charPos.x * z;
+    const rawTy = 50 - charPos.y * z;
+    const minOffset = -(z - 1) * 100;
+    const tx = Math.max(minOffset, Math.min(0, rawTx));
+    const ty = Math.max(minOffset, Math.min(0, rawTy));
+    return `translate(${tx}%, ${ty}%) scale(${z})`;
+  }, [charPos.x, charPos.y]);
+
   const REGION_BACKGROUNDS: Record<string, string | null> = {
     Fire: bgEmberPlains,
     Ice: null,
@@ -313,6 +324,15 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
 
   return (
     <div className="relative w-full h-screen overflow-hidden" data-testid="overworld-screen">
+      <div
+        className="absolute inset-0"
+        style={{
+          transformOrigin: "0 0",
+          transform: cameraTransform,
+          transition: "transform 0.4s ease-out",
+          willChange: "transform",
+        }}
+      >
       {isFireRegion ? (
         <LavaOverworldBg />
       ) : (
@@ -628,6 +648,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
           </div>
         );
       })()}
+      </div>
 
       <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between gap-2 p-2 px-3 bg-black/50 backdrop-blur-sm border-b border-white/5">
         <div className="flex items-center gap-3 flex-wrap">
@@ -856,10 +877,18 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
       {hoveredNode !== null && (() => {
         const node = region.nodes.find(n => n.id === hoveredNode);
         if (!node || !canAccessNode(node)) return null;
+        const z = CAMERA_ZOOM;
+        const rawTx = 50 - charPos.x * z;
+        const rawTy = 50 - charPos.y * z;
+        const minOff = -(z - 1) * 100;
+        const camTx = Math.max(minOff, Math.min(0, rawTx));
+        const camTy = Math.max(minOff, Math.min(0, rawTy));
+        const screenX = node.x * z + camTx;
+        const screenY = (node.y - 8) * z + camTy;
         return (
           <div className="absolute z-40 pointer-events-none" style={{
-            left: `${node.x}%`,
-            top: `${node.y - 12}%`,
+            left: `${screenX}%`,
+            top: `${screenY}%`,
             transform: "translateX(-50%)",
           }}>
             <Card className="px-2.5 py-1.5 bg-black/80 border-white/10 backdrop-blur-sm" style={{ boxShadow: "0 4px 15px rgba(0,0,0,0.5)" }}>
