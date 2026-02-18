@@ -4,7 +4,7 @@ import { Progress } from "@/components/ui/progress";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
-import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells } from "@/lib/gameData";
+import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel } from "@/lib/gameData";
 import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
@@ -182,6 +182,10 @@ export default function BattleScreen({
   const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
   const [tempestVortexActive, setTempestVortexActive] = useState(false);
   const [showVictoryUI, setShowVictoryUI] = useState(false);
+  const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
+  const [xpBarPercent, setXpBarPercent] = useState(0);
+  const [xpBarLevel, setXpBarLevel] = useState(player.level);
+  const [xpBarLevelUp, setXpBarLevelUp] = useState(false);
   const [dragonFireVfx, setDragonFireVfx] = useState<{ type: "burst" | "pillar"; x: number; y: number } | null>(null);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
@@ -220,8 +224,79 @@ export default function BattleScreen({
       return () => clearTimeout(timer);
     } else {
       setShowVictoryUI(false);
+      setXpBarPhase("waiting");
+      setXpBarPercent(0);
+      setXpBarLevel(player.level);
+      setXpBarLevelUp(false);
     }
   }, [battle.phase]);
+
+  useEffect(() => {
+    if (!showVictoryUI || battle.phase !== "victory") return;
+
+    const totalXp = battle.enemies.reduce((s, e) => s + e.xpReward, 0);
+    const startXp = player.xp;
+    const startLevel = player.level;
+    const startXpToNext = player.xpToNext || xpForLevel(startLevel);
+
+    setXpBarPercent((startXp / startXpToNext) * 100);
+    setXpBarLevel(startLevel);
+    setXpBarLevelUp(false);
+
+    if (totalXp === 0) {
+      setXpBarPhase("done");
+      return;
+    }
+
+    setXpBarPhase("animating");
+
+    const steps: { percent: number; level: number; levelUp: boolean; delay: number; snap: boolean }[] = [];
+    let remaining = totalXp;
+    let curXp = startXp;
+    let curLevel = startLevel;
+    let curXpToNext = startXpToNext;
+    let totalDelay = 300;
+
+    while (remaining > 0) {
+      const xpToFill = curXpToNext - curXp;
+      if (remaining >= xpToFill) {
+        steps.push({ percent: 100, level: curLevel, levelUp: true, delay: totalDelay, snap: false });
+        totalDelay += 700;
+        remaining -= xpToFill;
+        curLevel++;
+        curXpToNext = xpForLevel(curLevel);
+        curXp = 0;
+        steps.push({ percent: 0, level: curLevel, levelUp: false, delay: totalDelay, snap: true });
+        totalDelay += 100;
+      } else {
+        curXp += remaining;
+        steps.push({ percent: (curXp / curXpToNext) * 100, level: curLevel, levelUp: false, delay: totalDelay, snap: false });
+        totalDelay += 700;
+        remaining = 0;
+      }
+    }
+
+    const timers: number[] = [];
+    for (const step of steps) {
+      timers.push(window.setTimeout(() => {
+        if (step.snap) {
+          setXpBarPhase("waiting");
+        }
+        setXpBarPercent(step.percent);
+        setXpBarLevel(step.level);
+        setXpBarLevelUp(step.levelUp);
+        if (step.snap) {
+          requestAnimationFrame(() => setXpBarPhase("animating"));
+        }
+      }, step.delay));
+    }
+
+    timers.push(window.setTimeout(() => {
+      setXpBarPhase("done");
+    }, totalDelay + 300));
+
+    return () => timers.forEach(t => clearTimeout(t));
+  }, [showVictoryUI, battle.phase]);
 
   const spawnDamageNumber = useCallback((text: string, x: number, y: number, color: string) => {
     if (!showDamageNumbers) return;
@@ -2257,12 +2332,37 @@ export default function BattleScreen({
             <div className="text-center py-3 animate-[fadeIn_0.8s_ease-out]">
               <Trophy className="w-10 h-10 text-yellow-400 mx-auto mb-1 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]" />
               <h2 className="text-xl font-bold text-yellow-300 mb-1" data-testid="text-victory">Victory!</h2>
-              <p className="text-xs text-purple-300/70 mb-2">
-                XP: +{battle.enemies.reduce((s, e) => s + e.xpReward, 0)} | Gold: +{battle.enemies.reduce((s, e) => s + e.goldReward, 0)}
-              </p>
-              <Button onClick={() => onEndBattle(true)} className="bg-yellow-600/80 text-white" data-testid="button-claim-victory">
-                Claim Rewards
-              </Button>
+
+              <div className="mx-auto max-w-[220px] mb-2">
+                <div className="flex items-center justify-between text-[10px] text-purple-300/80 mb-0.5">
+                  <span className={`font-bold ${xpBarLevelUp ? "text-yellow-300 animate-pulse" : ""}`}>
+                    Lv {xpBarLevel}{xpBarLevelUp ? " → " + (xpBarLevel + 1) + "!" : ""}
+                  </span>
+                  <span>+{battle.enemies.reduce((s, e) => s + e.xpReward, 0)} XP</span>
+                </div>
+                <div className="relative w-full h-3 bg-black/60 rounded-full overflow-hidden border border-yellow-600/30">
+                  <div
+                    className={`h-full rounded-full ${xpBarLevelUp ? "bg-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.7)]" : "bg-gradient-to-r from-yellow-600 to-yellow-400"}`}
+                    style={{
+                      width: `${xpBarPercent}%`,
+                      transition: xpBarPhase === "animating" ? "width 0.7s ease-out" : "none",
+                    }}
+                  />
+                </div>
+                <div className="text-[10px] text-yellow-400/60 mt-0.5">
+                  Gold: +{battle.enemies.reduce((s, e) => s + e.goldReward, 0)}
+                </div>
+              </div>
+
+              {xpBarPhase === "done" && (
+                <Button
+                  onClick={() => onEndBattle(true)}
+                  className="bg-yellow-600/80 text-white animate-[fadeIn_0.4s_ease-out]"
+                  data-testid="button-claim-victory"
+                >
+                  Claim Rewards
+                </Button>
+              )}
             </div>
           )}
 
