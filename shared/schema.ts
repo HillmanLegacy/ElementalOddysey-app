@@ -186,6 +186,7 @@ export interface PartyMember {
   xp: number;
   xpToNext: number;
   learnedSpells?: string[];
+  perks?: string[];
 }
 
 export interface BattlePartyMember {
