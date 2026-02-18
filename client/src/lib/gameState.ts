@@ -624,12 +624,16 @@ export function useGameState() {
       if (!s.player || !s.battle) return s;
 
       if (!victory) {
+        const currentTierDef = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
+        const currentRegionDef = getRegionForTier(s.player.currentRegion, currentTierDef);
+        const hutNode = currentRegionDef.nodes[0];
         return {
           ...s,
           screen: "overworld",
           battle: null,
           player: {
             ...s.player,
+            currentNode: hutNode.id,
             stats: { ...s.player.stats, hp: s.player.stats.maxHp, mp: s.player.stats.maxMp },
             party: s.player.party.map(m => ({ ...m, stats: { ...m.stats, hp: m.stats.maxHp, mp: m.stats.maxMp } })),
           },
@@ -794,6 +798,9 @@ export function useGameState() {
       const pendingLevelUp: PendingLevelUp | null = levelUpQueue.length > 0 ? levelUpQueue[0] : null;
       const pendingLevelUpQueue = levelUpQueue.slice(1);
 
+      const tierChangedAfterBoss = isBossNode && (currentRegion !== s.player.currentRegion ||
+        getRegionTier(currentRegion, regionBossDefeats) !== getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {}));
+
       const updatedPlayer: PlayerCharacter = {
         ...s.player,
         xp: newXp,
@@ -810,6 +817,10 @@ export function useGameState() {
           hp: Math.min(baseStats.maxHp, s.battle.playerHp),
           mp: Math.min(baseStats.maxMp, s.battle.playerMp),
         },
+        merchantBattlesSinceRestock: tierChangedAfterBoss ? 0 : (s.player.merchantBattlesSinceRestock || 0) + 1,
+        merchantSavedStock: tierChangedAfterBoss ? null : s.player.merchantSavedStock,
+        merchantLastRegion: tierChangedAfterBoss ? currentRegion : (s.player.merchantLastRegion || 0),
+        merchantLastTier: tierChangedAfterBoss ? getRegionTier(currentRegion, regionBossDefeats) : (s.player.merchantLastTier || 0),
       };
 
       const nextScreen = pendingLevelUp
@@ -1020,8 +1031,26 @@ export function useGameState() {
       if (!s.player) return s;
       const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
       const region = getRegionForTier(s.player.currentRegion, tier);
-      const items = getShopItems(region);
-      return { ...s, currentShop: items, screen: "shop" };
+
+      const regionChanged = s.player.merchantLastRegion !== s.player.currentRegion;
+      const tierChanged = s.player.merchantLastTier !== tier;
+      const restocked = s.player.merchantBattlesSinceRestock >= 5;
+      const needsRestock = regionChanged || tierChanged || restocked || !s.player.merchantSavedStock;
+
+      const items = needsRestock ? getShopItems(region) : s.player.merchantSavedStock!;
+
+      return {
+        ...s,
+        currentShop: items,
+        screen: "shop",
+        player: {
+          ...s.player,
+          merchantLastRegion: s.player.currentRegion,
+          merchantLastTier: tier,
+          merchantSavedStock: items,
+          merchantBattlesSinceRestock: needsRestock ? 0 : s.player.merchantBattlesSinceRestock,
+        },
+      };
     });
   }, []);
 
@@ -1037,7 +1066,12 @@ export function useGameState() {
 
       return {
         ...s,
-        player: { ...s.player, gold: s.player.gold - shopItem.price, inventory: newInventory },
+        player: {
+          ...s.player,
+          gold: s.player.gold - shopItem.price,
+          inventory: newInventory,
+          merchantSavedStock: newShop,
+        },
         currentShop: newShop,
       };
     });
@@ -1120,6 +1154,10 @@ export function useGameState() {
       starterCharacterId: playerData.starterCharacterId || "samurai_wind",
       regionBossDefeats: playerData.regionBossDefeats || {},
       learnedSpells: playerData.learnedSpells || [],
+      merchantBattlesSinceRestock: playerData.merchantBattlesSinceRestock || 0,
+      merchantLastRegion: playerData.merchantLastRegion || 0,
+      merchantLastTier: playerData.merchantLastTier || 0,
+      merchantSavedStock: playerData.merchantSavedStock || null,
     };
     setState(s => ({ ...s, player: normalizedPlayer, screen: "overworld" }));
   }, []);

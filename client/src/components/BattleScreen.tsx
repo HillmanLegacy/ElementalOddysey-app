@@ -5,6 +5,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
 import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel } from "@/lib/gameData";
+import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
@@ -2492,16 +2493,16 @@ export default function BattleScreen({
               {consumables.length === 0 ? (
                 <p className="text-xs text-purple-400/50 text-center py-2">No items</p>
               ) : (
-                consumables.map(item => (
+                groupConsumables(consumables).map(({ item, count, ids }) => (
                   <Button
-                    key={item.id}
+                    key={item.name}
                     variant="ghost"
                     className="w-full justify-start text-xs text-purple-200 h-auto py-1.5"
-                    onClick={() => { onUseItem(item.id); setShowItems(false); }}
+                    onClick={() => { onUseItem(ids[0]); setShowItems(false); }}
                     data-testid={`button-use-item-${item.id}`}
                   >
                     <Heart className="w-3 h-3 mr-2 text-red-400" />
-                    {item.name} - {item.description}
+                    {item.name} x{count} - {item.description}
                   </Button>
                 ))
               )}
@@ -2622,19 +2623,19 @@ export default function BattleScreen({
                     {consumables.length === 0 ? (
                       <p className="text-xs text-purple-400/50 text-center py-2">No items</p>
                     ) : (
-                      consumables.map(item => (
+                      groupConsumables(consumables).map(({ item, count, ids }) => (
                         <Button
-                          key={item.id}
+                          key={item.name}
                           variant="ghost"
                           className="w-full justify-start text-xs text-purple-200 h-auto py-1.5"
                           onClick={() => {
-                            onPartyMemberUseItem(battle.activePartyIndex, item.id);
+                            onPartyMemberUseItem(battle.activePartyIndex, ids[0]);
                             setPartyAction("menu");
                             setTimeout(() => onAdvancePartyTurn(), 400);
                           }}
                         >
                           <Heart className="w-3 h-3 mr-2 text-red-400" />
-                          {item.name} - {item.description}
+                          {item.name} x{count} - {item.description}
                         </Button>
                       ))
                     )}

@@ -247,13 +247,16 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
       return node.id === region.nodes[0].id;
     }
     if (node.type === "boss" && !allBattlesCleared) return false;
+    if (!isAdjacentToCurrentNode(node)) return false;
     if (
       (currentNodeData.type === "battle" || currentNodeData.type === "boss") &&
       !player.clearedNodes.includes(currentNodeData.id)
     ) {
-      return false;
+      const targetCleared = player.clearedNodes.includes(node.id);
+      const targetIsSafe = node.type === "hut" || node.type === "shop" || node.type === "rest" || node.type === "shaman";
+      if (!targetCleared && !targetIsSafe) return false;
     }
-    return isAdjacentToCurrentNode(node);
+    return true;
   };
 
   const handleNodeClick = (node: OverworldNode) => {

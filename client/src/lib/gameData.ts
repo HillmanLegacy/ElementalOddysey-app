@@ -184,6 +184,10 @@ export function createNewPlayer(starterDef: PartyMemberDef, name: string, color:
     spriteId: starterDef.spriteId,
     starterCharacterId: starterDef.id,
     regionBossDefeats: {},
+    merchantBattlesSinceRestock: 0,
+    merchantLastRegion: 0,
+    merchantLastTier: 0,
+    merchantSavedStock: null,
   };
 }
 

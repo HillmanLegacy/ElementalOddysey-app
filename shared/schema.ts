@@ -72,6 +72,10 @@ export interface PlayerCharacter {
   starterCharacterId: string;
   regionBossDefeats: Record<string, number>;
   learnedSpells?: string[];
+  merchantBattlesSinceRestock: number;
+  merchantLastRegion: number;
+  merchantLastTier: number;
+  merchantSavedStock: ShopItem[] | null;
 }
 
 export interface InventoryItem {

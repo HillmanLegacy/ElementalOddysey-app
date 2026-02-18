@@ -8,6 +8,7 @@ import {
   ArrowLeft, Backpack, Heart, Droplets,
   Crown, FlaskConical,
 } from "lucide-react";
+import { groupConsumables } from "@/lib/utils";
 
 interface InventoryScreenProps {
   player: PlayerCharacter;
@@ -57,7 +58,7 @@ export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: 
                     <p className="text-sm text-purple-400/50">No consumable items</p>
                   </div>
                 ) : (
-                  consumables.map(item => {
+                  groupConsumables(consumables).map(({ item, count, ids }) => {
                     const canUseOnPlayer = item.effect.type === "heal" && (
                       (item.effect.stat === "hp" && player.stats.hp < player.stats.maxHp) ||
                       (item.effect.stat === "mp" && player.stats.mp < player.stats.maxMp)
@@ -68,12 +69,12 @@ export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: 
                         (item.effect.stat === "mp" && m.stats.mp < m.stats.maxMp)
                       )
                     );
-                    const isTargeting = targetingItemId === item.id;
+                    const isTargeting = targetingItemId === item.name;
                     return (
-                      <Card key={item.id} className="p-3 bg-[#12122a]/90 border-purple-500/10" data-testid={`card-item-${item.id}`}>
+                      <Card key={item.name} className="p-3 bg-[#12122a]/90 border-purple-500/10" data-testid={`card-item-${item.name}`}>
                         <div className="flex items-center justify-between gap-2">
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white">{item.name}</p>
+                            <p className="text-sm font-medium text-white">{item.name} <span className="text-yellow-400/80">x{count}</span></p>
                             <p className="text-xs text-purple-300/60">{item.description}</p>
                           </div>
                           {player.party.length > 0 ? (
@@ -81,9 +82,9 @@ export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: 
                               size="sm"
                               variant="outline"
                               className={`text-xs ${isTargeting ? "border-yellow-500/40 text-yellow-300" : "border-green-500/20 text-green-300"}`}
-                              onClick={() => setTargetingItemId(isTargeting ? null : item.id)}
+                              onClick={() => setTargetingItemId(isTargeting ? null : item.name)}
                               disabled={!canUseOnAny}
-                              data-testid={`button-use-${item.id}`}
+                              data-testid={`button-use-${item.name}`}
                             >
                               {isTargeting ? "Cancel" : "Use"}
                             </Button>
@@ -92,9 +93,9 @@ export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: 
                               size="sm"
                               variant="outline"
                               className="text-xs border-green-500/20 text-green-300"
-                              onClick={() => onUseItem(item.id)}
+                              onClick={() => onUseItem(ids[0])}
                               disabled={!canUseOnPlayer}
-                              data-testid={`button-use-${item.id}`}
+                              data-testid={`button-use-${item.name}`}
                             >
                               Use
                             </Button>
@@ -106,7 +107,7 @@ export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: 
                             <button
                               className="w-full flex items-center justify-between px-2 py-1.5 rounded bg-black/30 hover:bg-purple-500/10 transition-colors"
                               disabled={!canUseOnPlayer}
-                              onClick={() => { onUseItem(item.id); setTargetingItemId(null); }}
+                              onClick={() => { onUseItem(ids[0]); setTargetingItemId(null); }}
                             >
                               <div className="flex items-center gap-2">
                                 <span className="text-[10px] font-semibold text-amber-200">{player.name}</span>
@@ -141,7 +142,7 @@ export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: 
                                   key={member.id}
                                   className="w-full flex items-center justify-between px-2 py-1.5 rounded bg-black/30 hover:bg-purple-500/10 transition-colors disabled:opacity-30"
                                   disabled={!canUseOnMember}
-                                  onClick={() => { onUseItem(item.id, idx); setTargetingItemId(null); }}
+                                  onClick={() => { onUseItem(ids[0], idx); setTargetingItemId(null); }}
                                 >
                                   <span className="text-[10px] font-semibold text-purple-200">{member.name}</span>
                                   <div className="flex items-center gap-2">

@@ -58,7 +58,8 @@ export default function ShopScreen({ player, items, onBuy, onBack }: ShopScreenP
                     <p className="text-xs text-purple-300/60">{item.description}</p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/30 text-purple-400 capitalize">{item.type}</span>
-                      <span className="text-[10px] text-purple-400/50">Stock: {item.stock}</span>
+                      <span className="text-[10px] text-purple-400/50">Merchant Stock: {item.stock}</span>
+                      <span className="text-[10px] text-green-400/50">Inventory: {player.inventory.filter(i => i.name === item.name).length}</span>
                     </div>
                   </div>
                   <Button
