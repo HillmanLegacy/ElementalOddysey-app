@@ -1443,8 +1443,19 @@ export default function BattleScreen({
       {damageNumbers.map(d => (
         <div
           key={d.id}
-          className="absolute pointer-events-none z-50 animate-[dmgFloat_1.2s_ease-out_forwards] font-bold text-lg drop-shadow-[0_2px_4px_rgba(0,0,0,0.8)]"
-          style={{ left: `${d.x}%`, top: `${d.y}%`, color: d.color, textShadow: `0 0 10px ${d.color}80` }}
+          className="absolute pointer-events-none z-50 animate-[dmgFloat_1.2s_ease-out_forwards]"
+          style={{
+            left: `${d.x}%`,
+            top: `${d.y}%`,
+            fontSize: d.text.includes("CRIT") || d.text.includes("MISS") ? "28px" : "24px",
+            fontWeight: 900,
+            fontFamily: "'Arial Black', 'Impact', sans-serif",
+            color: d.color,
+            WebkitTextStroke: "2px rgba(0,0,0,0.9)",
+            paintOrder: "stroke fill",
+            textShadow: `0 0 8px ${d.color}, 0 0 16px ${d.color}80, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000`,
+            letterSpacing: "1px",
+          }}
         >
           {d.text}
         </div>
@@ -2685,9 +2696,10 @@ export default function BattleScreen({
           to { opacity: 1; transform: translateY(0); }
         }
         @keyframes dmgFloat {
-          0% { opacity: 1; transform: translateY(0) scale(1); }
-          50% { opacity: 1; transform: translateY(-30px) scale(1.3); }
-          100% { opacity: 0; transform: translateY(-60px) scale(0.8); }
+          0% { opacity: 1; transform: translateY(0) scale(0.5); }
+          15% { opacity: 1; transform: translateY(-10px) scale(1.2); }
+          30% { opacity: 1; transform: translateY(-20px) scale(1); }
+          100% { opacity: 0; transform: translateY(-55px) scale(0.9); }
         }
         @keyframes enemyHit {
           0% { filter: brightness(2); transform: scale(1.1) translateX(5px); }
