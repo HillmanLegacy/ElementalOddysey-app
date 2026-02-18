@@ -544,20 +544,12 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
               </div>
             ) : node.type === "shop" ? (
               <div className="flex flex-col items-center">
-                <div className="w-10 h-12 relative">
-                  <div className="absolute bottom-0 w-10 h-9 rounded-md" style={{
-                    backgroundColor: "#5a3a20",
-                    border: "2px solid #8b6b4a",
-                    boxShadow: isHovered && accessible ? `0 0 15px rgba(139, 107, 74, 0.5)` : "0 2px 6px rgba(0,0,0,0.3)",
-                  }}>
-                    <div className="flex items-center justify-center h-full">
-                      <ShoppingBag className="w-4 h-4 text-yellow-300" />
-                    </div>
-                  </div>
-                  <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-12 h-4 rounded-sm" style={{
-                    background: `linear-gradient(135deg, ${elemColor}cc, ${elemColor}88)`,
-                    borderRadius: "2px 2px 0 0",
-                  }} />
+                <div className="w-9 h-9 rounded-md flex items-center justify-center" style={{
+                  backgroundColor: "#5a3a20",
+                  border: "2px solid #8b6b4a",
+                  boxShadow: isHovered && accessible ? `0 0 15px rgba(139, 107, 74, 0.5)` : "0 2px 6px rgba(0,0,0,0.3)",
+                }}>
+                  <ShoppingBag className="w-4 h-4 text-yellow-300" />
                 </div>
               </div>
             ) : node.type === "rest" ? (
