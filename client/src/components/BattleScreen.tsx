@@ -658,10 +658,10 @@ export default function BattleScreen({
         if (preTarget.type === "party" && preTarget.index >= 0) {
           const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
           const tp = partyPos[preTarget.index % partyPos.length];
-          walkToX = tp.x + 10;
+          walkToX = tp.x + 8;
           walkToY = tp.y;
         } else {
-          walkToX = PLAYER_POS.x + 10;
+          walkToX = PLAYER_POS.x + 8;
           walkToY = PLAYER_POS.y;
         }
 
@@ -876,10 +876,10 @@ export default function BattleScreen({
         if (preTarget.type === "party" && preTarget.index >= 0) {
           const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
           const tp = partyPos[preTarget.index % partyPos.length];
-          walkToX = tp.x + 10;
+          walkToX = tp.x + 8;
           walkToY = tp.y;
         } else {
-          walkToX = PLAYER_POS.x + 10;
+          walkToX = PLAYER_POS.x + 8;
           walkToY = PLAYER_POS.y;
         }
 
@@ -1062,7 +1062,7 @@ export default function BattleScreen({
     }
     if ((animPhase === "runToEnemy" || animPhase === "attacking") && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
-      return { x: target.x - 15, y: target.y };
+      return { x: target.x - 8, y: target.y };
     }
     if (animPhase === "hurt") {
       return { x: PLAYER_POS.x - 1, y: PLAYER_POS.y };
@@ -1389,7 +1389,7 @@ export default function BattleScreen({
             if (isActiveParty && partyTargetIdx !== null) {
               const tgt = ENEMY_POSITIONS[partyTargetIdx % ENEMY_POSITIONS.length];
               if (partyAnimPhase === "runToEnemy" || partyAnimPhase === "attacking") {
-                posX = tgt.x - 15;
+                posX = tgt.x - 8;
                 posY = tgt.y;
               }
             }

@@ -56,7 +56,8 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 - PARTY_POSITIONS = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }] - fixed party member slots (absolute positioned)
 - ENEMY_POSITIONS = [{ x: 58, y: 42 }, { x: 72, y: 36 }, { x: 65, y: 52 }, { x: 80, y: 48 }] - fixed enemy slots with z-scale
 - getPlayerPosition() computes dynamic player position based on animPhase and target enemy index
-- Run-to-enemy: player moves to target.x - 10%, target.y (stops in front of the targeted enemy)
+- Run-to-enemy: player/party moves to target.x - 8%, target.y (stops slightly left of the targeted enemy)
+- Boss melee: boss walks to target.x + 8%, target.y (stops slightly right of the targeted character) using left/bottom transitions via bossOffset
 - Fujin dash: player moves to target.x + 12%, target.y (passes through enemy)
 - Movement uses CSS left/bottom transitions (not transform-based), fires onTransitionEnd on "left" property
 - runBackHandled ref prevents double-firing; fallback timer (500ms) ensures phase advances if transition doesn't fire
