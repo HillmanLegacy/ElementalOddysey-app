@@ -129,6 +129,7 @@ function lerpPosition(from: { x: number; y: number }, to: { x: number; y: number
 
 interface OverworldProps {
   player: PlayerCharacter;
+  onMoveToNode: (nodeId: number) => void;
   onNodeSelect: (nodeId: number) => void;
   onShopOpen: (nodeId: number) => void;
   onRest: (nodeId: number) => void;
@@ -139,7 +140,7 @@ interface OverworldProps {
   onRegionChange: (regionId: number) => void;
 }
 
-export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSave, onRegionChange }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSave, onRegionChange }: OverworldProps) {
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
   const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
@@ -211,7 +212,14 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
     if (prevNodeRef.current !== player.currentNode) {
       const targetNode = region.nodes.find(n => n.id === player.currentNode);
       if (targetNode) {
-        moveCharacterTo(getNodePosition(targetNode), () => {});
+        const targetPos = getNodePosition(targetNode);
+        const cur = charPosRef.current;
+        const dist = Math.abs(cur.x - targetPos.x) + Math.abs(cur.y - targetPos.y);
+        if (dist > 1) {
+          moveCharacterTo(targetPos, () => {});
+        } else {
+          setCharPos(targetPos);
+        }
       }
       prevNodeRef.current = player.currentNode;
     }
@@ -239,6 +247,12 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
       return node.id === region.nodes[0].id;
     }
     if (node.type === "boss" && !allBattlesCleared) return false;
+    if (
+      (currentNodeData.type === "battle" || currentNodeData.type === "boss") &&
+      !player.clearedNodes.includes(currentNodeData.id)
+    ) {
+      return false;
+    }
     return isAdjacentToCurrentNode(node);
   };
 
@@ -254,11 +268,7 @@ export default function Overworld({ player, onNodeSelect, onShopOpen, onRest, on
     setFacingRight(targetPos.x > charPos.x);
 
     moveCharacterTo(targetPos, () => {
-      if (node.type === "hut") {
-        setHutMenuOpen(true);
-      } else {
-        triggerNodeAction(node);
-      }
+      onMoveToNode(node.id);
     });
   };
 

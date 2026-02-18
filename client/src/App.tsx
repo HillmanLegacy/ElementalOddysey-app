@@ -137,13 +137,15 @@ function Game() {
           <>
             <Overworld
               player={state.player}
+              onMoveToNode={(nodeId: number) => {
+                updatePlayer({ currentNode: nodeId });
+              }}
               onNodeSelect={startBattle}
               onShopOpen={(nodeId: number) => {
-                updatePlayer({ currentNode: nodeId, clearedNodes: state.player!.clearedNodes.includes(nodeId) ? state.player!.clearedNodes : [...state.player!.clearedNodes, nodeId] });
+                updatePlayer({ clearedNodes: state.player!.clearedNodes.includes(nodeId) ? state.player!.clearedNodes : [...state.player!.clearedNodes, nodeId] });
                 openShop();
               }}
-              onRest={(nodeId: number) => {
-                updatePlayer({ currentNode: nodeId });
+              onRest={() => {
                 restAtNode();
                 toast({ title: "Rested", description: "HP and MP fully restored!" });
               }}
