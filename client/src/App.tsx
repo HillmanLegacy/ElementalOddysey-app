@@ -4,6 +4,7 @@ import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGameState } from "@/lib/gameState";
+import { getRegionForTier, getRegionTier } from "@/lib/gameData";
 import MainMenu from "@/components/MainMenu";
 import CharacterCreation from "@/components/CharacterCreation";
 import Overworld from "@/components/Overworld";
@@ -181,11 +182,14 @@ function Game() {
 
       case "battle":
         if (!state.player || !state.battle) return null;
+        const battleTier = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
+        const battleRegion = getRegionForTier(state.player.currentRegion, battleTier);
         return (
           <BattleScreen
             player={state.player}
             battle={state.battle}
             showDamageNumbers={state.showDamageNumbers}
+            regionTheme={battleRegion.theme}
             onAttack={playerAttack}
             onCastSpell={castSpell}
             onDefend={playerDefend}

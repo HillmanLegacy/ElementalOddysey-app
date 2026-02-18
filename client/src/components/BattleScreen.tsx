@@ -5,6 +5,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
 import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells } from "@/lib/gameData";
+import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
 import { playSfx } from "@/lib/sfx";
@@ -123,12 +124,13 @@ interface BattleScreenProps {
   onSetAnimating: () => void;
   onFinishPlayerTurn: () => void;
   showDamageNumbers: boolean;
+  regionTheme?: string;
 }
 
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice";
 
 export default function BattleScreen({
-  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn,
+  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, regionTheme,
 }: BattleScreenProps) {
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
@@ -1310,43 +1312,48 @@ export default function BattleScreen({
           filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : tempestVortexActive ? "contrast(1.1) saturate(1.15)" : "none",
         }}
       >
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" style={{ filter: "contrast(1.12) saturate(1.15)" }} />
-
-      <div className="absolute inset-0" style={{ perspective: "800px", perspectiveOrigin: "50% 35%" }}>
-        <div
-          className="absolute w-[140%] left-[-20%] bottom-0"
-          style={{
-            height: "55%",
-            transform: "rotateX(55deg)",
-            transformOrigin: "bottom center",
-            background: "linear-gradient(180deg, #1a0e35 0%, #120828 30%, #0d0520 60%, #080315 100%)",
-            borderTop: "1px solid rgba(168, 85, 247, 0.15)",
-          }}
-        >
-          <div className="absolute inset-0 opacity-20">
-            {Array.from({ length: 12 }).map((_, i) => (
+      {regionTheme === "Fire" ? (
+        <LavaBattleBg />
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" style={{ filter: "contrast(1.12) saturate(1.15)" }} />
+          <div className="absolute inset-0" style={{ perspective: "800px", perspectiveOrigin: "50% 35%" }}>
+            <div
+              className="absolute w-[140%] left-[-20%] bottom-0"
+              style={{
+                height: "55%",
+                transform: "rotateX(55deg)",
+                transformOrigin: "bottom center",
+                background: "linear-gradient(180deg, #1a0e35 0%, #120828 30%, #0d0520 60%, #080315 100%)",
+                borderTop: "1px solid rgba(168, 85, 247, 0.15)",
+              }}
+            >
+              <div className="absolute inset-0 opacity-20">
+                {Array.from({ length: 12 }).map((_, i) => (
+                  <div
+                    key={`h-${i}`}
+                    className="absolute w-full border-t border-purple-500/10"
+                    style={{ top: `${(i + 1) * 8}%` }}
+                  />
+                ))}
+                {Array.from({ length: 16 }).map((_, i) => (
+                  <div
+                    key={`v-${i}`}
+                    className="absolute h-full border-l border-purple-500/8"
+                    style={{ left: `${(i + 1) * 6.25}%` }}
+                  />
+                ))}
+              </div>
               <div
-                key={`h-${i}`}
-                className="absolute w-full border-t border-purple-500/10"
-                style={{ top: `${(i + 1) * 8}%` }}
+                className="absolute inset-0"
+                style={{
+                  background: `radial-gradient(ellipse at 30% 40%, ${elementColor}10 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, #a855f710 0%, transparent 50%)`,
+                }}
               />
-            ))}
-            {Array.from({ length: 16 }).map((_, i) => (
-              <div
-                key={`v-${i}`}
-                className="absolute h-full border-l border-purple-500/8"
-                style={{ left: `${(i + 1) * 6.25}%` }}
-              />
-            ))}
+            </div>
           </div>
-          <div
-            className="absolute inset-0"
-            style={{
-              background: `radial-gradient(ellipse at 30% 40%, ${elementColor}10 0%, transparent 50%), radial-gradient(ellipse at 70% 50%, #a855f710 0%, transparent 50%)`,
-            }}
-          />
-        </div>
-      </div>
+        </>
+      )}
 
       <div className="absolute inset-0 pointer-events-none" style={{
         backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.03) 2px, rgba(0,0,0,0.03) 4px)",
