@@ -313,7 +313,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
   const sortedNodes = useMemo(() => [...region.nodes].sort((a, b) => a.y - b.y), [region.nodes]);
 
-  const CAMERA_ZOOM = 1.8;
+  const CAMERA_ZOOM = 1.4;
   const cameraTransform = useMemo(() => {
     const z = CAMERA_ZOOM;
     const rawTx = 50 - charPos.x * z;
