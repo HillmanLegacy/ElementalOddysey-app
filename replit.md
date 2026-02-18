@@ -54,9 +54,12 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 
 ## Battle Position System
 - All battle positions use percentage-based coordinates (left%, bottom%) relative to the battle container
-- PLAYER_POS = { x: 12, y: 18 } - fixed player idle position
-- PARTY_POSITIONS = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }] - fixed party member slots (absolute positioned)
-- ENEMY_POSITIONS = [{ x: 58, y: 42 }, { x: 72, y: 36 }, { x: 65, y: 52 }, { x: 80, y: 48 }] - fixed enemy slots with z-scale
+- **Unified Slot System**: Positions defined as module-level constants (`ALLY_SLOTS`, `ENEMY_SLOTS`) outside the component. `PLAYER_POS` and `PARTY_POSITIONS` are derived aliases.
+- ALLY_SLOTS = [{ x: 12, y: 18 }, { x: 4, y: 12 }, { x: 20, y: 12 }] - slot 0 = player leader, slot 1-2 = party members
+- ENEMY_SLOTS = [{ x: 62, y: 42, z: 0.95 }, { x: 74, y: 36, z: 0.85 }, { x: 68, y: 50, z: 1.0 }] - 3 enemy slots filled sequentially
+- Characters fill slots sequentially: 1 character = slot 0, 2 characters = slots 0+1, etc.
+- All sprites centered on slot positions via `transform: translateX(-50%)`
+- Damage numbers positioned using same slot coordinates: `top = 100 - slot.y - offset`
 - getPlayerPosition() computes dynamic player position based on animPhase and target enemy index
 - Run-to-enemy: player/party moves to target.x - 8%, target.y (stops slightly left of the targeted enemy)
 - Boss melee: boss walks to target.x + 8%, target.y (stops slightly right of the targeted character) using left/bottom transitions via bossOffset

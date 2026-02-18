@@ -129,6 +129,22 @@ interface BattleScreenProps {
 
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice";
 
+const ALLY_SLOTS = [
+  { x: 12, y: 18 },
+  { x: 4, y: 12 },
+  { x: 20, y: 12 },
+];
+
+const ENEMY_SLOTS = [
+  { x: 62, y: 42, z: 0.95 },
+  { x: 74, y: 36, z: 0.85 },
+  { x: 68, y: 50, z: 1.0 },
+];
+
+const PLAYER_POS = ALLY_SLOTS[0];
+const PARTY_POSITIONS = [ALLY_SLOTS[1], ALLY_SLOTS[2]];
+const ENEMY_POSITIONS = ENEMY_SLOTS;
+
 export default function BattleScreen({
   player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, regionTheme,
 }: BattleScreenProps) {
@@ -221,32 +237,24 @@ export default function BattleScreen({
     if (evt.id <= lastDmgEventIdRef.current) return;
     lastDmgEventIdRef.current = evt.id;
 
-    const ENEMY_POS_DMG = [
-      { x: 58, y: 42 },
-      { x: 72, y: 36 },
-      { x: 65, y: 52 },
-      { x: 80, y: 48 },
-    ];
-    const PLAYER_BOTTOM = 18;
-    const PARTY_BOTTOMS = [12, 10, 12];
-
     let posX: number, posY: number;
     let color = "#ef4444";
 
     if (evt.targetType === "enemy") {
-      const ep = ENEMY_POS_DMG[evt.targetIndex % ENEMY_POS_DMG.length];
+      const ep = ENEMY_SLOTS[evt.targetIndex % ENEMY_SLOTS.length];
       posX = ep.x + (Math.random() * 6 - 3);
       posY = 100 - ep.y - 15 + (Math.random() * 4 - 2);
       color = evt.isCrit ? "#fbbf24" : "#ef4444";
     } else if (evt.targetType === "player") {
-      posX = 12 + (Math.random() * 4 - 2);
-      posY = 100 - PLAYER_BOTTOM - 18;
+      const pp = ALLY_SLOTS[0];
+      posX = pp.x + (Math.random() * 4 - 2);
+      posY = 100 - pp.y - 16;
       color = evt.element === "Fire" ? "#ff6b2b" : "#ef4444";
     } else {
-      const partyX = [4, 12, 20];
-      const idx = evt.targetIndex % PARTY_BOTTOMS.length;
-      posX = partyX[idx] + (Math.random() * 4 - 2);
-      posY = 100 - PARTY_BOTTOMS[idx] - 16;
+      const slotIdx = (evt.targetIndex % PARTY_POSITIONS.length) + 1;
+      const pp = ALLY_SLOTS[slotIdx];
+      posX = pp.x + (Math.random() * 4 - 2);
+      posY = 100 - pp.y - 14;
       color = "#ef4444";
     }
 
@@ -459,8 +467,7 @@ export default function BattleScreen({
       vfxX = 12;
       vfxY = 18;
     } else {
-      const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
-      const pos = partyPos[item.targetIndex % partyPos.length];
+      const pos = PARTY_POSITIONS[item.targetIndex % PARTY_POSITIONS.length];
       vfxX = pos.x;
       vfxY = pos.y;
     }
@@ -615,11 +622,10 @@ export default function BattleScreen({
 
       const getTargetPos = (result: { dodged: boolean; target: { type: "player" | "party"; index: number } }) => {
         if (result.target.type === "party" && result.target.index >= 0) {
-          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
-          const tp = partyPos[result.target.index % partyPos.length];
+          const tp = PARTY_POSITIONS[result.target.index % PARTY_POSITIONS.length];
           return { x: tp.x, y: tp.y };
         }
-        return { x: 12, y: 18 };
+        return { x: PLAYER_POS.x, y: PLAYER_POS.y };
       };
 
       if (attackType === "fireBurst") {
@@ -698,14 +704,12 @@ export default function BattleScreen({
         }
 
         let walkToX: number, walkToY: number;
-        if (preTarget.type === "party" && preTarget.index >= 0) {
-          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
-          const tp = partyPos[preTarget.index % partyPos.length];
+        {
+          const tp = preTarget.type === "party" && preTarget.index >= 0
+            ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length]
+            : PLAYER_POS;
           walkToX = tp.x + 8;
           walkToY = tp.y;
-        } else {
-          walkToX = PLAYER_POS.x + 8;
-          walkToY = PLAYER_POS.y;
         }
 
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
@@ -760,8 +764,7 @@ export default function BattleScreen({
 
         let walkToX: number, walkToY: number;
         if (preTarget.type === "party" && preTarget.index >= 0) {
-          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
-          const tp = partyPos[preTarget.index % partyPos.length];
+          const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
           walkToX = tp.x + 8;
           walkToY = tp.y;
         } else {
@@ -824,8 +827,7 @@ export default function BattleScreen({
 
       let targetX: number, targetY: number;
       if (preTarget.type === "party" && preTarget.index >= 0) {
-        const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
-        const tp = partyPos[preTarget.index % partyPos.length];
+        const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
         targetX = tp.x;
         targetY = tp.y;
       } else {
@@ -978,8 +980,7 @@ export default function BattleScreen({
 
         let walkToX: number, walkToY: number;
         if (preTarget.type === "party" && preTarget.index >= 0) {
-          const partyPos = [{ x: 4, y: 12 }, { x: 12, y: 10 }, { x: 20, y: 12 }];
-          const tp = partyPos[preTarget.index % partyPos.length];
+          const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
           walkToX = tp.x + 8;
           walkToY = tp.y;
         } else {
@@ -1141,20 +1142,6 @@ export default function BattleScreen({
 
   const spriteConfig = getSpriteSheet();
 
-  const PLAYER_POS = { x: 12, y: 18 };
-
-  const PARTY_POSITIONS = [
-    { x: 4, y: 12 },
-    { x: 12, y: 10 },
-    { x: 20, y: 12 },
-  ];
-
-  const ENEMY_POSITIONS = [
-    { x: 58, y: 42, z: 0.95 },
-    { x: 72, y: 36, z: 0.85 },
-    { x: 65, y: 52, z: 1.05 },
-    { x: 80, y: 48, z: 0.9 },
-  ];
 
   const getPlayerPosition = (): { x: number; y: number } => {
     if (animPhase === "fujinSlice" && fujinTargetIdx !== null) {
@@ -1394,6 +1381,7 @@ export default function BattleScreen({
             style={{
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
+              transform: "translateX(-50%)",
               opacity: fujinDashPhase === "fadeout" ? 0 : 1,
               filter: dodgeBlur && dodgeBlur.type === "player" ? "blur(3px) opacity(0.6)" : "none",
               transition: animPhase === "fujinSlice"
@@ -1531,6 +1519,7 @@ export default function BattleScreen({
                 style={{
                   left: `${posX}%`,
                   bottom: `${posY}%`,
+                  transform: "translateX(-50%)",
                   filter: dodgeBlur && dodgeBlur.type === "party" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
                   transition: isRunning
                     ? "left 0.35s ease-in, bottom 0.35s ease-in, filter 0.2s ease"
