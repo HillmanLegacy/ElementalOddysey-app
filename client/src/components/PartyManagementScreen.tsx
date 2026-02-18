@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import SpriteAnimator from "./SpriteAnimator";
 import ParticleCanvas from "./ParticleCanvas";
-import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells, ELEMENT_SPELL_UNLOCKS } from "@/lib/gameData";
+import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells, ELEMENT_SPELL_UNLOCKS, PERKS } from "@/lib/gameData";
 import type { PlayerCharacter, PartyMember, Spell } from "@shared/schema";
 import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, ArrowLeft, UserMinus, Sparkles, Crown } from "lucide-react";
 
@@ -42,6 +42,7 @@ interface DisplayMember {
   className?: string;
   isPlayer: boolean;
   learnedSpells?: string[];
+  perks?: string[];
 }
 
 export default function PartyManagementScreen({ player, onRemoveMember, onClose }: PartyManagementScreenProps) {
@@ -54,6 +55,7 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
     spriteId: player.spriteId,
     isPlayer: true,
     learnedSpells: player.learnedSpells || [],
+    perks: player.perks || [],
   };
 
   const partyMembers: DisplayMember[] = player.party.map(pm => ({
@@ -235,6 +237,27 @@ export default function PartyManagementScreen({ player, onRemoveMember, onClose 
                     )}
                   </div>
                 </div>
+
+                {selectedMember.perks && selectedMember.perks.length > 0 && (
+                  <div className="bg-black/30 rounded-lg border border-purple-500/10 p-2.5">
+                    <h3 className="text-[9px] tracking-wider text-amber-200/60 mb-2">PERKS</h3>
+                    <div className="space-y-1">
+                      {selectedMember.perks.map(perkId => {
+                        const perk = PERKS.find(p => p.id === perkId);
+                        if (!perk) return null;
+                        return (
+                          <div key={perkId} className="flex items-center gap-2 px-1.5 py-1 rounded bg-black/20">
+                            <Sparkles className="w-3 h-3 flex-shrink-0" style={{ color: ELEMENT_COLORS[perk.element as keyof typeof ELEMENT_COLORS] }} />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-[10px] text-purple-100 block">{perk.name}</span>
+                              <span className="text-[8px] text-purple-300/40 block">{perk.description}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="flex items-center justify-center h-full">
