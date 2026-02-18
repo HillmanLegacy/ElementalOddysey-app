@@ -1742,7 +1742,10 @@ export default function BattleScreen({
                               >
                                 {char.name}
                               </span>
-                              <span className="text-[8px] text-slate-500 leading-none">Lv.{char.level}</span>
+                              <span className={`text-[8px] leading-none ${(battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp) ? "text-yellow-300 animate-pulse font-bold" : "text-slate-500"}`}>
+                                Lv.{(battle.phase === "victory" && showVictoryUI && char.isPlayer) ? xpBarLevel : char.level}
+                                {(battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp) ? "→" + (xpBarLevel + 1) : ""}
+                              </span>
                             </div>
                           </div>
                           {char.buffs.length > 0 && (
@@ -1852,11 +1855,18 @@ export default function BattleScreen({
                               }}
                             >
                               <div
-                                className="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+                                className="h-full rounded-full relative overflow-hidden"
                                 style={{
-                                  width: `${charXpPct}%`,
-                                  background: "linear-gradient(180deg, #fbbf24 0%, #f59e0b 40%, #d97706 100%)",
-                                  boxShadow: "0 0 4px rgba(251,191,36,0.3)",
+                                  width: `${(battle.phase === "victory" && showVictoryUI && char.isPlayer) ? xpBarPercent : charXpPct}%`,
+                                  background: (battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp)
+                                    ? "linear-gradient(180deg, #fde047 0%, #facc15 40%, #eab308 100%)"
+                                    : "linear-gradient(180deg, #fbbf24 0%, #f59e0b 40%, #d97706 100%)",
+                                  boxShadow: (battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp)
+                                    ? "0 0 12px rgba(250,204,21,0.7)"
+                                    : "0 0 4px rgba(251,191,36,0.3)",
+                                  transition: (battle.phase === "victory" && showVictoryUI && char.isPlayer)
+                                    ? (xpBarPhase === "animating" ? "width 0.7s ease-out" : "none")
+                                    : "width 0.5s ease-out",
                                 }}
                               >
                                 <div className="absolute inset-0" style={{
@@ -2365,24 +2375,15 @@ export default function BattleScreen({
               <h2 className="text-xl font-bold text-yellow-300 mb-1" data-testid="text-victory">Victory!</h2>
 
               <div className="mx-auto max-w-[220px] mb-2">
-                <div className="flex items-center justify-between text-[10px] text-purple-300/80 mb-0.5">
-                  <span className={`font-bold ${xpBarLevelUp ? "text-yellow-300 animate-pulse" : ""}`}>
-                    Lv {xpBarLevel}{xpBarLevelUp ? " → " + (xpBarLevel + 1) + "!" : ""}
-                  </span>
+                <div className="flex items-center justify-center gap-3 text-[11px] text-purple-300/80 mb-1">
                   <span>+{battle.enemies.reduce((s, e) => s + e.xpReward, 0)} XP</span>
+                  <span className="text-yellow-400/60">+{battle.enemies.reduce((s, e) => s + e.goldReward, 0)} Gold</span>
                 </div>
-                <div className="relative w-full h-3 bg-black/60 rounded-full overflow-hidden border border-yellow-600/30">
-                  <div
-                    className={`h-full rounded-full ${xpBarLevelUp ? "bg-yellow-300 shadow-[0_0_12px_rgba(250,204,21,0.7)]" : "bg-gradient-to-r from-yellow-600 to-yellow-400"}`}
-                    style={{
-                      width: `${xpBarPercent}%`,
-                      transition: xpBarPhase === "animating" ? "width 0.7s ease-out" : "none",
-                    }}
-                  />
-                </div>
-                <div className="text-[10px] text-yellow-400/60 mt-0.5">
-                  Gold: +{battle.enemies.reduce((s, e) => s + e.goldReward, 0)}
-                </div>
+                {xpBarLevelUp && (
+                  <div className="text-center text-yellow-300 font-bold text-sm animate-pulse mb-1">
+                    Level Up!
+                  </div>
+                )}
               </div>
 
               {xpBarPhase === "done" && (
