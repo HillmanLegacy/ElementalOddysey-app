@@ -928,7 +928,6 @@ export default function BattleScreen({
             setPartyHurtIndex(result.target.index);
             scheduleTimer(() => setPartyHurtIndex(-1), 500);
           } else {
-            setFireHitSfx(true);
             setAnimPhase("hurt");
           }
           scheduleTimer(() => setShakeScreen(false), 500);
