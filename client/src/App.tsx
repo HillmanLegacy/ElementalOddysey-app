@@ -4,7 +4,7 @@ import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useGameState } from "@/lib/gameState";
-import { getRegionForTier, getRegionTier } from "@/lib/gameData";
+import { getRegionForTier, getRegionTier, ELEMENT_COLORS } from "@/lib/gameData";
 import MainMenu from "@/components/MainMenu";
 import CharacterCreation from "@/components/CharacterCreation";
 import Overworld from "@/components/Overworld";
@@ -84,26 +84,35 @@ function Game() {
 
   const hasSave = (saves && saves.length > 0) || false;
 
-  const handleSave = async () => {
+  const [showSaveScreen, setShowSaveScreen] = useState(false);
+  const [saveConfirmSlot, setSaveConfirmSlot] = useState<number | null>(null);
+  const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
+  const [showPartyManagement, setShowPartyManagement] = useState(false);
+
+  const handleSaveToSlot = async (slotNumber: number) => {
     if (!state.player) return;
     try {
       await apiRequest("POST", "/api/saves", {
-        slotName: state.player.name,
+        slotName: `Slot ${slotNumber}`,
         playerData: state.player,
       });
       queryClient.invalidateQueries({ queryKey: ["/api/saves"] });
-      toast({ title: "Game Saved", description: "Your progress has been saved." });
+      setSaveConfirmSlot(null);
+      setSaveSuccessSlot(slotNumber);
+      setTimeout(() => setSaveSuccessSlot(null), 2000);
     } catch {
       toast({ title: "Save Failed", description: "Could not save game.", variant: "destructive" });
     }
   };
 
-  const [showPartyManagement, setShowPartyManagement] = useState(false);
+  const handleLoadSlot = (save: any) => {
+    loadGame(save.playerData as PlayerCharacter);
+  };
 
   const handleContinue = () => {
     if (saves && saves.length > 0) {
-      const latestSave = saves[0];
-      loadGame(latestSave.playerData as PlayerCharacter);
+      const sorted = [...saves].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+      loadGame(sorted[0].playerData as PlayerCharacter);
     }
   };
 
@@ -114,7 +123,9 @@ function Game() {
           <MainMenu
             onNewGame={() => setScreen("creation")}
             onContinue={handleContinue}
+            onLoadGame={handleLoadSlot}
             hasSave={hasSave}
+            saves={saves || []}
             textSpeed={state.textSpeed}
             musicVolume={state.musicVolume}
             sfxVolume={state.sfxVolume}
@@ -152,7 +163,7 @@ function Game() {
               onShamanVisit={openShaman}
               onInventory={() => setScreen("inventory")}
               onPartyManage={() => setShowPartyManagement(true)}
-              onSave={handleSave}
+              onSaveOpen={() => setShowSaveScreen(true)}
               onRegionChange={changeRegion}
             />
             {showPartyManagement && state.player && (
@@ -179,6 +190,201 @@ function Game() {
                 />
               </div>
             )}
+            {showSaveScreen && state.player && (() => {
+              const saveTier = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
+              const saveReg = getRegionForTier(state.player.currentRegion, saveTier);
+              const ec = ELEMENT_COLORS[saveReg.theme];
+              const skyColors: Record<string, string[]> = {
+                Fire: ["#1a0508", "#3d0a10"], Ice: ["#050a1a", "#0a1535"],
+                Shadow: ["#08050a", "#150a20"], Earth: ["#0a0800", "#1a1508"],
+              };
+              const sky = skyColors[saveReg.theme] || skyColors.Fire;
+
+              const getSlotSave = (slotNum: number) => {
+                if (!saves) return null;
+                return saves.find(s => s.slotName === `Slot ${slotNum}`) || null;
+              };
+
+              return (
+                <div className="absolute inset-0 z-[300] flex items-center justify-center"
+                  style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" }}
+                >
+                  <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.85) 70%)` }} />
+                  <div className="absolute inset-0 pointer-events-none" style={{
+                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                  }} />
+
+                  <div className="relative w-[340px] overflow-hidden"
+                    style={{
+                      background: `linear-gradient(180deg, ${sky[0]}f0 0%, ${sky[1]}f5 100%)`,
+                      border: `3px solid ${ec}`,
+                      boxShadow: `0 0 20px ${ec}40, 0 0 60px ${ec}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                    }}
+                  >
+                    <div style={{
+                      position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                      pointerEvents: "none",
+                    }} />
+
+                    <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: `2px solid ${ec}60` }}>
+                      <span style={{ fontSize: "10px", color: ec, letterSpacing: "2px" }}>SAVE GAME</span>
+                      <button
+                        className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                        style={{ border: `1px solid ${ec}50`, background: "rgba(0,0,0,0.4)" }}
+                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                      >
+                        <span style={{ fontSize: "8px", color: ec }}>✕</span>
+                      </button>
+                    </div>
+
+                    <div className="relative px-3 py-3 space-y-2">
+                      {[1, 2, 3].map(slotNum => {
+                        const slotSave = getSlotSave(slotNum);
+                        const isSuccess = saveSuccessSlot === slotNum;
+                        return (
+                          <button
+                            key={slotNum}
+                            className="w-full text-left px-3 py-3 transition-all"
+                            style={{
+                              background: isSuccess ? `${ec}25` : "rgba(0,0,0,0.3)",
+                              border: `1px solid ${isSuccess ? ec : `${ec}30`}`,
+                              boxShadow: isSuccess ? `0 0 12px ${ec}30` : "none",
+                            }}
+                            onMouseEnter={e => {
+                              if (!isSuccess) {
+                                (e.currentTarget as HTMLElement).style.background = `${ec}25`;
+                                (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
+                                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}30, inset 0 0 8px ${ec}10`;
+                              }
+                            }}
+                            onMouseLeave={e => {
+                              if (!isSuccess) {
+                                (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                                (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                                (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                              }
+                            }}
+                            onClick={() => { if (!isSuccess) setSaveConfirmSlot(slotNum); }}
+                          >
+                            {isSuccess ? (
+                              <div className="flex items-center gap-2">
+                                <span style={{ fontSize: "9px", color: ec }}>✓ SAVED!</span>
+                              </div>
+                            ) : (
+                              <>
+                                <div className="flex items-center justify-between">
+                                  <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.9)", letterSpacing: "1px" }}>SLOT {slotNum}</span>
+                                  {slotSave && (
+                                    <span style={{ fontSize: "6px", color: `${ec}60` }}>
+                                      {new Date(slotSave.updatedAt).toLocaleDateString()}
+                                    </span>
+                                  )}
+                                </div>
+                                {slotSave ? (
+                                  <div style={{ marginTop: "4px" }}>
+                                    <span style={{ fontSize: "7px", color: `${ec}80` }}>
+                                      {(slotSave.playerData as any).name} · Lv.{(slotSave.playerData as any).level} · {(slotSave.playerData as any).element}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div style={{ marginTop: "4px" }}>
+                                    <span style={{ fontSize: "7px", color: "rgba(255,255,255,0.3)" }}>EMPTY SLOT</span>
+                                  </div>
+                                )}
+                              </>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ec}20` }}>
+                      <button
+                        className="w-full flex items-center justify-center gap-2 px-3 py-2 transition-all"
+                        style={{ border: `1px solid ${ec}30`, background: "rgba(0,0,0,0.3)" }}
+                        onMouseEnter={e => {
+                          (e.currentTarget as HTMLElement).style.background = `${ec}25`;
+                          (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
+                        }}
+                        onMouseLeave={e => {
+                          (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                          (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                        }}
+                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                      >
+                        <span style={{ fontSize: "8px", color: ec, letterSpacing: "1px" }}>BACK</span>
+                      </button>
+                    </div>
+
+                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ec}40, transparent)` }} />
+                  </div>
+
+                  {saveConfirmSlot !== null && (
+                    <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
+                      <div className="absolute inset-0 bg-black/60" onClick={() => setSaveConfirmSlot(null)} />
+                      <div className="relative w-[260px] overflow-hidden"
+                        style={{
+                          background: `linear-gradient(180deg, ${sky[0]}f8 0%, ${sky[1]}fc 100%)`,
+                          border: `3px solid ${ec}`,
+                          boxShadow: `0 0 30px ${ec}50, 0 0 80px ${ec}20, inset 0 0 30px rgba(0,0,0,0.5)`,
+                        }}
+                      >
+                        <div style={{
+                          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                          pointerEvents: "none",
+                        }} />
+
+                        <div className="relative px-4 py-4 text-center">
+                          <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.9)", letterSpacing: "1px", lineHeight: "1.8" }}>
+                            Save to Slot {saveConfirmSlot}?
+                          </p>
+                          {getSlotSave(saveConfirmSlot) && (
+                            <p style={{ fontSize: "7px", color: `${ec}70`, marginTop: "6px" }}>
+                              This will overwrite existing data
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="relative px-3 pb-3 flex gap-2">
+                          <button
+                            className="flex-1 px-3 py-2 transition-all text-center"
+                            style={{ border: `1px solid ${ec}`, background: `${ec}20` }}
+                            onMouseEnter={e => {
+                              (e.currentTarget as HTMLElement).style.background = `${ec}40`;
+                              (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}40`;
+                            }}
+                            onMouseLeave={e => {
+                              (e.currentTarget as HTMLElement).style.background = `${ec}20`;
+                              (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                            }}
+                            onClick={() => handleSaveToSlot(saveConfirmSlot)}
+                          >
+                            <span style={{ fontSize: "8px", color: ec, letterSpacing: "1px" }}>CONFIRM</span>
+                          </button>
+                          <button
+                            className="flex-1 px-3 py-2 transition-all text-center"
+                            style={{ border: `1px solid ${ec}30`, background: "rgba(0,0,0,0.3)" }}
+                            onMouseEnter={e => {
+                              (e.currentTarget as HTMLElement).style.background = `${ec}15`;
+                              (e.currentTarget as HTMLElement).style.borderColor = `${ec}60`;
+                            }}
+                            onMouseLeave={e => {
+                              (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                              (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                            }}
+                            onClick={() => setSaveConfirmSlot(null)}
+                          >
+                            <span style={{ fontSize: "8px", color: "rgba(255,255,255,0.6)", letterSpacing: "1px" }}>CANCEL</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
           </>
         );
 

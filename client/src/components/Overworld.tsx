@@ -6,7 +6,7 @@ import LavaOverworldBg from "./LavaOverworldBg";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Backpack, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, Menu, X, Users, Sparkles, Home, Shield, Package, Moon, Lock } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Users, Sparkles, Home, Shield, Package, Moon, Lock } from "lucide-react";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -136,16 +136,15 @@ interface OverworldProps {
   onShamanVisit: (nodeId: number) => void;
   onInventory: () => void;
   onPartyManage: () => void;
-  onSave: () => void;
+  onSaveOpen: () => void;
   onRegionChange: (regionId: number) => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSave, onRegionChange }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSaveOpen, onRegionChange }: OverworldProps) {
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
   const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const [hutMenuOpen, setHutMenuOpen] = useState(false);
   const [charPos, setCharPos] = useState<{ x: number; y: number }>(() => {
     const currentNode = region.nodes.find(n => n.id === player.currentNode);
@@ -748,62 +747,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           </div>
         </div>
 
-        <Button size="icon" variant="ghost" className="text-white/60" onClick={() => setMenuOpen(true)} data-testid="button-menu">
-          <Menu className="w-4 h-4" />
-        </Button>
       </div>
-
-      {menuOpen && (
-        <div className="absolute inset-0 z-[200]" onClick={() => setMenuOpen(false)}>
-          <div className="absolute inset-0 bg-black/40" />
-          <div
-            className="absolute top-0 right-0 h-full w-56 bg-black/85 backdrop-blur-md border-l border-white/10 flex flex-col"
-            style={{ fontFamily: "'Cinzel', serif" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between p-3 border-b border-white/10">
-              <span className="text-xs font-semibold tracking-wider text-amber-200/80">MENU</span>
-              <Button size="icon" variant="ghost" className="text-white/50" onClick={() => setMenuOpen(false)} data-testid="button-close-menu">
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex-1 p-3 space-y-1.5">
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-sm text-amber-100/80 transition-colors"
-                style={{ background: "rgba(140,100,30,0.15)" }}
-                onClick={() => { setMenuOpen(false); onInventory(); }}
-                data-testid="button-menu-inventory"
-              >
-                <Backpack className="w-4 h-4 text-amber-400/60" />
-                <span className="tracking-wide">Inventory</span>
-              </button>
-              {player.party.length > 0 && (
-                <button
-                  className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-sm text-amber-100/80 transition-colors"
-                  style={{ background: "rgba(140,100,30,0.15)" }}
-                  onClick={() => { setMenuOpen(false); onPartyManage(); }}
-                  data-testid="button-menu-party"
-                >
-                  <Users className="w-4 h-4 text-amber-400/60" />
-                  <span className="tracking-wide">Party</span>
-                </button>
-              )}
-              <button
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-left text-sm text-amber-100/80 transition-colors"
-                style={{ background: "rgba(140,100,30,0.15)" }}
-                onClick={() => { setMenuOpen(false); onSave(); }}
-                data-testid="button-menu-save"
-              >
-                <Save className="w-4 h-4 text-amber-400/60" />
-                <span className="tracking-wide">Save Game</span>
-              </button>
-            </div>
-            <div className="p-3 border-t border-white/10">
-              <div className="text-[9px] text-white/20 text-center tracking-wider">Elemental Odyssey</div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {hutMenuOpen && (() => {
         const ec = elemColor;
@@ -816,7 +760,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { setHutMenuOpen(false); const h = region.nodes.find(n => n.type === "hut"); if (h) onRest(h.id); } },
           { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setHutMenuOpen(false); onInventory(); } },
           ...(player.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setHutMenuOpen(false); onPartyManage(); } }] : []),
-          { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setHutMenuOpen(false); onSave(); } },
+          { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setHutMenuOpen(false); onSaveOpen(); } },
         ];
 
         return (

@@ -1,14 +1,14 @@
 import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
-import { Card } from "@/components/ui/card";
 import type { GameState } from "@shared/schema";
-import { Swords, Play, Settings, FolderOpen, ArrowLeft } from "lucide-react";
+import { Swords, ArrowLeft } from "lucide-react";
 
 interface MainMenuProps {
   onNewGame: () => void;
   onContinue: () => void;
+  onLoadGame: (save: any) => void;
   hasSave: boolean;
+  saves: any[];
   textSpeed: GameState["textSpeed"];
   musicVolume: number;
   sfxVolume: number;
@@ -227,8 +227,12 @@ function MedievalBackground() {
   return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />;
 }
 
-export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, musicVolume, sfxVolume, showDamageNumbers, onSettingsChange }: MainMenuProps) {
+const ACCENT = "#c9a44a";
+const PIXEL_FONT = "'Press Start 2P', cursive";
+
+export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, saves, textSpeed, musicVolume, sfxVolume, showDamageNumbers, onSettingsChange }: MainMenuProps) {
   const [showOptions, setShowOptions] = useState(false);
+  const [showLoadScreen, setShowLoadScreen] = useState(false);
   const [titleVisible, setTitleVisible] = useState(false);
   const [buttonsVisible, setButtonsVisible] = useState(false);
 
@@ -238,8 +242,153 @@ export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, mu
     return () => { clearTimeout(t1); clearTimeout(t2); };
   }, []);
 
+  const hasSaves = saves && saves.length > 0;
+
+  const getSlotSave = (slotNum: number) => {
+    if (!saves) return null;
+    return saves.find((s: any) => s.slotName === `Slot ${slotNum}`) || null;
+  };
+
+  const menuButtonStyle: React.CSSProperties = {
+    fontFamily: PIXEL_FONT,
+    fontSize: "11px",
+    letterSpacing: "2px",
+    border: `2px solid ${ACCENT}`,
+    background: "rgba(0,0,0,0.7)",
+    color: ACCENT,
+    padding: "14px 24px",
+    cursor: "pointer",
+    textTransform: "uppercase" as const,
+    borderRadius: 0,
+    width: "100%",
+    textAlign: "center" as const,
+    transition: "all 0.15s",
+    textShadow: `0 0 8px ${ACCENT}40`,
+  };
+
+  const menuButtonHover = (e: React.MouseEvent) => {
+    (e.currentTarget as HTMLElement).style.background = `${ACCENT}30`;
+    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 15px ${ACCENT}40, inset 0 0 10px ${ACCENT}15`;
+  };
+  const menuButtonLeave = (e: React.MouseEvent) => {
+    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.7)";
+    (e.currentTarget as HTMLElement).style.boxShadow = "none";
+  };
+
+  if (showLoadScreen) {
+    return (
+      <div className="relative w-full h-screen overflow-hidden" style={{ fontFamily: PIXEL_FONT, imageRendering: "pixelated" }}>
+        <MedievalBackground />
+        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.85)" }} />
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ACCENT}08 3px, ${ACCENT}08 4px)`,
+        }} />
+
+        <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
+          <div className="w-[340px] overflow-hidden" style={{
+            background: "linear-gradient(180deg, #0a0a12f0 0%, #08080ff5 100%)",
+            border: `3px solid ${ACCENT}`,
+            boxShadow: `0 0 20px ${ACCENT}40, 0 0 60px ${ACCENT}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+          }}>
+            <div className="absolute inset-0 pointer-events-none" style={{
+              backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ACCENT}08 3px, ${ACCENT}08 4px)`,
+            }} />
+
+            <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: `2px solid ${ACCENT}60` }}>
+              <span style={{ fontSize: "10px", color: ACCENT, letterSpacing: "2px" }}>LOAD GAME</span>
+              <button
+                className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                style={{ border: `1px solid ${ACCENT}50`, background: "rgba(0,0,0,0.4)" }}
+                onClick={() => setShowLoadScreen(false)}
+              >
+                <span style={{ fontSize: "8px", color: ACCENT }}>✕</span>
+              </button>
+            </div>
+
+            <div className="relative px-3 py-3 space-y-2">
+              {[1, 2, 3].map(slotNum => {
+                const slotSave = getSlotSave(slotNum);
+                return (
+                  <button
+                    key={slotNum}
+                    className="w-full text-left px-3 py-3 transition-all"
+                    style={{
+                      background: "rgba(0,0,0,0.3)",
+                      border: `1px solid ${ACCENT}30`,
+                      borderRadius: 0,
+                      cursor: slotSave ? "pointer" : "default",
+                      opacity: slotSave ? 1 : 0.5,
+                    }}
+                    onMouseEnter={e => {
+                      if (slotSave) {
+                        (e.currentTarget as HTMLElement).style.background = `${ACCENT}25`;
+                        (e.currentTarget as HTMLElement).style.borderColor = `${ACCENT}80`;
+                        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ACCENT}30, inset 0 0 8px ${ACCENT}10`;
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                      (e.currentTarget as HTMLElement).style.borderColor = `${ACCENT}30`;
+                      (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                    }}
+                    onClick={() => {
+                      if (slotSave) {
+                        onLoadGame(slotSave);
+                        setShowLoadScreen(false);
+                      }
+                    }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.9)", letterSpacing: "1px" }}>SLOT {slotNum}</span>
+                      {slotSave && (
+                        <span style={{ fontSize: "6px", color: `${ACCENT}60` }}>
+                          {new Date(slotSave.updatedAt).toLocaleDateString()}
+                        </span>
+                      )}
+                    </div>
+                    {slotSave ? (
+                      <div style={{ marginTop: "4px" }}>
+                        <span style={{ fontSize: "7px", color: `${ACCENT}80` }}>
+                          {(slotSave.playerData as any).name} · Lv.{(slotSave.playerData as any).level} · {(slotSave.playerData as any).element}
+                        </span>
+                      </div>
+                    ) : (
+                      <div style={{ marginTop: "4px" }}>
+                        <span style={{ fontSize: "7px", color: "rgba(255,255,255,0.3)" }}>EMPTY</span>
+                      </div>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ACCENT}20` }}>
+              <button
+                className="w-full flex items-center justify-center gap-2 px-3 py-2 transition-all"
+                style={{ border: `1px solid ${ACCENT}30`, background: "rgba(0,0,0,0.3)", borderRadius: 0 }}
+                onMouseEnter={e => {
+                  (e.currentTarget as HTMLElement).style.background = `${ACCENT}25`;
+                  (e.currentTarget as HTMLElement).style.borderColor = `${ACCENT}80`;
+                }}
+                onMouseLeave={e => {
+                  (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                  (e.currentTarget as HTMLElement).style.borderColor = `${ACCENT}30`;
+                }}
+                onClick={() => setShowLoadScreen(false)}
+              >
+                <span style={{ fontSize: "8px", color: ACCENT, letterSpacing: "1px" }}>BACK</span>
+              </button>
+            </div>
+
+            <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ACCENT}40, transparent)` }} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="relative w-full h-screen overflow-hidden">
+    <div className="relative w-full h-screen overflow-hidden" style={{ fontFamily: PIXEL_FONT }}>
       <MedievalBackground />
 
       <div className="absolute inset-0 pointer-events-none" style={{ background: "linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.3) 100%)" }} />
@@ -247,36 +396,36 @@ export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, mu
       <div className="relative z-10 flex flex-col items-center justify-center h-full gap-6 px-4">
         <div className={`text-center mb-2 transition-all duration-[2000ms] ${titleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
           <div className="relative inline-block">
-            <Swords className="w-8 h-8 mx-auto mb-3" style={{ color: "#c9a44a", filter: "drop-shadow(0 0 8px rgba(201,164,74,0.5))" }} />
+            <Swords className="w-8 h-8 mx-auto mb-3" style={{ color: ACCENT, filter: `drop-shadow(0 0 8px ${ACCENT}80)` }} />
             <h1
-              className="text-5xl md:text-7xl font-bold tracking-wider"
+              className="text-3xl md:text-5xl font-bold tracking-wider"
               style={{
-                fontFamily: "'Cinzel', 'Palatino Linotype', 'Book Antiqua', serif",
+                fontFamily: PIXEL_FONT,
                 color: "#d4a843",
-                textShadow: "0 0 20px rgba(212,168,67,0.3), 0 2px 4px rgba(0,0,0,0.8), 0 0 60px rgba(180,130,40,0.15)",
-                letterSpacing: "0.08em",
+                textShadow: `0 0 20px rgba(212,168,67,0.3), 0 2px 4px rgba(0,0,0,0.8), 0 0 60px rgba(180,130,40,0.15)`,
+                letterSpacing: "0.12em",
               }}
               data-testid="text-game-title"
             >
               ELEMENTAL
             </h1>
             <h2
-              className="text-2xl md:text-4xl tracking-[0.4em] mt-1"
+              className="text-xl md:text-2xl tracking-[0.4em] mt-1"
               style={{
-                fontFamily: "'Cinzel', 'Palatino Linotype', 'Book Antiqua', serif",
+                fontFamily: PIXEL_FONT,
                 color: "#a08030",
                 textShadow: "0 0 15px rgba(160,128,48,0.2), 0 1px 3px rgba(0,0,0,0.7)",
-                fontWeight: 300,
+                fontWeight: 400,
               }}
             >
               ODYSSEY
             </h2>
             <div className="flex items-center justify-center gap-3 mt-3">
-              <div className="h-px w-12 bg-gradient-to-r from-transparent to-amber-700/40" />
-              <p className="text-[10px] tracking-[0.3em] uppercase" style={{ color: "#8a7040" }}>
+              <div className="h-px w-12" style={{ background: `linear-gradient(to right, transparent, ${ACCENT}60)` }} />
+              <p style={{ fontSize: "7px", letterSpacing: "0.2em", color: "#8a7040", fontFamily: PIXEL_FONT, textTransform: "uppercase" }}>
                 A Medieval Fantasy
               </p>
-              <div className="h-px w-12 bg-gradient-to-l from-transparent to-amber-700/40" />
+              <div className="h-px w-12" style={{ background: `linear-gradient(to left, transparent, ${ACCENT}60)` }} />
             </div>
           </div>
         </div>
@@ -284,89 +433,99 @@ export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, mu
         <div className={`transition-all duration-[1500ms] ${buttonsVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           {!showOptions ? (
             <div className="flex flex-col gap-3 w-64">
-              <Button
+              <button
+                style={menuButtonStyle}
+                onMouseEnter={menuButtonHover}
+                onMouseLeave={menuButtonLeave}
                 onClick={onNewGame}
-                className="w-full h-12 text-base border"
-                style={{
-                  background: "linear-gradient(180deg, rgba(140,100,30,0.6) 0%, rgba(100,70,15,0.8) 100%)",
-                  borderColor: "rgba(180,140,50,0.3)",
-                  color: "#e8d5a0",
-                  fontFamily: "'Cinzel', serif",
-                  letterSpacing: "0.1em",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-                }}
                 data-testid="button-new-game"
               >
-                <Play className="w-4 h-4 mr-2" />
-                New Game
-              </Button>
+                NEW GAME
+              </button>
               {hasSave && (
-                <Button
+                <button
+                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}80`, color: `${ACCENT}cc` }}
+                  onMouseEnter={menuButtonHover}
+                  onMouseLeave={menuButtonLeave}
                   onClick={onContinue}
-                  variant="outline"
-                  className="w-full h-12 text-base"
-                  style={{
-                    borderColor: "rgba(160,130,60,0.25)",
-                    color: "#c0a060",
-                    background: "rgba(60,40,15,0.4)",
-                    fontFamily: "'Cinzel', serif",
-                    letterSpacing: "0.1em",
-                    textShadow: "0 1px 2px rgba(0,0,0,0.5)",
-                  }}
                   data-testid="button-continue"
                 >
-                  <FolderOpen className="w-4 h-4 mr-2" />
-                  Continue
-                </Button>
+                  CONTINUE
+                </button>
               )}
-              <Button
+              {hasSaves && (
+                <button
+                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}60`, color: `${ACCENT}aa` }}
+                  onMouseEnter={menuButtonHover}
+                  onMouseLeave={menuButtonLeave}
+                  onClick={() => setShowLoadScreen(true)}
+                  data-testid="button-load-game"
+                >
+                  LOAD GAME
+                </button>
+              )}
+              <button
+                style={{ ...menuButtonStyle, borderColor: `${ACCENT}40`, color: `${ACCENT}80`, fontSize: "9px" }}
+                onMouseEnter={menuButtonHover}
+                onMouseLeave={menuButtonLeave}
                 onClick={() => setShowOptions(true)}
-                variant="ghost"
-                className="w-full h-10 text-sm"
-                style={{
-                  color: "rgba(160,130,70,0.6)",
-                  fontFamily: "'Cinzel', serif",
-                  letterSpacing: "0.1em",
-                }}
                 data-testid="button-options"
               >
-                <Settings className="w-4 h-4 mr-2" />
-                Options
-              </Button>
+                OPTIONS
+              </button>
             </div>
           ) : (
-            <Card className="w-80 p-5 border backdrop-blur-md" style={{ background: "rgba(15,10,5,0.85)", borderColor: "rgba(140,110,50,0.2)" }}>
+            <div className="w-80 p-5 overflow-hidden" style={{
+              background: "rgba(8,8,12,0.92)",
+              border: `3px solid ${ACCENT}`,
+              boxShadow: `0 0 20px ${ACCENT}30, inset 0 0 20px rgba(0,0,0,0.5)`,
+              borderRadius: 0,
+            }}>
+              <div className="absolute inset-0 pointer-events-none" style={{
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ACCENT}06 3px, ${ACCENT}06 4px)`,
+              }} />
+
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold" style={{ color: "#c0a050", fontFamily: "'Cinzel', serif" }} data-testid="text-options-title">Options</h3>
-                <Button size="icon" variant="ghost" onClick={() => setShowOptions(false)} className="text-amber-700/60 h-8 w-8" data-testid="button-back-menu">
-                  <ArrowLeft className="w-4 h-4" />
-                </Button>
+                <h3 style={{ fontSize: "10px", color: ACCENT, fontFamily: PIXEL_FONT, letterSpacing: "2px" }} data-testid="text-options-title">OPTIONS</h3>
+                <button
+                  className="flex items-center justify-center w-7 h-7 transition-all hover:scale-110"
+                  style={{ border: `1px solid ${ACCENT}50`, background: "rgba(0,0,0,0.4)", borderRadius: 0 }}
+                  onClick={() => setShowOptions(false)}
+                  data-testid="button-back-menu"
+                >
+                  <ArrowLeft className="w-3 h-3" style={{ color: ACCENT }} />
+                </button>
               </div>
 
               <div className="space-y-5">
                 <div>
-                  <label className="text-xs mb-2 block" style={{ color: "#8a7040" }}>Text Speed</label>
+                  <label style={{ fontSize: "7px", color: `${ACCENT}80`, fontFamily: PIXEL_FONT, letterSpacing: "1px", display: "block", marginBottom: "8px" }}>TEXT SPEED</label>
                   <div className="flex gap-2">
                     {(["slow", "medium", "fast"] as const).map(sp => (
-                      <Button
+                      <button
                         key={sp}
-                        size="sm"
-                        className={`flex-1 text-xs ${textSpeed === sp ? "" : ""}`}
-                        style={textSpeed === sp
-                          ? { background: "rgba(140,100,30,0.6)", color: "#e8d5a0", borderColor: "rgba(180,140,50,0.3)", border: "1px solid" }
-                          : { background: "transparent", color: "#8a7040", borderColor: "rgba(100,80,30,0.2)", border: "1px solid" }
-                        }
+                        className="flex-1 py-2 transition-all"
+                        style={{
+                          fontFamily: PIXEL_FONT,
+                          fontSize: "7px",
+                          letterSpacing: "1px",
+                          borderRadius: 0,
+                          border: textSpeed === sp ? `2px solid ${ACCENT}` : `1px solid ${ACCENT}30`,
+                          background: textSpeed === sp ? `${ACCENT}25` : "transparent",
+                          color: textSpeed === sp ? ACCENT : `${ACCENT}60`,
+                          boxShadow: textSpeed === sp ? `0 0 8px ${ACCENT}30` : "none",
+                        }}
                         onClick={() => onSettingsChange({ textSpeed: sp })}
                         data-testid={`button-speed-${sp}`}
                       >
-                        {sp.charAt(0).toUpperCase() + sp.slice(1)}
-                      </Button>
+                        {sp.toUpperCase()}
+                      </button>
                     ))}
                   </div>
                 </div>
 
                 <div>
-                  <label className="text-xs mb-2 block" style={{ color: "#8a7040" }}>Music Volume: {musicVolume}%</label>
+                  <label style={{ fontSize: "7px", color: `${ACCENT}80`, fontFamily: PIXEL_FONT, letterSpacing: "1px", display: "block", marginBottom: "8px" }}>MUSIC: {musicVolume}%</label>
                   <Slider
                     value={[musicVolume]}
                     onValueChange={([v]) => onSettingsChange({ musicVolume: v })}
@@ -378,7 +537,7 @@ export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, mu
                 </div>
 
                 <div>
-                  <label className="text-xs mb-2 block" style={{ color: "#8a7040" }}>SFX Volume: {sfxVolume}%</label>
+                  <label style={{ fontSize: "7px", color: `${ACCENT}80`, fontFamily: PIXEL_FONT, letterSpacing: "1px", display: "block", marginBottom: "8px" }}>SFX: {sfxVolume}%</label>
                   <Slider
                     value={[sfxVolume]}
                     onValueChange={([v]) => onSettingsChange({ sfxVolume: v })}
@@ -390,31 +549,36 @@ export default function MainMenu({ onNewGame, onContinue, hasSave, textSpeed, mu
                 </div>
 
                 <div className="flex items-center justify-between">
-                  <label className="text-xs" style={{ color: "#8a7040" }}>Damage Numbers</label>
+                  <label style={{ fontSize: "7px", color: `${ACCENT}80`, fontFamily: PIXEL_FONT, letterSpacing: "1px" }}>DMG NUMBERS</label>
                   <button
-                    className="px-3 py-1 rounded text-xs font-semibold transition-all"
-                    style={showDamageNumbers
-                      ? { background: "rgba(140,100,30,0.6)", color: "#e8d5a0", border: "1px solid rgba(180,140,50,0.3)" }
-                      : { background: "transparent", color: "#8a7040", border: "1px solid rgba(100,80,30,0.2)" }
-                    }
+                    className="px-3 py-1 transition-all"
+                    style={{
+                      fontFamily: PIXEL_FONT,
+                      fontSize: "7px",
+                      borderRadius: 0,
+                      border: showDamageNumbers ? `2px solid ${ACCENT}` : `1px solid ${ACCENT}30`,
+                      background: showDamageNumbers ? `${ACCENT}25` : "transparent",
+                      color: showDamageNumbers ? ACCENT : `${ACCENT}60`,
+                      boxShadow: showDamageNumbers ? `0 0 8px ${ACCENT}30` : "none",
+                    }}
                     onClick={() => onSettingsChange({ showDamageNumbers: !showDamageNumbers })}
                     data-testid="button-damage-numbers"
                   >
-                    {showDamageNumbers ? "On" : "Off"}
+                    {showDamageNumbers ? "ON" : "OFF"}
                   </button>
                 </div>
               </div>
-            </Card>
+            </div>
           )}
         </div>
 
-        <p className="absolute bottom-4 text-[10px] tracking-[0.3em]" style={{ color: "rgba(120,100,60,0.3)", fontFamily: "'Cinzel', serif" }}>
-          Elemental Odyssey
+        <p className="absolute bottom-4" style={{ fontSize: "6px", letterSpacing: "0.3em", color: `${ACCENT}30`, fontFamily: PIXEL_FONT }}>
+          ELEMENTAL ODYSSEY
         </p>
       </div>
 
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
       `}</style>
     </div>
   );

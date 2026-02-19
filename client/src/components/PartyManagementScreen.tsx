@@ -1,10 +1,8 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import SpriteAnimator from "./SpriteAnimator";
-import ParticleCanvas from "./ParticleCanvas";
-import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells, ELEMENT_SPELL_UNLOCKS, PERKS } from "@/lib/gameData";
-import type { PlayerCharacter, PartyMember, Spell } from "@shared/schema";
-import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, ArrowLeft, UserMinus, UserPlus, Sparkles, Crown } from "lucide-react";
+import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells, PERKS } from "@/lib/gameData";
+import type { PlayerCharacter, Spell } from "@shared/schema";
+import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, Sparkles, Crown } from "lucide-react";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import knightIdle from "@/assets/images/knight-idle-4f.png";
@@ -23,14 +21,16 @@ interface PartyManagementScreenProps {
   onClose: () => void;
 }
 
+const ACCENT = "#c9a44a";
+
 const STAT_ICONS = [
-  { key: "maxHp", label: "HP", icon: Heart, color: "text-red-400" },
-  { key: "maxMp", label: "MP", icon: Droplets, color: "text-blue-400" },
-  { key: "atk", label: "ATK", icon: Swords, color: "text-orange-400" },
-  { key: "def", label: "DEF", icon: Shield, color: "text-cyan-400" },
-  { key: "int", label: "INT", icon: Brain, color: "text-purple-400" },
-  { key: "agi", label: "AGI", icon: Zap, color: "text-yellow-400" },
-  { key: "luck", label: "LCK", icon: Clover, color: "text-green-400" },
+  { key: "maxHp", label: "HP", icon: Heart, color: "#ef4444" },
+  { key: "maxMp", label: "MP", icon: Droplets, color: "#60a5fa" },
+  { key: "atk", label: "ATK", icon: Swords, color: "#fb923c" },
+  { key: "def", label: "DEF", icon: Shield, color: "#22d3ee" },
+  { key: "int", label: "INT", icon: Brain, color: "#a855f7" },
+  { key: "agi", label: "AGI", icon: Zap, color: "#facc15" },
+  { key: "luck", label: "LCK", icon: Clover, color: "#4ade80" },
 ];
 
 interface DisplayMember {
@@ -110,12 +110,25 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
     return (
       <button
         key={member.id}
-        className={`w-full flex items-center gap-2 px-2 py-2 text-left transition-colors border-b border-purple-500/5 ${
-          isSelected ? "bg-purple-500/15 border-l-2 border-l-amber-400/60" : "hover:bg-purple-500/5"
-        } ${member.isBenched ? "opacity-50" : ""}`}
         onClick={() => setSelectedId(member.id)}
+        style={{
+          width: "100%",
+          display: "flex",
+          alignItems: "center",
+          gap: "6px",
+          padding: "6px 8px",
+          textAlign: "left" as const,
+          background: isSelected ? `${ACCENT}20` : "transparent",
+          borderLeft: isSelected ? `2px solid ${ACCENT}` : "2px solid transparent",
+          borderBottom: `1px solid ${ACCENT}10`,
+          borderTop: "none",
+          borderRight: "none",
+          cursor: "pointer",
+          opacity: member.isBenched ? 0.5 : 1,
+          fontFamily: "'Press Start 2P', cursive",
+        }}
       >
-        <div className="w-8 h-8 flex-shrink-0 flex items-center justify-center overflow-hidden">
+        <div style={{ width: 32, height: 32, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
           <SpriteAnimator
             spriteSheet={getSpriteSheet(member.spriteId)}
             frameWidth={spriteInfo.frameWidth}
@@ -126,52 +139,108 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
             loop
           />
         </div>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <div className="text-[10px] font-semibold text-purple-100 truncate">{member.name}</div>
-            {member.isPlayer && <Crown className="w-2.5 h-2.5 text-amber-400 flex-shrink-0" />}
+        <div style={{ minWidth: 0, flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+            <span style={{ fontSize: "7px", color: "#e8e0d0", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{member.name}</span>
+            {member.isPlayer && <Crown style={{ width: 10, height: 10, color: ACCENT, flexShrink: 0 }} />}
           </div>
-          <div className="text-[8px]" style={{ color: ELEMENT_COLORS[member.element as keyof typeof ELEMENT_COLORS] }}>{member.element}</div>
+          <div style={{ fontSize: "6px", color: ELEMENT_COLORS[member.element as keyof typeof ELEMENT_COLORS] }}>{member.element}</div>
         </div>
       </button>
     );
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#12082a] to-[#0a0a1a]">
-      <ParticleCanvas colors={["#a855f7", "#6366f1", "#818cf8"]} count={30} speed={0.3} style="swirl" />
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100%",
+        overflow: "hidden",
+        background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+        fontFamily: "'Press Start 2P', cursive",
+        imageRendering: "pixelated" as any,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)`,
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      />
 
-      <div className="absolute inset-0 flex flex-col" style={{ fontFamily: "'Cinzel', serif" }}>
-        <div className="flex items-center justify-between px-4 py-2 border-b border-purple-500/20 bg-black/30">
-          <div className="flex items-center gap-2">
-            <Button size="icon" variant="ghost" className="text-purple-300/60 h-7 w-7" onClick={onClose}>
-              <ArrowLeft className="w-4 h-4" />
-            </Button>
-            <h1 className="text-sm font-bold tracking-wider text-amber-200/90">PARTY</h1>
+      <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column", zIndex: 2 }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "6px 12px",
+            borderBottom: `3px solid ${ACCENT}`,
+            background: "#0d0b0bf0",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+            <button
+              onClick={onClose}
+              style={{
+                fontFamily: "'Press Start 2P', cursive",
+                fontSize: "8px",
+                color: ACCENT,
+                background: "transparent",
+                border: `1px solid ${ACCENT}50`,
+                padding: "4px 8px",
+                cursor: "pointer",
+                width: 28,
+                height: 28,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ←
+            </button>
+            <span style={{ fontSize: "10px", color: ACCENT }}>PARTY</span>
           </div>
-          <span className="text-[10px] text-purple-300/40">{1 + activeMembers.length} Active{benchedMembers.length > 0 ? ` · ${benchedMembers.length} Benched` : ""}</span>
+          <span style={{ fontSize: "7px", color: `${ACCENT}60` }}>
+            {1 + activeMembers.length} Active{benchedMembers.length > 0 ? ` · ${benchedMembers.length} Benched` : ""}
+          </span>
         </div>
 
-        <div className="flex-1 flex overflow-hidden">
-          <div className="w-[140px] border-r border-purple-500/10 overflow-y-auto bg-black/20">
+        <div style={{ flex: 1, display: "flex", overflow: "hidden" }}>
+          <div style={{ width: 140, borderRight: `1px solid ${ACCENT}20`, overflowY: "auto", background: "#0a080840" }}>
             {renderMemberButton(playerAsMember)}
             {activeMembers.map(m => renderMemberButton(m))}
 
             {benchedMembers.length > 0 && (
               <>
-                <div className="px-2 py-1.5 bg-black/30 border-b border-purple-500/10">
-                  <span className="text-[8px] tracking-wider text-purple-300/30 uppercase">Benched</span>
+                <div style={{ padding: "4px 8px", background: "#0a080860", borderBottom: `1px solid ${ACCENT}10` }}>
+                  <span style={{ fontSize: "6px", letterSpacing: "1px", color: `${ACCENT}40`, textTransform: "uppercase" }}>Benched</span>
                 </div>
                 {benchedMembers.map(m => renderMemberButton(m))}
               </>
             )}
           </div>
 
-          <div className="flex-1 overflow-y-auto p-3">
+          <div style={{ flex: 1, overflowY: "auto", padding: "10px" }}>
             {selectedMember ? (
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-16 h-16 flex items-center justify-center bg-black/30 rounded-lg border border-purple-500/15 overflow-hidden">
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "10px" }}>
+                  <div
+                    style={{
+                      width: 56,
+                      height: 56,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      background: "#0a080860",
+                      border: `1px solid ${ACCENT}30`,
+                      overflow: "hidden",
+                    }}
+                  >
                     <SpriteAnimator
                       spriteSheet={getSpriteSheet(selectedMember.spriteId)}
                       frameWidth={getSpriteInfo(selectedMember.spriteId).frameWidth}
@@ -182,82 +251,88 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
                       loop
                     />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h2 className="text-sm font-bold text-amber-200/90 tracking-wide">{selectedMember.name}</h2>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                      <span style={{ fontSize: "9px", color: ACCENT }}>{selectedMember.name}</span>
                       {selectedMember.isPlayer && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-amber-400/15 text-amber-300 border border-amber-400/20">LEADER</span>
+                        <span style={{ fontSize: "6px", padding: "1px 4px", background: `${ACCENT}20`, color: ACCENT, border: `1px solid ${ACCENT}30` }}>LEADER</span>
                       )}
                       {selectedMember.isBenched && (
-                        <span className="text-[8px] px-1.5 py-0.5 rounded bg-gray-500/15 text-gray-400 border border-gray-500/20">BENCHED</span>
+                        <span style={{ fontSize: "6px", padding: "1px 4px", background: "#55555520", color: "#888", border: "1px solid #55555530" }}>BENCHED</span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <span className="text-[10px] font-semibold" style={{ color: ELEMENT_COLORS[selectedMember.element as keyof typeof ELEMENT_COLORS] }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "3px" }}>
+                      <span style={{ fontSize: "7px", color: ELEMENT_COLORS[selectedMember.element as keyof typeof ELEMENT_COLORS] }}>
                         {selectedMember.element}
                       </span>
-                      <span className="text-[9px] text-purple-300/40">Lv.{selectedMember.level}</span>
-                      {selectedMember.className && <span className="text-[9px] text-purple-300/40">{selectedMember.className}</span>}
+                      <span style={{ fontSize: "7px", color: `${ACCENT}50` }}>Lv.{selectedMember.level}</span>
+                      {selectedMember.className && <span style={{ fontSize: "7px", color: `${ACCENT}50` }}>{selectedMember.className}</span>}
                     </div>
                     {!selectedMember.isPlayer && (
-                      <div className="mt-1.5 flex gap-2">
+                      <div style={{ marginTop: "6px" }}>
                         {selectedMember.isBenched ? (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-[10px] text-green-300/70 hover:text-green-300 hover:bg-green-500/10 h-6 px-2"
-                            onClick={() => {
-                              onAddMember(selectedMember.id);
-                              setSelectedId(selectedMember.id);
+                          <button
+                            onClick={() => { onAddMember(selectedMember.id); setSelectedId(selectedMember.id); }}
+                            style={{
+                              fontFamily: "'Press Start 2P', cursive",
+                              fontSize: "7px",
+                              padding: "4px 8px",
+                              border: "1px solid #4ade8060",
+                              background: "#4ade8010",
+                              color: "#4ade80",
+                              cursor: "pointer",
                             }}
                           >
-                            <UserPlus className="w-3 h-3 mr-1" /> Add to Party
-                          </Button>
+                            + ADD TO PARTY
+                          </button>
                         ) : (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-[10px] text-red-300/70 hover:text-red-300 hover:bg-red-500/10 h-6 px-2"
-                            onClick={() => {
-                              onRemoveMember(selectedMember.id);
-                              setSelectedId("__player__");
+                          <button
+                            onClick={() => { onRemoveMember(selectedMember.id); setSelectedId("__player__"); }}
+                            style={{
+                              fontFamily: "'Press Start 2P', cursive",
+                              fontSize: "7px",
+                              padding: "4px 8px",
+                              border: "1px solid #ef444460",
+                              background: "#ef444410",
+                              color: "#fca5a5",
+                              cursor: "pointer",
                             }}
                           >
-                            <UserMinus className="w-3 h-3 mr-1" /> Bench
-                          </Button>
+                            − BENCH
+                          </button>
                         )}
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-1 mb-0.5">
-                      <Heart className="w-3 h-3 text-red-400" />
-                      <div className="flex-1 h-1.5 bg-black/50 rounded-full overflow-hidden">
-                        <div className="h-full bg-red-400 rounded-full" style={{ width: `${(selectedMember.stats.hp / selectedMember.stats.maxHp) * 100}%` }} />
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px", marginBottom: "3px" }}>
+                      <Heart style={{ width: 12, height: 12, color: "#ef4444" }} />
+                      <div style={{ flex: 1, height: 6, background: "#0a080880", overflow: "hidden" }}>
+                        <div style={{ height: "100%", background: "#ef4444", width: `${(selectedMember.stats.hp / selectedMember.stats.maxHp) * 100}%` }} />
                       </div>
-                      <span className="text-[9px] text-red-300/80">{selectedMember.stats.hp}/{selectedMember.stats.maxHp}</span>
+                      <span style={{ fontSize: "7px", color: "#fca5a5cc" }}>{selectedMember.stats.hp}/{selectedMember.stats.maxHp}</span>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Droplets className="w-3 h-3 text-blue-400" />
-                      <div className="flex-1 h-1.5 bg-black/50 rounded-full overflow-hidden">
-                        <div className="h-full bg-blue-400 rounded-full" style={{ width: `${(selectedMember.stats.mp / selectedMember.stats.maxMp) * 100}%` }} />
+                    <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                      <Droplets style={{ width: 12, height: 12, color: "#60a5fa" }} />
+                      <div style={{ flex: 1, height: 6, background: "#0a080880", overflow: "hidden" }}>
+                        <div style={{ height: "100%", background: "#60a5fa", width: `${(selectedMember.stats.mp / selectedMember.stats.maxMp) * 100}%` }} />
                       </div>
-                      <span className="text-[9px] text-blue-300/80">{selectedMember.stats.mp}/{selectedMember.stats.maxMp}</span>
+                      <span style={{ fontSize: "7px", color: "#93c5fdcc" }}>{selectedMember.stats.mp}/{selectedMember.stats.maxMp}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-black/30 rounded-lg border border-purple-500/10 p-2.5">
-                  <h3 className="text-[9px] tracking-wider text-amber-200/60 mb-2">STATS</h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                <div style={{ background: "#0a080860", border: `1px solid ${ACCENT}20`, padding: "8px" }}>
+                  <h3 style={{ fontSize: "7px", letterSpacing: "1px", color: `${ACCENT}90`, marginBottom: "6px" }}>STATS</h3>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 16px" }}>
                     {STAT_ICONS.map(({ key, label, icon: Icon, color }) => (
-                      <div key={key} className="flex items-center gap-1.5">
-                        <Icon className={`w-3 h-3 ${color} flex-shrink-0`} />
-                        <span className="text-[9px] text-purple-300/50 w-6">{label}</span>
-                        <span className="text-[10px] text-purple-100 font-semibold">
+                      <div key={key} style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+                        <Icon style={{ width: 10, height: 10, color, flexShrink: 0 }} />
+                        <span style={{ fontSize: "7px", color: `${ACCENT}60`, width: 24 }}>{label}</span>
+                        <span style={{ fontSize: "8px", color: "#e8e0d0" }}>
                           {selectedMember.stats[key as keyof typeof selectedMember.stats]}
                         </span>
                       </div>
@@ -265,35 +340,35 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
                   </div>
                 </div>
 
-                <div className="bg-black/30 rounded-lg border border-purple-500/10 p-2.5">
-                  <h3 className="text-[9px] tracking-wider text-amber-200/60 mb-2">SPELLS</h3>
-                  <div className="space-y-1">
+                <div style={{ background: "#0a080860", border: `1px solid ${ACCENT}20`, padding: "8px" }}>
+                  <h3 style={{ fontSize: "7px", letterSpacing: "1px", color: `${ACCENT}90`, marginBottom: "6px" }}>SPELLS</h3>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                     {getSpells(selectedMember).map(spell => (
-                      <div key={spell.id} className="flex items-center gap-2 px-1.5 py-1 rounded bg-black/20">
-                        <Sparkles className="w-3 h-3 flex-shrink-0" style={{ color: ELEMENT_COLORS[spell.element as keyof typeof ELEMENT_COLORS || selectedMember.element as keyof typeof ELEMENT_COLORS] }} />
-                        <span className="text-[10px] text-purple-100 flex-1">{spell.name}</span>
-                        <span className="text-[8px] text-blue-300/60">{spell.mpCost}MP</span>
+                      <div key={spell.id} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "3px 6px", background: "#0a080840" }}>
+                        <Sparkles style={{ width: 10, height: 10, flexShrink: 0, color: ELEMENT_COLORS[spell.element as keyof typeof ELEMENT_COLORS || selectedMember.element as keyof typeof ELEMENT_COLORS] }} />
+                        <span style={{ fontSize: "7px", color: "#e8e0d0", flex: 1 }}>{spell.name}</span>
+                        <span style={{ fontSize: "6px", color: "#93c5fd80" }}>{spell.mpCost}MP</span>
                       </div>
                     ))}
                     {getSpells(selectedMember).length === 0 && (
-                      <span className="text-[9px] text-purple-300/30">No spells available</span>
+                      <span style={{ fontSize: "7px", color: `${ACCENT}30` }}>No spells available</span>
                     )}
                   </div>
                 </div>
 
                 {selectedMember.perks && selectedMember.perks.length > 0 && (
-                  <div className="bg-black/30 rounded-lg border border-purple-500/10 p-2.5">
-                    <h3 className="text-[9px] tracking-wider text-amber-200/60 mb-2">PERKS</h3>
-                    <div className="space-y-1">
+                  <div style={{ background: "#0a080860", border: `1px solid ${ACCENT}20`, padding: "8px" }}>
+                    <h3 style={{ fontSize: "7px", letterSpacing: "1px", color: `${ACCENT}90`, marginBottom: "6px" }}>PERKS</h3>
+                    <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                       {selectedMember.perks.map(perkId => {
                         const perk = PERKS.find(p => p.id === perkId);
                         if (!perk) return null;
                         return (
-                          <div key={perkId} className="flex items-center gap-2 px-1.5 py-1 rounded bg-black/20">
-                            <Sparkles className="w-3 h-3 flex-shrink-0" style={{ color: ELEMENT_COLORS[perk.element as keyof typeof ELEMENT_COLORS] }} />
-                            <div className="flex-1 min-w-0">
-                              <span className="text-[10px] text-purple-100 block">{perk.name}</span>
-                              <span className="text-[8px] text-purple-300/40 block">{perk.description}</span>
+                          <div key={perkId} style={{ display: "flex", alignItems: "center", gap: "6px", padding: "3px 6px", background: "#0a080840" }}>
+                            <Sparkles style={{ width: 10, height: 10, flexShrink: 0, color: ELEMENT_COLORS[perk.element as keyof typeof ELEMENT_COLORS] }} />
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                              <span style={{ fontSize: "7px", color: "#e8e0d0", display: "block" }}>{perk.name}</span>
+                              <span style={{ fontSize: "6px", color: `${ACCENT}50`, display: "block" }}>{perk.description}</span>
                             </div>
                           </div>
                         );
@@ -303,8 +378,8 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
                 )}
               </div>
             ) : (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-[10px] text-purple-300/30 text-center">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%" }}>
+                <p style={{ fontSize: "7px", color: `${ACCENT}40`, textAlign: "center" }}>
                   Select a party member to view details
                 </p>
               </div>

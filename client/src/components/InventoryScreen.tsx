@@ -1,13 +1,6 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { PlayerCharacter } from "@shared/schema";
-import {
-  ArrowLeft, Backpack, Heart, Droplets,
-  Crown, FlaskConical,
-} from "lucide-react";
+import { Heart, Droplets } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
 
 interface InventoryScreenProps {
@@ -17,221 +10,346 @@ interface InventoryScreenProps {
   onBack: () => void;
 }
 
+const ACCENT = "#c9a44a";
+
 export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: InventoryScreenProps) {
   const consumables = player.inventory.filter(i => i.type === "consumable");
   const equipables = player.inventory.filter(i => i.type === "weapon" || i.type === "armor" || i.type === "accessory");
   const [targetingItemId, setTargetingItemId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"items" | "equipment">("items");
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden",
+        background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+        fontFamily: "'Press Start 2P', cursive",
+        imageRendering: "pixelated" as any,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)`,
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      />
 
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="flex items-center justify-between p-3 bg-black/40 backdrop-blur-sm border-b border-purple-500/10">
-          <Button variant="ghost" onClick={onBack} className="text-purple-400" data-testid="button-inventory-back">
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back
-          </Button>
-          <div className="flex items-center gap-1">
-            <Backpack className="w-4 h-4 text-purple-400" />
-            <span className="text-sm font-semibold text-purple-200">Inventory</span>
-          </div>
-          <div className="w-16" />
+      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", height: "100%" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "8px 12px",
+            background: "#0d0b0bf0",
+            borderBottom: `3px solid ${ACCENT}`,
+          }}
+        >
+          <button
+            onClick={onBack}
+            data-testid="button-inventory-back"
+            style={{
+              fontFamily: "'Press Start 2P', cursive",
+              fontSize: "8px",
+              color: ACCENT,
+              background: "transparent",
+              border: `1px solid ${ACCENT}50`,
+              padding: "4px 8px",
+              cursor: "pointer",
+            }}
+          >
+            ← BACK
+          </button>
+          <span style={{ fontSize: "10px", color: ACCENT }}>INVENTORY</span>
+          <div style={{ width: "60px" }} />
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4">
-          <Tabs defaultValue="items" className="w-full">
-            <TabsList className="w-full bg-black/30 border border-purple-500/10 mb-4">
-              <TabsTrigger value="items" className="flex-1 text-xs" data-testid="tab-items">
-                <FlaskConical className="w-3 h-3 mr-1" />Items
-              </TabsTrigger>
-              <TabsTrigger value="equipment" className="flex-1 text-xs" data-testid="tab-equipment">
-                <Crown className="w-3 h-3 mr-1" />Gear
-              </TabsTrigger>
-            </TabsList>
+        <div style={{ display: "flex", gap: 0, padding: "8px 12px 0" }}>
+          <button
+            onClick={() => setActiveTab("items")}
+            data-testid="tab-items"
+            style={{
+              fontFamily: "'Press Start 2P', cursive",
+              fontSize: "7px",
+              padding: "6px 12px",
+              border: `1px solid ${ACCENT}`,
+              borderBottom: activeTab === "items" ? "none" : `1px solid ${ACCENT}`,
+              background: activeTab === "items" ? ACCENT : "transparent",
+              color: activeTab === "items" ? "#0a0808" : `${ACCENT}80`,
+              cursor: "pointer",
+            }}
+          >
+            ITEMS
+          </button>
+          <button
+            onClick={() => setActiveTab("equipment")}
+            data-testid="tab-equipment"
+            style={{
+              fontFamily: "'Press Start 2P', cursive",
+              fontSize: "7px",
+              padding: "6px 12px",
+              border: `1px solid ${ACCENT}`,
+              borderBottom: activeTab === "equipment" ? "none" : `1px solid ${ACCENT}`,
+              background: activeTab === "equipment" ? ACCENT : "transparent",
+              color: activeTab === "equipment" ? "#0a0808" : `${ACCENT}80`,
+              cursor: "pointer",
+            }}
+          >
+            GEAR
+          </button>
+        </div>
 
-            <TabsContent value="items">
-              <div className="space-y-2">
-                {consumables.length === 0 ? (
-                  <div className="text-center py-8">
-                    <FlaskConical className="w-10 h-10 text-purple-500/30 mx-auto mb-2" />
-                    <p className="text-sm text-purple-400/50">No consumable items</p>
-                  </div>
-                ) : (
-                  groupConsumables(consumables).map(({ item, count, ids }) => {
-                    const canUseOnPlayer = item.effect.type === "heal" && (
-                      (item.effect.stat === "hp" && player.stats.hp < player.stats.maxHp) ||
-                      (item.effect.stat === "mp" && player.stats.mp < player.stats.maxMp)
-                    );
-                    const canUseOnAny = canUseOnPlayer || player.party.some(m =>
-                      item.effect.type === "heal" && (
-                        (item.effect.stat === "hp" && m.stats.hp < m.stats.maxHp) ||
-                        (item.effect.stat === "mp" && m.stats.mp < m.stats.maxMp)
-                      )
-                    );
-                    const isTargeting = targetingItemId === item.name;
-                    return (
-                      <Card key={item.name} className="p-3 bg-[#12122a]/90 border-purple-500/10" data-testid={`card-item-${item.name}`}>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-white">{item.name} <span className="text-yellow-400/80">x{count}</span></p>
-                            <p className="text-xs text-purple-300/60">{item.description}</p>
-                          </div>
-                          {player.party.length > 0 ? (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className={`text-xs ${isTargeting ? "border-yellow-500/40 text-yellow-300" : "border-green-500/20 text-green-300"}`}
-                              onClick={() => setTargetingItemId(isTargeting ? null : item.name)}
-                              disabled={!canUseOnAny}
-                              data-testid={`button-use-${item.name}`}
-                            >
-                              {isTargeting ? "Cancel" : "Use"}
-                            </Button>
-                          ) : (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="text-xs border-green-500/20 text-green-300"
-                              onClick={() => onUseItem(ids[0])}
-                              disabled={!canUseOnPlayer}
-                              data-testid={`button-use-${item.name}`}
-                            >
-                              Use
-                            </Button>
-                          )}
-                        </div>
-                        {isTargeting && (
-                          <div className="mt-2 pt-2 border-t border-purple-500/10 space-y-1">
-                            <p className="text-[10px] text-purple-300/40 mb-1">Select target:</p>
-                            <button
-                              className="w-full flex items-center justify-between px-2 py-1.5 rounded bg-black/30 hover:bg-purple-500/10 transition-colors"
-                              disabled={!canUseOnPlayer}
-                              onClick={() => { onUseItem(ids[0]); setTargetingItemId(null); }}
-                            >
-                              <div className="flex items-center gap-2">
-                                <span className="text-[10px] font-semibold text-amber-200">{player.name}</span>
-                                <span className="text-[8px] text-purple-300/40">(You)</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                {item.effect.stat === "hp" && (
-                                  <div className="flex items-center gap-1">
-                                    <Heart className="w-2.5 h-2.5 text-red-400" />
-                                    <span className={`text-[9px] ${player.stats.hp < player.stats.maxHp ? "text-red-300" : "text-green-300"}`}>
-                                      {player.stats.hp}/{player.stats.maxHp}
-                                    </span>
-                                  </div>
-                                )}
-                                {item.effect.stat === "mp" && (
-                                  <div className="flex items-center gap-1">
-                                    <Droplets className="w-2.5 h-2.5 text-blue-400" />
-                                    <span className={`text-[9px] ${player.stats.mp < player.stats.maxMp ? "text-blue-300" : "text-green-300"}`}>
-                                      {player.stats.mp}/{player.stats.maxMp}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </button>
-                            {player.party.map((member, idx) => {
-                              const canUseOnMember = item.effect.type === "heal" && (
-                                (item.effect.stat === "hp" && member.stats.hp < member.stats.maxHp) ||
-                                (item.effect.stat === "mp" && member.stats.mp < member.stats.maxMp)
-                              );
-                              return (
-                                <button
-                                  key={member.id}
-                                  className="w-full flex items-center justify-between px-2 py-1.5 rounded bg-black/30 hover:bg-purple-500/10 transition-colors disabled:opacity-30"
-                                  disabled={!canUseOnMember}
-                                  onClick={() => { onUseItem(ids[0], idx); setTargetingItemId(null); }}
-                                >
-                                  <span className="text-[10px] font-semibold text-purple-200">{member.name}</span>
-                                  <div className="flex items-center gap-2">
-                                    {item.effect.stat === "hp" && (
-                                      <div className="flex items-center gap-1">
-                                        <Heart className="w-2.5 h-2.5 text-red-400" />
-                                        <span className={`text-[9px] ${member.stats.hp < member.stats.maxHp ? "text-red-300" : "text-green-300"}`}>
-                                          {member.stats.hp}/{member.stats.maxHp}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {item.effect.stat === "mp" && (
-                                      <div className="flex items-center gap-1">
-                                        <Droplets className="w-2.5 h-2.5 text-blue-400" />
-                                        <span className={`text-[9px] ${member.stats.mp < member.stats.maxMp ? "text-blue-300" : "text-green-300"}`}>
-                                          {member.stats.mp}/{member.stats.maxMp}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </button>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </Card>
-                    );
-                  })
-                )}
-              </div>
-            </TabsContent>
-
-            <TabsContent value="equipment">
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <p className="text-[10px] text-purple-400/50 uppercase tracking-wider px-1">Equipped</p>
-                  {(["weapon", "armor", "accessory"] as const).map(slot => {
-                    const item = player.equipment[slot];
-                    return (
-                      <Card key={slot} className="p-3 bg-[#12122a]/90 border-purple-500/10">
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <p className="text-[10px] text-purple-400/50 uppercase tracking-wider">{slot}</p>
-                            {item ? (
-                              <>
-                                <p className="text-sm font-medium text-white">{item.name}</p>
-                                <p className="text-xs text-purple-300/60">{item.description}</p>
-                              </>
-                            ) : (
-                              <p className="text-sm text-purple-500/40 italic">Empty</p>
-                            )}
-                          </div>
-                        </div>
-                      </Card>
-                    );
-                  })}
+        <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px" }}>
+          {activeTab === "items" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              {consumables.length === 0 ? (
+                <div style={{ textAlign: "center", padding: "32px 0" }}>
+                  <p style={{ fontSize: "8px", color: `${ACCENT}50` }}>No consumable items</p>
                 </div>
-
-                {equipables.length > 0 && (
-                  <div className="space-y-2">
-                    <p className="text-[10px] text-purple-400/50 uppercase tracking-wider px-1 pt-2 border-t border-purple-500/10">Unequipped</p>
-                    {equipables.map(item => (
-                      <Card key={item.id} className="p-3 bg-[#12122a]/90 border-purple-500/10" data-testid={`card-equip-item-${item.id}`}>
-                        <div className="flex items-center justify-between gap-2">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium text-white">{item.name}</p>
-                              <Badge variant="outline" className="text-[8px] px-1 border-purple-500/20 text-purple-400/60 no-default-active-elevate">{item.type}</Badge>
-                            </div>
-                            <p className="text-xs text-purple-300/60">{item.description}</p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="text-xs border-purple-500/20 text-purple-300"
-                            onClick={() => onEquip(item.id)}
-                            data-testid={`button-equip-${item.id}`}
-                          >
-                            Equip
-                          </Button>
+              ) : (
+                groupConsumables(consumables).map(({ item, count, ids }) => {
+                  const canUseOnPlayer = item.effect.type === "heal" && (
+                    (item.effect.stat === "hp" && player.stats.hp < player.stats.maxHp) ||
+                    (item.effect.stat === "mp" && player.stats.mp < player.stats.maxMp)
+                  );
+                  const canUseOnAny = canUseOnPlayer || player.party.some(m =>
+                    item.effect.type === "heal" && (
+                      (item.effect.stat === "hp" && m.stats.hp < m.stats.maxHp) ||
+                      (item.effect.stat === "mp" && m.stats.mp < m.stats.maxMp)
+                    )
+                  );
+                  const isTargeting = targetingItemId === item.name;
+                  return (
+                    <div
+                      key={item.name}
+                      data-testid={`card-item-${item.name}`}
+                      style={{
+                        padding: "8px",
+                        background: "#0d0b0bf0",
+                        border: `1px solid ${ACCENT}30`,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "8px", color: "#e8e0d0" }}>
+                            {item.name} <span style={{ color: `${ACCENT}cc` }}>x{count}</span>
+                          </p>
+                          <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
                         </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </TabsContent>
+                        {player.party.length > 0 ? (
+                          <button
+                            onClick={() => setTargetingItemId(isTargeting ? null : item.name)}
+                            disabled={!canUseOnAny}
+                            data-testid={`button-use-${item.name}`}
+                            style={{
+                              fontFamily: "'Press Start 2P', cursive",
+                              fontSize: "7px",
+                              padding: "4px 8px",
+                              border: `1px solid ${isTargeting ? "#e8c030" : ACCENT}60`,
+                              background: isTargeting ? "#e8c03020" : "transparent",
+                              color: isTargeting ? "#e8c030" : ACCENT,
+                              cursor: canUseOnAny ? "pointer" : "default",
+                              opacity: canUseOnAny ? 1 : 0.4,
+                            }}
+                          >
+                            {isTargeting ? "CANCEL" : "USE"}
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => onUseItem(ids[0])}
+                            disabled={!canUseOnPlayer}
+                            data-testid={`button-use-${item.name}`}
+                            style={{
+                              fontFamily: "'Press Start 2P', cursive",
+                              fontSize: "7px",
+                              padding: "4px 8px",
+                              border: `1px solid ${ACCENT}60`,
+                              background: "transparent",
+                              color: ACCENT,
+                              cursor: canUseOnPlayer ? "pointer" : "default",
+                              opacity: canUseOnPlayer ? 1 : 0.4,
+                            }}
+                          >
+                            USE
+                          </button>
+                        )}
+                      </div>
+                      {isTargeting && (
+                        <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: `1px solid ${ACCENT}20` }}>
+                          <p style={{ fontSize: "7px", color: `${ACCENT}50`, marginBottom: "4px" }}>Select target:</p>
+                          <button
+                            disabled={!canUseOnPlayer}
+                            onClick={() => { onUseItem(ids[0]); setTargetingItemId(null); }}
+                            style={{
+                              width: "100%",
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              padding: "4px 8px",
+                              background: "#0a080820",
+                              border: `1px solid ${ACCENT}15`,
+                              cursor: canUseOnPlayer ? "pointer" : "default",
+                              opacity: canUseOnPlayer ? 1 : 0.3,
+                              marginBottom: "3px",
+                              fontFamily: "'Press Start 2P', cursive",
+                            }}
+                          >
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              <span style={{ fontSize: "7px", color: ACCENT }}>{player.name}</span>
+                              <span style={{ fontSize: "6px", color: `${ACCENT}50` }}>(You)</span>
+                            </div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                              {item.effect.stat === "hp" && (
+                                <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+                                  <Heart style={{ width: 10, height: 10, color: "#ef4444" }} />
+                                  <span style={{ fontSize: "7px", color: player.stats.hp < player.stats.maxHp ? "#fca5a5" : "#86efac" }}>
+                                    {player.stats.hp}/{player.stats.maxHp}
+                                  </span>
+                                </div>
+                              )}
+                              {item.effect.stat === "mp" && (
+                                <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+                                  <Droplets style={{ width: 10, height: 10, color: "#60a5fa" }} />
+                                  <span style={{ fontSize: "7px", color: player.stats.mp < player.stats.maxMp ? "#93c5fd" : "#86efac" }}>
+                                    {player.stats.mp}/{player.stats.maxMp}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </button>
+                          {player.party.map((member, idx) => {
+                            const canUseOnMember = item.effect.type === "heal" && (
+                              (item.effect.stat === "hp" && member.stats.hp < member.stats.maxHp) ||
+                              (item.effect.stat === "mp" && member.stats.mp < member.stats.maxMp)
+                            );
+                            return (
+                              <button
+                                key={member.id}
+                                disabled={!canUseOnMember}
+                                onClick={() => { onUseItem(ids[0], idx); setTargetingItemId(null); }}
+                                style={{
+                                  width: "100%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "space-between",
+                                  padding: "4px 8px",
+                                  background: "#0a080820",
+                                  border: `1px solid ${ACCENT}15`,
+                                  cursor: canUseOnMember ? "pointer" : "default",
+                                  opacity: canUseOnMember ? 1 : 0.3,
+                                  marginBottom: "3px",
+                                  fontFamily: "'Press Start 2P', cursive",
+                                }}
+                              >
+                                <span style={{ fontSize: "7px", color: "#e8e0d0" }}>{member.name}</span>
+                                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                  {item.effect.stat === "hp" && (
+                                    <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+                                      <Heart style={{ width: 10, height: 10, color: "#ef4444" }} />
+                                      <span style={{ fontSize: "7px", color: member.stats.hp < member.stats.maxHp ? "#fca5a5" : "#86efac" }}>
+                                        {member.stats.hp}/{member.stats.maxHp}
+                                      </span>
+                                    </div>
+                                  )}
+                                  {item.effect.stat === "mp" && (
+                                    <div style={{ display: "flex", alignItems: "center", gap: "3px" }}>
+                                      <Droplets style={{ width: 10, height: 10, color: "#60a5fa" }} />
+                                      <span style={{ fontSize: "7px", color: member.stats.mp < member.stats.maxMp ? "#93c5fd" : "#86efac" }}>
+                                        {member.stats.mp}/{member.stats.maxMp}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          )}
 
-          </Tabs>
+          {activeTab === "equipment" && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+              <p style={{ fontSize: "7px", color: `${ACCENT}60`, textTransform: "uppercase", letterSpacing: "1px", padding: "0 4px" }}>Equipped</p>
+              {(["weapon", "armor", "accessory"] as const).map(slot => {
+                const item = player.equipment[slot];
+                return (
+                  <div
+                    key={slot}
+                    style={{
+                      padding: "8px",
+                      background: "#0d0b0bf0",
+                      border: `1px solid ${ACCENT}30`,
+                    }}
+                  >
+                    <p style={{ fontSize: "7px", color: `${ACCENT}60`, textTransform: "uppercase", letterSpacing: "1px" }}>{slot}</p>
+                    {item ? (
+                      <>
+                        <p style={{ fontSize: "8px", color: "#e8e0d0", marginTop: "2px" }}>{item.name}</p>
+                        <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
+                      </>
+                    ) : (
+                      <p style={{ fontSize: "8px", color: `${ACCENT}40`, fontStyle: "italic", marginTop: "2px" }}>Empty</p>
+                    )}
+                  </div>
+                );
+              })}
+
+              {equipables.length > 0 && (
+                <>
+                  <div style={{ borderTop: `1px solid ${ACCENT}20`, marginTop: "4px", paddingTop: "6px" }}>
+                    <p style={{ fontSize: "7px", color: `${ACCENT}60`, textTransform: "uppercase", letterSpacing: "1px", padding: "0 4px" }}>Unequipped</p>
+                  </div>
+                  {equipables.map(item => (
+                    <div
+                      key={item.id}
+                      data-testid={`card-equip-item-${item.id}`}
+                      style={{
+                        padding: "8px",
+                        background: "#0d0b0bf0",
+                        border: `1px solid ${ACCENT}30`,
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                            <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
+                            <span style={{ fontSize: "6px", padding: "1px 4px", border: `1px solid ${ACCENT}30`, color: `${ACCENT}80`, textTransform: "capitalize" }}>{item.type}</span>
+                          </div>
+                          <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
+                        </div>
+                        <button
+                          onClick={() => onEquip(item.id)}
+                          data-testid={`button-equip-${item.id}`}
+                          style={{
+                            fontFamily: "'Press Start 2P', cursive",
+                            fontSize: "7px",
+                            padding: "4px 8px",
+                            border: `1px solid ${ACCENT}60`,
+                            background: "transparent",
+                            color: ACCENT,
+                            cursor: "pointer",
+                          }}
+                        >
+                          EQUIP
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

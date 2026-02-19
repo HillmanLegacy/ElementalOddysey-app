@@ -1,7 +1,5 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import type { PlayerCharacter, ShopItem } from "@shared/schema";
-import { Gem, ShoppingBag, Heart, Droplets, Swords, Shield, Sparkles, ArrowLeft } from "lucide-react";
+import { Heart, Droplets, Swords, Shield, Sparkles } from "lucide-react";
 
 const ITEM_ICONS: Record<string, any> = {
   heart: Heart,
@@ -18,68 +16,125 @@ interface ShopScreenProps {
   onBack: () => void;
 }
 
+const ACCENT = "#c9a44a";
+
 export default function ShopScreen({ player, items, onBuy, onBack }: ShopScreenProps) {
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden",
+        background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+        fontFamily: "'Press Start 2P', cursive",
+        imageRendering: "pixelated" as any,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)`,
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
+      />
 
-      <div className="relative z-10 flex flex-col h-full">
-        <div className="flex items-center justify-between p-3 bg-black/40 backdrop-blur-sm border-b border-purple-500/10">
-          <Button variant="ghost" onClick={onBack} className="text-purple-400" data-testid="button-shop-back">
-            <ArrowLeft className="w-4 h-4 mr-1" />
-            Back
-          </Button>
-          <div className="flex items-center gap-1">
-            <ShoppingBag className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm font-semibold text-purple-200">Shop</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Gem className="w-4 h-4 text-yellow-400" />
-            <span className="text-sm text-yellow-300" data-testid="text-shop-gold">{player.gold}g</span>
+      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", height: "100%" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "8px 12px",
+            background: "#0d0b0bf0",
+            borderBottom: `3px solid ${ACCENT}`,
+          }}
+        >
+          <button
+            onClick={onBack}
+            data-testid="button-shop-back"
+            style={{
+              fontFamily: "'Press Start 2P', cursive",
+              fontSize: "8px",
+              color: ACCENT,
+              background: "transparent",
+              border: `1px solid ${ACCENT}50`,
+              padding: "4px 8px",
+              cursor: "pointer",
+            }}
+          >
+            ← BACK
+          </button>
+          <span style={{ fontSize: "10px", color: ACCENT }}>SHOP</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "4px" }}>
+            <span style={{ fontSize: "8px", color: "#e8c030" }} data-testid="text-shop-gold">💰 {player.gold}g</span>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-2">
+        <div style={{ flex: 1, overflowY: "auto", padding: "8px 12px", display: "flex", flexDirection: "column", gap: "6px" }}>
           {items.map(item => {
             const Icon = ITEM_ICONS[item.icon] || Sparkles;
             const canAfford = player.gold >= item.price;
             return (
-              <Card
+              <div
                 key={item.id}
-                className="p-4 bg-[#12122a]/90 border-purple-500/10 backdrop-blur-sm"
                 data-testid={`card-shop-item-${item.id}`}
+                style={{
+                  padding: "8px",
+                  background: "#0d0b0bf0",
+                  border: `1px solid ${ACCENT}30`,
+                }}
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-md bg-purple-900/30 flex items-center justify-center flex-shrink-0">
-                    <Icon className="w-5 h-5 text-purple-400" />
+                <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                  <div
+                    style={{
+                      width: "32px",
+                      height: "32px",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: `1px solid ${ACCENT}30`,
+                      background: "#0a080840",
+                      flexShrink: 0,
+                    }}
+                  >
+                    <Icon style={{ width: 16, height: 16, color: ACCENT }} />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-white">{item.name}</p>
-                    <p className="text-xs text-purple-300/60">{item.description}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-900/30 text-purple-400 capitalize">{item.type}</span>
-                      <span className="text-[10px] text-purple-400/50">Merchant Stock: {item.stock}</span>
-                      <span className="text-[10px] text-green-400/50">Inventory: {player.inventory.filter(i => i.name === item.name).length}</span>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
+                    <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginTop: "3px" }}>
+                      <span style={{ fontSize: "6px", padding: "1px 4px", border: `1px solid ${ACCENT}30`, color: `${ACCENT}80`, textTransform: "capitalize" }}>{item.type}</span>
+                      <span style={{ fontSize: "6px", color: `${ACCENT}50` }}>Stock: {item.stock}</span>
+                      <span style={{ fontSize: "6px", color: "#86efac80" }}>Inv: {player.inventory.filter(i => i.name === item.name).length}</span>
                     </div>
                   </div>
-                  <Button
-                    size="sm"
+                  <button
                     disabled={!canAfford}
                     onClick={() => onBuy(item)}
-                    className={canAfford ? "bg-yellow-600/80 text-white hover:bg-yellow-500/80" : "bg-gray-700/40 text-gray-500"}
                     data-testid={`button-buy-${item.id}`}
+                    style={{
+                      fontFamily: "'Press Start 2P', cursive",
+                      fontSize: "7px",
+                      padding: "4px 10px",
+                      border: `1px solid ${canAfford ? "#e8c030" : "#555"}`,
+                      background: canAfford ? "#e8c03020" : "transparent",
+                      color: canAfford ? "#e8c030" : "#555",
+                      cursor: canAfford ? "pointer" : "default",
+                      opacity: canAfford ? 1 : 0.5,
+                    }}
                   >
-                    <Gem className="w-3 h-3 mr-1" />
                     {item.price}g
-                  </Button>
+                  </button>
                 </div>
-              </Card>
+              </div>
             );
           })}
           {items.length === 0 && (
-            <div className="text-center py-12">
-              <ShoppingBag className="w-12 h-12 text-purple-500/30 mx-auto mb-3" />
-              <p className="text-sm text-purple-400/50">Shop is empty</p>
+            <div style={{ textAlign: "center", padding: "48px 0" }}>
+              <p style={{ fontSize: "8px", color: `${ACCENT}50` }}>Shop is empty</p>
             </div>
           )}
         </div>

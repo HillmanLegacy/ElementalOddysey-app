@@ -1,9 +1,7 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import ParticleCanvas from "./ParticleCanvas";
-import type { PlayerCharacter, PartyMember } from "@shared/schema";
+import type { PlayerCharacter } from "@shared/schema";
 import { SHAMAN_SPELLS, SPELLS, ELEMENT_COLORS } from "@/lib/gameData";
-import { Sparkles, ArrowLeft, Check } from "lucide-react";
+import { Sparkles, Check } from "lucide-react";
 
 interface ShamanScreenProps {
   player: PlayerCharacter;
@@ -12,6 +10,7 @@ interface ShamanScreenProps {
 }
 
 const SPELL_COST = 50;
+const ACCENT = "#c9a44a";
 
 export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScreenProps) {
   const [selectedChar, setSelectedChar] = useState<{ type: "player" | "party"; index: number } | null>(null);
@@ -61,57 +60,86 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0c0618] via-[#1a0e2e] to-[#0a0412]">
-      <ParticleCanvas
-        colors={["#a855f7", "#c084fc", "#7c3aed", "#e879f9"]}
-        count={40}
-        speed={0.8}
-        style="burst"
+    <div
+      style={{
+        position: "relative",
+        width: "100%",
+        height: "100vh",
+        overflow: "hidden",
+        background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+        fontFamily: "'Press Start 2P', cursive",
+        imageRendering: "pixelated" as any,
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)`,
+          pointerEvents: "none",
+          zIndex: 1,
+        }}
       />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-purple-900/20 via-transparent to-purple-900/10" />
-
-      <div className="relative z-10 flex flex-col items-center h-full px-4 py-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Button
+      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", height: "100%", padding: "0 16px" }}>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            padding: "10px 0",
+            borderBottom: `3px solid ${ACCENT}`,
+          }}
+        >
+          <button
             onClick={onBack}
-            variant="ghost"
-            className="text-purple-300 hover:text-purple-100 hover:bg-purple-900/30 p-2"
+            style={{
+              fontFamily: "'Press Start 2P', cursive",
+              fontSize: "8px",
+              color: ACCENT,
+              background: "transparent",
+              border: `1px solid ${ACCENT}50`,
+              padding: "4px 8px",
+              cursor: "pointer",
+            }}
           >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-6 h-6 text-purple-400" />
-            <h1
-              className="text-3xl font-bold text-purple-200"
-              style={{ textShadow: "2px 2px 0px rgba(0,0,0,0.8), 0 0 10px rgba(168,85,247,0.3)" }}
-            >
-              Shaman's Lair
-            </h1>
-            <Sparkles className="w-6 h-6 text-purple-400" />
+            ← BACK
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            <Sparkles style={{ width: 14, height: 14, color: ACCENT }} />
+            <span style={{ fontSize: "10px", color: ACCENT }}>SHAMAN'S LAIR</span>
+            <Sparkles style={{ width: 14, height: 14, color: ACCENT }} />
           </div>
+          <div style={{ width: 60 }} />
         </div>
 
-        <p className="text-sm text-purple-300/70 mb-4" style={{ textShadow: "1px 1px 0px rgba(0,0,0,0.8)" }}>
-          The ancient shaman can teach powerful spells for {SPELL_COST} gold each.
+        <p style={{ fontSize: "7px", color: `${ACCENT}80`, margin: "8px 0", textAlign: "center" }}>
+          The ancient shaman teaches spells for {SPELL_COST} gold each.
         </p>
 
-        <div className="text-xs text-yellow-300 mb-4 flex items-center gap-1">
-          <span>Gold: {player.gold}</span>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "4px", marginBottom: "8px" }}>
+          <span style={{ fontSize: "8px", color: "#e8c030" }}>💰 Gold: {player.gold}</span>
         </div>
 
         {learnedMessage && (
-          <div className="mb-4 px-4 py-2 border-2 border-green-500 bg-green-900/40 animate-pulse">
-            <div className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-green-400" />
-              <span className="text-sm font-bold text-green-300">{learnedMessage}</span>
+          <div
+            style={{
+              margin: "0 0 8px",
+              padding: "6px 12px",
+              border: `2px solid #4ade80`,
+              background: "#4ade8020",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+              <Check style={{ width: 12, height: 12, color: "#4ade80" }} />
+              <span style={{ fontSize: "8px", color: "#4ade80" }}>{learnedMessage}</span>
             </div>
           </div>
         )}
 
-        <div className="flex gap-6 w-full max-w-3xl">
-          <div className="w-1/3 space-y-2">
-            <h2 className="text-xs tracking-wider text-purple-400/80 mb-2" style={{ textShadow: "1px 1px 0px rgba(0,0,0,0.8)" }}>
+        <div style={{ display: "flex", gap: "12px", flex: 1, overflow: "hidden" }}>
+          <div style={{ width: "33%", display: "flex", flexDirection: "column", gap: "4px", overflowY: "auto" }}>
+            <h2 style={{ fontSize: "7px", letterSpacing: "1px", color: `${ACCENT}90`, marginBottom: "4px" }}>
               SELECT CHARACTER
             </h2>
             {characters.map(char => {
@@ -121,82 +149,104 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
                 <button
                   key={`${char.type}-${char.index}`}
                   onClick={() => setSelectedChar({ type: char.type, index: char.index })}
-                  className={`w-full text-left px-3 py-2 border-2 transition-all ${
-                    isSelected
-                      ? "border-purple-400 bg-purple-800/40"
-                      : "border-purple-800/30 bg-purple-900/20 hover:border-purple-600/50"
-                  }`}
-                  style={{ boxShadow: isSelected ? "inset 0 0 8px rgba(168,85,247,0.2)" : "none" }}
+                  style={{
+                    width: "100%",
+                    textAlign: "left" as const,
+                    padding: "6px 8px",
+                    border: `2px solid ${isSelected ? ACCENT : `${ACCENT}30`}`,
+                    background: isSelected ? `${ACCENT}20` : "#0a080840",
+                    cursor: "pointer",
+                    fontFamily: "'Press Start 2P', cursive",
+                  }}
                 >
-                  <div className="flex items-center justify-between">
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                     <div>
-                      <span className="text-sm font-bold text-purple-200">{char.name}</span>
-                      <span className="text-[10px] text-purple-400/60 ml-2">
+                      <span style={{ fontSize: "8px", color: "#e8e0d0" }}>{char.name}</span>
+                      <span style={{ fontSize: "6px", color: `${ACCENT}60`, marginLeft: "6px" }}>
                         {char.type === "player" ? "Hero" : "Ally"}
                       </span>
                     </div>
                     <span
-                      className="text-[10px] px-1.5 py-0.5 border"
                       style={{
-                        color: ELEMENT_COLORS[char.element as keyof typeof ELEMENT_COLORS],
-                        borderColor: ELEMENT_COLORS[char.element as keyof typeof ELEMENT_COLORS] + "40",
+                        fontSize: "6px",
+                        padding: "1px 4px",
+                        border: `1px solid ${(ELEMENT_COLORS[char.element as keyof typeof ELEMENT_COLORS] || ACCENT) + "40"}`,
+                        color: ELEMENT_COLORS[char.element as keyof typeof ELEMENT_COLORS] || ACCENT,
                       }}
                     >
                       {char.element}
                     </span>
                   </div>
                   {spellsAvailable > 0 ? (
-                    <span className="text-[9px] text-purple-400/60">{spellsAvailable} spell{spellsAvailable > 1 ? "s" : ""} available</span>
+                    <span style={{ fontSize: "6px", color: `${ACCENT}70` }}>{spellsAvailable} spell{spellsAvailable > 1 ? "s" : ""} available</span>
                   ) : (
-                    <span className="text-[9px] text-purple-400/30">All spells learned</span>
+                    <span style={{ fontSize: "6px", color: `${ACCENT}30` }}>All spells learned</span>
                   )}
                 </button>
               );
             })}
           </div>
 
-          <div className="flex-1">
-            <h2 className="text-xs tracking-wider text-purple-400/80 mb-2" style={{ textShadow: "1px 1px 0px rgba(0,0,0,0.8)" }}>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            <h2 style={{ fontSize: "7px", letterSpacing: "1px", color: `${ACCENT}90`, marginBottom: "6px" }}>
               AVAILABLE SPELLS
             </h2>
 
             {!selectedChar && (
-              <p className="text-sm text-purple-300/40 mt-8 text-center">Select a character to view available spells</p>
+              <p style={{ fontSize: "7px", color: `${ACCENT}40`, marginTop: "32px", textAlign: "center" }}>Select a character to view available spells</p>
             )}
 
             {selectedChar && availableSpells.length === 0 && (
-              <div className="mt-8 text-center">
-                <p className="text-sm text-purple-300/40">No new spells available for this character.</p>
+              <div style={{ marginTop: "32px", textAlign: "center" }}>
+                <p style={{ fontSize: "7px", color: `${ACCENT}40` }}>No new spells available for this character.</p>
               </div>
             )}
 
             {selectedChar && availableSpells.length > 0 && (
-              <div className="space-y-2">
+              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
                 {availableSpells.map(spell => spell && (
                   <div
                     key={spell.id}
-                    className="flex items-center justify-between px-3 py-2 border-2 border-purple-800/30 bg-purple-900/20"
-                    style={{ boxShadow: "inset 0 0 6px rgba(0,0,0,0.4)" }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 8px",
+                      border: `1px solid ${ACCENT}30`,
+                      background: "#0a080860",
+                    }}
                   >
-                    <div className="flex items-center gap-2 flex-1">
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flex: 1 }}>
                       <Sparkles
-                        className="w-4 h-4 flex-shrink-0"
-                        style={{ color: ELEMENT_COLORS[spell.element as keyof typeof ELEMENT_COLORS || selectedCharData?.element as keyof typeof ELEMENT_COLORS] }}
+                        style={{
+                          width: 12,
+                          height: 12,
+                          flexShrink: 0,
+                          color: ELEMENT_COLORS[spell.element as keyof typeof ELEMENT_COLORS || selectedCharData?.element as keyof typeof ELEMENT_COLORS],
+                        }}
                       />
                       <div>
-                        <p className="text-sm font-bold text-purple-200">{spell.name}</p>
-                        <p className="text-[10px] text-purple-300/60">{spell.description}</p>
-                        <p className="text-[9px] text-blue-300/50">{spell.mpCost} MP</p>
+                        <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{spell.name}</p>
+                        <p style={{ fontSize: "6px", color: `${ACCENT}60`, marginTop: "1px" }}>{spell.description}</p>
+                        <p style={{ fontSize: "6px", color: "#93c5fd80", marginTop: "1px" }}>{spell.mpCost} MP</p>
                       </div>
                     </div>
-                    <Button
+                    <button
                       onClick={() => handleLearn(spell.id)}
                       disabled={player.gold < SPELL_COST}
-                      className="text-xs px-3 py-1 h-auto border-2 border-yellow-600 bg-yellow-900/40 hover:bg-yellow-800/60 text-yellow-300 disabled:opacity-40"
-                      style={{ boxShadow: "inset 0 0 4px rgba(0,0,0,0.4)" }}
+                      style={{
+                        fontFamily: "'Press Start 2P', cursive",
+                        fontSize: "7px",
+                        padding: "4px 10px",
+                        border: `1px solid ${player.gold >= SPELL_COST ? "#e8c030" : "#555"}`,
+                        background: player.gold >= SPELL_COST ? "#e8c03020" : "transparent",
+                        color: player.gold >= SPELL_COST ? "#e8c030" : "#555",
+                        cursor: player.gold >= SPELL_COST ? "pointer" : "default",
+                        opacity: player.gold >= SPELL_COST ? 1 : 0.5,
+                      }}
                     >
                       {SPELL_COST}g
-                    </Button>
+                    </button>
                   </div>
                 ))}
               </div>
