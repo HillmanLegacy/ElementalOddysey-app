@@ -130,7 +130,7 @@ function lerpPosition(from: { x: number; y: number }, to: { x: number; y: number
 interface OverworldProps {
   player: PlayerCharacter;
   onMoveToNode: (nodeId: number) => void;
-  onNodeSelect: (nodeId: number) => void;
+  onNodeSelect: (nodeId: number, charPos?: { x: number; y: number }) => void;
   onShopOpen: (nodeId: number) => void;
   onRest: (nodeId: number) => void;
   onShamanVisit: (nodeId: number) => void;
@@ -278,7 +278,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
     if (node.type === "hut") {
       setHutMenuOpen(true);
     } else if (node.type === "battle" || node.type === "boss") {
-      onNodeSelect(node.id);
+      onNodeSelect(node.id, charPos);
     } else if (node.type === "shop") {
       onShopOpen(node.id);
     } else if (node.type === "rest") {

@@ -17,6 +17,7 @@ import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
 import PartyManagementScreen from "@/components/PartyManagementScreen";
 import ShamanScreen from "@/components/ShamanScreen";
+import BattleTransition from "@/components/BattleTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
@@ -88,6 +89,7 @@ function Game() {
   const [saveConfirmSlot, setSaveConfirmSlot] = useState<number | null>(null);
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
+  const [battleTransition, setBattleTransition] = useState<{ nodeId: number; charPos: { x: number; y: number }; elementColor: string } | null>(null);
 
   const handleSaveToSlot = async (slotNumber: number) => {
     if (!state.player) return;
@@ -151,7 +153,13 @@ function Game() {
               onMoveToNode={(nodeId: number) => {
                 updatePlayer({ currentNode: nodeId });
               }}
-              onNodeSelect={startBattle}
+              onNodeSelect={(nodeId: number, pos?: { x: number; y: number }) => {
+                if (!state.player) return;
+                const t = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
+                const r = getRegionForTier(state.player.currentRegion, t);
+                const ec = ELEMENT_COLORS[r.theme] || "#c9a44a";
+                setBattleTransition({ nodeId, charPos: pos || { x: 50, y: 50 }, elementColor: ec });
+              }}
               onShopOpen={(nodeId: number) => {
                 updatePlayer({ clearedNodes: state.player!.clearedNodes.includes(nodeId) ? state.player!.clearedNodes : [...state.player!.clearedNodes, nodeId] });
                 openShop();
@@ -385,6 +393,18 @@ function Game() {
                 </div>
               );
             })()}
+            {battleTransition && (
+              <BattleTransition
+                originX={battleTransition.charPos.x}
+                originY={battleTransition.charPos.y}
+                elementColor={battleTransition.elementColor}
+                onComplete={() => {
+                  const nodeId = battleTransition.nodeId;
+                  setBattleTransition(null);
+                  startBattle(nodeId);
+                }}
+              />
+            )}
           </>
         );
 
