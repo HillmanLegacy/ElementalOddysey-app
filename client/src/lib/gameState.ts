@@ -236,16 +236,22 @@ export function useGameState() {
         const targets = hasAoe ? battle.enemies.filter(e => e.currentHp > 0) : (targetIndex !== undefined ? [battle.enemies[targetIndex]] : []);
 
         let lastLabel = "";
+        const damageEventsCollector: Array<{ id: number; amount: number; targetType: string; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean }> = [];
         for (const target of targets) {
           if (!target || target.currentHp <= 0) continue;
           const skillMult = spell.effect.damageMultiplier || 1;
           const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
           const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, true, s.player.element, target.element, skillMult, critMod);
           const tIdx = battle.enemies.indexOf(target);
+          const evt = { id: ++damageEventCounter, amount: damage, targetType: "enemy" as const, targetIndex: tIdx >= 0 ? tIdx : 0, isCrit, element: spell.element || s.player.element, label: elementLabel || undefined };
+          battle.lastDamageEvent = evt;
+          damageEventsCollector.push(evt);
           target.currentHp = Math.max(0, target.currentHp - damage);
-          battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: tIdx >= 0 ? tIdx : 0, isCrit, element: spell.element || s.player.element, label: elementLabel || undefined };
           battle.log = [...battle.log, `${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
           if (elementLabel) lastLabel = elementLabel;
+        }
+        if (damageEventsCollector.length > 0) {
+          battle.lastDamageEvents = damageEventsCollector;
         }
         battle.lastElementLabel = lastLabel || undefined;
 
@@ -417,14 +423,20 @@ export function useGameState() {
       if (spell.type === "damage") {
         let lastLabel = "";
         if (spell.targetType === "allEnemies") {
+          const damageEventsCollector: Array<{ id: number; amount: number; targetType: string; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean }> = [];
           battle.enemies.forEach((e, eIdx) => {
             if (e.currentHp <= 0) return;
             const { damage, isCrit, elementLabel } = calculateDamage(member.stats, e.stats, true, spell.element || member.element, e.element, spell.effect.damageMultiplier);
             e.currentHp = Math.max(0, e.currentHp - damage);
-            battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: eIdx, isCrit, element: spell.element || member.element, label: elementLabel || undefined };
+            const evt = { id: ++damageEventCounter, amount: damage, targetType: "enemy" as const, targetIndex: eIdx, isCrit, element: spell.element || member.element, label: elementLabel || undefined };
+            battle.lastDamageEvent = evt;
+            damageEventsCollector.push(evt);
             battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${e.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
             if (elementLabel) lastLabel = elementLabel;
           });
+          if (damageEventsCollector.length > 0) {
+            battle.lastDamageEvents = damageEventsCollector;
+          }
         } else if (targetIndex !== undefined) {
           const target = battle.enemies[targetIndex];
           if (target && target.currentHp > 0) {

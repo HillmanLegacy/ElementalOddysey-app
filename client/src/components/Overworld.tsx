@@ -645,14 +645,14 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           const dist = Math.sqrt(dx * dx + dy * dy);
           const ndx = dx / dist;
           const ndy = dy / dist;
-          const arrowDist = 5.5;
+          const arrowDist = ndy < -0.3 ? 9 : 6.5;
           const arrowX = charPos.x + ndx * arrowDist;
           const arrowY = charPos.y + ndy * arrowDist;
           const angle = Math.atan2(dy, dx) * (180 / Math.PI);
           return (
             <button
               key={`arrow-${connId}`}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2"
+              className="absolute transform -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center"
               style={{
                 left: `${arrowX}%`,
                 top: `${arrowY}%`,
@@ -661,24 +661,23 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               onClick={() => handleArrowClick(targetNode)}
               data-testid={`arrow-to-node-${connId}`}
             >
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center"
+              <svg
+                width="20"
+                height="16"
+                viewBox="0 0 20 16"
+                fill="none"
                 style={{
-                  backgroundColor: "rgba(0, 0, 0, 0.6)",
-                  border: `2px solid ${elemColor}`,
-                  boxShadow: `0 0 12px ${elemColor}80, 0 0 24px ${elemColor}40`,
+                  transform: `rotate(${angle}deg)`,
                   animation: "pulse 2s ease-in-out infinite",
+                  filter: `drop-shadow(0 0 3px rgba(255, 255, 255, 0.6))`,
                 }}
               >
-                <ChevronRight
-                  className="w-5 h-5"
-                  style={{
-                    color: elemColor,
-                    transform: `rotate(${angle}deg)`,
-                    filter: `drop-shadow(0 0 4px ${elemColor})`,
-                  }}
+                <polygon
+                  points="16,8 0,0 0,16"
+                  fill="white"
+                  strokeWidth="0"
                 />
-              </div>
+              </svg>
             </button>
           );
         });
@@ -806,94 +805,102 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         </div>
       )}
 
-      {hutMenuOpen && (
-        <div className="absolute inset-0 z-[200] flex items-center justify-center" onClick={() => setHutMenuOpen(false)}>
-          <div className="absolute inset-0 bg-black/60" />
-          <div
-            className="relative w-72 bg-gradient-to-b from-amber-950/95 to-stone-950/95 backdrop-blur-md rounded-xl border border-amber-700/40 overflow-hidden"
-            style={{ fontFamily: "'Cinzel', serif", boxShadow: "0 0 40px rgba(180, 140, 50, 0.15), 0 8px 32px rgba(0,0,0,0.5)" }}
-            onClick={e => e.stopPropagation()}
-          >
-            <div className="px-5 pt-4 pb-3 border-b border-amber-700/30 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Home className="w-5 h-5 text-amber-400" />
-                <span className="text-sm font-semibold tracking-wider text-amber-200">THE HUT</span>
-              </div>
-              <Button size="icon" variant="ghost" className="text-amber-400/60 h-7 w-7" onClick={() => setHutMenuOpen(false)}>
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
+      {hutMenuOpen && (() => {
+        const ec = elemColor;
+        const regionNames: Record<string, string> = { Fire: "Ember Hearth", Ice: "Frost Lodge", Shadow: "Shadow Refuge", Earth: "Stone Haven" };
+        const flavorText: Record<string, string> = { Fire: "Warmth against the inferno", Ice: "Shelter from the frost", Shadow: "Light in the darkness", Earth: "Rooted and restored" };
+        const hutName = regionNames[region.theme] || "The Hut";
+        const hutFlavor = flavorText[region.theme] || "A safe haven";
 
-            <div className="p-4 space-y-2">
-              <button
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
-                style={{ background: "linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))", border: "1px solid rgba(34, 197, 94, 0.25)" }}
-                onClick={() => {
-                  setHutMenuOpen(false);
-                  const hutNode = region.nodes.find(n => n.type === "hut");
-                  if (hutNode) onRest(hutNode.id);
-                }}
-              >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(34, 197, 94, 0.2)" }}>
-                  <Moon className="w-4 h-4 text-green-400" />
-                </div>
-                <div>
-                  <span className="tracking-wide text-green-300 font-medium">Rest</span>
-                  <p className="text-[10px] text-green-400/50 mt-0.5">Restore HP & MP</p>
-                </div>
-              </button>
+        const menuItems = [
+          { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { setHutMenuOpen(false); const h = region.nodes.find(n => n.type === "hut"); if (h) onRest(h.id); } },
+          { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setHutMenuOpen(false); onInventory(); } },
+          ...(player.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setHutMenuOpen(false); onPartyManage(); } }] : []),
+          { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setHutMenuOpen(false); onSave(); } },
+        ];
 
-              <button
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
-                style={{ background: "linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(168, 85, 247, 0.05))", border: "1px solid rgba(168, 85, 247, 0.25)" }}
-                onClick={() => { setHutMenuOpen(false); onInventory(); }}
-              >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(168, 85, 247, 0.2)" }}>
-                  <Package className="w-4 h-4 text-purple-400" />
-                </div>
-                <div>
-                  <span className="tracking-wide text-purple-300 font-medium">Items & Equipment</span>
-                  <p className="text-[10px] text-purple-400/50 mt-0.5">Use items, equip gear</p>
-                </div>
-              </button>
+        return (
+          <div className="absolute inset-0 z-[200] flex items-center justify-center" onClick={() => setHutMenuOpen(false)}>
+            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.75) 70%)` }} />
+            <div
+              className="relative w-[280px] overflow-hidden"
+              style={{
+                fontFamily: "'Press Start 2P', cursive",
+                imageRendering: "pixelated",
+                background: `linear-gradient(180deg, ${theme.sky[0]}f0 0%, ${theme.terrain}f5 100%)`,
+                border: `3px solid ${ec}`,
+                boxShadow: `0 0 20px ${ec}40, 0 0 60px ${ec}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+              }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                pointerEvents: "none",
+              }} />
 
-              {player.party.length > 0 && (
+              <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: `2px solid ${ec}60` }}>
+                <div className="flex items-center gap-2">
+                  <Home className="w-4 h-4" style={{ color: ec }} />
+                  <span style={{ fontSize: "10px", color: ec, letterSpacing: "2px" }}>{hutName.toUpperCase()}</span>
+                </div>
                 <button
-                  className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
-                  style={{ background: "linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(59, 130, 246, 0.05))", border: "1px solid rgba(59, 130, 246, 0.25)" }}
-                  onClick={() => { setHutMenuOpen(false); onPartyManage(); }}
+                  className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                  style={{ border: `1px solid ${ec}50`, background: "rgba(0,0,0,0.4)" }}
+                  onClick={() => setHutMenuOpen(false)}
                 >
-                  <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(59, 130, 246, 0.2)" }}>
-                    <Users className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <div>
-                    <span className="tracking-wide text-blue-300 font-medium">Party</span>
-                    <p className="text-[10px] text-blue-400/50 mt-0.5">Manage party members</p>
-                  </div>
+                  <X className="w-3 h-3" style={{ color: ec }} />
                 </button>
-              )}
+              </div>
 
-              <button
-                className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-all hover:brightness-125"
-                style={{ background: "linear-gradient(135deg, rgba(250, 204, 21, 0.15), rgba(250, 204, 21, 0.05))", border: "1px solid rgba(250, 204, 21, 0.25)" }}
-                onClick={() => { setHutMenuOpen(false); onSave(); }}
-              >
-                <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: "rgba(250, 204, 21, 0.2)" }}>
-                  <Save className="w-4 h-4 text-yellow-400" />
-                </div>
-                <div>
-                  <span className="tracking-wide text-yellow-300 font-medium">Save Game</span>
-                  <p className="text-[10px] text-yellow-400/50 mt-0.5">Save your progress</p>
-                </div>
-              </button>
-            </div>
+              <div className="relative px-3 py-3 space-y-1.5">
+                {menuItems.map((item, i) => {
+                  const Icon = item.icon;
+                  return (
+                    <button
+                      key={item.label}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all group"
+                      style={{
+                        background: "rgba(0,0,0,0.3)",
+                        border: `1px solid ${ec}30`,
+                        animation: `fadeIn 0.2s ease-out ${i * 0.05}s both`,
+                      }}
+                      onMouseEnter={e => {
+                        (e.currentTarget as HTMLElement).style.background = `${ec}25`;
+                        (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
+                        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}30, inset 0 0 8px ${ec}10`;
+                      }}
+                      onMouseLeave={e => {
+                        (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                        (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                        (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                      }}
+                      onClick={item.action}
+                    >
+                      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ec}40`, background: `${ec}15` }}>
+                        <Icon className="w-3.5 h-3.5" style={{ color: ec }} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.9)", letterSpacing: "1px" }}>{item.label}</span>
+                        <span style={{ fontSize: "7px", color: `${ec}80`, marginTop: "2px" }}>{item.desc}</span>
+                      </div>
+                      <svg className="w-3 h-3 ml-auto opacity-40 group-hover:opacity-80 transition-opacity" viewBox="0 0 12 12" style={{ color: ec }}>
+                        <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="2" />
+                      </svg>
+                    </button>
+                  );
+                })}
+              </div>
 
-            <div className="px-5 py-2 border-t border-amber-700/20">
-              <p className="text-[9px] text-amber-400/30 text-center tracking-wider">A safe haven for weary travelers</p>
+              <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ec}20` }}>
+                <p className="text-center" style={{ fontSize: "6px", color: `${ec}50`, letterSpacing: "1px" }}>{hutFlavor}</p>
+              </div>
+
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ec}40, transparent)` }} />
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       <div className="absolute bottom-0 left-0 right-0 z-30 bg-black/50 backdrop-blur-sm border-t border-white/5">
         <div className="flex items-center justify-between px-3 py-1.5">

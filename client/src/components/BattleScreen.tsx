@@ -343,6 +343,45 @@ export default function BattleScreen({
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
   }, [battle.lastDamageEvent, showDamageNumbers]);
 
+  const lastDmgEventsIdRef = useRef(0);
+  useEffect(() => {
+    if (!battle.lastDamageEvents || battle.lastDamageEvents.length === 0 || !showDamageNumbers) return;
+    const events = battle.lastDamageEvents;
+    const batchId = events[events.length - 1].id;
+    if (batchId <= lastDmgEventsIdRef.current) return;
+    lastDmgEventsIdRef.current = batchId;
+
+    if (events.length <= 1) return;
+
+    events.forEach((evt, idx) => {
+      setTimeout(() => {
+        let posX: number, posY: number;
+        let color = evt.isCrit ? "#fbbf24" : "#ef4444";
+
+        if (evt.targetType === "enemy") {
+          const ep = ENEMY_SLOTS[evt.targetIndex % ENEMY_SLOTS.length];
+          posX = ep.x + (Math.random() * 6 - 3);
+          posY = 100 - ep.y - 15 + (Math.random() * 4 - 2);
+        } else if (evt.targetType === "player") {
+          const pp = ALLY_SLOTS[0];
+          posX = pp.x + (Math.random() * 4 - 2);
+          posY = 100 - pp.y - 16;
+        } else {
+          const slotIdx = (evt.targetIndex % PARTY_POSITIONS.length) + 1;
+          const pp = ALLY_SLOTS[slotIdx];
+          posX = pp.x + (Math.random() * 4 - 2);
+          posY = 100 - pp.y - 14;
+        }
+
+        if (evt.isHeal) color = "#22c55e";
+        const text = evt.isHeal ? `+${evt.amount}` : (evt.isCrit ? "CRIT " : "") + evt.amount;
+        const id = damageIdRef.current++;
+        setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color }]);
+        setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
+      }, idx * 50);
+    });
+  }, [battle.lastDamageEvents, showDamageNumbers]);
+
   const handleAttackTarget = useCallback((targetIdx: number) => {
     setSelectedAction(null);
     setPendingTargetIdx(targetIdx);
@@ -529,7 +568,7 @@ export default function BattleScreen({
           setDodgeBlur({ type: "enemy", index: dodgeIdx });
           scheduleTimer(() => setDodgeBlur(null), 600);
           const ep = ENEMY_SLOTS[dodgeIdx % ENEMY_SLOTS.length];
-          spawnDamageNumber("MISS", ep.x, 100 - ep.y - 15, "#aaaaaa");
+          spawnDamageNumber("DODGE", ep.x, 100 - ep.y - 15, "#aaaaaa");
         }
       }
 
@@ -741,6 +780,10 @@ export default function BattleScreen({
           } else {
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
         }, 700);
 
@@ -773,6 +816,10 @@ export default function BattleScreen({
           } else {
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
         }, 800);
 
@@ -827,6 +874,10 @@ export default function BattleScreen({
           } else {
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
         }, 1200);
 
@@ -886,6 +937,10 @@ export default function BattleScreen({
           } else {
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
         }, 1200);
 
@@ -948,6 +1003,10 @@ export default function BattleScreen({
         } else {
           setDodgeBlur(result.target);
           scheduleTimer(() => setDodgeBlur(null), 600);
+          const dodgeSlot = result.target.type === "party"
+            ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+            : ALLY_SLOTS[0];
+          spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
         }
       }, 950);
 
@@ -981,6 +1040,10 @@ export default function BattleScreen({
         } else {
           setDodgeBlur(result.target);
           scheduleTimer(() => setDodgeBlur(null), 600);
+          const dodgeSlot = result.target.type === "party"
+            ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+            : ALLY_SLOTS[0];
+          spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
         }
       }, 900);
 
@@ -1019,6 +1082,10 @@ export default function BattleScreen({
           } else {
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
         }, 1000);
 
@@ -1050,6 +1117,10 @@ export default function BattleScreen({
           } else {
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
         }, 700);
 
@@ -1103,6 +1174,10 @@ export default function BattleScreen({
           } else {
             setDodgeBlur(result.target);
             scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
         }, 1200);
 
@@ -1132,13 +1207,17 @@ export default function BattleScreen({
       } else {
         setDodgeBlur(result.target);
         scheduleTimer(() => setDodgeBlur(null), 600);
+        const dodgeSlot = result.target.type === "party"
+          ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+          : ALLY_SLOTS[0];
+        spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
       }
       scheduleTimer(() => {
         setAnimPhase("idle");
         scheduleTimer(onDone, 300);
       }, 600);
     }
-  }, [isDragonLord, isFrostLizard, isJotem, scheduleTimer, onEnemyAttack]);
+  }, [isDragonLord, isFrostLizard, isJotem, scheduleTimer, onEnemyAttack, spawnDamageNumber]);
 
   useEffect(() => {
     if (battle.phase !== "partyTurn") {
@@ -1468,7 +1547,7 @@ export default function BattleScreen({
           style={{
             left: `${d.x}%`,
             top: `${d.y}%`,
-            fontSize: d.text.includes("CRIT") || d.text.includes("MISS") ? "28px" : "24px",
+            fontSize: d.text.includes("CRIT") || d.text.includes("DODGE") ? "28px" : "24px",
             fontWeight: 900,
             fontFamily: "'Arial Black', 'Impact', sans-serif",
             color: d.color,
