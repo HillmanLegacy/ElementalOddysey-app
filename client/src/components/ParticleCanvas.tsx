@@ -1,4 +1,4 @@
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect } from "react";
 
 interface Particle {
   x: number;
@@ -31,20 +31,47 @@ export default function ParticleCanvas({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
   const animRef = useRef<number>(0);
+  const colorsRef = useRef(colors);
+  const countRef = useRef(count);
+  const speedRef = useRef(speed);
+  const styleRef = useRef(style);
+  const initializedRef = useRef(false);
 
-  const createParticle = useCallback(
-    (w: number, h: number): Particle => {
-      const color = colors[Math.floor(Math.random() * colors.length)];
+  colorsRef.current = colors;
+  countRef.current = count;
+  speedRef.current = speed;
+  styleRef.current = style;
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    const resize = () => {
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = canvas.offsetWidth * dpr;
+      canvas.height = canvas.offsetHeight * dpr;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    function makeParticle(w: number, h: number): Particle {
+      const c = colorsRef.current;
+      const s = speedRef.current;
+      const st = styleRef.current;
+      const color = c[Math.floor(Math.random() * c.length)];
       const shapes: Particle["shape"][] = ["circle", "spark", "trail"];
 
-      if (style === "swirl") {
+      if (st === "swirl") {
         const angle = Math.random() * Math.PI * 2;
         const radius = Math.random() * Math.min(w, h) * 0.3;
         return {
           x: w / 2 + Math.cos(angle) * radius,
           y: h / 2 + Math.sin(angle) * radius,
-          vx: Math.cos(angle + Math.PI / 2) * speed * 0.5,
-          vy: Math.sin(angle + Math.PI / 2) * speed * 0.5,
+          vx: Math.cos(angle + Math.PI / 2) * s * 0.5,
+          vy: Math.sin(angle + Math.PI / 2) * s * 0.5,
           life: 0,
           maxLife: 120 + Math.random() * 200,
           size: 1 + Math.random() * 3,
@@ -54,14 +81,14 @@ export default function ParticleCanvas({
         };
       }
 
-      if (style === "rain") {
+      if (st === "rain") {
         return {
           x: Math.random() * w,
           y: -10,
-          vx: (Math.random() - 0.5) * speed * 0.3,
-          vy: 1 + Math.random() * speed * 2,
+          vx: (Math.random() - 0.5) * s * 0.3,
+          vy: 1 + Math.random() * s * 2,
           life: 0,
-          maxLife: h / (1 + Math.random() * speed),
+          maxLife: h / (1 + Math.random() * s),
           size: 1 + Math.random() * 2,
           color,
           alpha: 0.4 + Math.random() * 0.6,
@@ -72,8 +99,8 @@ export default function ParticleCanvas({
       return {
         x: Math.random() * w,
         y: Math.random() * h,
-        vx: (Math.random() - 0.5) * speed * 0.5,
-        vy: (Math.random() - 0.5) * speed * 0.5 - 0.3,
+        vx: (Math.random() - 0.5) * s * 0.5,
+        vy: (Math.random() - 0.5) * s * 0.5 - 0.3,
         life: 0,
         maxLife: 150 + Math.random() * 250,
         size: 1 + Math.random() * 3,
@@ -81,35 +108,33 @@ export default function ParticleCanvas({
         alpha: 0.2 + Math.random() * 0.6,
         shape: shapes[Math.floor(Math.random() * shapes.length)],
       };
-    },
-    [colors, speed, style]
-  );
+    }
 
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-
-    const resize = () => {
-      canvas.width = canvas.offsetWidth * window.devicePixelRatio;
-      canvas.height = canvas.offsetHeight * window.devicePixelRatio;
-      ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    };
-    resize();
-    window.addEventListener("resize", resize);
-
-    particlesRef.current = Array.from({ length: count }, () =>
-      createParticle(canvas.offsetWidth, canvas.offsetHeight)
-    );
+    if (!initializedRef.current) {
+      particlesRef.current = Array.from({ length: countRef.current }, () =>
+        makeParticle(canvas.offsetWidth, canvas.offsetHeight)
+      );
+      initializedRef.current = true;
+    }
 
     const animate = () => {
       const w = canvas.offsetWidth;
       const h = canvas.offsetHeight;
       ctx.clearRect(0, 0, w, h);
 
-      for (let i = 0; i < particlesRef.current.length; i++) {
-        const p = particlesRef.current[i];
+      const targetCount = countRef.current;
+      const particles = particlesRef.current;
+
+      if (particles.length < targetCount) {
+        for (let i = particles.length; i < targetCount; i++) {
+          particles.push(makeParticle(w, h));
+        }
+      } else if (particles.length > targetCount) {
+        particles.length = targetCount;
+      }
+
+      for (let i = 0; i < particles.length; i++) {
+        const p = particles[i];
         p.x += p.vx;
         p.y += p.vy;
         p.life++;
@@ -120,7 +145,7 @@ export default function ParticleCanvas({
         const currentAlpha = p.alpha * fadeIn * (lifeRatio > 0.7 ? fadeOut : 1);
 
         if (p.life >= p.maxLife || p.x < -20 || p.x > w + 20 || p.y < -20 || p.y > h + 20) {
-          particlesRef.current[i] = createParticle(w, h);
+          particles[i] = makeParticle(w, h);
           continue;
         }
 
@@ -168,7 +193,7 @@ export default function ParticleCanvas({
       cancelAnimationFrame(animRef.current);
       window.removeEventListener("resize", resize);
     };
-  }, [count, createParticle]);
+  }, []);
 
   return (
     <canvas
