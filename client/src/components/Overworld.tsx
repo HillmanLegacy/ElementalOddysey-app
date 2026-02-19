@@ -405,7 +405,12 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         zIndex: 1,
       }} />
 
-      <ParticleCanvas colors={regionColors} count={isFireRegion ? 40 : 30} speed={isFireRegion ? 0.4 : 0.3} style="ambient" />
+      <ParticleCanvas
+        colors={regionColors}
+        count={region.theme === "Fire" ? 40 : region.theme === "Ice" ? 25 : region.theme === "Shadow" ? 30 : 25}
+        speed={region.theme === "Fire" ? 0.5 : region.theme === "Ice" ? 0.2 : region.theme === "Shadow" ? 0.3 : 0.25}
+        style={region.theme === "Fire" ? "rain" : region.theme === "Ice" ? "ambient" : region.theme === "Shadow" ? "swirl" : "ambient"}
+      />
 
       <div className="absolute inset-0" style={{ zIndex: 10 }}>
         <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">

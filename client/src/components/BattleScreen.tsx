@@ -1445,10 +1445,16 @@ export default function BattleScreen({
       }} />
 
       <ParticleCanvas
-        colors={battle.phase === "victory" ? ["#fbbf24", "#f59e0b", "#eab308"] : [elementColor, "#a855f7", "#6b21a8"]}
-        count={battle.phase === "victory" ? 120 : 20}
-        speed={battle.phase === "victory" ? 1.5 : 0.3}
-        style={battle.phase === "victory" ? "burst" : "ambient"}
+        colors={battle.phase === "victory"
+          ? ["#fbbf24", "#f59e0b", "#eab308"]
+          : regionTheme === "Fire" ? ["#ef4444", "#f97316", "#fbbf24", "#dc2626"]
+          : regionTheme === "Ice" ? ["#67e8f9", "#3b82f6", "#93c5fd", "#e0f2fe"]
+          : regionTheme === "Shadow" ? ["#7c3aed", "#6b21a8", "#4c1d95", "#ddd6fe"]
+          : regionTheme === "Earth" ? ["#a16207", "#ca8a04", "#d97706", "#92400e"]
+          : [elementColor, "#a855f7", "#6b21a8"]}
+        count={battle.phase === "victory" ? 120 : regionTheme === "Fire" ? 35 : 20}
+        speed={battle.phase === "victory" ? 1.5 : regionTheme === "Fire" ? 0.5 : 0.3}
+        style={battle.phase === "victory" ? "burst" : regionTheme === "Fire" ? "rain" : "ambient"}
       />
 
       {isLowHp && battle.phase !== "victory" && battle.phase !== "defeat" && (
@@ -1480,8 +1486,9 @@ export default function BattleScreen({
         <div className="absolute inset-0 overflow-hidden">
           <div
             ref={playerSpriteRef}
-            className="absolute z-20"
+            className="absolute"
             style={{
+              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting") ? 55 : 20,
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               transform: "translateX(-50%)",
@@ -1618,8 +1625,9 @@ export default function BattleScreen({
             return (
               <div
                 key={member.id}
-                className={`absolute z-20 flex flex-col items-center ${isDead ? 'opacity-30' : ''}`}
+                className={`absolute flex flex-col items-center ${isDead ? 'opacity-30' : ''}`}
                 style={{
+                  zIndex: (partyAnimPhase === "runToEnemy" || partyAnimPhase === "attacking" || partyAnimPhase === "runBack") && isActiveParty ? 55 : 20,
                   left: `${posX}%`,
                   bottom: `${posY}%`,
                   transform: "translateX(-50%)",
@@ -1680,15 +1688,14 @@ export default function BattleScreen({
           <div
             className="absolute z-20 pointer-events-none transition-all duration-300"
             style={{
-              left: "50%",
-              top: "0px",
-              transform: "translateX(-50%)",
-              width: "98%",
-              maxWidth: "980px",
+              left: "8px",
+              top: "6px",
+              width: "auto",
+              maxWidth: "420px",
               opacity: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") ? 0 : 1,
             }}
           >
-            <div className="flex gap-1.5 items-stretch">
+            <div className="flex flex-col gap-1">
               {[
                 {
                   name: player.name,
@@ -1729,107 +1736,92 @@ export default function BattleScreen({
                 return (
                   <div
                     key={i}
-                    className={`flex-1 min-w-0 relative ${char.isDead ? "opacity-40" : ""}`}
+                    className={`relative ${char.isDead ? "opacity-40" : ""}`}
+                    style={{ width: "220px" }}
                   >
                     <div
-                      className="relative overflow-hidden rounded-b-lg"
+                      className="relative overflow-hidden rounded-lg"
                       style={{
                         background: char.isActive
-                          ? `linear-gradient(135deg, rgba(15,15,25,0.95) 0%, rgba(20,18,30,0.95) 100%)`
-                          : `linear-gradient(135deg, rgba(12,12,20,0.92) 0%, rgba(16,14,24,0.92) 100%)`,
-                        border: `1px solid ${char.isActive ? elColor + "50" : "rgba(80,70,100,0.25)"}`,
-                        borderTop: "none",
+                          ? `linear-gradient(135deg, rgba(10,10,18,0.93) 0%, rgba(18,16,28,0.93) 100%)`
+                          : `linear-gradient(135deg, rgba(8,8,14,0.88) 0%, rgba(14,12,22,0.88) 100%)`,
+                        border: `1px solid ${char.isActive ? elColor + "40" : "rgba(60,50,80,0.2)"}`,
                         boxShadow: char.isActive
-                          ? `0 4px 20px rgba(0,0,0,0.6), 0 0 15px ${elColor}20, inset 0 1px 0 rgba(255,255,255,0.04)`
-                          : "0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.03)",
+                          ? `0 2px 12px rgba(0,0,0,0.5), 0 0 8px ${elColor}15`
+                          : "0 2px 8px rgba(0,0,0,0.4)",
+                        backdropFilter: "blur(8px)",
                       }}
                     >
-                      <div className="px-3 py-2">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div
-                              className="w-1.5 h-6 rounded-full flex-shrink-0"
+                      <div className="px-2.5 py-1.5">
+                        <div className="flex items-center gap-1.5 mb-1">
+                          <div
+                            className="w-1 h-4 rounded-full flex-shrink-0"
+                            style={{
+                              background: elColor,
+                              boxShadow: `0 0 6px ${elColor}50`,
+                            }}
+                          />
+                          <span
+                            className="text-sm font-semibold truncate leading-none"
+                            style={{
+                              color: char.isActive ? "#f0eaff" : "#b8b0c8",
+                              textShadow: char.isActive ? `0 0 8px ${elColor}30` : "none",
+                            }}
+                            data-testid={char.isPlayer ? "text-player-battle-name" : undefined}
+                          >
+                            {char.name}
+                          </span>
+                          <span className={`text-[10px] leading-none ml-auto ${(battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp) ? "text-yellow-300 animate-pulse font-bold" : "text-slate-500"}`}>
+                            Lv.{(battle.phase === "victory" && showVictoryUI && char.isPlayer) ? xpBarLevel : char.level}
+                            {(battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp) ? "→" + (xpBarLevel + 1) : ""}
+                          </span>
+                          {char.buffs.length > 0 && char.buffs.map((buff, bi) => (
+                            <span
+                              key={bi}
+                              className="text-[8px] px-1 py-px rounded leading-none flex-shrink-0"
                               style={{
-                                background: `linear-gradient(180deg, ${elColor} 0%, ${elColor}80 100%)`,
-                                boxShadow: `0 0 8px ${elColor}60`,
-                              }}
-                            />
-                            <div>
-                              <span
-                                className="text-sm font-semibold tracking-wide truncate block max-w-[90px] leading-tight"
-                                style={{
-                                  color: char.isActive ? "#f0eaff" : "#c4bdd4",
-                                  textShadow: char.isActive ? `0 0 12px ${elColor}40` : "none",
-                                }}
-                                data-testid={char.isPlayer ? "text-player-battle-name" : undefined}
-                              >
-                                {char.name}
-                              </span>
-                              <span className={`text-xs leading-none ${(battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp) ? "text-yellow-300 animate-pulse font-bold" : "text-slate-500"}`}>
-                                Lv.{(battle.phase === "victory" && showVictoryUI && char.isPlayer) ? xpBarLevel : char.level}
-                                {(battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp) ? "→" + (xpBarLevel + 1) : ""}
-                              </span>
-                            </div>
-                          </div>
-                          {char.buffs.length > 0 && (
-                            <div className="flex gap-0.5 flex-wrap justify-end max-w-[60px]">
-                              {char.buffs.map((buff, bi) => (
-                                <span
-                                  key={bi}
-                                  className="text-[10px] px-1.5 py-0.5 rounded-full leading-none"
-                                  style={{
-                                    background: `${elColor}20`,
-                                    color: elColor,
-                                    border: `1px solid ${elColor}30`,
-                                  }}
-                                >
-                                  {buff.name}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-
-                        <div className="space-y-1.5">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-red-400 w-4 flex-shrink-0">HP</span>
-                            <div
-                              className="flex-1 h-3 rounded-full overflow-hidden relative"
-                              style={{
-                                background: "rgba(0,0,0,0.5)",
-                                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03)",
+                                background: `${elColor}20`,
+                                color: elColor,
+                                border: `1px solid ${elColor}25`,
                               }}
                             >
+                              {buff.name}
+                            </span>
+                          ))}
+                        </div>
+
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1">
+                            <div
+                              className="flex-1 h-2.5 rounded overflow-hidden relative"
+                              style={{ background: "rgba(0,0,0,0.5)" }}
+                            >
                               <div
-                                className="absolute inset-0 h-full rounded-full transition-all duration-[800ms] ease-out"
+                                className="absolute inset-0 h-full rounded transition-all duration-[800ms] ease-out"
                                 style={{
                                   width: `${Math.min(100, charHpPct + 3)}%`,
-                                  background: "rgba(220,50,50,0.2)",
+                                  background: "rgba(220,50,50,0.15)",
                                 }}
                               />
                               <div
-                                className={`h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden ${charLowHp ? "animate-pulse" : ""}`}
+                                className={`h-full rounded transition-all duration-500 ease-out relative overflow-hidden ${charLowHp ? "animate-pulse" : ""}`}
                                 style={{
                                   width: `${charHpPct}%`,
                                   background: charLowHp
-                                    ? "linear-gradient(180deg, #ef4444 0%, #dc2626 40%, #b91c1c 100%)"
+                                    ? "linear-gradient(180deg, #ef4444 0%, #dc2626 100%)"
                                     : charHpPct > 50
-                                      ? "linear-gradient(180deg, #4ade80 0%, #22c55e 40%, #16a34a 100%)"
-                                      : "linear-gradient(180deg, #fbbf24 0%, #f59e0b 40%, #d97706 100%)",
-                                  boxShadow: charLowHp
-                                    ? "0 0 10px rgba(239,68,68,0.5)"
-                                    : charHpPct > 50
-                                      ? "0 0 6px rgba(34,197,94,0.3)"
-                                      : "0 0 6px rgba(245,158,11,0.3)",
+                                      ? "linear-gradient(180deg, #4ade80 0%, #16a34a 100%)"
+                                      : "linear-gradient(180deg, #fbbf24 0%, #d97706 100%)",
+                                  boxShadow: charLowHp ? "0 0 6px rgba(239,68,68,0.4)" : "none",
                                 }}
                               >
                                 <div className="absolute inset-0" style={{
-                                  background: "linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)",
+                                  background: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 60%)",
                                 }} />
                               </div>
                             </div>
                             <span
-                              className="text-xs min-w-[44px] text-right font-mono tabular-nums"
+                              className="text-[10px] min-w-[38px] text-right font-mono tabular-nums"
                               style={{ color: charLowHp ? "#fca5a5" : "#a8a0b8" }}
                               data-testid={char.isPlayer ? "text-player-hp" : undefined}
                             >
@@ -1837,30 +1829,25 @@ export default function BattleScreen({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-blue-400 w-4 flex-shrink-0">MP</span>
+                          <div className="flex items-center gap-1">
                             <div
-                              className="flex-1 h-2 rounded-full overflow-hidden relative"
-                              style={{
-                                background: "rgba(0,0,0,0.5)",
-                                boxShadow: "inset 0 2px 4px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.03)",
-                              }}
+                              className="flex-1 h-1.5 rounded overflow-hidden relative"
+                              style={{ background: "rgba(0,0,0,0.4)" }}
                             >
                               <div
-                                className="h-full rounded-full transition-all duration-500 ease-out relative overflow-hidden"
+                                className="h-full rounded transition-all duration-500 ease-out relative overflow-hidden"
                                 style={{
                                   width: `${charMpPct}%`,
-                                  background: "linear-gradient(180deg, #60a5fa 0%, #3b82f6 40%, #2563eb 100%)",
-                                  boxShadow: "0 0 6px rgba(59,130,246,0.3)",
+                                  background: "linear-gradient(180deg, #60a5fa 0%, #2563eb 100%)",
                                 }}
                               >
                                 <div className="absolute inset-0" style={{
-                                  background: "linear-gradient(180deg, rgba(255,255,255,0.25) 0%, transparent 50%, rgba(0,0,0,0.1) 100%)",
+                                  background: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, transparent 60%)",
                                 }} />
                               </div>
                             </div>
                             <span
-                              className="text-xs min-w-[44px] text-right font-mono tabular-nums"
+                              className="text-[10px] min-w-[38px] text-right font-mono tabular-nums"
                               style={{ color: "#7ca0c4" }}
                               data-testid={char.isPlayer ? "text-player-mp" : undefined}
                             >
@@ -1868,36 +1855,28 @@ export default function BattleScreen({
                             </span>
                           </div>
 
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs font-bold text-amber-400 w-4 flex-shrink-0">XP</span>
+                          <div className="flex items-center gap-1">
                             <div
-                              className="flex-1 h-1.5 rounded-full overflow-hidden relative"
-                              style={{
-                                background: "rgba(0,0,0,0.4)",
-                                boxShadow: "inset 0 1px 2px rgba(0,0,0,0.3)",
-                              }}
+                              className="flex-1 h-1 rounded overflow-hidden relative"
+                              style={{ background: "rgba(0,0,0,0.3)" }}
                             >
                               <div
-                                className="h-full rounded-full relative overflow-hidden"
+                                className="h-full rounded relative overflow-hidden"
                                 style={{
                                   width: `${(battle.phase === "victory" && showVictoryUI && char.isPlayer) ? xpBarPercent : charXpPct}%`,
                                   background: (battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp)
-                                    ? "linear-gradient(180deg, #fde047 0%, #facc15 40%, #eab308 100%)"
-                                    : "linear-gradient(180deg, #fbbf24 0%, #f59e0b 40%, #d97706 100%)",
+                                    ? "linear-gradient(180deg, #fde047 0%, #eab308 100%)"
+                                    : "linear-gradient(180deg, #fbbf24 0%, #d97706 100%)",
                                   boxShadow: (battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp)
-                                    ? "0 0 12px rgba(250,204,21,0.7)"
-                                    : "0 0 4px rgba(251,191,36,0.3)",
+                                    ? "0 0 8px rgba(250,204,21,0.6)"
+                                    : "none",
                                   transition: (battle.phase === "victory" && showVictoryUI && char.isPlayer)
                                     ? (xpBarPhase === "animating" ? "width 0.7s ease-out" : "none")
                                     : "width 0.5s ease-out",
                                 }}
-                              >
-                                <div className="absolute inset-0" style={{
-                                  background: "linear-gradient(180deg, rgba(255,255,255,0.3) 0%, transparent 50%)",
-                                }} />
-                              </div>
+                              />
                             </div>
-                            <span className="text-xs min-w-[44px] text-right font-mono tabular-nums text-amber-500/60">
+                            <span className="text-[9px] min-w-[38px] text-right font-mono tabular-nums text-amber-500/50">
                               {char.xp}/{char.xpToNext}
                             </span>
                           </div>
@@ -1906,10 +1885,10 @@ export default function BattleScreen({
 
                       {char.isActive && (
                         <div
-                          className="absolute bottom-0 left-2 right-2 h-[2px] rounded-full"
+                          className="absolute bottom-0 left-1 right-1 h-px rounded-full"
                           style={{
-                            background: `linear-gradient(90deg, transparent 0%, ${elColor} 20%, ${elColor} 80%, transparent 100%)`,
-                            boxShadow: `0 0 10px ${elColor}80, 0 0 20px ${elColor}40`,
+                            background: `linear-gradient(90deg, transparent 0%, ${elColor} 30%, ${elColor} 70%, transparent 100%)`,
+                            boxShadow: `0 0 6px ${elColor}60`,
                           }}
                         />
                       )}
@@ -1966,9 +1945,9 @@ export default function BattleScreen({
                   </div>
                 )}
 
-                <div className="flex items-center justify-center gap-1.5 mb-1 z-10" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                  <span className="text-[10px] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ color: ELEMENT_COLORS[enemy.element], imageRendering: "pixelated" }}>Lv{enemy.level}</span>
-                  <span className="text-xs text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" data-testid={`text-enemy-name-${idx}`} style={{ imageRendering: "pixelated" }}>{enemy.name}</span>
+                <div className="flex items-center justify-center gap-1.5 mb-1 invisible" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                  <span className="text-[10px]">Lv{enemy.level}</span>
+                  <span className="text-xs" data-testid={`text-enemy-name-${idx}`}>{enemy.name}</span>
                 </div>
 
                 <div className={`relative ${isDead ? "" : "animate-[idleBob_2.8s_ease-in-out_infinite]"}`} style={{ animationDelay: `${idx * 0.5}s` }}>
@@ -2224,6 +2203,33 @@ export default function BattleScreen({
                 </div>
                 </div>
               </button>
+              </div>
+            );
+          })}
+
+          {battle.enemies.map((enemy, idx) => {
+            const isDead = enemy.currentHp <= 0;
+            const pos = ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
+            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
+            const labelLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
+            const labelBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
+            if (isDead) return null;
+            return (
+              <div
+                key={`label-${idx}`}
+                className="absolute pointer-events-none"
+                style={{
+                  left: `${labelLeft}%`,
+                  bottom: `${labelBottom + 12}%`,
+                  transform: "translateX(-50%)",
+                  zIndex: 60,
+                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
+                }}
+              >
+                <div className="flex items-center justify-center gap-1.5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                  <span className="text-[10px] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ color: ELEMENT_COLORS[enemy.element], imageRendering: "pixelated" }}>Lv{enemy.level}</span>
+                  <span className="text-xs text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ imageRendering: "pixelated" }}>{enemy.name}</span>
+                </div>
               </div>
             );
           })}
