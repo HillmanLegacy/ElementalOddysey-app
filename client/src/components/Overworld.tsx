@@ -260,18 +260,18 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   };
 
   const handleNodeClick = (node: OverworldNode) => {
-    if (!canAccessNode(node) || isMoving) return;
-
+    if (isMoving) return;
     if (node.id === player.currentNode) {
       triggerNodeAction(node);
-      return;
     }
+  };
 
-    const targetPos = getNodePosition(node);
+  const handleArrowClick = (targetNode: OverworldNode) => {
+    if (isMoving || hutMenuOpen) return;
+    const targetPos = getNodePosition(targetNode);
     setFacingRight(targetPos.x > charPos.x);
-
     moveCharacterTo(targetPos, () => {
-      onMoveToNode(node.id);
+      onMoveToNode(targetNode.id);
     });
   };
 
@@ -490,17 +490,18 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         return (
           <button
             key={node.id}
-            className={`absolute transform -translate-x-1/2 -translate-y-1/2 group transition-transform duration-200 ${accessible && !isMoving ? "cursor-pointer" : "cursor-not-allowed"}`}
+            className={`absolute transform -translate-x-1/2 -translate-y-1/2 group transition-transform duration-200 ${isCurrent && !isMoving ? "cursor-pointer" : "cursor-default"}`}
             style={{
               left: `${node.x}%`,
               top: `${node.y}%`,
               zIndex: Math.floor(node.y) + 20,
-              transform: `translate(-50%, -50%) ${isHovered && accessible ? "scale(1.15)" : "scale(1)"}`,
+              transform: `translate(-50%, -50%) ${isHovered && isCurrent ? "scale(1.15)" : "scale(1)"}`,
+              pointerEvents: isCurrent ? "auto" : "none",
             }}
             onClick={() => handleNodeClick(node)}
             onMouseEnter={() => setHoveredNode(node.id)}
             onMouseLeave={() => setHoveredNode(null)}
-            disabled={!accessible || isMoving}
+            disabled={!isCurrent || isMoving}
             data-testid={`button-node-${node.id}`}
           >
             {node.type === "boss" ? (
@@ -632,6 +633,56 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           </button>
         );
       })}
+
+      {!isMoving && !hutMenuOpen && (() => {
+        const currentNode = region.nodes.find(n => n.id === player.currentNode);
+        if (!currentNode) return null;
+        return currentNode.connections.map(connId => {
+          const targetNode = region.nodes.find(n => n.id === connId);
+          if (!targetNode || !canAccessNode(targetNode)) return null;
+          const dx = targetNode.x - currentNode.x;
+          const dy = targetNode.y - currentNode.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          const ndx = dx / dist;
+          const ndy = dy / dist;
+          const arrowDist = 5.5;
+          const arrowX = charPos.x + ndx * arrowDist;
+          const arrowY = charPos.y + ndy * arrowDist;
+          const angle = Math.atan2(dy, dx) * (180 / Math.PI);
+          return (
+            <button
+              key={`arrow-${connId}`}
+              className="absolute transform -translate-x-1/2 -translate-y-1/2"
+              style={{
+                left: `${arrowX}%`,
+                top: `${arrowY}%`,
+                zIndex: 80,
+              }}
+              onClick={() => handleArrowClick(targetNode)}
+              data-testid={`arrow-to-node-${connId}`}
+            >
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center"
+                style={{
+                  backgroundColor: "rgba(0, 0, 0, 0.6)",
+                  border: `2px solid ${elemColor}`,
+                  boxShadow: `0 0 12px ${elemColor}80, 0 0 24px ${elemColor}40`,
+                  animation: "pulse 2s ease-in-out infinite",
+                }}
+              >
+                <ChevronRight
+                  className="w-5 h-5"
+                  style={{
+                    color: elemColor,
+                    transform: `rotate(${angle}deg)`,
+                    filter: `drop-shadow(0 0 4px ${elemColor})`,
+                  }}
+                />
+              </div>
+            </button>
+          );
+        });
+      })()}
 
       {(() => {
         const spriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;

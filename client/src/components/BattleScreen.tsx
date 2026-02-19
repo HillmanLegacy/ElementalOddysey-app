@@ -2199,7 +2199,7 @@ export default function BattleScreen({
 
                 <div className="w-full max-w-[80px] mt-1 z-10">
                   <Progress value={enemyHpPct} className="h-1.5 bg-black/60" />
-                  <p className="text-xs text-center text-red-300/50 mt-0.5" data-testid={`text-enemy-hp-${idx}`}>{enemy.currentHp}/{enemy.stats.hp}</p>
+                  <p className="text-[10px] text-center text-white mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" data-testid={`text-enemy-hp-${idx}`} style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" }}>{enemy.currentHp}/{enemy.stats.hp}</p>
                 </div>
                 </div>
               </button>
@@ -2364,151 +2364,172 @@ export default function BattleScreen({
         )}
 
         <div
-          className="absolute bottom-0 left-0 right-0 z-30 px-3 pb-2 bg-gradient-to-t from-black/80 via-black/50 to-transparent pt-4 transition-all duration-300"
+          className="absolute bottom-0 left-0 right-0 z-30 transition-all duration-300"
           style={{
             opacity: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") && battle.phase !== "victory" && battle.phase !== "defeat" ? 0 : 1,
             transform: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") && battle.phase !== "victory" && battle.phase !== "defeat" ? "translateY(20px)" : "translateY(0)",
             pointerEvents: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") ? "none" : "auto",
           }}
         >
+          <div
+            className="mx-2 mb-2 rounded-lg overflow-hidden"
+            style={{
+              background: "linear-gradient(180deg, rgba(15,10,30,0.85) 0%, rgba(10,5,25,0.95) 100%)",
+              border: "2px solid rgba(120,80,200,0.3)",
+              boxShadow: "0 0 20px rgba(80,40,160,0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
+              imageRendering: "pixelated",
+            }}
+          >
+            <div className="px-3 py-0.5 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(120,80,200,0.15)", background: "rgba(120,80,200,0.08)" }}>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(120,80,200,0.3), transparent)" }} />
+              <span className="text-[9px] tracking-[0.2em] uppercase" style={{ fontFamily: "'Press Start 2P', cursive", color: "rgba(180,160,220,0.5)" }}>
+                {battle.phase === "victory" ? "Victory" : battle.phase === "defeat" ? "Defeat" : battle.phase === "partyTurn" ? "Party" : "Command"}
+              </span>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(120,80,200,0.3), transparent)" }} />
+            </div>
+
+            <div className="px-3 py-2">
 
           {battle.phase === "victory" && showVictoryUI && (
-            <div className="text-center py-3 animate-[fadeIn_0.8s_ease-out]">
-              <Trophy className="w-10 h-10 text-yellow-400 mx-auto mb-1 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]" />
-              <h2 className="text-xl font-bold text-yellow-300 mb-1" data-testid="text-victory">Victory!</h2>
+            <div className="text-center py-2 animate-[fadeIn_0.8s_ease-out]">
+              <Trophy className="w-8 h-8 text-yellow-400 mx-auto mb-1 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]" />
+              <h2 className="text-lg font-bold text-yellow-300 mb-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "14px" }} data-testid="text-victory">Victory!</h2>
 
               <div className="mx-auto max-w-[220px] mb-2">
-                <div className="flex items-center justify-center gap-3 text-sm text-purple-300/80 mb-1">
-                  <span>+{battle.enemies.reduce((s, e) => s + e.xpReward, 0)} XP</span>
-                  <span className="text-yellow-400/60">+{battle.enemies.reduce((s, e) => s + e.goldReward, 0)} Gold</span>
+                <div className="flex items-center justify-center gap-3 text-xs mb-1" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                  <span style={{ color: "#c084fc" }}>+{battle.enemies.reduce((s, e) => s + e.xpReward, 0)} XP</span>
+                  <span style={{ color: "#facc15" }}>+{battle.enemies.reduce((s, e) => s + e.goldReward, 0)} G</span>
                 </div>
                 {xpBarLevelUp && (
-                  <div className="text-center text-yellow-300 font-bold text-sm animate-pulse mb-1">
+                  <div className="text-center font-bold animate-pulse mb-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "10px", color: "#fbbf24" }}>
                     Level Up!
                   </div>
                 )}
               </div>
 
               {xpBarPhase === "done" && (
-                <Button
+                <button
                   onClick={() => onEndBattle(true)}
-                  className="bg-yellow-600/80 text-white animate-[fadeIn_0.4s_ease-out]"
+                  className="px-5 py-2 rounded animate-[fadeIn_0.4s_ease-out] transition-all hover:brightness-125"
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "10px",
+                    color: "#fff",
+                    background: "linear-gradient(180deg, rgba(202,138,4,0.8) 0%, rgba(161,98,7,0.9) 100%)",
+                    border: "2px solid rgba(250,204,21,0.5)",
+                    boxShadow: "0 0 12px rgba(250,204,21,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
+                  }}
                   data-testid="button-claim-victory"
                 >
                   Claim Rewards
-                </Button>
+                </button>
               )}
             </div>
           )}
 
           {battle.phase === "defeat" && (
-            <div className="text-center py-3 animate-[fadeIn_0.5s_ease-out]">
-              <Skull className="w-10 h-10 text-red-400 mx-auto mb-1" />
-              <h2 className="text-xl font-bold text-red-300 mb-1" data-testid="text-defeat">Defeated...</h2>
-              <p className="text-sm text-purple-300/70 mb-2">Your journey continues...</p>
-              <Button onClick={() => onEndBattle(false)} variant="outline" className="border-red-500/30 text-red-300" data-testid="button-continue-defeat">
+            <div className="text-center py-2 animate-[fadeIn_0.5s_ease-out]">
+              <Skull className="w-8 h-8 text-red-400 mx-auto mb-1" />
+              <h2 className="text-lg font-bold text-red-300 mb-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "14px" }} data-testid="text-defeat">Defeated...</h2>
+              <p className="text-xs mb-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(180,160,220,0.5)" }}>Your journey continues...</p>
+              <button
+                onClick={() => onEndBattle(false)}
+                className="px-5 py-2 rounded transition-all hover:brightness-125"
+                style={{
+                  fontFamily: "'Press Start 2P', cursive",
+                  fontSize: "10px",
+                  color: "#fca5a5",
+                  background: "linear-gradient(180deg, rgba(127,29,29,0.6) 0%, rgba(69,10,10,0.8) 100%)",
+                  border: "2px solid rgba(239,68,68,0.3)",
+                  boxShadow: "0 0 12px rgba(239,68,68,0.15)",
+                }}
+                data-testid="button-continue-defeat"
+              >
                 Return to Map
-              </Button>
+              </button>
             </div>
           )}
 
           {battle.phase === "playerTurn" && !showItems && !showSpells && !isInputBlocked && (
             <div className="grid grid-cols-4 gap-2 mb-1">
-              <Button
-                onClick={() => {
-                  setSelectedAction(selectedAction === "attack" ? null : "attack");
-                  setSelectedSpell(null);
-                }}
-                className={`flex flex-col items-center gap-1 h-auto py-2.5 ${
-                  selectedAction === "attack"
-                    ? "bg-red-600/80 text-white ring-2 ring-red-400/50"
-                    : "bg-red-900/30 text-red-300 border border-red-500/20"
-                }`}
-                data-testid="button-action-attack"
-              >
-                <Swords className="w-5 h-5" />
-                <span className="text-sm">Attack</span>
-              </Button>
-              <Button
-                onClick={handleDefend}
-                className="flex flex-col items-center gap-1 h-auto py-2.5 bg-blue-900/30 text-blue-300 border border-blue-500/20"
-                data-testid="button-action-defend"
-              >
-                <Shield className="w-5 h-5" />
-                <span className="text-sm">Defend</span>
-              </Button>
-              <Button
-                onClick={() => {
-                  setShowSpells(true);
-                  setSelectedAction(null);
-                  setSelectedSpell(null);
-                }}
-                className="flex flex-col items-center gap-1 h-auto py-2.5 bg-purple-900/30 text-purple-300 border border-purple-500/20"
-                data-testid="button-action-magic"
-              >
-                <Sparkles className="w-5 h-5" />
-                <span className="text-sm">Magic</span>
-              </Button>
-              <Button
-                onClick={() => setShowItems(true)}
-                className="flex flex-col items-center gap-1 h-auto py-2.5 bg-green-900/30 text-green-300 border border-green-500/20"
-                disabled={consumables.length === 0}
-                data-testid="button-action-item"
-              >
-                <Package className="w-5 h-5" />
-                <span className="text-sm">Item</span>
-              </Button>
+              {[
+                { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
+                { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", activeColor: "#2563eb", onClick: handleDefend, active: false, testId: "button-action-defend" },
+                { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); }, active: false, testId: "button-action-magic" },
+                { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => setShowItems(true), active: false, disabled: consumables.length === 0, testId: "button-action-item" },
+              ].map(btn => (
+                <button
+                  key={btn.key}
+                  onClick={btn.onClick}
+                  disabled={btn.disabled}
+                  className="flex flex-col items-center gap-1 py-2 rounded transition-all duration-150 hover:brightness-125 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                  style={{
+                    background: btn.active
+                      ? `linear-gradient(180deg, ${btn.activeColor}cc 0%, ${btn.activeColor}99 100%)`
+                      : `linear-gradient(180deg, ${btn.color}18 0%, ${btn.color}08 100%)`,
+                    border: `2px solid ${btn.active ? btn.color + "90" : btn.color + "30"}`,
+                    boxShadow: btn.active ? `0 0 15px ${btn.color}40, inset 0 1px 0 rgba(255,255,255,0.1)` : `inset 0 1px 0 rgba(255,255,255,0.03)`,
+                    color: btn.active ? "#fff" : btn.color,
+                  }}
+                  data-testid={btn.testId}
+                >
+                  {btn.icon}
+                  <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", letterSpacing: "0.05em" }}>{btn.label}</span>
+                </button>
+              ))}
             </div>
           )}
 
           {battle.phase === "playerTurn" && selectedAction === "attack" && !isInputBlocked && (
-            <p className="text-center text-sm text-yellow-300/70 mb-1 animate-pulse" data-testid="text-select-target">
-              Select a target to attack
+            <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "rgba(253,224,71,0.7)" }} data-testid="text-select-target">
+              Select a target
             </p>
           )}
 
           {battle.phase === "playerTurn" && selectedAction === "magic" && selectedSpell && !isInputBlocked && (
-            <p className="text-center text-sm text-yellow-300/70 mb-1 animate-pulse" data-testid="text-select-spell-target">
-              Select a target for {selectedSpell.name}
+            <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "rgba(253,224,71,0.7)" }} data-testid="text-select-spell-target">
+              Target for {selectedSpell.name}
             </p>
           )}
 
           {battle.phase === "playerTurn" && showSpells && !isInputBlocked && (
             <div className="space-y-1 mb-1">
-              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                <span className="text-sm text-purple-300 flex items-center gap-1">
-                  <Sparkles className="w-4 h-4" /> Spells
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c084fc" }}>
+                  <Sparkles className="w-3.5 h-3.5" /> Spells
                 </span>
-                <Button size="sm" variant="ghost" className="text-sm text-purple-400" onClick={() => setShowSpells(false)} data-testid="button-close-spells">
-                  <ArrowLeft className="w-4 h-4 mr-1" /> Back
-                </Button>
+                <button className="flex items-center gap-1 px-2 py-1 rounded transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setShowSpells(false)} data-testid="button-close-spells">
+                  <ArrowLeft className="w-3 h-3" /> Back
+                </button>
               </div>
               {spells.length === 0 ? (
-                <p className="text-sm text-purple-400/50 text-center py-2">No spells learned</p>
+                <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No spells learned</p>
               ) : (
-                <div className="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto">
+                <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto">
                   {spells.map(spell => {
                     const canCast = battle.playerMp >= spell.mpCost;
                     return (
-                      <Button
+                      <button
                         key={spell.id}
-                        variant="ghost"
-                        className={`w-full justify-start text-sm h-auto py-1.5 px-2 ${canCast ? "text-purple-200" : "text-purple-500/40"}`}
+                        className="w-full text-left py-1.5 px-2 rounded transition-all hover:brightness-125 disabled:opacity-30"
+                        style={{
+                          background: canCast ? "rgba(139,92,246,0.08)" : "rgba(30,20,50,0.3)",
+                          border: `1px solid ${canCast ? "rgba(139,92,246,0.2)" : "rgba(60,40,80,0.2)"}`,
+                          color: canCast ? "#e9d5ff" : "rgba(120,80,160,0.4)",
+                        }}
                         onClick={() => handleSpellSelect(spell)}
                         disabled={!canCast}
                         data-testid={`button-spell-${spell.id}`}
                       >
-                        <div className="flex flex-col items-start w-full">
-                          <div className="flex items-center gap-1 w-full justify-between">
-                            <span className="font-medium flex items-center gap-1">
-                              <Zap className="w-3 h-3" style={{ color: spell.element ? ELEMENT_COLORS[spell.element] : "#a855f7" }} />
-                              {spell.name}
-                            </span>
-                            <span className="text-xs text-blue-300">{spell.mpCost} MP</span>
-                          </div>
-                          <span className="text-xs text-purple-400/60">{spell.description}</span>
+                        <div className="flex items-center gap-1 justify-between">
+                          <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px" }}>
+                            <Zap className="w-3 h-3 flex-shrink-0" style={{ color: spell.element ? ELEMENT_COLORS[spell.element] : "#a855f7" }} />
+                            {spell.name}
+                          </span>
+                          <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "7px", color: "#93c5fd" }}>{spell.mpCost}MP</span>
                         </div>
-                      </Button>
+                        <span className="block mt-0.5 text-xs" style={{ color: "rgba(168,130,247,0.45)", fontSize: "10px" }}>{spell.description}</span>
+                      </button>
                     );
                   })}
                 </div>
@@ -2518,26 +2539,31 @@ export default function BattleScreen({
 
           {battle.phase === "playerTurn" && showItems && !isInputBlocked && (
             <div className="space-y-1 mb-1">
-              <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                <span className="text-sm text-purple-300">Items</span>
-                <Button size="sm" variant="ghost" className="text-sm text-purple-400" onClick={() => setShowItems(false)} data-testid="button-close-items">
-                  <ArrowLeft className="w-4 h-4 mr-1" /> Back
-                </Button>
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#86efac" }}>Items</span>
+                <button className="flex items-center gap-1 px-2 py-1 rounded transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setShowItems(false)} data-testid="button-close-items">
+                  <ArrowLeft className="w-3 h-3" /> Back
+                </button>
               </div>
               {consumables.length === 0 ? (
-                <p className="text-sm text-purple-400/50 text-center py-2">No items</p>
+                <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No items</p>
               ) : (
                 groupConsumables(consumables).map(({ item, count, ids }) => (
-                  <Button
+                  <button
                     key={item.name}
-                    variant="ghost"
-                    className="w-full justify-start text-sm text-purple-200 h-auto py-1.5"
+                    className="w-full flex items-center gap-2 text-left py-1.5 px-2 rounded transition-all hover:brightness-125"
+                    style={{
+                      background: "rgba(34,197,94,0.06)",
+                      border: "1px solid rgba(34,197,94,0.15)",
+                      color: "#bbf7d0",
+                    }}
                     onClick={() => { onUseItem(ids[0]); setShowItems(false); }}
                     data-testid={`button-use-item-${item.id}`}
                   >
-                    <Heart className="w-3 h-3 mr-2 text-red-400" />
-                    {item.name} x{count} - {item.description}
-                  </Button>
+                    <Heart className="w-3 h-3 text-red-400 flex-shrink-0" />
+                    <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px" }}>{item.name} x{count}</span>
+                    <span className="text-xs ml-auto" style={{ color: "rgba(134,239,172,0.5)", fontSize: "10px" }}>{item.description}</span>
+                  </button>
                 ))
               )}
             </div>
@@ -2550,67 +2576,60 @@ export default function BattleScreen({
             const consumables = player.inventory.filter(i => i.type === "consumable");
             return (
               <div className="animate-[fadeIn_0.2s_ease-out]">
-                <p className="text-sm text-purple-300/50 text-center mb-1.5" style={{ color: ELEMENT_COLORS[activeMember.element] }}>
+                <p className="text-center mb-1.5" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: ELEMENT_COLORS[activeMember.element] }}>
                   {activeMember.name}'s Turn
                 </p>
                 {partyAction === "menu" && (
                   <div className="grid grid-cols-4 gap-2 mb-1">
-                    <Button
-                      onClick={() => setPartyAction("selectTarget")}
-                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-red-900/30 text-red-300 border border-red-500/20"
-                    >
-                      <Swords className="w-5 h-5" />
-                      <span className="text-sm">Attack</span>
-                    </Button>
-                    <Button
-                      onClick={() => {
-                        onPartyMemberDefend(battle.activePartyIndex);
-                        setTimeout(() => onAdvancePartyTurn(), 400);
-                      }}
-                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-blue-900/30 text-blue-300 border border-blue-500/20"
-                    >
-                      <Shield className="w-5 h-5" />
-                      <span className="text-sm">Defend</span>
-                    </Button>
-                    <Button
-                      onClick={() => setPartyAction("showSpells")}
-                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-purple-900/30 text-purple-300 border border-purple-500/20"
-                      disabled={partySpells.length === 0}
-                    >
-                      <Sparkles className="w-5 h-5" />
-                      <span className="text-sm">Magic</span>
-                    </Button>
-                    <Button
-                      onClick={() => setPartyAction("showItems")}
-                      className="flex flex-col items-center gap-1 h-auto py-2.5 bg-green-900/30 text-green-300 border border-green-500/20"
-                      disabled={consumables.length === 0}
-                    >
-                      <Package className="w-5 h-5" />
-                      <span className="text-sm">Item</span>
-                    </Button>
+                    {[
+                      { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => setPartyAction("selectTarget") },
+                      { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", onClick: () => { onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 400); } },
+                      { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", onClick: () => setPartyAction("showSpells"), disabled: partySpells.length === 0 },
+                      { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", onClick: () => setPartyAction("showItems"), disabled: consumables.length === 0 },
+                    ].map(btn => (
+                      <button
+                        key={btn.key}
+                        onClick={btn.onClick}
+                        disabled={btn.disabled}
+                        className="flex flex-col items-center gap-1 py-2 rounded transition-all duration-150 hover:brightness-125 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                        style={{
+                          background: `linear-gradient(180deg, ${btn.color}18 0%, ${btn.color}08 100%)`,
+                          border: `2px solid ${btn.color}30`,
+                          boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+                          color: btn.color,
+                        }}
+                      >
+                        {btn.icon}
+                        <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", letterSpacing: "0.05em" }}>{btn.label}</span>
+                      </button>
+                    ))}
                   </div>
                 )}
                 {partyAction === "showSpells" && (
                   <div className="space-y-1 mb-1">
-                    <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                      <span className="text-sm text-purple-300 flex items-center gap-1">
-                        <Sparkles className="w-4 h-4" /> Spells
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c084fc" }}>
+                        <Sparkles className="w-3.5 h-3.5" /> Spells
                       </span>
-                      <Button size="sm" variant="ghost" className="text-sm text-purple-400" onClick={() => setPartyAction("menu")}>
-                        <ArrowLeft className="w-3 h-3 mr-1" /> Back
-                      </Button>
+                      <button className="flex items-center gap-1 px-2 py-1 rounded transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setPartyAction("menu")}>
+                        <ArrowLeft className="w-3 h-3" /> Back
+                      </button>
                     </div>
                     {partySpells.length === 0 ? (
-                      <p className="text-sm text-purple-400/50 text-center py-2">No spells learned</p>
+                      <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No spells learned</p>
                     ) : (
-                      <div className="grid grid-cols-2 gap-1 max-h-32 overflow-y-auto">
+                      <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto">
                         {partySpells.map(spell => {
                           const canCast = activeMember.currentMp >= spell.mpCost;
                           return (
-                            <Button
+                            <button
                               key={spell.id}
-                              variant="ghost"
-                              className={`w-full justify-start text-sm h-auto py-1.5 px-2 ${canCast ? "text-purple-200" : "text-purple-500/40"}`}
+                              className="w-full text-left py-1.5 px-2 rounded transition-all hover:brightness-125 disabled:opacity-30"
+                              style={{
+                                background: canCast ? "rgba(139,92,246,0.08)" : "rgba(30,20,50,0.3)",
+                                border: `1px solid ${canCast ? "rgba(139,92,246,0.2)" : "rgba(60,40,80,0.2)"}`,
+                                color: canCast ? "#e9d5ff" : "rgba(120,80,160,0.4)",
+                              }}
                               disabled={!canCast}
                               onClick={() => {
                                 if (spell.targetType === "enemy") {
@@ -2629,17 +2648,15 @@ export default function BattleScreen({
                                 }
                               }}
                             >
-                              <div className="flex flex-col items-start w-full">
-                                <div className="flex items-center gap-1 w-full justify-between">
-                                  <span className="font-medium flex items-center gap-1">
-                                    <Zap className="w-3 h-3" style={{ color: spell.element ? ELEMENT_COLORS[spell.element] : "#a855f7" }} />
-                                    {spell.name}
-                                  </span>
-                                  <span className="text-xs text-blue-300">{spell.mpCost} MP</span>
-                                </div>
-                                <span className="text-xs text-purple-400/60">{spell.description}</span>
+                              <div className="flex items-center gap-1 justify-between">
+                                <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px" }}>
+                                  <Zap className="w-3 h-3 flex-shrink-0" style={{ color: spell.element ? ELEMENT_COLORS[spell.element] : "#a855f7" }} />
+                                  {spell.name}
+                                </span>
+                                <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "7px", color: "#93c5fd" }}>{spell.mpCost}MP</span>
                               </div>
-                            </Button>
+                              <span className="block mt-0.5" style={{ color: "rgba(168,130,247,0.45)", fontSize: "10px" }}>{spell.description}</span>
+                            </button>
                           );
                         })}
                       </div>
@@ -2648,46 +2665,50 @@ export default function BattleScreen({
                 )}
                 {partyAction === "showItems" && (
                   <div className="space-y-1 mb-1">
-                    <div className="flex items-center justify-between gap-2 mb-1 flex-wrap">
-                      <span className="text-sm text-purple-300">Items</span>
-                      <Button size="sm" variant="ghost" className="text-sm text-purple-400" onClick={() => setPartyAction("menu")}>
-                        <ArrowLeft className="w-4 h-4 mr-1" /> Back
-                      </Button>
+                    <div className="flex items-center justify-between gap-2 mb-1">
+                      <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#86efac" }}>Items</span>
+                      <button className="flex items-center gap-1 px-2 py-1 rounded transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setPartyAction("menu")}>
+                        <ArrowLeft className="w-3 h-3" /> Back
+                      </button>
                     </div>
                     {consumables.length === 0 ? (
-                      <p className="text-sm text-purple-400/50 text-center py-2">No items</p>
+                      <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No items</p>
                     ) : (
                       groupConsumables(consumables).map(({ item, count, ids }) => (
-                        <Button
+                        <button
                           key={item.name}
-                          variant="ghost"
-                          className="w-full justify-start text-sm text-purple-200 h-auto py-1.5"
+                          className="w-full flex items-center gap-2 text-left py-1.5 px-2 rounded transition-all hover:brightness-125"
+                          style={{
+                            background: "rgba(34,197,94,0.06)",
+                            border: "1px solid rgba(34,197,94,0.15)",
+                            color: "#bbf7d0",
+                          }}
                           onClick={() => {
                             onPartyMemberUseItem(battle.activePartyIndex, ids[0]);
                             setPartyAction("menu");
                             setTimeout(() => onAdvancePartyTurn(), 400);
                           }}
                         >
-                          <Heart className="w-3 h-3 mr-2 text-red-400" />
-                          {item.name} x{count} - {item.description}
-                        </Button>
+                          <Heart className="w-3 h-3 text-red-400 flex-shrink-0" />
+                          <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px" }}>{item.name} x{count}</span>
+                          <span className="ml-auto" style={{ color: "rgba(134,239,172,0.5)", fontSize: "10px" }}>{item.description}</span>
+                        </button>
                       ))
                     )}
                   </div>
                 )}
                 {(partyAction === "selectTarget" || partyAction === "selectMagicTarget") && (
                   <div className="text-center">
-                    <p className="text-center text-sm text-yellow-300/70 mb-1 animate-pulse">
-                      {partyAction === "selectMagicTarget" ? `Select a target for ${partySelectedSpell?.name}` : "Select a target to attack"}
+                    <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "rgba(253,224,71,0.7)" }}>
+                      {partyAction === "selectMagicTarget" ? `Target for ${partySelectedSpell?.name}` : "Select a target"}
                     </p>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-sm text-purple-400/60 mt-1"
+                    <button
+                      className="flex items-center gap-1 px-2 py-1 rounded mx-auto mt-1 transition-all hover:brightness-125"
+                      style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}
                       onClick={() => { setPartyAction("menu"); setPartySelectedSpell(null); }}
                     >
-                      <ArrowLeft className="w-4 h-4 mr-1" /> Back
-                    </Button>
+                      <ArrowLeft className="w-3 h-3" /> Back
+                    </button>
                   </div>
                 )}
               </div>
@@ -2696,11 +2717,14 @@ export default function BattleScreen({
 
           {(battle.phase === "enemyTurn" || (battle.phase === "animating" && animPhase !== "idle")) && battle.phase !== "victory" && battle.phase !== "defeat" && (
             <div className="text-center py-2">
-              <p className="text-sm text-purple-300/60 animate-pulse">
-                {battle.phase === "enemyTurn" ? "Enemies attacking..." : ""}
+              <p className="animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "rgba(180,160,220,0.5)" }}>
+                {battle.phase === "enemyTurn" ? "Enemy turn..." : ""}
               </p>
             </div>
           )}
+
+            </div>
+          </div>
         </div>
       </div>
 
