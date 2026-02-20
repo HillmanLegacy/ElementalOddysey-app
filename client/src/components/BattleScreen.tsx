@@ -102,6 +102,27 @@ const ENEMY_SPRITES: Record<string, string> = {
   kraken: deepKrakenImg,
   shadow_lord: shadowLordImg,
   crystal_titan: crystalTitanImg,
+  dragon_lord: dragonLordIdle,
+};
+
+const ENEMY_ANIM_DATA: Record<string, { idle: string; attack: string; hurt: string; death: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; deathFrames: number; scale?: number; yOffset?: number }> = {
+  dragon_lord: { 
+    idle: dragonLordIdle, 
+    attack: dragonLordAttack, 
+    hurt: dragonLordHurt, 
+    death: dragonLordDeath, 
+    frameWidth: 128, 
+    frameHeight: 128, 
+    idleFrames: 8, 
+    attackFrames: 8, 
+    hurtFrames: 3, 
+    deathFrames: 8, 
+    scale: 3.5,
+    yOffset: -10
+  },
+  demon: { idle: demonIdle, attack: demonAttack, hurt: demonHurt, death: demonDeath, frameWidth: 96, frameHeight: 96, idleFrames: 6, attackFrames: 8, hurtFrames: 4, deathFrames: 6, scale: 3 },
+  frost_lizard: { idle: frostLizardIdle, attack: frostLizardAttack, hurt: frostLizardHurt, death: frostLizardIdle, frameWidth: 64, frameHeight: 64, idleFrames: 6, attackFrames: 6, hurtFrames: 3, deathFrames: 6, scale: 2.5 },
+  jotem: { idle: jotemIdle, attack: jotemAttack, hurt: jotemHurt, death: jotemDeath, frameWidth: 100, frameHeight: 100, idleFrames: 6, attackFrames: 8, hurtFrames: 3, deathFrames: 8, scale: 3 },
 };
 
 const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; walk?: string; special?: string; death?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; walkFrames?: number; specialFrames?: number; deathFrames?: number; scale?: number }> = {
@@ -2430,7 +2451,9 @@ export default function BattleScreen({
 
             const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
             const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
-            const bossBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
+            const bossBottom = isBossMoving ? pos.y + bossOffset.y - (isDragonLord(enemy) ? 12 : 0) : pos.y - (isDragonLord(enemy) ? 12 : 0);
+
+            const isHovered = (partyAction === "selectTarget" || partyAction === "selectMagicTarget" || selectedAction === "attack" || (selectedAction === "magic" && selectedSpell)) && pendingTargetIdx === idx;
 
             return (
               <div
@@ -2445,17 +2468,28 @@ export default function BattleScreen({
                 }}
               >
               <button
-                className={`${isDead ? "pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
+                className={`${isDead ? "pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""} transition-all duration-200`}
                 style={{
                   transform: `scale(${pos.z}) ${isTargetable ? "translateY(-4px)" : ""}`,
                   transition: "transform 0.5s ease, opacity 0.3s ease, filter 0.2s ease",
-                  filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
+                  filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : (isHovered ? "brightness(1.3)" : "none"),
                 }}
                 onClick={() => handleEnemyClick(idx)}
+                onMouseEnter={() => (partyAction === "selectTarget" || partyAction === "selectMagicTarget" || selectedAction === "attack" || (selectedAction === "magic" && selectedSpell)) && setPendingTargetIdx(idx)}
+                onMouseLeave={() => setPendingTargetIdx(null)}
                 disabled={isDead || !isTargetable}
                 data-testid={`button-enemy-${idx}`}
               >
-                <div className="flex flex-col items-center">
+                <div className="flex flex-col items-center relative">
+                {isHovered && (
+                  <div className="absolute inset-[-10%] pointer-events-none z-50 animate-pulse" style={{
+                    border: `2px solid ${ELEMENT_COLORS[enemy.element]}`,
+                    boxShadow: `0 0 15px ${ELEMENT_COLORS[enemy.element]}, inset 0 0 10px ${ELEMENT_COLORS[enemy.element]}`,
+                    borderRadius: "4px",
+                    opacity: 0.8,
+                    imageRendering: "pixelated"
+                  }} />
+                )}
                 {isTargetable && (
                   <div className="z-30 mb-1">
                     <Target className="w-5 h-5 text-yellow-400 animate-bounce drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
@@ -2626,37 +2660,22 @@ export default function BattleScreen({
                           : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? dragonLordWalk
                           : dragonLordIdle
                         }
-                        frameWidth={
-                          enemyAnimStates[idx] === "death" ? 160
-                          : enemyAnimStates[idx] === "attack" ? 90
-                          : enemyAnimStates[idx] === "hurt" ? 130
-                          : 74
-                        }
-                        frameHeight={
-                          enemyAnimStates[idx] === "death" ? 160
-                          : enemyAnimStates[idx] === "attack" ? 70
-                          : enemyAnimStates[idx] === "hurt" ? 130
-                          : 74
-                        }
+                        frameWidth={128}
+                        frameHeight={128}
                         totalFrames={
-                          enemyAnimStates[idx] === "death" ? 36
-                          : enemyAnimStates[idx] === "attack" ? 16
-                          : enemyAnimStates[idx] === "hurt" ? 5
-                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
-                          : 4
-                        }
-                        fps={
-                          enemyAnimStates[idx] === "attack" ? 16
-                          : enemyAnimStates[idx] === "death" ? 10
-                          : enemyAnimStates[idx] === "hurt" ? 10
+                          enemyAnimStates[idx] === "death" ? 8
+                          : enemyAnimStates[idx] === "attack" ? 8
+                          : enemyAnimStates[idx] === "hurt" ? 3
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 6
                           : 8
                         }
-                        scale={
-                          enemyAnimStates[idx] === "death" ? 2.6
-                          : enemyAnimStates[idx] === "attack" ? 4.4
-                          : enemyAnimStates[idx] === "hurt" ? 3.2
-                          : 4.2
+                        fps={
+                          enemyAnimStates[idx] === "attack" ? 12
+                          : enemyAnimStates[idx] === "death" ? 8
+                          : enemyAnimStates[idx] === "hurt" ? 8
+                          : 8
                         }
+                        scale={3.5}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
                         onComplete={
@@ -3120,15 +3139,66 @@ export default function BattleScreen({
           )}
 
           {battle.phase === "playerTurn" && selectedAction === "attack" && !isInputBlocked && (
-            <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "rgba(253,224,71,0.7)" }} data-testid="text-select-target">
-              Select a target
-            </p>
+            <div className="grid grid-cols-1 gap-1 mb-2 max-h-32 overflow-y-auto p-1 border-t border-white/10 pt-2 mt-1">
+              <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(253,224,71,0.7)" }} data-testid="text-select-target">
+                Select a target
+              </p>
+              {battle.enemies.map((enemy, idx) => {
+                if (enemy.currentHp <= 0) return null;
+                return (
+                  <button
+                    key={`player-target-${idx}`}
+                    className="w-full text-left py-1.5 px-3 transition-all hover:brightness-125 flex items-center justify-between"
+                    style={{
+                      background: pendingTargetIdx === idx ? "rgba(239,68,68,0.15)" : "rgba(255,255,255,0.05)",
+                      border: `1px solid ${pendingTargetIdx === idx ? "#ef4444" : "rgba(255,255,255,0.1)"}`,
+                      color: pendingTargetIdx === idx ? "#fca5a5" : "#fff",
+                    }}
+                    onMouseEnter={() => setPendingTargetIdx(idx)}
+                    onMouseLeave={() => setPendingTargetIdx(null)}
+                    onClick={() => handleEnemyClick(idx)}
+                  >
+                    <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px" }}>{enemy.name}</span>
+                    {pendingTargetIdx === idx && <Target className="w-3 h-3 animate-pulse text-red-400" />}
+                  </button>
+                );
+              })}
+            </div>
           )}
 
           {battle.phase === "playerTurn" && selectedAction === "magic" && selectedSpell && !isInputBlocked && (
-            <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "rgba(253,224,71,0.7)" }} data-testid="text-select-spell-target">
-              Target for {selectedSpell.name}
-            </p>
+            <div className="grid grid-cols-1 gap-1 mb-2 max-h-32 overflow-y-auto p-1 border-t border-white/10 pt-2 mt-1">
+              <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.7)" }} data-testid="text-select-spell-target">
+                Target for {selectedSpell.name}
+              </p>
+              {battle.enemies.map((enemy, idx) => {
+                if (enemy.currentHp <= 0) return null;
+                return (
+                  <button
+                    key={`player-magic-target-${idx}`}
+                    className="w-full text-left py-1.5 px-3 transition-all hover:brightness-125 flex items-center justify-between"
+                    style={{
+                      background: pendingTargetIdx === idx ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.05)",
+                      border: `1px solid ${pendingTargetIdx === idx ? "#a855f7" : "rgba(255,255,255,0.1)"}`,
+                      color: pendingTargetIdx === idx ? "#d8b4fe" : "#fff",
+                    }}
+                    onMouseEnter={() => setPendingTargetIdx(idx)}
+                    onMouseLeave={() => setPendingTargetIdx(null)}
+                    onClick={() => handleEnemyClick(idx)}
+                  >
+                    <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px" }}>{enemy.name}</span>
+                    {pendingTargetIdx === idx && <Target className="w-3 h-3 animate-pulse text-purple-400" />}
+                  </button>
+                );
+              })}
+              <button
+                className="flex items-center justify-center gap-1 px-2 py-1 mt-1 transition-all hover:brightness-125"
+                style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}
+                onClick={() => { setSelectedSpell(null); setPendingTargetIdx(null); }}
+              >
+                <ArrowLeft className="w-3 h-3" /> Back
+              </button>
+            </div>
           )}
 
           {battle.phase === "playerTurn" && showSpells && !isInputBlocked && (
@@ -3336,15 +3406,57 @@ export default function BattleScreen({
                     )}
                   </div>
                 )}
-                {(partyAction === "selectTarget" || partyAction === "selectMagicTarget") && (
-                  <div className="text-center">
-                    <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "rgba(253,224,71,0.7)" }}>
-                      {partyAction === "selectMagicTarget" ? `Target for ${partySelectedSpell?.name}` : "Select a target"}
-                    </p>
+                {partyAction === "selectTarget" && (
+                  <div className="grid grid-cols-1 gap-1.5 mb-2 max-h-32 overflow-y-auto p-1 border-t border-white/10 pt-2 mt-2">
+                    {battle.enemies.filter(e => e.stats.hp > 0).map((enemy, idx) => (
+                      <button
+                        key={`target-${idx}`}
+                        className="w-full text-left py-2 px-3 transition-all hover:brightness-125 flex items-center justify-between"
+                        style={{
+                          background: pendingTargetIdx === idx ? "rgba(253,224,71,0.15)" : "rgba(255,255,255,0.05)",
+                          border: `1px solid ${pendingTargetIdx === idx ? "#fde047" : "rgba(255,255,255,0.1)"}`,
+                          color: pendingTargetIdx === idx ? "#fde047" : "#fff",
+                        }}
+                        onMouseEnter={() => setPendingTargetIdx(idx)}
+                        onMouseLeave={() => setPendingTargetIdx(null)}
+                        onClick={() => handlePartyAttackTarget(idx)}
+                      >
+                        <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px" }}>{enemy.name}</span>
+                        {pendingTargetIdx === idx && <Target className="w-3 h-3 animate-pulse" />}
+                      </button>
+                    ))}
                     <button
-                      className="flex items-center gap-1 px-2 py-1 mx-auto mt-1 transition-all hover:brightness-125"
+                      className="flex items-center justify-center gap-1 px-2 py-2 mt-1 transition-all hover:brightness-125"
                       style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}
-                      onClick={() => { setPartyAction("menu"); setPartySelectedSpell(null); }}
+                      onClick={() => { setPartyAction("menu"); setPendingTargetIdx(null); }}
+                    >
+                      <ArrowLeft className="w-3 h-3" /> Back
+                    </button>
+                  </div>
+                )}
+                {partyAction === "selectMagicTarget" && (
+                  <div className="grid grid-cols-1 gap-1.5 mb-2 max-h-32 overflow-y-auto p-1 border-t border-white/10 pt-2 mt-2">
+                    {battle.enemies.filter(e => e.stats.hp > 0).map((enemy, idx) => (
+                      <button
+                        key={`magic-target-${idx}`}
+                        className="w-full text-left py-2 px-3 transition-all hover:brightness-125 flex items-center justify-between"
+                        style={{
+                          background: pendingTargetIdx === idx ? "rgba(168,85,247,0.15)" : "rgba(255,255,255,0.05)",
+                          border: `1px solid ${pendingTargetIdx === idx ? "#a855f7" : "rgba(255,255,255,0.1)"}`,
+                          color: pendingTargetIdx === idx ? "#d8b4fe" : "#fff",
+                        }}
+                        onMouseEnter={() => setPendingTargetIdx(idx)}
+                        onMouseLeave={() => setPendingTargetIdx(null)}
+                        onClick={() => handlePartySpellTarget(idx)}
+                      >
+                        <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px" }}>{enemy.name}</span>
+                        {pendingTargetIdx === idx && <Sparkles className="w-3 h-3 animate-pulse" />}
+                      </button>
+                    ))}
+                    <button
+                      className="flex items-center justify-center gap-1 px-2 py-2 mt-1 transition-all hover:brightness-125"
+                      style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}
+                      onClick={() => { setPartyAction("showSpells"); setPendingTargetIdx(null); }}
                     >
                       <ArrowLeft className="w-3 h-3" /> Back
                     </button>
