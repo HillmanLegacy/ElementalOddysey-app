@@ -892,8 +892,16 @@ export default function BattleScreen({
   const onSpriteComplete = useCallback(() => {
     if (animPhase === "attacking") {
       runBackHandled.current = false;
+      
+      // The attack animation just finished. 
+      // We explicitly wait here BEFORE changing the state to runBack.
       scheduleTimer(() => {
+        // Double check we haven't already handled this or moved to a new phase
+        if (runBackHandled.current) return;
+        
         setAnimPhase("runBack");
+        
+        // The transition for runBack is 0.35s (defined in the style transition)
         scheduleTimer(() => {
           if (!runBackHandled.current) {
             runBackHandled.current = true;
@@ -903,8 +911,8 @@ export default function BattleScreen({
               setTimeout(() => onFinishPlayerTurn(), 1000);
             }
           }
-        }, 350);
-      }, 1000);
+        }, 400);
+      }, 1500); // 1.5s literal pause at the enemy
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
@@ -2037,7 +2045,7 @@ export default function BattleScreen({
               />
             )}
             
-            <div className="relative">
+            <div className="relative" key={spriteConfig.src}>
               <SpriteAnimator
                 spriteSheet={spriteConfig.src}
                 frameWidth={spriteConfig.w}
@@ -2048,7 +2056,7 @@ export default function BattleScreen({
                 loop={spriteConfig.loop}
                 onComplete={onSpriteComplete}
                 preloadSheets={[playerSprites.idle, playerSprites.attack, playerSprites.hurt, ...(playerSprites.run ? [playerSprites.run] : []), ...(playerSprites.walk ? [playerSprites.walk] : []), ...(playerSprites.special ? [playerSprites.special] : []), ...(playerSprites.death ? [playerSprites.death] : [])]}
-                startFrame={spriteConfig.startAt}
+                startFrame={0}
                 pauseAtFrame={spriteConfig.pauseAt}
                 holdFrames={spriteConfig.holdFrames}
               />
