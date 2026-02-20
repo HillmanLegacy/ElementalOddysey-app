@@ -190,7 +190,7 @@ export default function BattleScreen({
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
   const [frostBreathAnim, setFrostBreathAnim] = useState<{ fromX: number; fromY: number; active: boolean } | null>(null);
   const [frostHitSfx, setFrostHitSfx] = useState(false);
-  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string }[]>([]);
+  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string; isBlocked?: boolean }[]>([]);
   const [pendingTargetIdx, setPendingTargetIdx] = useState<number | null>(null);
   const [fujinSliceActive, setFujinSliceActive] = useState(false);
   const [fujinSlashes, setFujinSlashes] = useState<{ id: number; x: number; y: number; rotation: number; delay: number; sheet: string; frames: number; fw: number }[]>([]);
@@ -386,9 +386,12 @@ export default function BattleScreen({
     if (evt.isHeal) {
       color = "#22c55e";
     }
+    if (evt.isBlocked) {
+      color = "#60a5fa";
+    }
     const text = evt.isHeal ? `+${evt.amount}` : (evt.isCrit ? "CRIT " : "") + evt.amount;
     const id = damageIdRef.current++;
-    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color }]);
+    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked }]);
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
   }, [battle.lastDamageEvent, showDamageNumbers]);
 
@@ -1909,7 +1912,7 @@ export default function BattleScreen({
       {damageNumbers.map(d => (
         <div
           key={d.id}
-          className="absolute pointer-events-none z-50 animate-[dmgFloat_1.2s_ease-out_forwards]"
+          className="absolute pointer-events-none z-50 animate-[dmgFloat_1.2s_ease-out_forwards] flex items-center gap-1"
           style={{
             left: `${d.x}%`,
             top: `${d.y}%`,
@@ -1923,6 +1926,15 @@ export default function BattleScreen({
             letterSpacing: "1px",
           }}
         >
+          {d.isBlocked && (
+            <Shield className="w-6 h-6 flex-shrink-0" style={{
+              color: d.color,
+              filter: `drop-shadow(0 0 6px ${d.color}) drop-shadow(0 0 12px ${d.color}80)`,
+              WebkitTextStroke: "0",
+              stroke: d.color,
+              strokeWidth: 2.5,
+            }} />
+          )}
           {d.text}
         </div>
       ))}

@@ -569,7 +569,7 @@ export function useGameState() {
           const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
           const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
           battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
-          battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined };
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
           battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
           battle.animation = "enemyAttack";
         }
@@ -588,7 +588,7 @@ export function useGameState() {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
             const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
             battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
-            battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined };
+            battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
             battle.animation = "enemyAttack";
           }
@@ -601,7 +601,7 @@ export function useGameState() {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, Math.random() > 0.5, enemy.element, partyTarget.element);
             const actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
             battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
-            battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "party", targetIndex: partyIdx, isCrit, element: enemy.element, label: elementLabel || undefined };
+            battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "party", targetIndex: partyIdx, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: partyTarget.defending };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${isCrit ? " CRIT" : ""} to ${partyTarget.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
             battle.animation = "enemyAttack";
           }
