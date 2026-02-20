@@ -1948,7 +1948,7 @@ export default function BattleScreen({
               <div className="absolute inset-0 z-30 animate-[flashDamage_0.4s_ease-out]" style={{ background: "radial-gradient(circle, rgba(239,68,68,0.5) 0%, transparent 70%)" }} />
             )}
             {fireHitSfx && (
-              <div className="absolute z-30" style={{ top: "-30%", left: "-55%", width: "210%", height: "210%", pointerEvents: "none" }}>
+              <div className="absolute z-30" style={{ top: "50%", left: "50%", width: 288, height: 288, transform: "translate(-50%, -50%)", pointerEvents: "none" }}>
                 <SpriteAnimator
                   spriteSheet={sfxFireBurst}
                   frameWidth={96}
