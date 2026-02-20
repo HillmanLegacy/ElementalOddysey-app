@@ -392,9 +392,10 @@ export default function BattleScreen({
 
   const lastDmgEventsIdRef = useRef(0);
   useEffect(() => {
-    if (!battle.lastDamageEvents || battle.lastDamageEvents.length === 0 || !showDamageNumbers) return;
     const events = battle.lastDamageEvents;
-    const batchId = events[events.length - 1].id;
+    if (!events || events.length === 0 || !showDamageNumbers) return;
+    const lastEvt = events[events.length - 1];
+    const batchId = lastEvt ? lastEvt.id : 0;
     if (batchId <= lastDmgEventsIdRef.current) return;
     lastDmgEventsIdRef.current = batchId;
 
