@@ -9,7 +9,7 @@ import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
-import { playSfx } from "@/lib/sfx";
+import { playSfx, playSfxPitched } from "@/lib/sfx";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
@@ -198,6 +198,8 @@ export default function BattleScreen({
   const [windSparkleTarget, setWindSparkleTarget] = useState<number | null>(null);
   const [windBladeFrozenEnemy, setWindBladeFrozenEnemy] = useState<number | null>(null);
   const windSparkleAfterRunBack = useRef<number | null>(null);
+  const windBladeDamageTarget = useRef<number | null>(null);
+  const [deathAnimPending, setDeathAnimPending] = useState<Set<number>>(new Set());
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
@@ -237,6 +239,7 @@ export default function BattleScreen({
       setFrostHitSfx(false);
     }
     if (battle.phase === "victory") {
+      if (deathAnimPending.size > 0) return;
       const timer = setTimeout(() => setShowVictoryUI(true), 1200);
       return () => clearTimeout(timer);
     } else {
@@ -246,7 +249,7 @@ export default function BattleScreen({
       setXpBarLevel(player.level);
       setXpBarLevelUp(false);
     }
-  }, [battle.phase]);
+  }, [battle.phase, deathAnimPending]);
 
   useEffect(() => {
     if (!showVictoryUI || battle.phase !== "victory") return;
@@ -483,7 +486,7 @@ export default function BattleScreen({
         setAnimPhase("casting");
         setWindBladeActive(true);
         setWindBladeFrozenEnemy(targetIdx);
-        playSfx("swordSwing");
+        playSfx("mifuneSlice");
         playSfx("gruntAttack", 0.7);
 
         const slashes = Array.from({ length: 5 }, (_, i) => ({
@@ -499,50 +502,55 @@ export default function BattleScreen({
         for (let i = 0; i < 5; i++) {
           scheduleTimer(() => {
             setWindBladeSlashes(prev => prev.map((s, si) => si === i ? { ...s, active: true } : s));
-            playSfx("whoosh");
-          }, 200 + i * 400);
+            playSfxPitched("windSlash", 0.7, 1.4, 0.8);
+            const hitEnemy = battle.enemies[targetIdx];
+            const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
+            if (hasAnim) {
+              setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+              scheduleTimer(() => {
+                setEnemyAnimStates(prev => {
+                  if (prev[targetIdx] === "death") return prev;
+                  return { ...prev, [targetIdx]: "idle" };
+                });
+              }, 180);
+            }
+            setEnemyHitIdx(targetIdx);
+            scheduleTimer(() => setEnemyHitIdx(null), 180);
+          }, i * 240);
         }
 
         scheduleTimer(() => {
-          onCastSpell(spell, targetIdx);
-        }, 600);
+          setWindSparkleTarget(targetIdx);
+          playSfx("magicRing", 0.4);
+        }, 800);
 
         scheduleTimer(() => {
           setWindBladeSlashes([]);
           setWindBladeActive(false);
           castingNeedsRunBack.current = false;
           runBackHandled.current = false;
-          windSparkleAfterRunBack.current = targetIdx;
           setAnimPhase("runBack");
           scheduleTimer(() => {
             if (!runBackHandled.current) {
               runBackHandled.current = true;
               setAnimPhase("idle");
               setPendingTargetIdx(null);
-              const sparkleIdx = windSparkleAfterRunBack.current;
-              if (sparkleIdx !== null) {
-                setWindSparkleTarget(sparkleIdx);
-                playSfx("magicRing", 0.4);
-                windSparkleAfterRunBack.current = null;
-                scheduleTimer(() => {
-                  setWindSparkleTarget(null);
-                  setWindBladeFrozenEnemy(null);
-                  if (battle.phase !== "victory" && battle.phase !== "defeat") {
-                    setTimeout(() => onFinishPlayerTurn(), 600);
-                  }
-                }, 1200);
-              } else {
-                setWindBladeFrozenEnemy(null);
-                if (battle.phase !== "victory" && battle.phase !== "defeat") {
-                  setTimeout(() => onFinishPlayerTurn(), 600);
-                }
-              }
             }
           }, 600);
-        }, 2400);
+        }, 1200);
+
+        scheduleTimer(() => {
+          setWindSparkleTarget(null);
+          windBladeDamageTarget.current = targetIdx;
+          onCastSpell(spell, targetIdx);
+          setWindBladeFrozenEnemy(null);
+          if (battle.phase !== "victory" && battle.phase !== "defeat") {
+            setTimeout(() => onFinishPlayerTurn(), 600);
+          }
+        }, 2000);
       } else {
         setAnimPhase("attacking");
-        playSfx("swordSwing");
+        playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
         playSfx("gruntAttack", 0.7);
         if (pendingTargetIdx !== null) {
           onAttack(pendingTargetIdx);
@@ -552,23 +560,12 @@ export default function BattleScreen({
       runBackHandled.current = true;
       setAnimPhase("idle");
       setPendingTargetIdx(null);
-      if (windSparkleAfterRunBack.current !== null) {
-        const sparkleIdx = windSparkleAfterRunBack.current;
-        setWindSparkleTarget(sparkleIdx);
-        playSfx("magicRing", 0.4);
-        windSparkleAfterRunBack.current = null;
-        scheduleTimer(() => {
-          setWindSparkleTarget(null);
-          setWindBladeFrozenEnemy(null);
-          if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 600);
-          }
-        }, 1200);
+      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null) {
       } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell]);
+  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
@@ -597,9 +594,13 @@ export default function BattleScreen({
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
           setEnemyAnimStates(prev => ({ ...prev, [tidx]: "hurt" }));
           scheduleTimer(() => {
+            const e = battle.enemies[tidx];
+            const isDying = e && e.currentHp <= 0;
+            if (isDying) {
+              setDeathAnimPending(prev => new Set(prev).add(tidx));
+            }
             setEnemyAnimStates(prev => {
-              const e = battle.enemies[tidx];
-              return { ...prev, [tidx]: (e && e.currentHp <= 0) ? "death" : "idle" };
+              return { ...prev, [tidx]: isDying ? "death" : "idle" };
             });
           }, 500);
         }
@@ -628,9 +629,42 @@ export default function BattleScreen({
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
           scheduleTimer(() => {
+            const e = battle.enemies[targetIdx];
+            const isDying = e && e.currentHp <= 0;
+            if (isDying) {
+              setDeathAnimPending(prev => new Set(prev).add(targetIdx));
+            }
             setEnemyAnimStates(prev => {
-              const e = battle.enemies[targetIdx];
-              return { ...prev, [targetIdx]: (e && e.currentHp <= 0) ? "death" : "idle" };
+              return { ...prev, [targetIdx]: isDying ? "death" : "idle" };
+            });
+          }, 500);
+        }
+        setShakeScreen(true);
+        setTimeout(() => setShakeScreen(false), 500);
+        setTimeout(() => setEnemyHitIdx(null), 400);
+      }
+
+      if (matched && windBladeDamageTarget.current !== null) {
+        const targetIdx = windBladeDamageTarget.current;
+        windBladeDamageTarget.current = null;
+        setEnemyHitIdx(targetIdx);
+        playSfx("stabRing");
+        if (battle.lastElementLabel === "Super effective!") {
+          scheduleTimer(() => playSfx("effectiveHit", 0.6), 200);
+        } else if (battle.lastElementLabel === "Not very effective...") {
+          scheduleTimer(() => playSfx("notEffectiveHit", 0.6), 200);
+        }
+        const hitEnemy = battle.enemies[targetIdx];
+        if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
+          setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+          scheduleTimer(() => {
+            const e = battle.enemies[targetIdx];
+            const isDying = e && e.currentHp <= 0;
+            if (isDying) {
+              setDeathAnimPending(prev => new Set(prev).add(targetIdx));
+            }
+            setEnemyAnimStates(prev => {
+              return { ...prev, [targetIdx]: isDying ? "death" : "idle" };
             });
           }, 500);
         }
@@ -747,6 +781,7 @@ export default function BattleScreen({
         setWindSparkleTarget(null);
         setWindBladeFrozenEnemy(null);
         windSparkleAfterRunBack.current = null;
+        windBladeDamageTarget.current = null;
       }
     }
   }, [battle.phase, windBladeActive, windBladeFrozenEnemy, windSparkleTarget]);
@@ -839,6 +874,23 @@ export default function BattleScreen({
   const isAnimatedEnemyCheck = useCallback((enemy: { id: string; element: string; isBoss: boolean }) => {
     return (enemy.element === "Fire" && !enemy.isBoss) || isDragonLord(enemy) || isFrostLizard(enemy) || isJotem(enemy);
   }, [isDragonLord, isFrostLizard, isJotem]);
+
+  const onEnemyDeathAnimDone = useCallback((idx: number) => {
+    setDeathAnimPending(prev => {
+      const next = new Set(prev);
+      next.delete(idx);
+      return next;
+    });
+  }, []);
+
+  useEffect(() => {
+    if (deathAnimPending.size > 0) {
+      const fallback = setTimeout(() => {
+        setDeathAnimPending(new Set());
+      }, 3000);
+      return () => clearTimeout(fallback);
+    }
+  }, [deathAnimPending]);
 
   const animateEnemyAttack = useCallback((enemyIdx: number, enemy: typeof battle.enemies[0], onDone: () => void) => {
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
@@ -2190,11 +2242,11 @@ export default function BattleScreen({
 
                   {windSparkleTarget === idx && (
                     <div className="absolute z-30 pointer-events-none" style={{
-                      top: "-40%",
-                      left: "-30%",
-                      width: "160%",
-                      height: "160%",
-                      filter: "drop-shadow(0 0 15px rgba(150,255,150,0.9))",
+                      top: "-100%",
+                      left: "-80%",
+                      width: "260%",
+                      height: "280%",
+                      filter: "drop-shadow(0 0 20px rgba(150,255,150,0.9)) drop-shadow(0 0 40px rgba(100,255,100,0.5))",
                       animation: "windSparkleGlow 1.2s ease-out forwards",
                     }}>
                       <SpriteAnimator
@@ -2202,8 +2254,8 @@ export default function BattleScreen({
                         frameWidth={64}
                         frameHeight={64}
                         totalFrames={18}
-                        fps={16}
-                        scale={3}
+                        fps={15}
+                        scale={5}
                         loop={false}
                         style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
                       />
@@ -2315,6 +2367,11 @@ export default function BattleScreen({
                         }
                         loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
+                        onComplete={
+                          (enemyAnimStates[idx] === "death" || isDead)
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
                         preloadSheets={[dragonLordIdle, dragonLordWalk, dragonLordAttack, dragonLordHurt, dragonLordDeath]}
                       />
                     </div>
@@ -2356,6 +2413,11 @@ export default function BattleScreen({
                         scale={2.5}
                         loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death" && enemyAnimStates[idx] !== "slash"}
                         flipX={true}
+                        onComplete={
+                          (enemyAnimStates[idx] === "death" || isDead)
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
                         preloadSheets={[jotemIdle, jotemWalk, jotemAttack, jotemHurt, jotemDeath, jotemSlash]}
                       />
                     </div>
@@ -2376,8 +2438,16 @@ export default function BattleScreen({
                           : enemyAnimStates[idx] === "hurt" ? demonHurt
                           : demonIdle
                         }
-                        frameWidth={81}
-                        frameHeight={71}
+                        frameWidth={
+                          (enemyAnimStates[idx] === "death" || isDead) ? 79
+                          : enemyAnimStates[idx] === "hurt" ? 79
+                          : 81
+                        }
+                        frameHeight={
+                          (enemyAnimStates[idx] === "death" || isDead) ? 69
+                          : enemyAnimStates[idx] === "hurt" ? 69
+                          : 71
+                        }
                         totalFrames={
                           (enemyAnimStates[idx] === "death" || isDead) ? 7
                           : enemyAnimStates[idx] === "attack" ? 8
@@ -2387,11 +2457,17 @@ export default function BattleScreen({
                         fps={
                           enemyAnimStates[idx] === "attack" ? 12
                           : enemyAnimStates[idx] === "death" ? 8
+                          : enemyAnimStates[idx] === "hurt" ? 12
                           : 8
                         }
                         scale={isBoss ? 4 : 2.5}
                         loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={false}
+                        onComplete={
+                          (enemyAnimStates[idx] === "death" || isDead)
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
                         preloadSheets={[demonIdle, demonAttack, demonHurt, demonDeath]}
                       />
                     </div>
@@ -2428,6 +2504,11 @@ export default function BattleScreen({
                         scale={1.5}
                         loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
+                        onComplete={
+                          (enemyAnimStates[idx] === "death" || isDead)
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
                         preloadSheets={[frostLizardIdle, frostLizardAttack, frostLizardHurt]}
                       />
                     </div>

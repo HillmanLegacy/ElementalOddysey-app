@@ -31,9 +31,12 @@ import notEffective from "@/assets/audio/not-effective.wav";
 import potionHeal from "@/assets/audio/potion-heal.wav";
 import potionMana from "@/assets/audio/potion-mana.wav";
 import drinkSlurp from "@/assets/audio/drink-slurp.wav";
+import mifuneSwordSlice from "@/assets/audio/mifune-sword-slice.wav";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
+  mifuneSlice: [mifuneSwordSlice],
+  windSlash: [mifuneSwordSlice],
   hitMetal: [hitMetal1, hitMetal2],
   hitCombo: [hitCombo1, hitCombo2],
   block: [block1, block2],
@@ -96,6 +99,16 @@ export function playSfx(name: SfxName, volumeScale = 1.0): void {
   const src = pickRandom(group);
   const el = getPooled(src);
   el.volume = Math.min(1, globalVolume * volumeScale);
+  el.play().catch(() => {});
+}
+
+export function playSfxPitched(name: SfxName, pitchMin = 0.8, pitchMax = 1.3, volumeScale = 1.0): void {
+  if (globalVolume <= 0) return;
+  const group = SFX_GROUPS[name];
+  const src = pickRandom(group);
+  const el = getPooled(src);
+  el.volume = Math.min(1, globalVolume * volumeScale);
+  el.playbackRate = pitchMin + Math.random() * (pitchMax - pitchMin);
   el.play().catch(() => {});
 }
 

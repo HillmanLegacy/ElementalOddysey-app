@@ -72,9 +72,22 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 - runBackHandled ref prevents double-firing; fallback timer (500ms) ensures phase advances if transition doesn't fire
 
 ## Wind Blade Cinematic Animation
-- **Flow**: Samurai runs to enemy → attack animation pauses at last frame → 5 staggered wind slash VFX (randomly rotated/offset, 400ms apart over 2s) → runBack → wind sparkle on target → unfreeze enemy → finish turn
-- **State**: `windBladeActive` (bool), `windBladeSlashes` (array of {id, rotation, offsetX, offsetY, scale, active}), `windSparkleTarget` (enemy idx), `windBladeFrozenEnemy` (enemy idx), `windSparkleAfterRunBack` (ref)
-- **Sprites**: `wind-slash-anim.png` (640x256, 128x128 frames, 10 total), `wind-sparkle.png` (1152x64, 64x64 frames, 18 total)
-- **Enemy freeze**: Target enemy stops idle bob animation during attack, resumes after wind sparkle completes
+- **Flow**: Samurai runs to enemy → attack animation pauses at last frame → 5 staggered wind slash VFX (240ms apart, 1.2s total) → sparkle overlaps end of slashes (starts at 800ms) → runBack at 1200ms → damage dealt at 2000ms when sparkle concludes → finish turn
+- **State**: `windBladeActive` (bool), `windBladeSlashes` (array of {id, rotation, offsetX, offsetY, scale, active}), `windSparkleTarget` (enemy idx), `windBladeFrozenEnemy` (enemy idx)
+- **Sprites**: `wind-slash-anim.png` (640x256, 128x128 frames, 10 total), `wind-sparkle.png` (1152x64, 64x64 frames, 18 total, scale 5 for large sparkle)
+- **Per-hit hurt**: Each slash triggers a brief hurt animation (180ms) on the target enemy
+- **Enemy freeze**: Target enemy stops idle bob animation during attack, resumes after sparkle + damage
+- **Damage timing**: `onCastSpell` called at 2000ms (sparkle conclusion), not during slashes
 - **Cleanup**: Battle phase changes to victory/defeat auto-clear all wind blade state
-- **Fallback**: runBack has 600ms fallback timer guarded by runBackHandled ref to prevent double-firing
+- **Fallback**: runBack has 600ms fallback timer guarded by runBackHandled ref
+
+## Enemy Death Animation System
+- **deathAnimPending**: Set<number> tracks which enemy indices have pending death animations
+- **Flow**: When enemy HP reaches 0, add to `deathAnimPending` → set `enemyAnimStates` to "death" → SpriteAnimator `onComplete` calls `onEnemyDeathAnimDone` → removes from pending set
+- **Victory delay**: `showVictoryUI` waits for `deathAnimPending.size === 0` before starting 1.2s delay
+- **Supported enemies**: Fire Demon (79x69 frames, 7 death / 4 hurt), Dragon Lord, Jotem, Frost Lizard
+
+## Sound System Updates
+- **mifuneSlice**: Base sword slice WAV for Mifune/Samurai regular physical attacks (replaces generic swordSwing when player.element === "Wind")
+- **windSlash**: Same WAV file with pitch variation (0.7x-1.4x playbackRate) via `playSfxPitched()` for wind blade slash VFX
+- **playSfxPitched()**: New SFX function that randomizes `playbackRate` between min/max for tonal variety
