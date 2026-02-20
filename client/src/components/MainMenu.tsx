@@ -465,7 +465,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 </button>
               )}
               <button
-                style={{ ...menuButtonStyle, borderColor: `${ACCENT}40`, color: `${ACCENT}80`, fontSize: "9px" }}
+                style={{ ...menuButtonStyle, borderColor: `${ACCENT}40`, color: `${ACCENT}80`, fontSize: "11px" }}
                 onMouseEnter={menuButtonHover}
                 onMouseLeave={menuButtonLeave}
                 onClick={() => setShowOptions(true)}
