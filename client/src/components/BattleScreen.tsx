@@ -2029,7 +2029,7 @@ export default function BattleScreen({
                     key={i}
                     className="relative"
                     style={{
-                      width: "200px",
+                      width: "230px",
                       opacity: charOpacity,
                       transition: "opacity 0.4s ease",
                     }}
@@ -2045,11 +2045,11 @@ export default function BattleScreen({
                         imageRendering: "pixelated",
                       }}
                     >
-                      <div className="px-2 py-1" style={{ borderBottom: `1px solid ${elColor}15` }}>
+                      <div className="px-2.5 py-1.5" style={{ borderBottom: `1px solid ${elColor}15` }}>
                         <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1.5">
                             <div
-                              className="w-1.5 h-1.5 flex-shrink-0"
+                              className="w-2 h-2 flex-shrink-0"
                               style={{
                                 background: elColor,
                                 boxShadow: char.isActive ? `0 0 4px ${elColor}` : `0 0 2px ${elColor}60`,
@@ -2058,7 +2058,7 @@ export default function BattleScreen({
                             <span
                               style={{
                                 fontFamily: "'Press Start 2P', cursive",
-                                fontSize: "8px",
+                                fontSize: "9px",
                                 color: char.isActive ? "#f0eaff" : "#b8b0c8",
                                 textShadow: char.isActive ? `0 0 6px ${elColor}40` : "none",
                                 letterSpacing: "0.05em",
@@ -2071,7 +2071,7 @@ export default function BattleScreen({
                           </div>
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
-                            fontSize: "7px",
+                            fontSize: "8px",
                             color: (battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp) ? "#fde047" : `${elColor}80`,
                             imageRendering: "pixelated",
                           }}>
@@ -2080,14 +2080,14 @@ export default function BattleScreen({
                           </span>
                         </div>
                         {char.buffs.length > 0 && (
-                          <div className="flex gap-0.5 mt-0.5">
+                          <div className="flex gap-1 mt-1">
                             {char.buffs.map((buff, bi) => (
                               <span
                                 key={bi}
                                 style={{
                                   fontFamily: "'Press Start 2P', cursive",
-                                  fontSize: "6px",
-                                  padding: "1px 3px",
+                                  fontSize: "7px",
+                                  padding: "2px 4px",
                                   background: `${elColor}15`,
                                   color: elColor,
                                   border: `1px solid ${elColor}30`,
@@ -2101,17 +2101,17 @@ export default function BattleScreen({
                         )}
                       </div>
 
-                      <div className="px-2 py-1 space-y-0.5">
-                        <div className="flex items-center gap-1">
+                      <div className="px-2.5 py-1.5 space-y-1">
+                        <div className="flex items-center gap-1.5">
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
-                            fontSize: "6px",
+                            fontSize: "7px",
                             color: charLowHp ? "#fca5a5" : "#6b8a6b",
-                            width: "14px",
+                            width: "18px",
                             imageRendering: "pixelated",
                           }}>HP</span>
                           <div
-                            className="flex-1 h-2 overflow-hidden relative"
+                            className="flex-1 h-2.5 overflow-hidden relative"
                             style={{
                               background: "rgba(0,0,0,0.6)",
                               border: "1px solid rgba(255,255,255,0.08)",
@@ -2138,9 +2138,9 @@ export default function BattleScreen({
                           <span
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
-                              fontSize: "6px",
+                              fontSize: "7px",
                               color: charLowHp ? "#fca5a5" : "#a8a0b8",
-                              minWidth: "42px",
+                              minWidth: "50px",
                               textAlign: "right",
                               imageRendering: "pixelated",
                             }}
@@ -2150,16 +2150,16 @@ export default function BattleScreen({
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
-                            fontSize: "6px",
+                            fontSize: "7px",
                             color: "#5b7db5",
-                            width: "14px",
+                            width: "18px",
                             imageRendering: "pixelated",
                           }}>MP</span>
                           <div
-                            className="flex-1 h-1.5 overflow-hidden relative"
+                            className="flex-1 h-2 overflow-hidden relative"
                             style={{
                               background: "rgba(0,0,0,0.5)",
                               border: "1px solid rgba(255,255,255,0.06)",
@@ -2178,9 +2178,9 @@ export default function BattleScreen({
                           <span
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
-                              fontSize: "6px",
+                              fontSize: "7px",
                               color: "#7ca0c4",
-                              minWidth: "42px",
+                              minWidth: "50px",
                               textAlign: "right",
                               imageRendering: "pixelated",
                             }}
@@ -2190,16 +2190,16 @@ export default function BattleScreen({
                           </span>
                         </div>
 
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1.5">
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
-                            fontSize: "6px",
+                            fontSize: "7px",
                             color: "#8b7530",
-                            width: "14px",
+                            width: "18px",
                             imageRendering: "pixelated",
                           }}>XP</span>
                           <div
-                            className="flex-1 h-1 overflow-hidden relative"
+                            className="flex-1 h-1.5 overflow-hidden relative"
                             style={{
                               background: "rgba(0,0,0,0.4)",
                               border: "1px solid rgba(255,255,255,0.04)",
@@ -2224,9 +2224,9 @@ export default function BattleScreen({
                           </div>
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
-                            fontSize: "5px",
+                            fontSize: "7px",
                             color: "rgba(217,119,6,0.5)",
-                            minWidth: "42px",
+                            minWidth: "50px",
                             textAlign: "right",
                             imageRendering: "pixelated",
                           }}>
@@ -2647,9 +2647,58 @@ export default function BattleScreen({
                   />
                 </div>
 
-                <div className="w-full max-w-[80px] mt-1 z-10">
-                  <Progress value={enemyHpPct} className="h-1.5 bg-black/60" />
-                  <p className="text-[10px] text-center text-white mt-0.5 drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" data-testid={`text-enemy-hp-${idx}`} style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" }}>{enemy.currentHp}/{enemy.stats.hp}</p>
+                <div className="w-full max-w-[100px] mt-1 z-10">
+                  <div
+                    className="overflow-hidden"
+                    style={{
+                      background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
+                      border: `2px solid ${ELEMENT_COLORS[enemy.element]}30`,
+                      imageRendering: "pixelated",
+                    }}
+                  >
+                    <div className="px-1.5 py-1 space-y-0.5">
+                      <div className="flex items-center gap-1">
+                        <span style={{
+                          fontFamily: "'Press Start 2P', cursive",
+                          fontSize: "7px",
+                          color: enemyHpPct <= 25 ? "#fca5a5" : "#6b8a6b",
+                          imageRendering: "pixelated",
+                        }}>HP</span>
+                        <div
+                          className="flex-1 h-2 overflow-hidden relative"
+                          style={{
+                            background: "rgba(0,0,0,0.6)",
+                            border: "1px solid rgba(255,255,255,0.08)",
+                          }}
+                        >
+                          <div
+                            className={`h-full transition-all duration-500 ease-out ${enemyHpPct <= 25 ? "animate-pulse" : ""}`}
+                            style={{
+                              width: `${enemyHpPct}%`,
+                              background: enemyHpPct <= 25
+                                ? "#ef4444"
+                                : enemyHpPct > 50
+                                  ? "#22c55e"
+                                  : "#eab308",
+                              boxShadow: enemyHpPct <= 25
+                                ? "0 0 4px rgba(239,68,68,0.6)"
+                                : enemyHpPct > 50
+                                  ? "0 0 2px rgba(34,197,94,0.4)"
+                                  : "0 0 2px rgba(234,179,8,0.4)",
+                              imageRendering: "pixelated",
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <p style={{
+                        fontFamily: "'Press Start 2P', cursive",
+                        fontSize: "7px",
+                        color: "#a8a0b8",
+                        textAlign: "center",
+                        imageRendering: "pixelated",
+                      }} data-testid={`text-enemy-hp-${idx}`}>{enemy.currentHp}/{enemy.stats.hp}</p>
+                    </div>
+                  </div>
                 </div>
                 </div>
               </button>
@@ -2676,9 +2725,19 @@ export default function BattleScreen({
                   transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
                 }}
               >
-                <div className="flex items-center justify-center gap-1.5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                  <span className="text-[10px] drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ color: ELEMENT_COLORS[enemy.element], imageRendering: "pixelated" }}>Lv{enemy.level}</span>
-                  <span className="text-xs text-white drop-shadow-[0_1px_3px_rgba(0,0,0,0.9)]" style={{ imageRendering: "pixelated" }}>{enemy.name}</span>
+                <div
+                  className="overflow-hidden"
+                  style={{
+                    background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
+                    border: `2px solid ${ELEMENT_COLORS[enemy.element]}30`,
+                    padding: "3px 8px",
+                    imageRendering: "pixelated",
+                  }}
+                >
+                  <div className="flex items-center justify-center gap-1.5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                    <span style={{ fontSize: "8px", color: ELEMENT_COLORS[enemy.element], imageRendering: "pixelated" }}>Lv{enemy.level}</span>
+                    <span style={{ fontSize: "9px", color: "#f0eaff", imageRendering: "pixelated" }}>{enemy.name}</span>
+                  </div>
                 </div>
               </div>
             );
@@ -2854,19 +2913,22 @@ export default function BattleScreen({
                   key={btn.key}
                   onClick={btn.onClick}
                   disabled={btn.disabled}
-                  className="flex flex-col items-center gap-1 py-2 rounded transition-all duration-150 hover:brightness-125 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
+                  className="flex flex-col items-center gap-1.5 py-2.5 transition-all duration-150 hover:brightness-125 active:scale-95 disabled:opacity-30 disabled:cursor-not-allowed"
                   style={{
                     background: btn.active
                       ? `linear-gradient(180deg, ${btn.activeColor}cc 0%, ${btn.activeColor}99 100%)`
-                      : `linear-gradient(180deg, ${btn.color}18 0%, ${btn.color}08 100%)`,
+                      : "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
                     border: `2px solid ${btn.active ? btn.color + "90" : btn.color + "30"}`,
-                    boxShadow: btn.active ? `0 0 15px ${btn.color}40, inset 0 1px 0 rgba(255,255,255,0.1)` : `inset 0 1px 0 rgba(255,255,255,0.03)`,
+                    boxShadow: btn.active
+                      ? `0 0 12px ${btn.color}40, inset 0 1px 0 rgba(255,255,255,0.1)`
+                      : "inset 0 1px 0 rgba(255,255,255,0.03)",
                     color: btn.active ? "#fff" : btn.color,
+                    imageRendering: "pixelated",
                   }}
                   data-testid={btn.testId}
                 >
                   {btn.icon}
-                  <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", letterSpacing: "0.05em" }}>{btn.label}</span>
+                  <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", letterSpacing: "0.05em" }}>{btn.label}</span>
                 </button>
               ))}
             </div>
