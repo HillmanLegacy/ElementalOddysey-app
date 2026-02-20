@@ -455,6 +455,7 @@ export default function BattleScreen({
   const handleAttackTarget = useCallback((targetIdx: number) => {
     setSelectedAction(null);
     setPendingTargetIdx(targetIdx);
+    runBackHandled.current = false;
     onSetAnimating();
     setAnimPhase("runToEnemy");
   }, [onSetAnimating]);
@@ -468,6 +469,7 @@ export default function BattleScreen({
   const handleSpellTarget = useCallback((targetIdx: number) => {
     if (!selectedSpell) return;
     if (selectedSpell.animation === "fujinSlice" && startFujinSliceRef.current) {
+      runBackHandled.current = false;
       startFujinSliceRef.current(targetIdx, selectedSpell);
       return;
     }
@@ -475,6 +477,7 @@ export default function BattleScreen({
       pendingWindBlade.current = { targetIdx, spell: selectedSpell };
       setSelectedAction(null);
       setPendingTargetIdx(targetIdx);
+      runBackHandled.current = false;
       onSetAnimating();
       setMagicZoom(true);
       setMagicZoomTarget(targetIdx);
@@ -487,6 +490,7 @@ export default function BattleScreen({
       pendingIncinerationSlash.current = { targetIdx, spell: selectedSpell };
       setSelectedAction(null);
       setPendingTargetIdx(targetIdx);
+      runBackHandled.current = false;
       onSetAnimating();
       setMagicZoom(true);
       setMagicZoomTarget(targetIdx);
@@ -497,6 +501,7 @@ export default function BattleScreen({
     }
     setSelectedAction(null);
     setPendingTargetIdx(targetIdx);
+    runBackHandled.current = false;
     onSetAnimating();
     setAnimPhase("casting");
     setMagicZoom(true);
@@ -508,6 +513,7 @@ export default function BattleScreen({
   }, [selectedSpell, onSetAnimating, onCastSpell, scheduleTimer]);
 
   const handleSelfSpell = useCallback((spell: Spell) => {
+    runBackHandled.current = false;
     onSetAnimating();
     setAnimPhase("casting");
     setMagicZoom(true);
@@ -548,6 +554,7 @@ export default function BattleScreen({
   }, [onSetAnimating, onCastSpell, battle.enemies, scheduleTimer]);
 
   const handleDefend = useCallback(() => {
+    runBackHandled.current = false;
     onSetAnimating();
     setAnimPhase("defending");
     playSfx("block");
@@ -555,6 +562,14 @@ export default function BattleScreen({
   }, [onSetAnimating, onDefend]);
 
   const runBackHandled = useRef(false);
+
+  useEffect(() => {
+    // Reset the runBack lock at the start of any player/party turn
+    if (battle.phase === "playerTurn" || battle.phase === "partyTurn") {
+      runBackHandled.current = false;
+      partyRunBackHandled.current = false;
+    }
+  }, [battle.phase]);
 
   const onPlayerTransitionEnd = useCallback((e: React.TransitionEvent) => {
     if (e.propertyName !== "left" && e.propertyName !== "bottom") return;
@@ -898,19 +913,7 @@ export default function BattleScreen({
       scheduleTimer(() => {
         runBackHandled.current = false; // Reset for the actual runBack
         setAnimPhase("runBack");
-        
-        // MOVEMENT phase: Knight slides back
-        scheduleTimer(() => {
-          if (!runBackHandled.current) {
-            runBackHandled.current = true;
-            setAnimPhase("idle");
-            setPendingTargetIdx(null);
-            if (battle.phase !== "victory" && battle.phase !== "defeat") {
-              setTimeout(() => onFinishPlayerTurn(), 1000);
-            }
-          }
-        }, 350);
-      }, 350); 
+      }, 400); 
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
@@ -1698,8 +1701,8 @@ export default function BattleScreen({
       return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
     }
     if (animPhase === "runBack" && pendingTargetIdx !== null) {
-      // During runBack, we want the position to transition from the enemy back to PLAYER_POS.
-      // The CSS transition on the wrapper div will handle the interpolation.
+      // During runBack, we return PLAYER_POS.
+      // The CSS transition handles moving from the enemy back to origin.
       return PLAYER_POS;
     }
     if (animPhase === "hurt") {
@@ -2048,7 +2051,7 @@ export default function BattleScreen({
               />
             )}
             
-            <div className="relative" key={spriteConfig.src}>
+            <div className="relative" key={`${player.spriteId}-${animPhase}`}>
               <SpriteAnimator
                 spriteSheet={spriteConfig.src}
                 frameWidth={spriteConfig.w}
