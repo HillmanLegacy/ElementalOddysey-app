@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import ParticleCanvas from "./ParticleCanvas";
 import type { PlayerCharacter, PendingLevelUp } from "@shared/schema";
 import { PERKS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
@@ -24,6 +22,8 @@ export default function PerkSelectScreen({ player, pendingLevelUp, onSelect }: P
     p => p.element === characterElement && !existingPerks.includes(p.id)
   ).slice(0, 6);
 
+  const elColor = ELEMENT_COLORS[characterElement] || "#c9a44a";
+
   return (
     <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
       <ParticleCanvas
@@ -35,62 +35,208 @@ export default function PerkSelectScreen({ player, pendingLevelUp, onSelect }: P
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-        <div className="text-center mb-6">
-          <Sparkles className="w-10 h-10 text-purple-400 mx-auto mb-2" />
-          <h1 className="text-3xl font-bold text-purple-300" data-testid="text-choose-perk">Choose a Perk</h1>
-          <p className="text-sm text-purple-400/60 mt-1">
-            Select a new ability for <span className="text-amber-200/80">{characterName}</span>
-          </p>
-        </div>
+        <div
+          style={{
+            background: "rgba(15,10,30,0.9)",
+            border: `2px solid ${elColor}55`,
+            padding: "24px 32px",
+            position: "relative",
+            overflow: "hidden",
+            imageRendering: "pixelated",
+            maxWidth: "560px",
+            width: "100%",
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px)",
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full max-w-lg">
-          {availablePerks.map(perk => (
-            <Card
-              key={perk.id}
-              className="p-4 bg-[#12122a]/90 border-purple-500/15 backdrop-blur-sm cursor-pointer hover:border-purple-400/30 transition-all hover:scale-[1.02]"
-              onClick={() => onSelect(perk.id)}
-              data-testid={`card-perk-${perk.id}`}
+          <div style={{ position: "relative", zIndex: 2 }}>
+            <div style={{ textAlign: "center", marginBottom: "20px" }}>
+              <Sparkles
+                style={{
+                  width: "28px",
+                  height: "28px",
+                  color: "#c9a44a",
+                  margin: "0 auto 8px auto",
+                  display: "block",
+                  imageRendering: "pixelated",
+                }}
+              />
+              <h1
+                style={{
+                  fontFamily: "'Press Start 2P', cursive",
+                  fontSize: "11px",
+                  color: "#c9a44a",
+                  textTransform: "uppercase",
+                  letterSpacing: "2px",
+                  textShadow: "0 0 8px rgba(201,164,74,0.4)",
+                }}
+                data-testid="text-choose-perk"
+              >
+                Choose a Perk
+              </h1>
+              <p
+                style={{
+                  fontFamily: "'Press Start 2P', cursive",
+                  fontSize: "7px",
+                  color: "rgba(200,180,255,0.5)",
+                  marginTop: "8px",
+                  lineHeight: "1.6",
+                }}
+              >
+                Select a new ability for{" "}
+                <span style={{ color: "#c9a44a" }}>{characterName}</span>
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                gap: "10px",
+              }}
             >
-              <div className="flex items-start gap-3">
-                <div
-                  className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
-                  style={{
-                    backgroundColor: ELEMENT_COLORS[perk.element] + "20",
-                    border: `1px solid ${ELEMENT_COLORS[perk.element]}40`,
-                  }}
-                >
-                  <Sparkles className="w-5 h-5" style={{ color: ELEMENT_COLORS[perk.element] }} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-white">{perk.name}</p>
-                  <p className="text-xs text-purple-300/60 mt-0.5">{perk.description}</p>
-                  <div className="flex items-center gap-1 mt-1.5">
-                    <span
-                      className="text-[10px] px-1.5 py-0.5 rounded"
+              {availablePerks.map(perk => {
+                const perkColor = ELEMENT_COLORS[perk.element] || "#c9a44a";
+                return (
+                  <button
+                    key={perk.id}
+                    onClick={() => onSelect(perk.id)}
+                    data-testid={`card-perk-${perk.id}`}
+                    style={{
+                      background: "rgba(15,10,30,0.85)",
+                      border: `2px solid ${perkColor}4D`,
+                      padding: "12px",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      display: "flex",
+                      alignItems: "flex-start",
+                      gap: "10px",
+                      transition: "border-color 0.15s, background 0.15s, box-shadow 0.15s",
+                      borderRadius: "0",
+                      imageRendering: "pixelated",
+                      outline: "none",
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = perkColor + "99";
+                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(25,18,50,0.9)";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 12px ${perkColor}22`;
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = perkColor + "4D";
+                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(15,10,30,0.85)";
+                      (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+                    }}
+                  >
+                    <div
                       style={{
-                        backgroundColor: ELEMENT_COLORS[perk.element] + "20",
-                        color: ELEMENT_COLORS[perk.element],
+                        width: "36px",
+                        height: "36px",
+                        flexShrink: 0,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        background: perkColor + "15",
+                        border: `2px solid ${perkColor}33`,
+                        imageRendering: "pixelated",
                       }}
                     >
-                      {perk.element}
-                    </span>
-                  </div>
+                      <Sparkles style={{ width: "18px", height: "18px", color: perkColor }} />
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <p
+                        style={{
+                          fontFamily: "'Press Start 2P', cursive",
+                          fontSize: "8px",
+                          color: "#ffffff",
+                          margin: 0,
+                          lineHeight: "1.5",
+                        }}
+                      >
+                        {perk.name}
+                      </p>
+                      <p
+                        style={{
+                          fontFamily: "'Press Start 2P', cursive",
+                          fontSize: "7px",
+                          color: "rgba(200,180,255,0.45)",
+                          margin: "4px 0 0 0",
+                          lineHeight: "1.6",
+                        }}
+                      >
+                        {perk.description}
+                      </p>
+                      <div style={{ display: "flex", alignItems: "center", gap: "4px", marginTop: "6px" }}>
+                        <span
+                          style={{
+                            fontFamily: "'Press Start 2P', cursive",
+                            fontSize: "6px",
+                            padding: "2px 6px",
+                            background: perkColor + "20",
+                            color: perkColor,
+                            border: `1px solid ${perkColor}33`,
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                          }}
+                        >
+                          {perk.element}
+                        </span>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+              {availablePerks.length === 0 && (
+                <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "32px 0" }}>
+                  <p
+                    style={{
+                      fontFamily: "'Press Start 2P', cursive",
+                      fontSize: "7px",
+                      color: "rgba(200,180,255,0.4)",
+                    }}
+                  >
+                    No more perks available for {characterElement}
+                  </p>
+                  <button
+                    onClick={() => onSelect("")}
+                    style={{
+                      fontFamily: "'Press Start 2P', cursive",
+                      fontSize: "8px",
+                      marginTop: "16px",
+                      padding: "8px 24px",
+                      background: "rgba(15,10,30,0.85)",
+                      border: "2px solid rgba(201,164,74,0.3)",
+                      color: "#c9a44a",
+                      cursor: "pointer",
+                      textTransform: "uppercase",
+                      letterSpacing: "2px",
+                      transition: "border-color 0.15s, background 0.15s",
+                      borderRadius: "0",
+                      imageRendering: "pixelated",
+                      outline: "none",
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(201,164,74,0.6)";
+                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(25,18,50,0.9)";
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLButtonElement).style.borderColor = "rgba(201,164,74,0.3)";
+                      (e.currentTarget as HTMLButtonElement).style.background = "rgba(15,10,30,0.85)";
+                    }}
+                  >
+                    Skip
+                  </button>
                 </div>
-              </div>
-            </Card>
-          ))}
-          {availablePerks.length === 0 && (
-            <div className="col-span-2 text-center py-8">
-              <p className="text-sm text-purple-400/50">No more perks available for {characterElement}</p>
-              <Button
-                variant="outline"
-                className="mt-4 text-purple-300 border-purple-500/20"
-                onClick={() => onSelect("")}
-              >
-                Skip
-              </Button>
+              )}
             </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

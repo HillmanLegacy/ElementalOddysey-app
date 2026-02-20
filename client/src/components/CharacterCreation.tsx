@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import ParticleCanvas from "./ParticleCanvas";
 import { COLOR_MAP, ELEMENT_COLORS, STARTER_CHARACTERS } from "@/lib/gameData";
 import { ArrowLeft, ArrowRight, Sparkles, Diamond, CloudLightning, Check, Sword, Wind, Zap, Flame } from "lucide-react";
@@ -36,6 +33,14 @@ interface CharacterCreationProps {
   onBack: () => void;
 }
 
+const ACCENT = "#c9a44a";
+
+const panelBg = "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)";
+
+const scanlineOverlay = "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)";
+
+const fontFamily = "'Press Start 2P', cursive";
+
 export default function CharacterCreation({ onComplete, onBack }: CharacterCreationProps) {
   const [step, setStep] = useState(0);
   const [selectedStarter, setSelectedStarter] = useState<string>("samurai_wind");
@@ -47,15 +52,14 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   const elemColor = ELEMENT_COLORS[starterDef.element];
 
   const statBar = (label: string, value: number, max: number, color: string) => (
-    <div className="flex items-center gap-2">
-      <span className="text-xs text-purple-300/70 w-10 text-right">{label}</span>
-      <div className="flex-1 h-2 bg-black/40 rounded-full overflow-hidden">
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <span style={{ fontFamily, fontSize: 7, color: "rgba(192,168,255,0.7)", width: 40, textAlign: "right" }}>{label}</span>
+      <div style={{ flex: 1, height: 6, background: "rgba(0,0,0,0.4)", overflow: "hidden", border: `1px solid ${color}40` }}>
         <div
-          className="h-full rounded-full transition-all duration-500"
-          style={{ width: `${(value / max) * 100}%`, backgroundColor: color }}
+          style={{ height: "100%", width: `${(value / max) * 100}%`, backgroundColor: color, transition: "all 0.5s" }}
         />
       </div>
-      <span className="text-xs text-purple-200 w-6">{value}</span>
+      <span style={{ fontFamily, fontSize: 7, color: "rgba(210,190,255,1)", width: 24 }}>{value}</span>
     </div>
   );
 
@@ -63,9 +67,9 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
     switch (step) {
       case 0:
         return (
-          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Choose Your Character</h3>
-            <div className="grid grid-cols-3 gap-3">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
+            <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Choose Your Character</h3>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {STARTER_CHARACTERS.map(starter => {
                 const Icon = STARTER_ICONS[starter.id] || Sword;
                 const sColor = ELEMENT_COLORS[starter.element];
@@ -75,13 +79,25 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                   <button
                     key={starter.id}
                     onClick={() => setSelectedStarter(starter.id)}
-                    className={`relative flex flex-col items-center gap-2 p-3 rounded-lg transition-all duration-200 ${
-                      isSelected
-                        ? "ring-2 ring-white/50 bg-white/10 scale-105"
-                        : "bg-white/5 hover:bg-white/10"
-                    }`}
+                    style={{
+                      position: "relative",
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      gap: 8,
+                      padding: 10,
+                      border: isSelected ? `2px solid ${sColor}` : "2px solid rgba(255,255,255,0.1)",
+                      background: isSelected ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.03)",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                      transform: isSelected ? "scale(1.05)" : "scale(1)",
+                      fontFamily,
+                      borderRadius: 0,
+                      imageRendering: "pixelated" as any,
+                      boxShadow: isSelected ? `0 0 12px ${sColor}30, inset 0 0 20px ${sColor}10` : "none",
+                    }}
                   >
-                    <div className="w-16 h-16 flex items-center justify-center">
+                    <div style={{ width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", imageRendering: "pixelated" as any }}>
                       <SpriteAnimator
                         spriteSheet={sprite.sheet}
                         frameWidth={sprite.frameWidth}
@@ -92,24 +108,24 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                         loop={true}
                       />
                     </div>
-                    <div className="text-center">
-                      <span className="text-sm font-semibold text-white block">{starter.className}</span>
-                      <div className="flex items-center justify-center gap-1 mt-0.5">
-                        <Icon className="w-3 h-3" style={{ color: sColor }} />
-                        <span className="text-[10px]" style={{ color: sColor }}>{starter.element}</span>
+                    <div style={{ textAlign: "center" }}>
+                      <span style={{ fontFamily, fontSize: 8, fontWeight: "bold", color: "white", display: "block" }}>{starter.className}</span>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 2 }}>
+                        <Icon style={{ width: 10, height: 10, color: sColor }} />
+                        <span style={{ fontFamily, fontSize: 7, color: sColor }}>{starter.element}</span>
                       </div>
                     </div>
                     {isSelected && (
-                      <Check className="absolute top-1.5 right-1.5 w-4 h-4 text-white/80" />
+                      <Check style={{ position: "absolute", top: 4, right: 4, width: 12, height: 12, color: "rgba(255,255,255,0.8)" }} />
                     )}
                   </button>
                 );
               })}
             </div>
-            <p className="text-xs text-center text-purple-400/70 mt-2">
+            <p style={{ fontFamily, fontSize: 7, textAlign: "center", color: "rgba(168,132,255,0.7)", marginTop: 8, lineHeight: "1.6" }}>
               {STARTER_DESCRIPTIONS[selectedStarter]}
             </p>
-            <div className="space-y-1.5 mt-2">
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
               {statBar("HP", starterDef.baseStats.maxHp, 150, "#ef4444")}
               {statBar("MP", starterDef.baseStats.maxMp, 60, "#3b82f6")}
               {statBar("ATK", starterDef.baseStats.atk, 20, "#f97316")}
@@ -123,10 +139,10 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
 
       case 1:
         return (
-          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Name Your {starterDef.className}</h3>
-            <div className="flex justify-center mb-2">
-              <div className="w-16 h-16 flex items-center justify-center">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
+            <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Name Your {starterDef.className}</h3>
+            <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
+              <div style={{ width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", imageRendering: "pixelated" as any }}>
                 <SpriteAnimator
                   spriteSheet={spriteData.sheet}
                   frameWidth={spriteData.frameWidth}
@@ -138,13 +154,25 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 />
               </div>
             </div>
-            <Input
+            <input
               value={name}
               onChange={e => setName(e.target.value)}
               placeholder={`Enter name (default: ${starterDef.name})...`}
-              className="text-center text-lg bg-black/30 border-purple-500/30 text-purple-100 placeholder:text-purple-500/40 h-12"
               maxLength={20}
               data-testid="input-player-name"
+              style={{
+                fontFamily,
+                fontSize: 9,
+                textAlign: "center",
+                background: "rgba(0,0,0,0.4)",
+                border: `2px solid ${elemColor}60`,
+                color: "rgba(210,190,255,1)",
+                padding: "12px 16px",
+                outline: "none",
+                borderRadius: 0,
+                width: "100%",
+                boxSizing: "border-box" as any,
+              }}
             />
           </div>
         );
@@ -153,16 +181,21 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
         const displayName = name.trim() || starterDef.name;
         const StarterIcon = STARTER_ICONS[selectedStarter] || Sword;
         return (
-          <div className="space-y-4 animate-[fadeIn_0.3s_ease-out]">
-            <h3 className="text-xl text-purple-300 font-semibold text-center">Confirm Your Hero</h3>
-            <div className="flex flex-col items-center gap-4">
-              <div className="relative">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
+            <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Confirm Your Hero</h3>
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+              <div style={{ position: "relative" }}>
                 <div
-                  className="w-24 h-24 rounded-full flex items-center justify-center"
                   style={{
+                    width: 96,
+                    height: 96,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                     backgroundColor: elemColor + "20",
                     boxShadow: `0 0 40px ${elemColor}40, 0 0 80px ${elemColor}20`,
-                    border: `2px solid ${elemColor}60`,
+                    border: `3px solid ${elemColor}60`,
+                    imageRendering: "pixelated" as any,
                   }}
                 >
                   <SpriteAnimator
@@ -176,14 +209,14 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                   />
                 </div>
               </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-white" data-testid="text-confirm-name">{displayName}</p>
-                <div className="flex items-center justify-center gap-2 mt-1">
-                  <StarterIcon className="w-4 h-4" style={{ color: elemColor }} />
-                  <span className="text-sm" style={{ color: elemColor }}>{starterDef.element} {starterDef.className}</span>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontFamily, fontSize: 12, fontWeight: "bold", color: "white" }} data-testid="text-confirm-name">{displayName}</p>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
+                  <StarterIcon style={{ width: 12, height: 12, color: elemColor }} />
+                  <span style={{ fontFamily, fontSize: 8, color: elemColor }}>{starterDef.element} {starterDef.className}</span>
                 </div>
               </div>
-              <div className="w-full space-y-1.5 mt-2">
+              <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
                 {statBar("HP", starterDef.baseStats.maxHp, 150, "#ef4444")}
                 {statBar("MP", starterDef.baseStats.maxMp, 60, "#3b82f6")}
                 {statBar("ATK", starterDef.baseStats.atk, 20, "#f97316")}
@@ -209,57 +242,130 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
 
-      <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-        <div className="flex items-center gap-2 mb-6">
+      <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "0 16px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
           {steps.map((s, i) => (
-            <div key={s} className="flex items-center gap-2">
+            <div key={s} style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <div
-                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${
-                  i <= step ? "bg-purple-400 scale-110" : "bg-purple-800/40"
-                }`}
+                style={{
+                  width: 8,
+                  height: 8,
+                  transition: "all 0.3s",
+                  backgroundColor: i <= step ? ACCENT : "rgba(88,40,128,0.4)",
+                  border: i <= step ? `1px solid ${ACCENT}` : "1px solid rgba(88,40,128,0.3)",
+                  transform: i <= step ? "scale(1.1)" : "scale(1)",
+                }}
               />
               {i < steps.length - 1 && (
-                <div className={`w-6 h-px ${i < step ? "bg-purple-400/50" : "bg-purple-800/30"}`} />
+                <div style={{ width: 24, height: 1, backgroundColor: i < step ? `${ACCENT}80` : "rgba(88,40,128,0.3)" }} />
               )}
             </div>
           ))}
         </div>
 
-        <Card className="w-full max-w-md p-6 bg-[#12122a]/90 border-purple-500/15 backdrop-blur-sm max-h-[80vh] overflow-y-auto">
-          {renderStep()}
+        <div
+          style={{
+            width: "100%",
+            maxWidth: 448,
+            padding: 24,
+            background: panelBg,
+            border: `3px solid ${elemColor}50`,
+            maxHeight: "80vh",
+            overflowY: "auto",
+            position: "relative",
+            boxShadow: `0 0 30px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.3)`,
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              inset: 0,
+              background: scanlineOverlay,
+              pointerEvents: "none",
+              zIndex: 1,
+            }}
+          />
+          <div style={{ position: "relative", zIndex: 2 }}>
+            {renderStep()}
 
-          <div className="flex justify-between mt-6 gap-3">
-            <Button
-              variant="ghost"
-              onClick={() => (step === 0 ? onBack() : setStep(step - 1))}
-              className="text-purple-400 hover:text-purple-300"
-              data-testid="button-creation-back"
-            >
-              <ArrowLeft className="w-4 h-4 mr-1" />
-              {step === 0 ? "Menu" : "Back"}
-            </Button>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24, gap: 12 }}>
+              <button
+                onClick={() => (step === 0 ? onBack() : setStep(step - 1))}
+                data-testid="button-creation-back"
+                style={{
+                  fontFamily,
+                  fontSize: 8,
+                  color: ACCENT,
+                  background: "transparent",
+                  border: `2px solid ${ACCENT}40`,
+                  padding: "8px 16px",
+                  cursor: "pointer",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 4,
+                  transition: "all 0.2s",
+                  borderRadius: 0,
+                }}
+                onMouseEnter={e => { (e.target as HTMLElement).style.borderColor = ACCENT; (e.target as HTMLElement).style.background = "rgba(201,164,74,0.1)"; }}
+                onMouseLeave={e => { (e.target as HTMLElement).style.borderColor = `${ACCENT}40`; (e.target as HTMLElement).style.background = "transparent"; }}
+              >
+                <ArrowLeft style={{ width: 12, height: 12 }} />
+                {step === 0 ? "Menu" : "Back"}
+              </button>
 
-            {step < 2 ? (
-              <Button
-                onClick={() => setStep(step + 1)}
-                className="bg-purple-600/80 text-white hover:bg-purple-500/80 border border-purple-400/20"
-                data-testid="button-creation-next"
-              >
-                Next
-                <ArrowRight className="w-4 h-4 ml-1" />
-              </Button>
-            ) : (
-              <Button
-                onClick={() => onComplete(selectedStarter, name.trim() || starterDef.name, "Purple", "Orb")}
-                className="bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500"
-                data-testid="button-begin-adventure"
-              >
-                <Sparkles className="w-4 h-4 mr-1" />
-                Begin Adventure
-              </Button>
-            )}
+              {step < 2 ? (
+                <button
+                  onClick={() => setStep(step + 1)}
+                  data-testid="button-creation-next"
+                  style={{
+                    fontFamily,
+                    fontSize: 8,
+                    color: "white",
+                    background: `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`,
+                    border: `2px solid ${elemColor}`,
+                    padding: "8px 20px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    transition: "all 0.2s",
+                    borderRadius: 0,
+                  }}
+                  onMouseEnter={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}, ${elemColor}90)`; }}
+                  onMouseLeave={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`; }}
+                >
+                  Next
+                  <ArrowRight style={{ width: 12, height: 12 }} />
+                </button>
+              ) : (
+                <button
+                  onClick={() => onComplete(selectedStarter, name.trim() || starterDef.name, "Purple", "Orb")}
+                  data-testid="button-begin-adventure"
+                  style={{
+                    fontFamily,
+                    fontSize: 8,
+                    color: "white",
+                    background: `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`,
+                    border: `2px solid ${elemColor}`,
+                    padding: "8px 20px",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                    transition: "all 0.2s",
+                    borderRadius: 0,
+                    boxShadow: `0 0 20px ${elemColor}30`,
+                  }}
+                  onMouseEnter={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}, ${elemColor}90)`; }}
+                  onMouseLeave={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`; }}
+                >
+                  <Sparkles style={{ width: 12, height: 12 }} />
+                  Begin Adventure
+                </button>
+              )}
+            </div>
           </div>
-        </Card>
+        </div>
       </div>
     </div>
   );

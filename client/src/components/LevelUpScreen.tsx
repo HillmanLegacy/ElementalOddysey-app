@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, PlayerStats, PendingLevelUp } from "@shared/schema";
@@ -187,7 +186,7 @@ export default function LevelUpScreen({
               const value = currentStats[key];
               const increase = key === "maxHp" ? "+10" : key === "maxMp" ? "+5" : "+2";
               return (
-                <Button
+                <button
                   key={key}
                   onClick={() => onAllocate(key)}
                   disabled={statsRemaining === 0}
@@ -220,7 +219,7 @@ export default function LevelUpScreen({
                   >
                     {increase}
                   </div>
-                </Button>
+                </button>
               );
             })}
           </div>

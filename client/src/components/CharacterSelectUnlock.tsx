@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import SpriteAnimator from "./SpriteAnimator";
 import ParticleCanvas from "./ParticleCanvas";
 import { ELEMENT_COLORS } from "@/lib/gameData";
@@ -35,11 +34,24 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
         <div className="text-center mb-6 animate-[fadeIn_0.5s_ease-out]">
-          <p className="text-sm uppercase tracking-widest text-purple-400/60 mb-1">Choose Your Ally</p>
-          <h1 className="text-3xl font-bold text-white mb-1" style={{ textShadow: "0 0 30px rgba(168,85,247,0.4)" }}>
+          <p
+            className="text-sm uppercase tracking-widest text-purple-400/60 mb-1"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            Choose Your Ally
+          </p>
+          <h1
+            className="text-3xl font-bold text-white mb-1"
+            style={{ textShadow: "0 0 30px rgba(168,85,247,0.4)", fontFamily: "'Press Start 2P', cursive" }}
+          >
             A New Companion Awaits
           </h1>
-          <p className="text-sm text-purple-300/50">Select one character to join your party</p>
+          <p
+            className="text-sm text-purple-300/50"
+            style={{ fontFamily: "'Press Start 2P', cursive" }}
+          >
+            Select one character to join your party
+          </p>
         </div>
 
         <div className="flex gap-6 mb-4">
@@ -53,17 +65,34 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
             const scaledHp = Math.floor(char.baseStats.maxHp * scale);
 
             return (
-              <Button
+              <button
                 key={char.id}
-                variant="ghost"
-                className="flex flex-col items-center p-4 rounded-xl border border-purple-500/20 bg-[#12122a]/80 backdrop-blur-sm hover:border-purple-400/50 hover:bg-purple-900/30 transition-all duration-300 h-auto animate-[fadeIn_0.5s_ease-out]"
-                style={{ animationDelay: `${i * 0.15}s` }}
+                className="flex flex-col items-center p-4 border-0 backdrop-blur-sm transition-all duration-300 h-auto animate-[fadeIn_0.5s_ease-out] cursor-pointer"
+                style={{
+                  animationDelay: `${i * 0.15}s`,
+                  background: "rgba(15,10,30,0.8)",
+                  border: "2px solid rgba(168,85,247,0.2)",
+                  borderRadius: 0,
+                  fontFamily: "'Press Start 2P', cursive",
+                  imageRendering: "pixelated" as const,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(168,85,247,0.6)";
+                  e.currentTarget.style.background = "rgba(30,15,60,0.9)";
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = "rgba(168,85,247,0.2)";
+                  e.currentTarget.style.background = "rgba(15,10,30,0.8)";
+                }}
                 onClick={() => onSelect(char)}
               >
                 <div className="relative mb-2">
                   <div
-                    className="absolute inset-0 rounded-full blur-xl opacity-20"
-                    style={{ backgroundColor: elementColor }}
+                    className="absolute inset-0 opacity-20"
+                    style={{
+                      backgroundColor: elementColor,
+                      boxShadow: `0 0 20px 10px ${elementColor}`,
+                    }}
                   />
                   {spriteData && (
                     <SpriteAnimator
@@ -88,7 +117,7 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
                 <div className="mt-2 flex items-center gap-1 text-xs text-purple-300/40">
                   <Sparkles className="w-3 h-3" /> Select
                 </div>
-              </Button>
+              </button>
             );
           })}
         </div>

@@ -1,7 +1,4 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import SpriteAnimator from "./SpriteAnimator";
 import ParticleCanvas from "./ParticleCanvas";
 import { ELEMENT_COLORS } from "@/lib/gameData";
@@ -40,7 +37,7 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
+    <div className="relative w-full h-screen overflow-hidden" style={{ background: "linear-gradient(to bottom, #0a0a1a, #1a0a2e, #0a0a1a)" }}>
       <ParticleCanvas
         colors={[elementColor, "#ffffff"]}
         count={60}
@@ -48,25 +45,25 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
         style="swirl"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+      <div className="absolute inset-0" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.4), transparent, rgba(0,0,0,0.2))" }} />
 
       <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
-        <div className="text-center mb-4 animate-[fadeIn_0.5s_ease-out]">
-          <p className="text-sm uppercase tracking-widest text-purple-400/60 mb-1">New Ally Joins!</p>
-          <h1 className="text-4xl font-bold text-white mb-1" style={{ textShadow: `0 0 30px ${elementColor}60` }}>
+        <div className="text-center mb-4" style={{ animation: "fadeIn 0.5s ease-out", fontFamily: "'Press Start 2P', cursive" }}>
+          <p style={{ fontSize: "7px", textTransform: "uppercase", letterSpacing: "0.15em", color: "rgba(168,85,247,0.6)", marginBottom: "4px" }}>New Ally Joins!</p>
+          <h1 style={{ fontSize: "12px", color: "#fff", marginBottom: "4px", textShadow: `0 0 30px ${elementColor}60`, fontFamily: "'Press Start 2P', cursive" }}>
             {character.className}
           </h1>
-          <p className="text-lg" style={{ color: elementColor }}>
+          <p style={{ fontSize: "9px", color: elementColor, fontFamily: "'Press Start 2P', cursive" }}>
             {character.element}
           </p>
         </div>
 
-        <div className="mb-6 animate-[fadeIn_0.8s_ease-out]">
+        <div className="mb-6" style={{ animation: "fadeIn 0.8s ease-out" }}>
           {spriteData && (
             <div className="relative">
               <div
-                className="absolute inset-0 rounded-full blur-2xl opacity-30"
-                style={{ backgroundColor: elementColor }}
+                className="absolute inset-0 opacity-30"
+                style={{ backgroundColor: elementColor, imageRendering: "pixelated" }}
               />
               <SpriteAnimator
                 spriteSheet={spriteData.sheet}
@@ -81,53 +78,98 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
           )}
         </div>
 
-        <Card className="w-full max-w-sm p-5 bg-[#12122a]/90 border-purple-500/15 backdrop-blur-sm animate-[fadeIn_1s_ease-out]">
+        <div
+          className="w-full max-w-sm p-5"
+          style={{
+            background: "linear-gradient(to bottom, rgba(18,18,42,0.95), rgba(10,10,30,0.95))",
+            border: `3px solid ${elementColor}`,
+            borderRadius: 0,
+            backdropFilter: "blur(4px)",
+            animation: "fadeIn 1s ease-out",
+          }}
+        >
           <div className="mb-4">
-            <label className="text-xs text-purple-300/60 block mb-1.5 text-center">Name Your New Ally</label>
-            <Input
+            <label style={{ fontSize: "7px", color: "rgba(168,85,247,0.6)", display: "block", marginBottom: "6px", textAlign: "center", fontFamily: "'Press Start 2P', cursive" }}>Name Your New Ally</label>
+            <input
               value={customName}
               onChange={e => setCustomName(e.target.value)}
               placeholder={character.name}
-              className="text-center text-lg bg-black/30 border-purple-500/30 text-purple-100 placeholder:text-purple-500/40 h-11"
               maxLength={20}
+              style={{
+                width: "100%",
+                textAlign: "center",
+                fontSize: "9px",
+                fontFamily: "'Press Start 2P', cursive",
+                background: "rgba(0,0,0,0.4)",
+                border: `2px solid ${elementColor}`,
+                borderRadius: 0,
+                color: "#e2d5f0",
+                padding: "10px 8px",
+                outline: "none",
+                boxSizing: "border-box",
+              }}
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div className="flex items-center gap-2">
               <Heart className="w-4 h-4 text-red-400" />
-              <span className="text-sm text-purple-300/70">HP</span>
-              <span className="text-sm text-white font-semibold ml-auto">{scaledStats.hp}</span>
+              <span style={{ fontSize: "7px", color: "rgba(168,85,247,0.7)", fontFamily: "'Press Start 2P', cursive" }}>HP</span>
+              <span style={{ fontSize: "7px", color: "#fff", fontWeight: 600, marginLeft: "auto", fontFamily: "'Press Start 2P', cursive" }}>{scaledStats.hp}</span>
             </div>
             <div className="flex items-center gap-2">
               <Swords className="w-4 h-4 text-orange-400" />
-              <span className="text-sm text-purple-300/70">ATK</span>
-              <span className="text-sm text-white font-semibold ml-auto">{scaledStats.atk}</span>
+              <span style={{ fontSize: "7px", color: "rgba(168,85,247,0.7)", fontFamily: "'Press Start 2P', cursive" }}>ATK</span>
+              <span style={{ fontSize: "7px", color: "#fff", fontWeight: 600, marginLeft: "auto", fontFamily: "'Press Start 2P', cursive" }}>{scaledStats.atk}</span>
             </div>
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4 text-green-400" />
-              <span className="text-sm text-purple-300/70">DEF</span>
-              <span className="text-sm text-white font-semibold ml-auto">{scaledStats.def}</span>
+              <span style={{ fontSize: "7px", color: "rgba(168,85,247,0.7)", fontFamily: "'Press Start 2P', cursive" }}>DEF</span>
+              <span style={{ fontSize: "7px", color: "#fff", fontWeight: 600, marginLeft: "auto", fontFamily: "'Press Start 2P', cursive" }}>{scaledStats.def}</span>
             </div>
             <div className="flex items-center gap-2">
               <Zap className="w-4 h-4 text-yellow-400" />
-              <span className="text-sm text-purple-300/70">AGI</span>
-              <span className="text-sm text-white font-semibold ml-auto">{scaledStats.agi}</span>
+              <span style={{ fontSize: "7px", color: "rgba(168,85,247,0.7)", fontFamily: "'Press Start 2P', cursive" }}>AGI</span>
+              <span style={{ fontSize: "7px", color: "#fff", fontWeight: 600, marginLeft: "auto", fontFamily: "'Press Start 2P', cursive" }}>{scaledStats.agi}</span>
             </div>
           </div>
 
-          <p className="text-xs text-purple-400/50 text-center mb-4">
+          <p style={{ fontSize: "7px", color: "rgba(168,85,247,0.5)", textAlign: "center", marginBottom: "16px", fontFamily: "'Press Start 2P', cursive" }}>
             Joins at Level {Math.max(1, playerLevel - 2)} &middot; Player-controlled in battle
           </p>
 
-          <Button
+          <button
             onClick={() => onConfirm(customName.trim() || character.name)}
-            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-500 hover:to-indigo-500"
+            style={{
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "8px",
+              padding: "12px 16px",
+              background: "linear-gradient(to bottom, rgba(30,20,50,0.9), rgba(15,10,30,0.9))",
+              border: `2px solid ${elementColor}`,
+              borderRadius: 0,
+              color: elementColor,
+              fontSize: "9px",
+              fontFamily: "'Press Start 2P', cursive",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              textShadow: `0 0 8px ${elementColor}60`,
+            }}
+            onMouseEnter={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = `linear-gradient(to bottom, ${elementColor}30, ${elementColor}15)`;
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = `0 0 12px ${elementColor}40, inset 0 0 12px ${elementColor}15`;
+            }}
+            onMouseLeave={e => {
+              (e.currentTarget as HTMLButtonElement).style.background = "linear-gradient(to bottom, rgba(30,20,50,0.9), rgba(15,10,30,0.9))";
+              (e.currentTarget as HTMLButtonElement).style.boxShadow = "none";
+            }}
           >
-            <Sparkles className="w-4 h-4 mr-2" />
+            <Sparkles className="w-4 h-4" />
             Welcome to the Party!
-          </Button>
-        </Card>
+          </button>
+        </div>
       </div>
     </div>
   );
