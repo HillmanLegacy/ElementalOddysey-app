@@ -106,6 +106,15 @@ const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: str
   axewarrior: { idle: axewarriorIdle, attack: axewarriorAttack, hurt: axewarriorHurt, frameWidth: 94, frameHeight: 91, idleFrames: 6, attackFrames: 8, hurtFrames: 3, scale: 3.5 },
 };
 
+const SPRITE_COLORS: Record<string, string> = {
+  samurai: "#a3e635",
+  knight: "#ef4444",
+  basken: "#3b82f6",
+  ranger: "#2dd4bf",
+  knight2d: "#fde68a",
+  axewarrior: "#a16207",
+};
+
 interface BattleScreenProps {
   player: PlayerCharacter;
   battle: BattleState;
@@ -1391,6 +1400,14 @@ export default function BattleScreen({
     return `${(PLAYER_POS.x + fujinZoomTarget.x) / 2}% ${(100 - (PLAYER_POS.y + fujinZoomTarget.y) / 2)}%`;
   })();
 
+  const turnSpriteId = battle.phase === "partyTurn" && battle.activePartyIndex >= 0 && battle.activePartyIndex < player.party.length
+    ? player.party[battle.activePartyIndex].spriteId
+    : player.spriteId;
+  const tc = SPRITE_COLORS[turnSpriteId] || "#c9a44a";
+  const turnLabel = battle.phase === "partyTurn"
+    ? (battle.activePartyIndex >= 0 && battle.activePartyIndex < player.party.length ? player.party[battle.activePartyIndex].name : "Party")
+    : battle.phase === "victory" ? "Victory" : battle.phase === "defeat" ? "Defeat" : player.name;
+
   return (
     <div className={`relative w-full h-screen overflow-hidden ${shakeScreen ? "animate-[shake_0.3s_ease-out]" : ""}`}>
       {fujinSliceActive && (
@@ -2451,83 +2468,25 @@ export default function BattleScreen({
           }}
         >
           <div
-            className="mx-2 mb-2 rounded-lg overflow-hidden"
+            className="mx-2 mb-2 overflow-hidden"
             style={{
               background: "linear-gradient(180deg, rgba(15,10,30,0.85) 0%, rgba(10,5,25,0.95) 100%)",
-              border: "2px solid rgba(120,80,200,0.3)",
-              boxShadow: "0 0 20px rgba(80,40,160,0.2), inset 0 1px 0 rgba(255,255,255,0.05)",
+              border: `2px solid ${tc}50`,
+              boxShadow: `0 0 20px ${tc}20, inset 0 1px 0 rgba(255,255,255,0.05)`,
               imageRendering: "pixelated",
             }}
           >
-            <div className="px-3 py-0.5 flex items-center gap-2" style={{ borderBottom: "1px solid rgba(120,80,200,0.15)", background: "rgba(120,80,200,0.08)" }}>
-              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(120,80,200,0.3), transparent)" }} />
-              <span className="text-[9px] tracking-[0.2em] uppercase" style={{ fontFamily: "'Press Start 2P', cursive", color: "rgba(180,160,220,0.5)" }}>
-                {battle.phase === "victory" ? "Victory" : battle.phase === "defeat" ? "Defeat" : battle.phase === "partyTurn" ? "Party" : "Command"}
+            <div className="px-3 py-0.5 flex items-center gap-2" style={{ borderBottom: `1px solid ${tc}25`, background: `${tc}10` }}>
+              <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${tc}40, transparent)` }} />
+              <span className="text-[9px] tracking-[0.2em] uppercase" style={{ fontFamily: "'Press Start 2P', cursive", color: `${tc}90` }}>
+                {turnLabel}
               </span>
-              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, rgba(120,80,200,0.3), transparent)" }} />
+              <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${tc}40, transparent)` }} />
             </div>
 
             <div className="px-3 py-2">
 
-          {battle.phase === "victory" && showVictoryUI && (
-            <div className="text-center py-2 animate-[fadeIn_0.8s_ease-out]">
-              <Trophy className="w-8 h-8 text-yellow-400 mx-auto mb-1 drop-shadow-[0_0_10px_rgba(250,204,21,0.4)]" />
-              <h2 className="text-lg font-bold text-yellow-300 mb-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "14px" }} data-testid="text-victory">Victory!</h2>
-
-              <div className="mx-auto max-w-[220px] mb-2">
-                <div className="flex items-center justify-center gap-3 text-xs mb-1" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                  <span style={{ color: "#c084fc" }}>+{battle.enemies.reduce((s, e) => s + e.xpReward, 0)} XP</span>
-                  <span style={{ color: "#facc15" }}>+{battle.enemies.reduce((s, e) => s + e.goldReward, 0)} G</span>
-                </div>
-                {xpBarLevelUp && (
-                  <div className="text-center font-bold animate-pulse mb-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "10px", color: "#fbbf24" }}>
-                    Level Up!
-                  </div>
-                )}
-              </div>
-
-              {xpBarPhase === "done" && (
-                <button
-                  onClick={() => onEndBattle(true)}
-                  className="px-5 py-2 rounded animate-[fadeIn_0.4s_ease-out] transition-all hover:brightness-125"
-                  style={{
-                    fontFamily: "'Press Start 2P', cursive",
-                    fontSize: "10px",
-                    color: "#fff",
-                    background: "linear-gradient(180deg, rgba(202,138,4,0.8) 0%, rgba(161,98,7,0.9) 100%)",
-                    border: "2px solid rgba(250,204,21,0.5)",
-                    boxShadow: "0 0 12px rgba(250,204,21,0.3), inset 0 1px 0 rgba(255,255,255,0.15)",
-                  }}
-                  data-testid="button-claim-victory"
-                >
-                  Claim Rewards
-                </button>
-              )}
-            </div>
-          )}
-
-          {battle.phase === "defeat" && (
-            <div className="text-center py-2 animate-[fadeIn_0.5s_ease-out]">
-              <Skull className="w-8 h-8 text-red-400 mx-auto mb-1" />
-              <h2 className="text-lg font-bold text-red-300 mb-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "14px" }} data-testid="text-defeat">Defeated...</h2>
-              <p className="text-xs mb-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(180,160,220,0.5)" }}>Your journey continues...</p>
-              <button
-                onClick={() => onEndBattle(false)}
-                className="px-5 py-2 rounded transition-all hover:brightness-125"
-                style={{
-                  fontFamily: "'Press Start 2P', cursive",
-                  fontSize: "10px",
-                  color: "#fca5a5",
-                  background: "linear-gradient(180deg, rgba(127,29,29,0.6) 0%, rgba(69,10,10,0.8) 100%)",
-                  border: "2px solid rgba(239,68,68,0.3)",
-                  boxShadow: "0 0 12px rgba(239,68,68,0.15)",
-                }}
-                data-testid="button-continue-defeat"
-              >
-                Return to Map
-              </button>
-            </div>
-          )}
+          
 
           {battle.phase === "playerTurn" && !showItems && !showSpells && !isInputBlocked && (
             <div className="grid grid-cols-4 gap-2 mb-1">
@@ -2806,6 +2765,147 @@ export default function BattleScreen({
           </div>
         </div>
       </div>
+
+      {battle.phase === "victory" && showVictoryUI && (() => {
+        const ec = "#facc15";
+        return (
+          <div className="absolute inset-0 z-[200] flex items-center justify-center animate-[fadeIn_0.5s_ease-out]">
+            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.75) 70%)` }} />
+            <div
+              className="relative w-[300px] overflow-hidden"
+              style={{
+                fontFamily: "'Press Start 2P', cursive",
+                imageRendering: "pixelated",
+                background: "linear-gradient(180deg, rgba(30,20,10,0.95) 0%, rgba(15,10,5,0.98) 100%)",
+                border: `3px solid ${ec}`,
+                boxShadow: `0 0 20px ${ec}40, 0 0 60px ${ec}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+              }}
+            >
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                pointerEvents: "none",
+              }} />
+
+              <div className="relative px-4 pt-3 pb-2 flex items-center justify-center gap-2" style={{ borderBottom: `2px solid ${ec}60` }}>
+                <Trophy className="w-4 h-4" style={{ color: ec }} />
+                <span style={{ fontSize: "12px", color: ec, letterSpacing: "2px" }}>VICTORY</span>
+                <Trophy className="w-4 h-4" style={{ color: ec }} />
+              </div>
+
+              <div className="relative px-4 py-4 space-y-3">
+                <div className="flex items-center justify-center gap-4 text-xs" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+                  <div className="flex flex-col items-center gap-1 px-3 py-2" style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${ec}30` }}>
+                    <span style={{ fontSize: "7px", color: `${ec}80` }}>EXP</span>
+                    <span style={{ color: "#c084fc", fontSize: "11px" }}>+{battle.enemies.reduce((s, e) => s + e.xpReward, 0)}</span>
+                  </div>
+                  <div className="flex flex-col items-center gap-1 px-3 py-2" style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${ec}30` }}>
+                    <span style={{ fontSize: "7px", color: `${ec}80` }}>GOLD</span>
+                    <span style={{ color: "#facc15", fontSize: "11px" }}>+{battle.enemies.reduce((s, e) => s + e.goldReward, 0)}</span>
+                  </div>
+                </div>
+                {xpBarLevelUp && (
+                  <div className="text-center font-bold animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "10px", color: "#fbbf24" }}>
+                    Level Up!
+                  </div>
+                )}
+                {xpBarPhase === "done" && (
+                  <button
+                    onClick={() => onEndBattle(true)}
+                    className="w-full flex items-center justify-center gap-3 px-3 py-2.5 text-left transition-all animate-[fadeIn_0.3s_ease-out]"
+                    style={{
+                      fontFamily: "'Press Start 2P', cursive",
+                      fontSize: "9px",
+                      color: "rgba(255,255,255,0.9)",
+                      letterSpacing: "1px",
+                      background: "rgba(0,0,0,0.3)",
+                      border: `1px solid ${ec}30`,
+                    }}
+                    onMouseEnter={e => {
+                      (e.currentTarget as HTMLElement).style.background = `${ec}25`;
+                      (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
+                      (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}30, inset 0 0 8px ${ec}10`;
+                    }}
+                    onMouseLeave={e => {
+                      (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                      (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                      (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                    }}
+                    data-testid="button-claim-victory"
+                  >
+                    CLAIM REWARDS
+                    <svg className="w-3 h-3 ml-auto opacity-60" viewBox="0 0 12 12" style={{ color: ec }}>
+                      <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="2" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {battle.phase === "defeat" && (() => {
+        const ec = "#ef4444";
+        return (
+          <div className="absolute inset-0 z-[200] flex items-center justify-center animate-[fadeIn_0.5s_ease-out]">
+            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.8) 70%)` }} />
+            <div
+              className="relative w-[300px] overflow-hidden"
+              style={{
+                fontFamily: "'Press Start 2P', cursive",
+                imageRendering: "pixelated",
+                background: "linear-gradient(180deg, rgba(20,5,5,0.95) 0%, rgba(10,2,2,0.98) 100%)",
+                border: `3px solid ${ec}`,
+                boxShadow: `0 0 20px ${ec}40, 0 0 60px ${ec}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+              }}
+            >
+              <div style={{
+                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                pointerEvents: "none",
+              }} />
+
+              <div className="relative px-4 pt-3 pb-2 flex items-center justify-center gap-2" style={{ borderBottom: `2px solid ${ec}60` }}>
+                <Skull className="w-4 h-4" style={{ color: ec }} />
+                <span style={{ fontSize: "12px", color: ec, letterSpacing: "2px" }}>DEFEATED</span>
+              </div>
+
+              <div className="relative px-4 py-4 space-y-3">
+                <p className="text-center" style={{ fontSize: "8px", color: `${ec}80` }}>Your journey continues...</p>
+                <button
+                  onClick={() => onEndBattle(false)}
+                  className="w-full flex items-center justify-center gap-3 px-3 py-2.5 text-left transition-all"
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "9px",
+                    color: "rgba(255,255,255,0.9)",
+                    letterSpacing: "1px",
+                    background: "rgba(0,0,0,0.3)",
+                    border: `1px solid ${ec}30`,
+                  }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.background = `${ec}25`;
+                    (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
+                    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}30, inset 0 0 8px ${ec}10`;
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
+                    (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                    (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                  }}
+                  data-testid="button-continue-defeat"
+                >
+                  RETURN TO MAP
+                  <svg className="w-3 h-3 ml-auto opacity-60" viewBox="0 0 12 12" style={{ color: ec }}>
+                    <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="2" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <style>{`
         @keyframes shake {
