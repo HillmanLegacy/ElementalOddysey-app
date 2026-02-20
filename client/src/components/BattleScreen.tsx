@@ -2670,9 +2670,9 @@ export default function BattleScreen({
                           : 8
                         }
                         fps={
-                          enemyAnimStates[idx] === "attack" ? 12
+                          enemyAnimStates[idx] === "attack" ? 10
                           : enemyAnimStates[idx] === "death" ? 8
-                          : enemyAnimStates[idx] === "hurt" ? 8
+                          : enemyAnimStates[idx] === "hurt" ? 10
                           : 8
                         }
                         scale={3.5}
