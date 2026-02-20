@@ -109,10 +109,10 @@ export const PARTY_SPRITE_DATA: Record<string, PartySpriteData> = {
     hurt: { sheet: "samurai-hurt.png", frameWidth: 96, frameHeight: 96, totalFrames: 3 },
   },
   knight: {
-    idle: { sheet: "knight-idle-4f.png", frameWidth: 86, frameHeight: 98, totalFrames: 4 },
-    attack: { sheet: "knight-attack.png", frameWidth: 86, frameHeight: 98, totalFrames: 7 },
-    run: { sheet: "knight-run.png", frameWidth: 86, frameHeight: 98, totalFrames: 6 },
-    hurt: { sheet: "knight-hurt.png", frameWidth: 86, frameHeight: 98, totalFrames: 2 },
+    idle: { sheet: "knight-idle-4f.png", frameWidth: 86, frameHeight: 49, totalFrames: 7 },
+    attack: { sheet: "knight-attack.png", frameWidth: 86, frameHeight: 49, totalFrames: 7 },
+    run: { sheet: "knight-run.png", frameWidth: 86, frameHeight: 49, totalFrames: 6 },
+    hurt: { sheet: "knight-hurt.png", frameWidth: 86, frameHeight: 49, totalFrames: 2 },
   },
   ranger: {
     idle: { sheet: "ranger-idle.png", frameWidth: 64, frameHeight: 48, totalFrames: 6 },

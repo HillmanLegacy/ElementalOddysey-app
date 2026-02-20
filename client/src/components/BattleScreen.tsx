@@ -143,7 +143,7 @@ interface BattleScreenProps {
   regionTheme?: string;
 }
 
-type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice";
+type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash";
 
 const ALLY_SLOTS = [
   { x: 12, y: 18 },
@@ -211,6 +211,11 @@ export default function BattleScreen({
   const [xpBarLevel, setXpBarLevel] = useState(player.level);
   const [xpBarLevelUp, setXpBarLevelUp] = useState(false);
   const [dragonFireVfx, setDragonFireVfx] = useState<{ type: "burst" | "pillar"; x: number; y: number } | null>(null);
+  const [fireImpactVfx, setFireImpactVfx] = useState<{ targetIdx: number; id: number }[]>([]);
+  const [incinerationSlashActive, setIncinerationSlashActive] = useState(false);
+  const [incinerationFrozenEnemy, setIncinerationFrozenEnemy] = useState<number | null>(null);
+  const pendingIncinerationSlash = useRef<{ targetIdx: number; spell: Spell } | null>(null);
+  const fireImpactId = useRef(0);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
   const prevPhaseRef = useRef(battle.phase);
@@ -437,6 +442,16 @@ export default function BattleScreen({
       setShowSpells(false);
       return;
     }
+    if (selectedSpell.animation === "incinerationSlash") {
+      pendingIncinerationSlash.current = { targetIdx, spell: selectedSpell };
+      setSelectedAction(null);
+      setPendingTargetIdx(targetIdx);
+      onSetAnimating();
+      setAnimPhase("runToEnemy");
+      setSelectedSpell(null);
+      setShowSpells(false);
+      return;
+    }
     setSelectedAction(null);
     setPendingTargetIdx(targetIdx);
     onSetAnimating();
@@ -563,6 +578,80 @@ export default function BattleScreen({
             }
           }, 2200);
         }, attackDuration);
+      } else if (pendingIncinerationSlash.current) {
+        const { targetIdx, spell } = pendingIncinerationSlash.current;
+        pendingIncinerationSlash.current = null;
+        castingNeedsRunBack.current = true;
+        setAnimPhase("incinerationSlash");
+        setIncinerationSlashActive(true);
+        setIncinerationFrozenEnemy(targetIdx);
+        playSfx("swordSwing");
+        playSfx("gruntAttack", 0.7);
+
+        const frameDuration = 1000 / 14;
+        const frame3Time = frameDuration * 2;
+        const frame6Time = frameDuration * 5;
+
+        scheduleTimer(() => {
+          const id1 = ++fireImpactId.current;
+          setFireImpactVfx(prev => [...prev, { targetIdx, id: id1 }]);
+          playSfx("hitMetal");
+          setEnemyHitIdx(targetIdx);
+          scheduleTimer(() => setEnemyHitIdx(null), 180);
+          const hitEnemy = battle.enemies[targetIdx];
+          const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
+          if (hasAnim) {
+            setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+            scheduleTimer(() => {
+              setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+            }, 200);
+          }
+        }, frame3Time);
+
+        scheduleTimer(() => {
+          const id2 = ++fireImpactId.current;
+          setFireImpactVfx(prev => [...prev, { targetIdx, id: id2 }]);
+          playSfx("hitMetal");
+          setEnemyHitIdx(targetIdx);
+          scheduleTimer(() => setEnemyHitIdx(null), 180);
+          const hitEnemy = battle.enemies[targetIdx];
+          const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
+          if (hasAnim) {
+            setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+            scheduleTimer(() => {
+              setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+            }, 200);
+          }
+        }, frame6Time);
+
+        const totalAnimTime = frameDuration * 7;
+
+        scheduleTimer(() => {
+          setIncinerationSlashActive(false);
+          setFireImpactVfx([]);
+          castingNeedsRunBack.current = false;
+          runBackHandled.current = false;
+          setAnimPhase("runBack");
+          scheduleTimer(() => {
+            if (!runBackHandled.current) {
+              runBackHandled.current = true;
+              setAnimPhase("idle");
+              setPendingTargetIdx(null);
+            }
+          }, 600);
+        }, totalAnimTime + 200);
+
+        scheduleTimer(() => {
+          onCastSpell(spell, targetIdx);
+          playSfx("magicRing", 0.4);
+        }, totalAnimTime + 400);
+
+        scheduleTimer(() => {
+          setIncinerationFrozenEnemy(null);
+          if (battle.phase !== "victory" && battle.phase !== "defeat") {
+            setTimeout(() => onFinishPlayerTurn(), 600);
+          }
+        }, totalAnimTime + 1000);
       } else {
         setAnimPhase("attacking");
         playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
@@ -575,12 +664,12 @@ export default function BattleScreen({
       runBackHandled.current = true;
       setAnimPhase("idle");
       setPendingTargetIdx(null);
-      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null) {
+      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null) {
       } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy]);
+  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
@@ -1488,6 +1577,14 @@ export default function BattleScreen({
           return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1 };
         }
         return atk;
+      case "incinerationSlash": {
+        const specialSheet = playerSprites.special;
+        const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
+        if (specialSheet) {
+          return { src: specialSheet, frames: specialFrames, fps: 14, loop: false, pauseAt: specialFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+        }
+        return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1 };
+      }
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
           return { ...atk, fps: 12, pauseAt: Math.min(3, atk.frames - 1) };
@@ -1517,7 +1614,7 @@ export default function BattleScreen({
       }
       return PLAYER_POS;
     }
-    if ((animPhase === "runToEnemy" || animPhase === "attacking" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
+    if ((animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "incinerationSlash" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
       const targetEnemy = battle.enemies[pendingTargetIdx];
       const isBossTarget = targetEnemy && targetEnemy.isBoss;
@@ -2371,6 +2468,26 @@ export default function BattleScreen({
                     </div>
                   )}
                   
+                  {fireImpactVfx.filter(v => v.targetIdx === idx).map(v => (
+                    <div key={v.id} className="absolute z-25 pointer-events-none" style={{
+                      top: "-80%",
+                      left: "-60%",
+                      width: "220%",
+                      height: "220%",
+                      filter: "drop-shadow(0 0 12px rgba(255,120,0,0.8)) drop-shadow(0 0 24px rgba(255,60,0,0.4))",
+                    }}>
+                      <SpriteAnimator
+                        spriteSheet={vfxFireImpact}
+                        frameWidth={64}
+                        frameHeight={64}
+                        totalFrames={10}
+                        fps={16}
+                        scale={3}
+                        loop={false}
+                        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+                      />
+                    </div>
+                  ))}
                   {windSpellVfx && windSpellVfx.targets.includes(idx) && windSpellVfx.type !== "tempest" && (
                     <div className="absolute z-25 pointer-events-none" style={{
                       top: "-60%",
