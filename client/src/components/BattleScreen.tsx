@@ -186,6 +186,8 @@ export default function BattleScreen({
   const [fujinSliceActive, setFujinSliceActive] = useState(false);
   const [fujinSlashes, setFujinSlashes] = useState<{ id: number; x: number; y: number; rotation: number; delay: number; sheet: string; frames: number; fw: number }[]>([]);
   const [fujinZoom, setFujinZoom] = useState(false);
+  const [magicZoom, setMagicZoom] = useState(false);
+  const [magicZoomTarget, setMagicZoomTarget] = useState<number | null>(null);
   const [fujinTargetIdx, setFujinTargetIdx] = useState<number | null>(null);
   const [fujinDashPhase, setFujinDashPhase] = useState<"none" | "windup" | "dash" | "strike" | "fadeout" | "return">("none");
   const [partyAnimIndex, setPartyAnimIndex] = useState(-1);
@@ -248,6 +250,8 @@ export default function BattleScreen({
       setDarkMagicSfx(false);
       setFireHitSfx(false);
       setFrostHitSfx(false);
+      setMagicZoom(false);
+      setMagicZoomTarget(null);
     }
     if (battle.phase === "victory") {
       if (deathAnimPending.size > 0) return;
@@ -438,6 +442,8 @@ export default function BattleScreen({
       setSelectedAction(null);
       setPendingTargetIdx(targetIdx);
       onSetAnimating();
+      setMagicZoom(true);
+      setMagicZoomTarget(targetIdx);
       setAnimPhase("runToEnemy");
       setSelectedSpell(null);
       setShowSpells(false);
@@ -448,6 +454,8 @@ export default function BattleScreen({
       setSelectedAction(null);
       setPendingTargetIdx(targetIdx);
       onSetAnimating();
+      setMagicZoom(true);
+      setMagicZoomTarget(targetIdx);
       setAnimPhase("runToEnemy");
       setSelectedSpell(null);
       setShowSpells(false);
@@ -457,6 +465,8 @@ export default function BattleScreen({
     setPendingTargetIdx(targetIdx);
     onSetAnimating();
     setAnimPhase("casting");
+    setMagicZoom(true);
+    setMagicZoomTarget(targetIdx);
     playSfx("magicRing", 0.6);
     onCastSpell(selectedSpell, targetIdx);
     setSelectedSpell(null);
@@ -466,6 +476,8 @@ export default function BattleScreen({
   const handleSelfSpell = useCallback((spell: Spell) => {
     onSetAnimating();
     setAnimPhase("casting");
+    setMagicZoom(true);
+    setMagicZoomTarget(null);
     playSfx("magicRing", 0.6);
     if (spell.animation === "galeSlash") {
       const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
@@ -552,6 +564,8 @@ export default function BattleScreen({
           scheduleTimer(() => {
             setWindBladeSlashes([]);
             setWindBladeActive(false);
+            setMagicZoom(false);
+            setMagicZoomTarget(null);
             castingNeedsRunBack.current = false;
             runBackHandled.current = false;
             setAnimPhase("runBack");
@@ -597,32 +611,28 @@ export default function BattleScreen({
           const id1 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id1 }]);
           playSfx("hitMetal");
+          setShakeScreen(true);
+          scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);
           scheduleTimer(() => setEnemyHitIdx(null), 180);
-          const hitEnemy = battle.enemies[targetIdx];
-          const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
-          if (hasAnim) {
-            setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
-            scheduleTimer(() => {
-              setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
-            }, 200);
-          }
+          setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+          scheduleTimer(() => {
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+          }, 250);
         }, frame3Time);
 
         scheduleTimer(() => {
           const id2 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id2 }]);
           playSfx("hitMetal");
+          setShakeScreen(true);
+          scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);
           scheduleTimer(() => setEnemyHitIdx(null), 180);
-          const hitEnemy = battle.enemies[targetIdx];
-          const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
-          if (hasAnim) {
-            setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
-            scheduleTimer(() => {
-              setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
-            }, 200);
-          }
+          setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+          scheduleTimer(() => {
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+          }, 250);
         }, frame6Time);
 
         const totalAnimTime = frameDuration * 7;
@@ -630,6 +640,8 @@ export default function BattleScreen({
         scheduleTimer(() => {
           setIncinerationSlashActive(false);
           setFireImpactVfx([]);
+          setMagicZoom(false);
+          setMagicZoomTarget(null);
           castingNeedsRunBack.current = false;
           runBackHandled.current = false;
           setAnimPhase("runBack");
@@ -665,6 +677,8 @@ export default function BattleScreen({
       runBackHandled.current = true;
       setAnimPhase("idle");
       setPendingTargetIdx(null);
+      setMagicZoom(false);
+      setMagicZoomTarget(null);
       if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null) {
       } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
         setTimeout(() => onFinishPlayerTurn(), 1000);
@@ -849,6 +863,8 @@ export default function BattleScreen({
       if (windBladeActive || windBladeAnimPending.current) {
         return;
       }
+      setMagicZoom(false);
+      setMagicZoomTarget(null);
       if (castingNeedsRunBack.current) {
         castingNeedsRunBack.current = false;
         runBackHandled.current = false;
@@ -1652,11 +1668,17 @@ export default function BattleScreen({
       const target = battle.enemies[idx];
       if (!target || target.currentHp <= 0) return;
       const pIdx = battle.activePartyIndex;
+      setMagicZoom(true);
+      setMagicZoomTarget(idx);
       onPartyMemberCastSpell(pIdx, partySelectedSpell, idx);
       playSfx("magicRing");
       setPartySelectedSpell(null);
       setPartyAction("menu");
-      setTimeout(() => onAdvancePartyTurn(), 600);
+      setTimeout(() => {
+        setMagicZoom(false);
+        setMagicZoomTarget(null);
+        onAdvancePartyTurn();
+      }, 600);
       return;
     }
     if (isInputBlocked) return;
@@ -1686,6 +1708,14 @@ export default function BattleScreen({
       return `${playerPos.x}% ${100 - playerPos.y}%`;
     }
     return `${(PLAYER_POS.x + fujinZoomTarget.x) / 2}% ${(100 - (PLAYER_POS.y + fujinZoomTarget.y) / 2)}%`;
+  })();
+
+  const magicZoomOrigin = (() => {
+    if (magicZoomTarget !== null) {
+      const tp = ENEMY_POSITIONS[magicZoomTarget % ENEMY_POSITIONS.length];
+      return `${(PLAYER_POS.x + tp.x) / 2}% ${100 - (PLAYER_POS.y + tp.y) / 2}%`;
+    }
+    return `${PLAYER_POS.x}% ${100 - PLAYER_POS.y}%`;
   })();
 
   const turnSpriteId = battle.phase === "partyTurn" && battle.activePartyIndex >= 0 && battle.activePartyIndex < player.party.length
@@ -1769,10 +1799,10 @@ export default function BattleScreen({
         style={{
           position: "absolute",
           inset: 0,
-          transform: fujinZoom ? "scale(1.45)" : tempestVortexActive ? "scale(1.3)" : "scale(1)",
-          transformOrigin: fujinZoom ? fujinOrigin : tempestVortexActive ? "70% 55%" : "50% 50%",
-          transition: fujinZoom ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : tempestVortexActive ? "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
-          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : tempestVortexActive ? "contrast(1.1) saturate(1.15)" : "none",
+          transform: fujinZoom ? "scale(1.45)" : magicZoom ? "scale(1.45)" : tempestVortexActive ? "scale(1.3)" : "scale(1)",
+          transformOrigin: fujinZoom ? fujinOrigin : magicZoom ? magicZoomOrigin : tempestVortexActive ? "70% 55%" : "50% 50%",
+          transition: (fujinZoom || magicZoom) ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : tempestVortexActive ? "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
+          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : (magicZoom || tempestVortexActive) ? "contrast(1.1) saturate(1.15)" : "none",
         }}
       >
       {regionTheme === "Fire" ? (
@@ -1965,7 +1995,7 @@ export default function BattleScreen({
                 scale={playerSprites.scale || 3.5}
                 loop={spriteConfig.loop}
                 onComplete={onSpriteComplete}
-                preloadSheets={[playerSprites.idle, playerSprites.attack, playerSprites.hurt]}
+                preloadSheets={[playerSprites.idle, playerSprites.attack, playerSprites.hurt, ...(playerSprites.run ? [playerSprites.run] : []), ...(playerSprites.walk ? [playerSprites.walk] : []), ...(playerSprites.special ? [playerSprites.special] : []), ...(playerSprites.death ? [playerSprites.death] : [])]}
                 startFrame={spriteConfig.startAt}
                 pauseAtFrame={spriteConfig.pauseAt}
               />
@@ -2473,10 +2503,11 @@ export default function BattleScreen({
                   
                   {fireImpactVfx.filter(v => v.targetIdx === idx).map(v => (
                     <div key={v.id} className="absolute z-25 pointer-events-none" style={{
-                      top: "-80%",
-                      left: "-60%",
+                      top: "50%",
+                      left: "50%",
                       width: "220%",
                       height: "220%",
+                      transform: "translate(-50%, -50%)",
                       filter: "drop-shadow(0 0 12px rgba(255,120,0,0.8)) drop-shadow(0 0 24px rgba(255,60,0,0.4))",
                     }}>
                       <SpriteAnimator
