@@ -2192,9 +2192,9 @@ export default function BattleScreen({
                 }}
               >
               <button
-                className={`${isDead ? "opacity-10 pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
+                className={`${isDead ? "pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
                 style={{
-                  transform: `scale(${isDead ? 0.4 : pos.z}) ${isTargetable ? "translateY(-4px)" : ""}`,
+                  transform: `scale(${pos.z}) ${isTargetable ? "translateY(-4px)" : ""}`,
                   transition: "transform 0.5s ease, opacity 0.3s ease, filter 0.2s ease",
                   filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
                 }}
