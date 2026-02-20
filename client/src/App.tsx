@@ -89,7 +89,10 @@ function Game() {
   const [saveConfirmSlot, setSaveConfirmSlot] = useState<number | null>(null);
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
-  const [battleTransition, setBattleTransition] = useState<{ nodeId: number; charPos: { x: number; y: number }; elementColor: string } | null>(null);
+  const [battleTransition, setBattleTransition] = useState<{ nodeId: number; direction: "in" } | null>(null);
+  const [battleExitTransition, setBattleExitTransition] = useState<{ victory: boolean } | null>(null);
+  const [postBattleReveal, setPostBattleReveal] = useState(false);
+  const [battleEntryReveal, setBattleEntryReveal] = useState(false);
 
   const handleSaveToSlot = async (slotNumber: number) => {
     if (!state.player) return;
@@ -155,10 +158,7 @@ function Game() {
               }}
               onNodeSelect={(nodeId: number, pos?: { x: number; y: number }) => {
                 if (!state.player) return;
-                const t = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
-                const r = getRegionForTier(state.player.currentRegion, t);
-                const ec = ELEMENT_COLORS[r.theme] || "#c9a44a";
-                setBattleTransition({ nodeId, charPos: pos || { x: 50, y: 50 }, elementColor: ec });
+                setBattleTransition({ nodeId, direction: "in" });
               }}
               onShopOpen={(nodeId: number) => {
                 updatePlayer({ clearedNodes: state.player!.clearedNodes.includes(nodeId) ? state.player!.clearedNodes : [...state.player!.clearedNodes, nodeId] });
@@ -395,14 +395,19 @@ function Game() {
             })()}
             {battleTransition && (
               <BattleTransition
-                originX={battleTransition.charPos.x}
-                originY={battleTransition.charPos.y}
-                elementColor={battleTransition.elementColor}
+                direction="in"
                 onComplete={() => {
                   const nodeId = battleTransition.nodeId;
                   setBattleTransition(null);
+                  setBattleEntryReveal(true);
                   startBattle(nodeId);
                 }}
+              />
+            )}
+            {postBattleReveal && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setPostBattleReveal(false)}
               />
             )}
           </>
@@ -413,38 +418,65 @@ function Game() {
         const battleTier = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
         const battleRegion = getRegionForTier(state.player.currentRegion, battleTier);
         return (
-          <BattleScreen
-            player={state.player}
-            battle={state.battle}
-            showDamageNumbers={state.showDamageNumbers}
-            regionTheme={battleRegion.theme}
-            onAttack={playerAttack}
-            onCastSpell={castSpell}
-            onDefend={playerDefend}
-            onUseItem={useItem}
-            onPartyMemberAttack={partyMemberAttack}
-            onPartyMemberDefend={partyMemberDefend}
-            onPartyMemberCastSpell={partyMemberCastSpell}
-            onPartyMemberUseItem={partyMemberUseItem}
-            onAdvancePartyTurn={advancePartyTurn}
-            onFinishPartyTurn={finishPartyTurn}
-            onEnemyAttack={enemyAttack}
-            onEnemyTurnEnd={enemyTurnEnd}
-            onEndBattle={endBattle}
-            onSetAnimating={setAnimating}
-            onFinishPlayerTurn={finishPlayerTurn}
-          />
+          <>
+            <BattleScreen
+              player={state.player}
+              battle={state.battle}
+              showDamageNumbers={state.showDamageNumbers}
+              regionTheme={battleRegion.theme}
+              onAttack={playerAttack}
+              onCastSpell={castSpell}
+              onDefend={playerDefend}
+              onUseItem={useItem}
+              onPartyMemberAttack={partyMemberAttack}
+              onPartyMemberDefend={partyMemberDefend}
+              onPartyMemberCastSpell={partyMemberCastSpell}
+              onPartyMemberUseItem={partyMemberUseItem}
+              onAdvancePartyTurn={advancePartyTurn}
+              onFinishPartyTurn={finishPartyTurn}
+              onEnemyAttack={enemyAttack}
+              onEnemyTurnEnd={enemyTurnEnd}
+              onEndBattle={(victory: boolean) => setBattleExitTransition({ victory })}
+              onSetAnimating={setAnimating}
+              onFinishPlayerTurn={finishPlayerTurn}
+            />
+            {battleEntryReveal && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setBattleEntryReveal(false)}
+              />
+            )}
+            {battleExitTransition && (
+              <BattleTransition
+                direction="in"
+                onComplete={() => {
+                  const v = battleExitTransition.victory;
+                  setBattleExitTransition(null);
+                  setPostBattleReveal(true);
+                  endBattle(v);
+                }}
+              />
+            )}
+          </>
         );
 
       case "levelUp":
         if (!state.player || !state.pendingLevelUp) return null;
         return (
-          <LevelUpScreen
-            player={state.player}
-            pendingLevelUp={state.pendingLevelUp}
-            statsRemaining={state.pendingLevelUp.statsToAllocate}
-            onAllocate={allocateStat}
-          />
+          <>
+            <LevelUpScreen
+              player={state.player}
+              pendingLevelUp={state.pendingLevelUp}
+              statsRemaining={state.pendingLevelUp.statsToAllocate}
+              onAllocate={allocateStat}
+            />
+            {postBattleReveal && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setPostBattleReveal(false)}
+              />
+            )}
+          </>
         );
 
       case "perkSelect":
