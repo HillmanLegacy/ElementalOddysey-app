@@ -67,6 +67,7 @@ import vfxWindSlash3 from "@/assets/images/vfx-wind-slash3.png";
 import vfxWindVortex from "@/assets/images/vfx-wind-vortex.png";
 import windSlashAnim from "@/assets/images/wind-slash-anim.png";
 import windSparkleSheet from "@/assets/images/wind-sparkle.png";
+import mifuneBurstSheet from "@/assets/images/mifune-burst.png";
 
 import knightIdle from "@/assets/images/knight-idle-4f.png";
 import knightAttack from "@/assets/images/knight-attack.png";
@@ -2283,19 +2284,19 @@ export default function BattleScreen({
 
                   {windSparkleTarget === idx && (
                     <div className="absolute z-30 pointer-events-none" style={{
-                      top: "-100%",
-                      left: "-80%",
-                      width: "260%",
-                      height: "280%",
-                      filter: "drop-shadow(0 0 20px rgba(150,255,150,0.9)) drop-shadow(0 0 40px rgba(100,255,100,0.5))",
-                      animation: "windSparkleGlow 1.2s ease-out forwards",
+                      top: "-120%",
+                      left: "-100%",
+                      width: "300%",
+                      height: "320%",
+                      filter: "drop-shadow(0 0 24px rgba(255,220,100,0.9)) drop-shadow(0 0 48px rgba(255,180,50,0.5))",
+                      animation: "windSparkleGlow 1.0s ease-out forwards",
                     }}>
                       <SpriteAnimator
-                        spriteSheet={windSparkleSheet}
-                        frameWidth={64}
-                        frameHeight={64}
-                        totalFrames={18}
-                        fps={15}
+                        spriteSheet={mifuneBurstSheet}
+                        frameWidth={96}
+                        frameHeight={96}
+                        totalFrames={7}
+                        fps={10}
                         scale={5}
                         loop={false}
                         style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
