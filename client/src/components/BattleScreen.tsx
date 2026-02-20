@@ -398,8 +398,6 @@ export default function BattleScreen({
     if (batchId <= lastDmgEventsIdRef.current) return;
     lastDmgEventsIdRef.current = batchId;
 
-    if (events.length <= 1) return;
-
     events.forEach((evt, idx) => {
       setTimeout(() => {
         let posX: number, posY: number;
@@ -509,6 +507,17 @@ export default function BattleScreen({
         setWindSpellVfx(null);
         setTempestVortexActive(false);
       }, 1800);
+    } else if (spell.name === "Fire Storm") {
+      const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
+      aliveTargets.forEach((idx) => {
+        scheduleTimer(() => {
+          const id = ++fireImpactId.current;
+          setFireImpactVfx(prev => [...prev, { targetIdx: idx, id }]);
+          scheduleTimer(() => {
+            setFireImpactVfx(prev => prev.filter(v => v.id !== id));
+          }, 800);
+        }, idx * 150);
+      });
     }
     onCastSpell(spell);
     setSelectedSpell(null);
@@ -2522,7 +2531,7 @@ export default function BattleScreen({
                   )}
                   
                   {fireImpactVfx.filter(v => v.targetIdx === idx).map(v => (
-                    <div key={v.id} className="absolute z-25 pointer-events-none" style={{
+                    <div key={v.id} className="absolute z-50 pointer-events-none" style={{
                       top: "50%",
                       left: "50%",
                       width: 192,
