@@ -756,7 +756,7 @@ export default function BattleScreen({
         }
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies, runBackHandled]);
+  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
@@ -917,17 +917,16 @@ export default function BattleScreen({
 
   const onSpriteComplete = useCallback(() => {
     if (animPhase === "attacking") {
-      if (runBackHandled.current) return;
-      runBackHandled.current = true;
+      // Character finished attack animation at enemy position
+      // DO NOT set runBackHandled here yet, we want to wait for the pause
       
-      // PAUSE phase: Stay at the enemy position for 400ms
       scheduleTimer(() => {
-        runBackHandled.current = false; // Reset for the actual runBack
+        // After 400ms pause, start running back
         setAnimPhase("runBack");
         
-        // Safety timer to ensure turn advances if transitionEnd fails
+        // Safety fallback in case transitionEnd doesn't fire
         scheduleTimer(() => {
-          if (!runBackHandled.current && animPhase === "runBack") {
+          if (animPhase === "runBack" && !runBackHandled.current) {
             runBackHandled.current = true;
             setAnimPhase("idle");
             setPendingTargetIdx(null);
@@ -935,7 +934,7 @@ export default function BattleScreen({
               onFinishPlayerTurn();
             }
           }
-        }, 450); // 350ms transition + 100ms buffer
+        }, 500);
       }, 400); 
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
