@@ -574,6 +574,7 @@ export default function BattleScreen({
   const onPlayerTransitionEnd = useCallback((e: React.TransitionEvent) => {
     if (e.propertyName !== "left" && e.propertyName !== "bottom") return;
     if (e.propertyName === "bottom") return;
+    
     if (animPhase === "runToEnemy") {
       if (pendingWindBlade.current) {
         const { targetIdx, spell } = pendingWindBlade.current;
@@ -634,8 +635,11 @@ export default function BattleScreen({
                 runBackHandled.current = true;
                 setAnimPhase("idle");
                 setPendingTargetIdx(null);
+                if (battle.phase !== "victory" && battle.phase !== "defeat") {
+                  onFinishPlayerTurn();
+                }
               }
-            }, 600);
+            }, 400);
           }, 1200);
 
           scheduleTimer(() => {
@@ -711,8 +715,11 @@ export default function BattleScreen({
               runBackHandled.current = true;
               setAnimPhase("idle");
               setPendingTargetIdx(null);
+              if (battle.phase !== "victory" && battle.phase !== "defeat") {
+                onFinishPlayerTurn();
+              }
             }
-          }, 600);
+          }, 400);
         }, totalAnimTime + 200);
 
         scheduleTimer(() => {
@@ -734,15 +741,19 @@ export default function BattleScreen({
           onAttack(pendingTargetIdx);
         }
       }
-    } else if (animPhase === "runBack" && !runBackHandled.current) {
-      runBackHandled.current = true;
-      setAnimPhase("idle");
-      setPendingTargetIdx(null);
-      setMagicZoom(false);
-      setMagicZoomTarget(null);
-      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null) {
-      } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
-        onFinishPlayerTurn();
+    } else if (animPhase === "runBack") {
+      // Character has finished sliding back to starting position
+      if (!runBackHandled.current) {
+        runBackHandled.current = true;
+        setAnimPhase("idle");
+        setPendingTargetIdx(null);
+        setMagicZoom(false);
+        setMagicZoomTarget(null);
+        
+        // Final safety check for turn progression
+        if (battle.phase !== "victory" && battle.phase !== "defeat") {
+          onFinishPlayerTurn();
+        }
       }
     }
   }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies]);
@@ -913,6 +924,20 @@ export default function BattleScreen({
       scheduleTimer(() => {
         runBackHandled.current = false; // Reset for the actual runBack
         setAnimPhase("runBack");
+        
+        // Ensure we advance the turn even if transitionEnd doesn't fire for some reason
+        // or if the character is already at the target position.
+        // We'll use a safety timer that matches the transition duration.
+        scheduleTimer(() => {
+          if (!runBackHandled.current && animPhase === "runBack") {
+            runBackHandled.current = true;
+            setAnimPhase("idle");
+            setPendingTargetIdx(null);
+            if (battle.phase !== "victory" && battle.phase !== "defeat") {
+              onFinishPlayerTurn();
+            }
+          }
+        }, 400); // 350ms transition + 50ms buffer
       }, 400); 
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
