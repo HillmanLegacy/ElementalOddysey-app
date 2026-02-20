@@ -35,6 +35,7 @@ import demonFireball from "@/assets/images/demon-fireball.png";
 
 import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
 import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
+import guardSpriteSheet from "@assets/10_weaponhit_spritesheet_1771628904150.png";
 
 import fireSlimeImg from "@/assets/images/enemy-fire-slime.png";
 import aquaSlimeImg from "@/assets/images/enemy-aqua-slime.png";
@@ -204,6 +205,7 @@ export default function BattleScreen({
   const [partyAction, setPartyAction] = useState<"menu" | "selectTarget" | "selectMagicTarget" | "showSpells" | "showItems">("menu");
   const [partySelectedSpell, setPartySelectedSpell] = useState<Spell | null>(null);
   const [partyHurtIndex, setPartyHurtIndex] = useState(-1);
+  const [partyGuardIndex, setPartyGuardIndex] = useState(-1);
   const [dodgeBlur, setDodgeBlur] = useState<{ type: "player" | "party" | "enemy"; index: number } | null>(null);
   const [windAttackVfx, setWindAttackVfx] = useState<number | null>(null);
   const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
@@ -2000,11 +2002,22 @@ export default function BattleScreen({
               </div>
             )}
             {animPhase === "defending" && (
-              <div
-                className="absolute -inset-6 rounded-full z-30 animate-[shieldPulse_0.8s_ease-out_forwards]"
-                style={{ border: "3px solid rgba(96,165,250,0.6)", boxShadow: "0 0 40px rgba(96,165,250,0.3), inset 0 0 20px rgba(96,165,250,0.1)" }}
-                onAnimationEnd={onSpriteComplete}
-              />
+              <div className="absolute z-30" style={{
+                top: "50%",
+                left: "50%",
+                transform: "translate(-50%, -50%)",
+              }}>
+                <SpriteAnimator
+                  spriteSheet={guardSpriteSheet}
+                  frameWidth={100}
+                  frameHeight={100}
+                  totalFrames={31}
+                  fps={24}
+                  scale={2.5}
+                  loop={false}
+                  onComplete={onSpriteComplete}
+                />
+              </div>
             )}
             {animPhase === "casting" && !windBladeActive && !windBladeFrozenEnemy && (
               <div
@@ -2128,6 +2141,24 @@ export default function BattleScreen({
                   loop={!isAttacking && !isHurt}
                   onComplete={isAttacking || isHurt ? () => {} : undefined}
                 />
+                {partyGuardIndex === idx && (
+                  <div className="absolute z-30" style={{
+                    top: "50%",
+                    left: "50%",
+                    transform: "translate(-50%, -50%)",
+                  }}>
+                    <SpriteAnimator
+                      spriteSheet={guardSpriteSheet}
+                      frameWidth={100}
+                      frameHeight={100}
+                      totalFrames={31}
+                      fps={24}
+                      scale={2.5}
+                      loop={false}
+                      onComplete={() => setPartyGuardIndex(-1)}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}
@@ -3222,7 +3253,7 @@ export default function BattleScreen({
                   <div className="grid grid-cols-4 gap-2 mb-1">
                     {[
                       { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => setPartyAction("selectTarget") },
-                      { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", onClick: () => { onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 400); } },
+                      { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", onClick: () => { setPartyGuardIndex(battle.activePartyIndex); playSfx("block"); onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 1200); } },
                       { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", onClick: () => setPartyAction("showSpells"), disabled: partySpells.length === 0 },
                       { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", onClick: () => setPartyAction("showItems"), disabled: consumables.length === 0 },
                     ].map(btn => (
