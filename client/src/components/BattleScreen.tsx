@@ -1701,8 +1701,7 @@ export default function BattleScreen({
       return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
     }
     if (animPhase === "runBack" && pendingTargetIdx !== null) {
-      // During runBack, we return PLAYER_POS.
-      // The CSS transition handles moving from the enemy back to origin.
+      // While running back, the position is the target origin
       return PLAYER_POS;
     }
     if (animPhase === "hurt") {
