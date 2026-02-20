@@ -892,17 +892,19 @@ export default function BattleScreen({
   const onSpriteComplete = useCallback(() => {
     if (animPhase === "attacking") {
       runBackHandled.current = false;
-      setAnimPhase("runBack");
       scheduleTimer(() => {
-        if (!runBackHandled.current) {
-          runBackHandled.current = true;
-          setAnimPhase("idle");
-          setPendingTargetIdx(null);
-          if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 1000);
+        setAnimPhase("runBack");
+        scheduleTimer(() => {
+          if (!runBackHandled.current) {
+            runBackHandled.current = true;
+            setAnimPhase("idle");
+            setPendingTargetIdx(null);
+            if (battle.phase !== "victory" && battle.phase !== "defeat") {
+              setTimeout(() => onFinishPlayerTurn(), 1000);
+            }
           }
-        }
-      }, 250);
+        }, 350);
+      }, 600);
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
@@ -924,7 +926,7 @@ export default function BattleScreen({
               setTimeout(() => onFinishPlayerTurn(), 1000);
             }
           }
-        }, 250);
+        }, 350);
       } else {
         setAnimPhase("idle");
         setPendingTargetIdx(null);
@@ -1971,7 +1973,7 @@ export default function BattleScreen({
                 : animPhase === "runToEnemy"
                   ? "left 0.35s ease-in, bottom 0.35s ease-in"
                   : animPhase === "runBack"
-                    ? "left 0.2s ease-out, bottom 0.2s ease-out"
+                    ? "left 0.35s ease-out, bottom 0.35s ease-out"
                     : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
             onTransitionEnd={onPlayerTransitionEnd}
@@ -2126,7 +2128,7 @@ export default function BattleScreen({
                             onAdvancePartyTurn();
                           }, 600);
                         }
-                      }, 250);
+                      }, 350);
                     }, 400);
                   } else if (partyAnimPhase === "runBack" && !partyRunBackHandled.current) {
                     partyRunBackHandled.current = true;
