@@ -334,6 +334,8 @@ export default function BattleScreen({
     if (evt.id <= lastDmgEventIdRef.current) return;
     lastDmgEventIdRef.current = evt.id;
 
+    if (battle.lastDamageEvents && battle.lastDamageEvents.length > 1 && battle.lastDamageEvents.some(e => e.id === evt.id)) return;
+
     let posX: number, posY: number;
     let color = "#ef4444";
 
@@ -529,11 +531,6 @@ export default function BattleScreen({
           }
 
           scheduleTimer(() => {
-            setWindSparkleTarget(targetIdx);
-            playSfx("magicRing", 0.4);
-          }, 800);
-
-          scheduleTimer(() => {
             setWindBladeSlashes([]);
             setWindBladeActive(false);
             castingNeedsRunBack.current = false;
@@ -551,6 +548,8 @@ export default function BattleScreen({
           scheduleTimer(() => {
             windBladeDamageTarget.current = targetIdx;
             onCastSpell(spell, targetIdx);
+            setWindSparkleTarget(targetIdx);
+            playSfx("magicRing", 0.4);
           }, 1600);
 
           scheduleTimer(() => {
@@ -1850,15 +1849,7 @@ export default function BattleScreen({
                 onAnimationEnd={onSpriteComplete}
               />
             )}
-            {windBladeActive && (
-              <div
-                className="absolute -inset-10 z-30 pointer-events-none"
-                style={{
-                  background: "radial-gradient(circle, rgba(100,255,100,0.3) 0%, rgba(50,200,50,0.15) 40%, transparent 70%)",
-                  animation: "pulse 0.5s ease-in-out infinite",
-                }}
-              />
-            )}
+            
             <div className="relative">
               <SpriteAnimator
                 spriteSheet={spriteConfig.src}
