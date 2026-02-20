@@ -2001,24 +2001,6 @@ export default function BattleScreen({
                 />
               </div>
             )}
-            {animPhase === "defending" && (
-              <div className="absolute z-30" style={{
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-              }}>
-                <SpriteAnimator
-                  spriteSheet={guardSpriteSheet}
-                  frameWidth={100}
-                  frameHeight={100}
-                  totalFrames={31}
-                  fps={24}
-                  scale={2.5}
-                  loop={false}
-                  onComplete={onSpriteComplete}
-                />
-              </div>
-            )}
             {animPhase === "casting" && !windBladeActive && !windBladeFrozenEnemy && (
               <div
                 className="absolute -inset-8 z-30 animate-[magicGlow_0.9s_ease-out_forwards]"
@@ -2042,6 +2024,24 @@ export default function BattleScreen({
                 pauseAtFrame={spriteConfig.pauseAt}
                 holdFrames={spriteConfig.holdFrames}
               />
+              {animPhase === "defending" && (
+                <div className="absolute z-30 pointer-events-none" style={{
+                  top: "50%",
+                  left: "50%",
+                  transform: "translate(-50%, -50%)",
+                }}>
+                  <SpriteAnimator
+                    spriteSheet={guardSpriteSheet}
+                    frameWidth={100}
+                    frameHeight={100}
+                    totalFrames={31}
+                    fps={38}
+                    scale={2.5}
+                    loop={false}
+                    onComplete={onSpriteComplete}
+                  />
+                </div>
+              )}
               <div
                 className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-3 rounded-full blur-md opacity-40"
                 style={{ backgroundColor: elementColor }}
@@ -2131,34 +2131,36 @@ export default function BattleScreen({
                   }
                 }}
               >
-                <SpriteAnimator
-                  spriteSheet={spriteSheet}
-                  frameWidth={spriteInfo.frameWidth}
-                  frameHeight={spriteInfo.frameHeight}
-                  totalFrames={spriteFrames}
-                  fps={isAttacking ? 14 : isRunning ? 14 : 8}
-                  scale={spriteInfo.scale || 3.5}
-                  loop={!isAttacking && !isHurt}
-                  onComplete={isAttacking || isHurt ? () => {} : undefined}
-                />
-                {partyGuardIndex === idx && (
-                  <div className="absolute z-30" style={{
-                    top: "50%",
-                    left: "50%",
-                    transform: "translate(-50%, -50%)",
-                  }}>
-                    <SpriteAnimator
-                      spriteSheet={guardSpriteSheet}
-                      frameWidth={100}
-                      frameHeight={100}
-                      totalFrames={31}
-                      fps={24}
-                      scale={2.5}
-                      loop={false}
-                      onComplete={() => setPartyGuardIndex(-1)}
-                    />
-                  </div>
-                )}
+                <div className="relative">
+                  <SpriteAnimator
+                    spriteSheet={spriteSheet}
+                    frameWidth={spriteInfo.frameWidth}
+                    frameHeight={spriteInfo.frameHeight}
+                    totalFrames={spriteFrames}
+                    fps={isAttacking ? 14 : isRunning ? 14 : 8}
+                    scale={spriteInfo.scale || 3.5}
+                    loop={!isAttacking && !isHurt}
+                    onComplete={isAttacking || isHurt ? () => {} : undefined}
+                  />
+                  {partyGuardIndex === idx && (
+                    <div className="absolute z-30 pointer-events-none" style={{
+                      top: "50%",
+                      left: "50%",
+                      transform: "translate(-50%, -50%)",
+                    }}>
+                      <SpriteAnimator
+                        spriteSheet={guardSpriteSheet}
+                        frameWidth={100}
+                        frameHeight={100}
+                        totalFrames={31}
+                        fps={38}
+                        scale={2.5}
+                        loop={false}
+                        onComplete={() => setPartyGuardIndex(-1)}
+                      />
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })}
