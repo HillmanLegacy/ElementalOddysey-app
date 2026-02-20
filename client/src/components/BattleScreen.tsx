@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
+import PixelDissolve from "./PixelDissolve";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
 import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel } from "@/lib/gameData";
 import { groupConsumables } from "@/lib/utils";
@@ -200,6 +201,7 @@ export default function BattleScreen({
   const windSparkleAfterRunBack = useRef<number | null>(null);
   const windBladeDamageTarget = useRef<number | null>(null);
   const [deathAnimPending, setDeathAnimPending] = useState<Set<number>>(new Set());
+  const [pixelDissolving, setPixelDissolving] = useState<Set<number>>(new Set());
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
@@ -884,6 +886,15 @@ export default function BattleScreen({
       next.delete(idx);
       return next;
     });
+    setPixelDissolving(prev => new Set(prev).add(idx));
+  }, []);
+
+  const onPixelDissolveComplete = useCallback((idx: number) => {
+    setPixelDissolving(prev => {
+      const next = new Set(prev);
+      next.delete(idx);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -898,15 +909,20 @@ export default function BattleScreen({
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = [];
     battle.enemies.forEach((enemy, idx) => {
-      if (enemy.currentHp <= 0 && isAnimatedEnemyCheck(enemy) && enemyAnimStates[idx] !== "death" && enemyAnimStates[idx] !== "hurt" && !deathAnimPending.has(idx)) {
+      if (enemy.currentHp <= 0 && isAnimatedEnemyCheck(enemy) && enemyAnimStates[idx] !== "death" && enemyAnimStates[idx] !== "hurt" && !deathAnimPending.has(idx) && !pixelDissolving.has(idx)) {
         timers.push(setTimeout(() => {
           setDeathAnimPending(prev => new Set(prev).add(idx));
           setEnemyAnimStates(prev => ({ ...prev, [idx]: "death" }));
         }, 600));
       }
+      if (enemy.currentHp <= 0 && !isAnimatedEnemyCheck(enemy) && !pixelDissolving.has(idx)) {
+        timers.push(setTimeout(() => {
+          setPixelDissolving(prev => new Set(prev).add(idx));
+        }, 500));
+      }
     });
     return () => timers.forEach(t => clearTimeout(t));
-  }, [battle.enemies, isAnimatedEnemyCheck, enemyAnimStates, deathAnimPending]);
+  }, [battle.enemies, isAnimatedEnemyCheck, enemyAnimStates, deathAnimPending, pixelDissolving]);
 
   const animateEnemyAttack = useCallback((enemyIdx: number, enemy: typeof battle.enemies[0], onDone: () => void) => {
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
@@ -2333,6 +2349,7 @@ export default function BattleScreen({
                     </div>
                   )}
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
                       className="w-36 h-36 md:w-48 md:h-48"
                       style={{
@@ -2389,7 +2406,9 @@ export default function BattleScreen({
                         preloadSheets={[dragonLordIdle, dragonLordWalk, dragonLordAttack, dragonLordHurt, dragonLordDeath]}
                       />
                     </div>
+                    </PixelDissolve>
                   ) : isJotem(enemy) ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
                       className={`w-32 h-32 md:w-40 md:h-40 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
@@ -2433,7 +2452,9 @@ export default function BattleScreen({
                         preloadSheets={[jotemIdle, jotemWalk, jotemAttack, jotemHurt, jotemDeath, jotemSlash]}
                       />
                     </div>
+                    </PixelDissolve>
                   ) : enemy.element === "Fire" && !enemy.isBoss ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
                       className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
@@ -2481,7 +2502,9 @@ export default function BattleScreen({
                         preloadSheets={[demonIdle, demonAttack, demonHurt, demonDeath]}
                       />
                     </div>
+                    </PixelDissolve>
                   ) : isFrostLizard(enemy) ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
                       className={`w-20 h-20 md:w-28 md:h-28 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
@@ -2520,7 +2543,9 @@ export default function BattleScreen({
                         preloadSheets={[frostLizardIdle, frostLizardAttack, frostLizardHurt]}
                       />
                     </div>
+                    </PixelDissolve>
                   ) : (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <img
                       src={spriteImg}
                       alt={enemy.name}
@@ -2531,6 +2556,7 @@ export default function BattleScreen({
                       }}
                       data-testid={`img-enemy-${idx}`}
                     />
+                    </PixelDissolve>
                   )}
                   <div
                     className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-2 rounded-full blur-sm opacity-30"
