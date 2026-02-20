@@ -2646,7 +2646,14 @@ export default function BattleScreen({
                   />
                 </div>
 
-                <div className="w-full max-w-[100px] mt-1 z-10">
+                <div
+                  className="w-full max-w-[100px] mt-1 z-10"
+                  style={{
+                    opacity: pixelDissolving.has(idx) || isDead ? 0 : 1,
+                    transition: "opacity 0.6s ease-out",
+                    pointerEvents: isDead ? "none" : "auto",
+                  }}
+                >
                   <div
                     className="overflow-hidden"
                     style={{
@@ -2711,7 +2718,6 @@ export default function BattleScreen({
             const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
             const labelLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
             const labelBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
-            if (isDead) return null;
             return (
               <div
                 key={`label-${idx}`}
@@ -2721,7 +2727,8 @@ export default function BattleScreen({
                   bottom: `${labelBottom + 12}%`,
                   transform: "translateX(-50%)",
                   zIndex: 60,
-                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
+                  opacity: pixelDissolving.has(idx) || isDead ? 0 : 1,
+                  transition: `opacity 0.6s ease-out${isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? ", left 0.5s ease, bottom 0.5s ease" : ""}`,
                 }}
               >
                 <div
