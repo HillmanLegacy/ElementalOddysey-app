@@ -3,6 +3,7 @@ import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { Slider } from "@/components/ui/slider";
 import { useGameState } from "@/lib/gameState";
 import { getRegionForTier, getRegionTier, ELEMENT_COLORS } from "@/lib/gameData";
 import MainMenu from "@/components/MainMenu";
@@ -21,6 +22,7 @@ import BattleTransition from "@/components/BattleTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
+import { X } from "lucide-react";
 import type { PlayerCharacter } from "@shared/schema";
 
 const DESIGN_WIDTH = 1024;
@@ -89,6 +91,13 @@ function Game() {
   const [saveConfirmSlot, setSaveConfirmSlot] = useState<number | null>(null);
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
+  const [showOptions, setShowOptions] = useState(false);
+
+  useEffect(() => {
+    const handleOpenOptions = () => setShowOptions(true);
+    window.addEventListener('open-options', handleOpenOptions);
+    return () => window.removeEventListener('open-options', handleOpenOptions);
+  }, []);
   const [battleTransition, setBattleTransition] = useState<{ nodeId: number; elementColor: string } | null>(null);
   const [battleExitTransition, setBattleExitTransition] = useState<{ victory: boolean } | null>(null);
   const [postBattleReveal, setPostBattleReveal] = useState(false);
@@ -216,6 +225,63 @@ function Game() {
                   }}
                   onClose={() => setShowPartyManagement(false)}
                 />
+              </div>
+            )}
+            {showOptions && (
+              <div className="absolute inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+                <div className="w-80 p-5 overflow-hidden relative" style={{
+                  background: "rgba(8,8,12,0.95)",
+                  border: `3px solid ${ELEMENT_COLORS[getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {})).theme]}`,
+                  boxShadow: `0 0 30px rgba(0,0,0,0.5)`,
+                  fontFamily: "'Press Start 2P', cursive"
+                }}>
+                  <div className="flex items-center justify-between mb-6">
+                    <h3 style={{ fontSize: "10px", color: "#c9a44a", letterSpacing: "2px" }}>OPTIONS</h3>
+                    <button 
+                      onClick={() => setShowOptions(false)}
+                      className="w-8 h-8 flex items-center justify-center border border-[#c9a44a]50 bg-black/40"
+                    >
+                      <X className="w-4 h-4 text-[#c9a44a]" />
+                    </button>
+                  </div>
+                  <div className="space-y-6">
+                    <div>
+                      <label style={{ fontSize: "7px", color: "#c9a44a80", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>TEXT SPEED</label>
+                      <div className="flex gap-2">
+                        {(["slow", "medium", "fast"] as const).map(sp => (
+                          <button
+                            key={sp}
+                            className="flex-1 py-2 text-[7px]"
+                            style={{
+                              border: state.textSpeed === sp ? `2px solid #c9a44a` : `1px solid #c9a44a30`,
+                              background: state.textSpeed === sp ? `#c9a44a25` : "transparent",
+                              color: state.textSpeed === sp ? "#c9a44a" : "#c9a44a60",
+                            }}
+                            onClick={() => setState(s => ({ ...s, textSpeed: sp }))}
+                          >
+                            {sp.toUpperCase()}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "7px", color: "#c9a44a80", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>MUSIC: {state.musicVolume}%</label>
+                      <Slider
+                        value={[state.musicVolume]}
+                        max={100} step={1}
+                        onValueChange={([v]: number[]) => setState(s => ({ ...s, musicVolume: v }))}
+                      />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "7px", color: "#c9a44a80", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>SFX: {state.sfxVolume}%</label>
+                      <Slider
+                        value={[state.sfxVolume]}
+                        max={100} step={1}
+                        onValueChange={([v]: number[]) => setState(s => ({ ...s, sfxVolume: v }))}
+                      />
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
             {showSaveScreen && state.player && (() => {

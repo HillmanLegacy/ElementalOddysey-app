@@ -4,9 +4,10 @@ import { Card } from "@/components/ui/card";
 import ParticleCanvas from "./ParticleCanvas";
 import LavaOverworldBg from "./LavaOverworldBg";
 import SpriteAnimator from "./SpriteAnimator";
+import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Users, Sparkles, Home, Shield, Package, Moon, Lock } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Users, Sparkles, Home, Shield, Package, Moon, Lock, ArrowLeft } from "lucide-react";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -192,19 +193,27 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
     animFrameRef.current = requestAnimationFrame(animate);
   }, []);
 
+  const menuFadeOut = useRef(false);
+
   useEffect(() => {
     if (prevRegionRef.current !== player.currentRegion) {
-      cancelAnimationFrame(animFrameRef.current);
-      setIsMoving(false);
-      setFacingRight(true);
-      moveCallbackRef.current = null;
-      const newTier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
-      const newRegion = getRegionForTier(player.currentRegion, newTier);
-      const firstNode = newRegion.nodes[0];
-      const pos = getNodePosition(firstNode);
-      setCharPos(pos);
-      prevRegionRef.current = player.currentRegion;
-      prevNodeRef.current = player.currentNode;
+      menuFadeOut.current = true;
+      setTimeout(() => {
+        cancelAnimationFrame(animFrameRef.current);
+        setIsMoving(false);
+        setFacingRight(true);
+        moveCallbackRef.current = null;
+        const newTier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
+        const newRegion = getRegionForTier(player.currentRegion, newTier);
+        const firstNode = newRegion.nodes[0];
+        const pos = getNodePosition(firstNode);
+        setCharPos(pos);
+        prevRegionRef.current = player.currentRegion;
+        prevNodeRef.current = player.currentNode;
+        setTimeout(() => {
+          menuFadeOut.current = false;
+        }, 800);
+      }, 800);
       return;
     }
 
@@ -449,6 +458,17 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           })}
         </svg>
       </div>
+
+      {menuFadeOut.current && (
+        <div className="absolute inset-0 z-[500] pointer-events-none">
+          <BattleTransition direction="in" elementColor={elemColor} onComplete={() => {}} />
+        </div>
+      )}
+      {!menuFadeOut.current && prevRegionRef.current !== player.currentRegion && (
+        <div className="absolute inset-0 z-[500] pointer-events-none">
+          <BattleTransition direction="out" elementColor={elemColor} onComplete={() => {}} />
+        </div>
+      )}
 
       {sortedNodes.map(node => {
         const Icon = NODE_ICONS[node.type] || Star;
@@ -717,36 +737,57 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
       })()}
       </div>
 
-      <div className="absolute top-0 left-0 right-0 z-30 flex items-center justify-between gap-2 p-2 px-3 bg-black/50 backdrop-blur-sm border-b border-white/5">
-        <div className="flex items-center gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center"
-              style={{ backgroundColor: COLOR_MAP[player.energyColor] + "30", border: `1.5px solid ${COLOR_MAP[player.energyColor]}60` }}
+      <div className="absolute top-0 left-0 right-0 z-[150] h-12 flex items-center justify-between px-4 overflow-hidden"
+        style={{
+          background: `linear-gradient(180deg, ${theme.sky[0]}f0 0%, ${theme.terrain}f5 100%)`,
+          borderBottom: `3px solid ${elemColor}`,
+          boxShadow: `0 2px 15px rgba(0,0,0,0.5), 0 0 20px ${elemColor}20`,
+        }}
+      >
+        <div className="absolute inset-0 pointer-events-none" style={{
+          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${elemColor}08 3px, ${elemColor}08 4px)`,
+        }} />
+
+        <div className="relative flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm"
+              style={{ backgroundColor: COLOR_MAP[player.energyColor] + "30", border: `2px solid ${COLOR_MAP[player.energyColor]}` }}
             >
-              <span className="text-[10px] font-bold" style={{ color: COLOR_MAP[player.energyColor] }}>{player.level}</span>
+              <span className="text-[11px] font-bold" style={{ color: COLOR_MAP[player.energyColor], fontFamily: "'Press Start 2P'" }}>{player.level}</span>
             </div>
             <div>
-              <p className="text-xs font-semibold text-white leading-none" data-testid="text-player-name">{player.name}</p>
-              <p className="text-[9px] text-white/40">Lv.{player.level} {player.element}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Heart className="w-3 h-3 text-red-400" />
-              <span className="text-[10px] text-red-300" data-testid="text-hp">{player.stats.hp}/{player.stats.maxHp}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Droplets className="w-3 h-3 text-blue-400" />
-              <span className="text-[10px] text-blue-300" data-testid="text-mp">{player.stats.mp}/{player.stats.maxMp}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Gem className="w-3 h-3 text-yellow-400" />
-              <span className="text-[10px] text-yellow-300" data-testid="text-gold">{player.gold}g</span>
+              <p className="text-[10px] font-bold text-white tracking-wider" style={{ fontFamily: "'Press Start 2P'" }}>{player.name.toUpperCase()}</p>
+              <div className="flex gap-3 mt-1">
+                <div className="flex items-center gap-1.5">
+                  <Heart className="w-2.5 h-2.5 text-red-500" />
+                  <span className="text-[8px] text-red-200" style={{ fontFamily: "'Press Start 2P'" }}>{player.stats.hp}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Droplets className="w-2.5 h-2.5 text-blue-500" />
+                  <span className="text-[8px] text-blue-200" style={{ fontFamily: "'Press Start 2P'" }}>{player.stats.mp}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <Gem className="w-2.5 h-2.5 text-yellow-500" />
+                  <span className="text-[8px] text-yellow-200" style={{ fontFamily: "'Press Start 2P'" }}>{player.gold}</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
+        <div className="relative flex items-center gap-2">
+          <button
+            onClick={onInventory}
+            className="flex items-center justify-center w-8 h-8 transition-all hover:scale-110 active:scale-95"
+            style={{
+              background: "rgba(0,0,0,0.4)",
+              border: `1px solid ${elemColor}60`,
+              boxShadow: `inset 0 0 8px ${elemColor}20`,
+            }}
+          >
+            <Package className="w-4 h-4" style={{ color: elemColor }} />
+          </button>
+        </div>
       </div>
 
       {hutMenuOpen && (() => {
@@ -761,6 +802,8 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setHutMenuOpen(false); onInventory(); } },
           ...(player.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setHutMenuOpen(false); onPartyManage(); } }] : []),
           { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setHutMenuOpen(false); onSaveOpen(); } },
+          { label: "OPTIONS", desc: "Game settings", icon: Sparkles, action: () => { setHutMenuOpen(false); /* Handled by App */ window.dispatchEvent(new CustomEvent('open-options')); } },
+          { label: "MAIN MENU", desc: "Return to title", icon: ArrowLeft, action: () => { if (confirm("Return to Main Menu? Unsaved progress will be lost.")) window.location.reload(); } },
         ];
 
         return (
