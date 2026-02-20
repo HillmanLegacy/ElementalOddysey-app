@@ -920,14 +920,12 @@ export default function BattleScreen({
       if (runBackHandled.current) return;
       runBackHandled.current = true;
       
-      // PAUSE phase: Knight stays at the enemy position
+      // PAUSE phase: Stay at the enemy position for 400ms
       scheduleTimer(() => {
         runBackHandled.current = false; // Reset for the actual runBack
         setAnimPhase("runBack");
         
-        // Ensure we advance the turn even if transitionEnd doesn't fire for some reason
-        // or if the character is already at the target position.
-        // We'll use a safety timer that matches the transition duration.
+        // Safety timer to ensure turn advances if transitionEnd fails
         scheduleTimer(() => {
           if (!runBackHandled.current && animPhase === "runBack") {
             runBackHandled.current = true;
@@ -937,7 +935,7 @@ export default function BattleScreen({
               onFinishPlayerTurn();
             }
           }
-        }, 400); // 350ms transition + 50ms buffer
+        }, 450); // 350ms transition + 100ms buffer
       }, 400); 
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
@@ -957,24 +955,24 @@ export default function BattleScreen({
             setAnimPhase("idle");
             setPendingTargetIdx(null);
             if (battle.phase !== "victory" && battle.phase !== "defeat") {
-              setTimeout(() => onFinishPlayerTurn(), 1000);
+              onFinishPlayerTurn();
             }
           }
-        }, 350);
+        }, 450);
       } else {
         setAnimPhase("idle");
         setPendingTargetIdx(null);
         if (battle.phase !== "victory" && battle.phase !== "defeat") {
-          setTimeout(() => onFinishPlayerTurn(), 1000);
+          onFinishPlayerTurn();
         }
       }
     } else if (animPhase === "defending") {
       setAnimPhase("idle");
       if (battle.phase !== "victory" && battle.phase !== "defeat") {
-        setTimeout(() => onFinishPlayerTurn(), 1000);
+        onFinishPlayerTurn();
       }
     }
-  }, [animPhase, battle.phase, onFinishPlayerTurn, windBladeActive]);
+  }, [animPhase, battle.phase, onFinishPlayerTurn, windBladeActive, scheduleTimer]);
 
   useEffect(() => {
     if (battle.phase === "victory" || battle.phase === "defeat") {
