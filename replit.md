@@ -1,93 +1,53 @@
 # Elemental Odyssey - Turn-Based RPG
 
 ## Overview
-Elemental Odyssey is a browser-based turn-based RPG. Players navigate a board-style overworld, engage in turn-based combat, and develop their characters through leveling and perks. The game features character selection, an inventory system, equipment management, and a party system where defeating bosses unlocks new party members. The core purpose is to provide an engaging and persistent RPG experience in a web browser, focusing on strategic combat and character progression.
+Elemental Odyssey is a browser-based turn-based RPG focused on strategic combat and character progression. Players explore a board-style overworld, engage in turn-based combat, manage an inventory, equip items, and develop characters through leveling and perks. The game features character selection, a party system where new members are unlocked by defeating bosses, and persistent save functionality. The vision is to deliver an engaging and persistent RPG experience directly in a web browser.
 
 ## User Preferences
 No explicit user preferences were provided.
 
 ## System Architecture
-The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui** components for a modern UI/UX. The backend is built with **Express.js** and uses **PostgreSQL** with **Drizzle ORM** for data persistence.
+The application features a **React + Vite + Tailwind CSS** frontend using **shadcn/ui** for UI components. The backend uses **Express.js** with **PostgreSQL** and **Drizzle ORM** for data persistence.
 
 **Core Game Mechanics & Features:**
--   **Game State Management**: Handled on the frontend via React hooks (`useGameState`), encompassing battle logic, leveling, inventory, party management, and region progression.
--   **Persistent Saves**: 3-slot save system with confirmation dialog. Save screen accessible from hut menu (overworld). Load Game screen on main menu shows 3 slots. Continue loads the most recent save by updatedAt. Saves use slotName "Slot 1"/"Slot 2"/"Slot 3".
--   **Character System**: Players select from three starter characters (Knight/Fire, Samurai/Wind, Basken/Lightning), each with unique elements, stats, and sprites. The `starterCharacterId` tracks the initial choice, and `spriteId` manages visual appearance.
--   **Overworld & Progression**: A complex board-game-style node map with branching paths, loops, and multiple routes. Each region has 14 nodes with a **Hut** as the starting point. Node types: hut, battle, shop, rest, shaman, boss. **Directional arrow navigation**: white pixel-style SVG triangle arrows appear around the player sprite pointing to accessible adjacent nodes. Clicking an arrow moves the character to that node; clicking the current node triggers its action. Arrows pointing upward use 9% distance (vs 6.5% default) to avoid sprite overlap. **Movement blocking**: if the player is on an uncleared battle/boss node, they can move back to cleared nodes or safe nodes (hut/shop/rest/shaman) but cannot pass through to new uncleared nodes. Only battle and boss nodes require clearing; shops/rest/shaman never block. **Defeat returns player to the hut** (safe house) of the current region/tier. The Hut node opens a region-themed popup menu (pixel-art styled, Press Start 2P font, element-colored) with region-specific names (Ember Hearth, Frost Lodge, Shadow Refuge, Stone Haven) for Rest, Items, Party, and Save. Paths between nodes are drawn per-connection (edge-based SVG lines) rather than sequentially. Connections are bidirectional. Region progression requires defeating each boss three times, with enemy scaling occurring after each defeat until the next region unlocks. After boss defeat, player resets to the Hut (nodes[0]) of current/next region.
--   **Overworld Camera System**: The overworld uses a zoomed camera (1.8x) that follows the player character. The camera wraps all map content (background, paths, nodes, character sprite) while UI overlays (top bar, bottom bar, menus) remain fixed. Camera offset is calculated from charPos using `translate(tx%, ty%) scale(1.8)` with `transform-origin: 0 0`. Offset clamped so edges don't show empty space: `tx = clamp(50 - charPos.x * zoom, -(zoom-1)*100, 0)`. Tooltip positions are transformed to screen coordinates outside the camera div. CSS transition (0.4s ease-out) provides smooth panning.
--   **Tier-Based Map Variants**: Each region has 3 map tiers (0, 1, 2) with genuinely different topologies (connection patterns), node positions, and names. `REGION_TIER_VARIANTS` in `gameData.ts` stores alternate region layouts. `getRegionForTier()` returns the correct map for a given tier. Region 0 tiers: "Ember Plains" (left-to-right parallel paths) -> "Molten Wastes" (fan/hub from bottom-center) -> "Infernal Core" (zigzag left-to-right). All `REGIONS[]` lookups in gameState.ts and Overworld.tsx use `getRegionForTier()` for tier-awareness. Cleared nodes reset on each boss defeat so map feels fresh.
--   **Party System**: Defeating the region boss 3 times unlocks new party members. Region 0 unlocks unchosen starters, other regions unlock from PARTY_CHARACTERS pool. Checks both active party and benchedParty to avoid duplicates. Party members have individual MP pools tracked via `BattlePartyMember.currentMp`. Party management screen accessible from hut menu shows stats, spells, and allows removing/benching members.
--   **Party Bench System**: Removed party members go to `benchedParty` array instead of being deleted. PartyManagementScreen shows Active and Benched sections with toggle buttons (Bench/Add to Party). Player leader is immutable and cannot be benched.
--   **Combat System**: AGI-based turn queue determines combat order each round (`buildTurnQueue` sorts all combatants by AGI). All party members have full menu access (Attack/Defend/Magic/Item) with element-specific spells via `getPartyMemberSpells`. Party member MP is tracked independently from player MP. Victory screen shows with 1.2s delay after final kill for smooth transition.
--   **Per-Character XP & Leveling**: Each character (player + party members) gains XP independently. Level-up queue (`PendingLevelUp`) processes multiple characters sequentially through stat allocation and perk selection. Medieval-themed level-up screen shows character sprite, name, element badge, and new spell notifications.
--   **Inventory & Equipment**: Separate tabs for consumables (usable in overworld for healing with party member targeting) and equipable items. Consumables are grouped by name with "xN" count display using `groupConsumables()` from `utils.ts`. This grouping applies in inventory, battle item menus (player + party), and shop.
--   **Merchant Stock System**: Shop stock persists between visits via `merchantSavedStock` on PlayerCharacter. Stock replenishes after 5 battles since last restock (`merchantBattlesSinceRestock`). Area/phase completion (boss defeat with tier/region change) resets merchant stock. Shop displays "Merchant Stock" count and "Inventory" count (how many player owns). `openShop` checks restock conditions; `buyItem` saves stock without resetting battle counter; `endBattle` increments battle counter and resets stock on tier change.
--   **Spell/Magic System**: Level-based spell unlocks defined via `ELEMENT_SPELL_UNLOCKS` in `gameData.ts`. Each element has spells that unlock at specific levels. Characters can also learn additional spells from the Shaman's Lair (costs gold). `SHAMAN_SPELLS` maps spriteId to learnable spells. Player and party members track `learnedSpells` arrays for shaman-taught spells. Spells have MP costs and element-specific effects with optional cinematic animations. Buffs are tracked with turn countdowns.
--   **Weapon Element System**: Weapons can have elemental properties (Fire, Ice, Shadow, Earth) that influence physical attack damage based on elemental effectiveness multipliers (e.g., Fire > Ice).
+-   **Game State Management**: Frontend-driven via React hooks, handling battle logic, leveling, inventory, party, and region progression.
+-   **Persistent Saves**: A 3-slot save system accessible from the overworld hut menu, with automatic loading of the most recent save.
+-   **Character System**: Three starter characters (Knight/Fire, Samurai/Wind, Basken/Lightning), each with unique elements, stats, and sprites.
+-   **Overworld & Progression**: A node-based map with branching paths and distinct node types (hut, battle, shop, rest, shaman, boss). Navigation uses directional arrows. Defeating a region boss three times unlocks new party members and progresses to the next region.
+    -   **Movement Blocking**: Uncleared battle/boss nodes block forward progression, requiring players to clear them or retreat to safe/cleared nodes.
+    -   **Defeat Mechanic**: Defeat returns the player to the current region's hut.
+    -   **Hut Menu**: Provides access to Rest, Items, Party, and Save options with region-specific theming.
+-   **Overworld Camera System**: A zoomed (1.8x) camera follows the player, with fixed UI overlays. Smooth panning is achieved with CSS transitions.
+-   **Tier-Based Map Variants**: Each region has 3 distinct map layouts that change with progression, offering fresh exploration.
+-   **Party System**: Defeating region bosses unlocks new party members from a pool. A bench system allows managing active and benched party members.
+-   **Combat System**: AGI-based turn order. Party members have independent MP pools and access to a full combat menu (Attack/Defend/Magic/Item).
+-   **Per-Character XP & Leveling**: Individual XP gain and level-up processing for each character, including stat allocation and perk selection.
+-   **Inventory & Equipment**: Consumables are grouped by name, usable in the overworld with party member targeting.
+-   **Merchant Stock System**: Shop stock persists between visits, replenishes after 5 battles, and resets upon region/tier progression.
+-   **Spell/Magic System**: Level-based spell unlocks unique to each element. Additional spells can be learned from the Shaman's Lair.
+-   **Weapon Element System**: Weapons have elemental properties influencing physical attack damage based on elemental effectiveness multipliers.
+-   **Damage & Balance System**:
+    -   **Damage Formula**: `baseDamage = (offense²) / (offense + defense) * skillMultiplier`.
+    -   **Elemental Multipliers**: 1.3x advantage, 0.7x disadvantage.
+    -   **Crit Chance**: 5% base, 2x damage, ±10% variance.
+    -   **Enemy Scaling**: HP, ATK, DEF scale with level; region and tier apply additional scaling.
+-   **Battle Position System**: Uses percentage-based coordinates for character and enemy placement. A unified slot system manages dynamic positioning for various battle scenarios and animations.
 -   **UI/UX**:
-    -   Responsive design with mobile landscape scaling using `useViewportScale` hook, transforming the game to fit fixed 1024x640 resolution.
-    -   All menus use unified pixel-art theme: Press Start 2P font, amber/gold (#c9a44a) accents, sharp edges (no border-radius), scanline overlays, dark gradient backgrounds. Hut menu uses region-specific element colors.
-    -   No hamburger menu - all overworld actions (Inventory, Party, Save) accessible via the Hut menu.
+    -   **Responsive Design**: `useViewportScale` hook scales the game to fit a fixed 1024x640 resolution.
+    -   **Theming**: Unified pixel-art theme with "Press Start 2P" font, amber accents, and sharp edges.
 -   **Animation System**:
-    -   **Battle Transition**: Pixel-dissolve fade to black (`BattleTransition.tsx`). Random pixel blocks (16px) fill/reveal screen over 800ms. Used bidirectionally: fade-in (overworld → black → battle) and fade-out (battle → black → overworld/levelUp). Intercepts `onNodeSelect` in App.tsx and `onEndBattle` in BattleScreen.
-    -   **Battle Animations**: Event-driven animation queue manages player and enemy actions (e.g., attack, run, hurt).
-    -   **Animated Enemy Sprites**: Specific enemies (Fire Demon, Dragon Lord, Frost Lizard, Jotem) feature detailed sprite animations for idle, attack, hurt, and death states, some with multiple attack patterns (e.g., Dragon Lord's close-range vs. dark magic attacks).
-    -   **Special VFX**: Cinematic spell animations like "Fujin's Slice" (Wind Special) involve camera zooms, sprite transformations, and staggered visual effects. Tempest spell uses camera zoom (scale 1.3 to enemy area), per-enemy tornado VFX with conic gradients, and ambient particles. Wind VFX utilize sprite sheets for slashes.
--   **Sound System**: An audio engine (`sfx.ts`) manages pooled HTMLAudio playback for various in-game sound effects (sword swings, hits, magic, grunts) with volume control.
+    -   **Battle Transition**: Pixel-dissolve fade to black for seamless transitions between overworld and battle.
+    -   **Battle Animations**: Event-driven queue manages character actions (attack, run, hurt).
+    -   **Animated Enemy Sprites**: Detailed idle, attack, hurt, and death animations for key enemies.
+    -   **Special VFX**: Cinematic spell animations with camera zooms, sprite transformations, and staggered visual effects.
+    -   **Enemy Death Animation**: Features a pixel-dissolve effect triggered after a death animation or a delay for non-animated enemies.
+-   **Sound System**: An audio engine manages pooled HTMLAudio playback for sound effects with volume control and pitched variations for specific effects.
 
 ## External Dependencies
 -   **React**: Frontend UI library.
--   **Vite**: Fast frontend build tool.
+-   **Vite**: Frontend build tool.
 -   **Tailwind CSS**: Utility-first CSS framework.
--   **shadcn/ui**: Component library for React.
+-   **shadcn/ui**: React component library.
 -   **Express.js**: Backend web framework.
--   **PostgreSQL**: Relational database for persistent storage.
+-   **PostgreSQL**: Relational database.
 -   **Drizzle ORM**: TypeScript ORM for PostgreSQL.
-
-## Damage & Balance System
-- **Damage Formula (ratio-based)**: `baseDamage = (offense²) / (offense + defense) * skillMultiplier`
-  - Physical: offense = ATK, defense = DEF
-  - Magical: offense = INT, defense = INT
-  - Element multipliers applied after base calculation (1.3x advantage, 0.7x disadvantage)
-  - Crits: 5% base chance, 2x damage multiplier; variance ±10%
-- **Enemy Tiers**:
-  - Lesser enemies (level 1-2): HP = 18+lv*10, ATK = 5+lv*2.5, DEF = 3+lv*1.5
-  - Bosses (level 4-7): HP = 50+lv*25, ATK = 8+lv*3, DEF = 5+lv*2
-  - Region scaling: baseScale = 1 + regionId * 0.5, tierScale = 1 + tier * 0.25
-- **Balance targets**: Lesser enemies die in 3-4 hits, bosses require strategy/leveling, player never deals less than MIN_DAMAGE (1)
-
-## Battle Position System
-- All battle positions use percentage-based coordinates (left%, bottom%) relative to the battle container
-- **Unified Slot System**: Positions defined as module-level constants (`ALLY_SLOTS`, `ENEMY_SLOTS`) outside the component. `PLAYER_POS` and `PARTY_POSITIONS` are derived aliases.
-- ALLY_SLOTS = [{ x: 12, y: 18 }, { x: 4, y: 12 }, { x: 20, y: 12 }] - slot 0 = player leader, slot 1-2 = party members
-- ENEMY_SLOTS = [{ x: 62, y: 42, z: 0.95 }, { x: 74, y: 36, z: 0.85 }, { x: 68, y: 50, z: 1.0 }] - 3 enemy slots filled sequentially
-- Characters fill slots sequentially: 1 character = slot 0, 2 characters = slots 0+1, etc.
-- All sprites centered on slot positions via `transform: translateX(-50%)`
-- Damage numbers positioned using same slot coordinates: `top = 100 - slot.y - offset`
-- getPlayerPosition() computes dynamic player position based on animPhase and target enemy index
-- Run-to-enemy: player/party moves to target.x - 8%, target.y (stops slightly left of the targeted enemy)
-- Boss melee: boss walks to target.x + 8%, target.y (stops slightly right of the targeted character) using left/bottom transitions via bossOffset
-- Fujin dash: player moves to target.x + 12%, target.y (passes through enemy)
-- Movement uses CSS left/bottom transitions (not transform-based), fires onTransitionEnd on "left" property
-- runBackHandled ref prevents double-firing; fallback timer (500ms) ensures phase advances if transition doesn't fire
-
-## Wind Blade Cinematic Animation
-- **Flow**: Samurai runs to enemy → attack animation pauses at last frame → 5 staggered wind slash VFX (240ms apart, 1.2s total) → sparkle overlaps end of slashes (starts at 800ms) → runBack at 1200ms → damage dealt at 2000ms when sparkle concludes → finish turn
-- **State**: `windBladeActive` (bool), `windBladeSlashes` (array of {id, rotation, offsetX, offsetY, scale, active}), `windSparkleTarget` (enemy idx), `windBladeFrozenEnemy` (enemy idx)
-- **Sprites**: `wind-slash-anim.png` (640x256, 128x128 frames, 10 total), `wind-sparkle.png` (1152x64, 64x64 frames, 18 total, scale 5 for large sparkle)
-- **Per-hit hurt**: Each slash triggers a brief hurt animation (180ms) on the target enemy
-- **Enemy freeze**: Target enemy stops idle bob animation during attack, resumes after sparkle + damage
-- **Damage timing**: `onCastSpell` called at 2000ms (sparkle conclusion), not during slashes
-- **Cleanup**: Battle phase changes to victory/defeat auto-clear all wind blade state
-- **Fallback**: runBack has 600ms fallback timer guarded by runBackHandled ref
-
-## Enemy Death Animation System
-- **deathAnimPending**: Set<number> tracks which enemy indices have pending death animations
-- **Flow**: When enemy HP reaches 0, add to `deathAnimPending` → set `enemyAnimStates` to "death" → SpriteAnimator `onComplete` calls `onEnemyDeathAnimDone` → removes from pending set
-- **Victory delay**: `showVictoryUI` waits for `deathAnimPending.size === 0` before starting 1.2s delay
-- **Supported enemies**: Fire Demon (79x69 frames, 7 death / 4 hurt), Dragon Lord, Jotem, Frost Lizard
-
-## Sound System Updates
-- **mifuneSlice**: Base sword slice WAV for Mifune/Samurai regular physical attacks (replaces generic swordSwing when player.element === "Wind")
-- **windSlash**: Same WAV file with pitch variation (0.7x-1.4x playbackRate) via `playSfxPitched()` for wind blade slash VFX
-- **playSfxPitched()**: New SFX function that randomizes `playbackRate` between min/max for tonal variety

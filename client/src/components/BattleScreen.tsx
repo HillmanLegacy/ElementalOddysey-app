@@ -1502,13 +1502,13 @@ export default function BattleScreen({
     if (animPhase === "fujinSlice" && fujinTargetIdx !== null) {
       const target = ENEMY_POSITIONS[fujinTargetIdx % ENEMY_POSITIONS.length];
       if (fujinDashPhase === "dash" || fujinDashPhase === "strike" || fujinDashPhase === "fadeout") {
-        return { x: target.x + 12, y: target.y };
+        return { x: target.x + 12, y: target.y - 4 };
       }
       return PLAYER_POS;
     }
     if ((animPhase === "runToEnemy" || animPhase === "attacking" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
-      return { x: target.x - 8, y: target.y };
+      return { x: target.x - 8, y: target.y - 4 };
     }
     if (animPhase === "hurt") {
       return { x: PLAYER_POS.x - 1, y: PLAYER_POS.y };
@@ -1887,7 +1887,7 @@ export default function BattleScreen({
               const tgt = ENEMY_POSITIONS[partyTargetIdx % ENEMY_POSITIONS.length];
               if (partyAnimPhase === "runToEnemy" || partyAnimPhase === "attacking") {
                 posX = tgt.x - 8;
-                posY = tgt.y;
+                posY = tgt.y - 4;
               }
             }
 
@@ -2351,8 +2351,11 @@ export default function BattleScreen({
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
-                      className="w-36 h-36 md:w-48 md:h-48"
+                      className="w-48 h-48 md:w-[320px] md:h-[320px]"
                       style={{
+                        display: "flex",
+                        alignItems: "flex-end",
+                        justifyContent: "center",
                         filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
@@ -2391,10 +2394,10 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={
-                          enemyAnimStates[idx] === "death" ? 1.4
-                          : enemyAnimStates[idx] === "attack" ? 2.5
-                          : enemyAnimStates[idx] === "hurt" ? 1.7
-                          : 3
+                          enemyAnimStates[idx] === "death" ? 2.0
+                          : enemyAnimStates[idx] === "attack" ? 3.5
+                          : enemyAnimStates[idx] === "hurt" ? 2.4
+                          : 4.2
                         }
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
