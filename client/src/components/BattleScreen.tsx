@@ -727,7 +727,7 @@ export default function BattleScreen({
       setMagicZoomTarget(null);
       if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null) {
       } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
-        setTimeout(() => onFinishPlayerTurn(), 1000);
+        onFinishPlayerTurn();
       }
     }
   }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies]);
@@ -902,7 +902,7 @@ export default function BattleScreen({
             setTimeout(() => onFinishPlayerTurn(), 1000);
           }
         }
-      }, 500);
+      }, 250);
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
@@ -924,7 +924,7 @@ export default function BattleScreen({
               setTimeout(() => onFinishPlayerTurn(), 1000);
             }
           }
-        }, 500);
+        }, 250);
       } else {
         setAnimPhase("idle");
         setPendingTargetIdx(null);
@@ -1971,7 +1971,7 @@ export default function BattleScreen({
                 : animPhase === "runToEnemy"
                   ? "left 0.35s ease-in, bottom 0.35s ease-in"
                   : animPhase === "runBack"
-                    ? "left 0.35s ease-out, bottom 0.35s ease-out"
+                    ? "left 0.2s ease-out, bottom 0.2s ease-out"
                     : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
             onTransitionEnd={onPlayerTransitionEnd}
@@ -2126,7 +2126,7 @@ export default function BattleScreen({
                             onAdvancePartyTurn();
                           }, 600);
                         }
-                      }, 500);
+                      }, 250);
                     }, 400);
                   } else if (partyAnimPhase === "runBack" && !partyRunBackHandled.current) {
                     partyRunBackHandled.current = true;
