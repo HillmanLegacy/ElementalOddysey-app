@@ -918,10 +918,10 @@ export default function BattleScreen({
   const onSpriteComplete = useCallback(() => {
     if (animPhase === "attacking") {
       // Character finished attack animation at enemy position
-      // DO NOT set runBackHandled here yet, we want to wait for the pause
       
       scheduleTimer(() => {
         // After 400ms pause, start running back
+        runBackHandled.current = false; // Reset lock to allow runBack transition to process
         setAnimPhase("runBack");
         
         // Safety fallback in case transitionEnd doesn't fire
@@ -949,7 +949,7 @@ export default function BattleScreen({
         runBackHandled.current = false;
         setAnimPhase("runBack");
         scheduleTimer(() => {
-          if (!runBackHandled.current) {
+          if (animPhase === "runBack" && !runBackHandled.current) {
             runBackHandled.current = true;
             setAnimPhase("idle");
             setPendingTargetIdx(null);
@@ -957,7 +957,7 @@ export default function BattleScreen({
               onFinishPlayerTurn();
             }
           }
-        }, 450);
+        }, 500);
       } else {
         setAnimPhase("idle");
         setPendingTargetIdx(null);
@@ -971,7 +971,7 @@ export default function BattleScreen({
         onFinishPlayerTurn();
       }
     }
-  }, [animPhase, battle.phase, onFinishPlayerTurn, windBladeActive, scheduleTimer]);
+  }, [animPhase, battle.phase, onFinishPlayerTurn, windBladeActive, scheduleTimer, runBackHandled]);
 
   useEffect(() => {
     if (battle.phase === "victory" || battle.phase === "defeat") {
