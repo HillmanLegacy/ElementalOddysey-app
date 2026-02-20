@@ -1633,7 +1633,7 @@ export default function BattleScreen({
       case "incinerationSlash": {
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
-        const incHoldFrames = { 2: 333, 5: 333 };
+        const incHoldFrames = { 2: 200, 5: 200 };
         if (specialSheet) {
           return { src: specialSheet, frames: specialFrames, fps: 14, loop: false, pauseAt: specialFrames - 1, holdFrames: incHoldFrames, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
