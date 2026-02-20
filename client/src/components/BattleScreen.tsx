@@ -715,6 +715,82 @@ export default function BattleScreen({
             setTimeout(() => onFinishPlayerTurn(), 600);
           }
         }, totalAnimTime + 1000);
+      } else if (pendingEruptionCleave.current) {
+        const { targetIdx, spell } = pendingEruptionCleave.current;
+        pendingEruptionCleave.current = null;
+        castingNeedsRunBack.current = true;
+        setAnimPhase("eruptionCleave");
+        setEruptionCleaveActive(true);
+        setEruptionFrozenEnemy(targetIdx);
+        playSfx("swordSwing");
+        playSfx("gruntAttack", 0.7);
+
+        const frameDuration = 1000 / 14;
+        const pauseFrame2Time = frameDuration * 2;
+        const pauseFrame2Duration = 200;
+        const flamelashDuration = 1200;
+        const resumeAfterFlamelash = pauseFrame2Time + pauseFrame2Duration + flamelashDuration;
+        const pauseFrame5Time = resumeAfterFlamelash + (frameDuration * 3);
+        const pauseFrame5Duration = 1000;
+        const nukeDuration = 11 * (1000 / 18);
+        const nukeStartTime = pauseFrame5Time + pauseFrame5Duration;
+        const totalAnimTime = nukeStartTime + nukeDuration + 400;
+
+        scheduleTimer(() => {
+          setEruptionFlamelashActive(true);
+          playSfx("magicRing", 0.6);
+        }, pauseFrame2Time + pauseFrame2Duration);
+
+        scheduleTimer(() => {
+          setEruptionFlamelashActive(false);
+        }, pauseFrame2Time + pauseFrame2Duration + flamelashDuration);
+
+        scheduleTimer(() => {
+          setEruptionNukeActive(true);
+          setEruptionNukeTargetIdx(targetIdx);
+          playSfx("hitMetal");
+          setShakeScreen(true);
+          scheduleTimer(() => setShakeScreen(false), 500);
+          setEnemyHitIdx(targetIdx);
+          scheduleTimer(() => setEnemyHitIdx(null), 300);
+          setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+          scheduleTimer(() => {
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+          }, 500);
+        }, nukeStartTime);
+
+        scheduleTimer(() => {
+          setEruptionNukeActive(false);
+          setEruptionNukeTargetIdx(null);
+        }, nukeStartTime + nukeDuration);
+
+        scheduleTimer(() => {
+          setEruptionCleaveActive(false);
+          setMagicZoom(false);
+          setMagicZoomTarget(null);
+          castingNeedsRunBack.current = false;
+          runBackHandled.current = false;
+          setAnimPhase("runBack");
+          scheduleTimer(() => {
+            if (!runBackHandled.current) {
+              runBackHandled.current = true;
+              setAnimPhase("idle");
+              setPendingTargetIdx(null);
+            }
+          }, 600);
+        }, totalAnimTime);
+
+        scheduleTimer(() => {
+          onCastSpell(spell, targetIdx);
+          playSfx("magicRing", 0.4);
+        }, totalAnimTime + 200);
+
+        scheduleTimer(() => {
+          setEruptionFrozenEnemy(null);
+          if (battle.phase !== "victory" && battle.phase !== "defeat") {
+            setTimeout(() => onFinishPlayerTurn(), 600);
+          }
+        }, totalAnimTime + 800);
       } else {
         setAnimPhase("attacking");
         playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
@@ -729,12 +805,12 @@ export default function BattleScreen({
       setPendingTargetIdx(null);
       setMagicZoom(false);
       setMagicZoomTarget(null);
-      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null) {
+      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null || eruptionFrozenEnemy !== null) {
       } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies]);
+  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, eruptionFrozenEnemy, battle.enemies]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
@@ -1659,6 +1735,15 @@ export default function BattleScreen({
         }
         return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
+      case "eruptionCleave": {
+        const specialSheet = playerSprites.special;
+        const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
+        const ecHoldFrames: Record<number, number> = { 2: 1400, 5: 1000 };
+        if (specialSheet) {
+          return { src: specialSheet, frames: specialFrames, fps: 14, loop: false, pauseAt: specialFrames - 1, holdFrames: ecHoldFrames, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+        }
+        return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: ecHoldFrames };
+      }
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
           return { ...atk, fps: 12, pauseAt: Math.min(3, atk.frames - 1) };
@@ -1687,7 +1772,7 @@ export default function BattleScreen({
       }
       return PLAYER_POS;
     }
-    if ((animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "incinerationSlash" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
+    if ((animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "incinerationSlash" || animPhase === "eruptionCleave" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
       const targetEnemy = battle.enemies[pendingTargetIdx];
       const isBossTarget = targetEnemy && targetEnemy.isBoss;
@@ -1965,7 +2050,7 @@ export default function BattleScreen({
             ref={playerSpriteRef}
             className="absolute"
             style={{
-              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting") ? 55 : 20,
+              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave") ? 55 : 20,
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               transform: "translateX(-50%)",
@@ -2006,6 +2091,26 @@ export default function BattleScreen({
                   onComplete={() => setFireHitSfx(false)}
                   preloadSheets={[sfxFireBurst]}
                   style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+                />
+              </div>
+            )}
+            {eruptionFlamelashActive && (
+              <div className="absolute z-40 pointer-events-none" style={{
+                top: "50%",
+                left: "50%",
+                width: 250,
+                height: 250,
+                transform: "translate(-50%, -50%)",
+                filter: "drop-shadow(0 0 14px rgba(255,100,0,0.9)) drop-shadow(0 0 28px rgba(255,50,0,0.5))",
+              }}>
+                <SpriteAnimator
+                  spriteSheet={flamelashSheet}
+                  frameWidth={100}
+                  frameHeight={100}
+                  totalFrames={49}
+                  fps={38}
+                  scale={2.5}
+                  loop={false}
                 />
               </div>
             )}
@@ -2616,6 +2721,26 @@ export default function BattleScreen({
                       />
                     </div>
                   ))}
+                  {eruptionNukeActive && eruptionNukeTargetIdx === idx && (
+                    <div className="absolute z-50 pointer-events-none" style={{
+                      top: "50%",
+                      left: "50%",
+                      width: 256,
+                      height: 256,
+                      transform: "translate(-50%, -50%)",
+                      filter: "drop-shadow(0 0 16px rgba(255,80,0,0.9)) drop-shadow(0 0 32px rgba(255,40,0,0.5))",
+                    }}>
+                      <SpriteAnimator
+                        spriteSheet={nukeExplosionSheet}
+                        frameWidth={64}
+                        frameHeight={64}
+                        totalFrames={11}
+                        fps={18}
+                        scale={4}
+                        loop={false}
+                      />
+                    </div>
+                  )}
                   {windSpellVfx && windSpellVfx.targets.includes(idx) && windSpellVfx.type !== "tempest" && (
                     <div className="absolute z-25 pointer-events-none" style={{
                       top: "-60%",
