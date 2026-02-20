@@ -64,6 +64,8 @@ import vfxWindSlash1 from "@/assets/images/vfx-wind-slash1.png";
 import vfxWindSlash2 from "@/assets/images/vfx-wind-slash2.png";
 import vfxWindSlash3 from "@/assets/images/vfx-wind-slash3.png";
 import vfxWindVortex from "@/assets/images/vfx-wind-vortex.png";
+import windSlashAnim from "@/assets/images/wind-slash-anim.png";
+import windSparkleSheet from "@/assets/images/wind-sparkle.png";
 
 import knightIdle from "@/assets/images/knight-idle-4f.png";
 import knightAttack from "@/assets/images/knight-attack.png";
@@ -191,6 +193,11 @@ export default function BattleScreen({
   const [windAttackVfx, setWindAttackVfx] = useState<number | null>(null);
   const [windSpellVfx, setWindSpellVfx] = useState<{ type: "windBlade" | "galeSlash" | "tempest"; targets: number[] } | null>(null);
   const [tempestVortexActive, setTempestVortexActive] = useState(false);
+  const [windBladeActive, setWindBladeActive] = useState(false);
+  const [windBladeSlashes, setWindBladeSlashes] = useState<{ id: number; rotation: number; offsetX: number; offsetY: number; scale: number; active: boolean }[]>([]);
+  const [windSparkleTarget, setWindSparkleTarget] = useState<number | null>(null);
+  const [windBladeFrozenEnemy, setWindBladeFrozenEnemy] = useState<number | null>(null);
+  const windSparkleAfterRunBack = useRef<number | null>(null);
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
@@ -474,11 +481,65 @@ export default function BattleScreen({
         pendingWindBlade.current = null;
         castingNeedsRunBack.current = true;
         setAnimPhase("casting");
-        playSfx("magicRing", 0.6);
-        setWindSpellVfx({ type: "windBlade", targets: [targetIdx] });
-        playSfx("whoosh");
-        scheduleTimer(() => setWindSpellVfx(null), 700);
-        onCastSpell(spell, targetIdx);
+        setWindBladeActive(true);
+        setWindBladeFrozenEnemy(targetIdx);
+        playSfx("swordSwing");
+        playSfx("gruntAttack", 0.7);
+
+        const slashes = Array.from({ length: 5 }, (_, i) => ({
+          id: i,
+          rotation: Math.random() * 360,
+          offsetX: (Math.random() - 0.5) * 40,
+          offsetY: (Math.random() - 0.5) * 40,
+          scale: 0.8 + Math.random() * 0.5,
+          active: false,
+        }));
+        setWindBladeSlashes(slashes);
+
+        for (let i = 0; i < 5; i++) {
+          scheduleTimer(() => {
+            setWindBladeSlashes(prev => prev.map((s, si) => si === i ? { ...s, active: true } : s));
+            playSfx("whoosh");
+          }, 200 + i * 400);
+        }
+
+        scheduleTimer(() => {
+          onCastSpell(spell, targetIdx);
+        }, 600);
+
+        scheduleTimer(() => {
+          setWindBladeSlashes([]);
+          setWindBladeActive(false);
+          castingNeedsRunBack.current = false;
+          runBackHandled.current = false;
+          windSparkleAfterRunBack.current = targetIdx;
+          setAnimPhase("runBack");
+          scheduleTimer(() => {
+            if (!runBackHandled.current) {
+              runBackHandled.current = true;
+              setAnimPhase("idle");
+              setPendingTargetIdx(null);
+              const sparkleIdx = windSparkleAfterRunBack.current;
+              if (sparkleIdx !== null) {
+                setWindSparkleTarget(sparkleIdx);
+                playSfx("magicRing", 0.4);
+                windSparkleAfterRunBack.current = null;
+                scheduleTimer(() => {
+                  setWindSparkleTarget(null);
+                  setWindBladeFrozenEnemy(null);
+                  if (battle.phase !== "victory" && battle.phase !== "defeat") {
+                    setTimeout(() => onFinishPlayerTurn(), 600);
+                  }
+                }, 1200);
+              } else {
+                setWindBladeFrozenEnemy(null);
+                if (battle.phase !== "victory" && battle.phase !== "defeat") {
+                  setTimeout(() => onFinishPlayerTurn(), 600);
+                }
+              }
+            }
+          }, 600);
+        }, 2400);
       } else {
         setAnimPhase("attacking");
         playSfx("swordSwing");
@@ -491,7 +552,19 @@ export default function BattleScreen({
       runBackHandled.current = true;
       setAnimPhase("idle");
       setPendingTargetIdx(null);
-      if (battle.phase !== "victory" && battle.phase !== "defeat") {
+      if (windSparkleAfterRunBack.current !== null) {
+        const sparkleIdx = windSparkleAfterRunBack.current;
+        setWindSparkleTarget(sparkleIdx);
+        playSfx("magicRing", 0.4);
+        windSparkleAfterRunBack.current = null;
+        scheduleTimer(() => {
+          setWindSparkleTarget(null);
+          setWindBladeFrozenEnemy(null);
+          if (battle.phase !== "victory" && battle.phase !== "defeat") {
+            setTimeout(() => onFinishPlayerTurn(), 600);
+          }
+        }, 1200);
+      } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
     }
@@ -634,6 +707,9 @@ export default function BattleScreen({
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
+      if (windBladeActive) {
+        return;
+      }
       if (castingNeedsRunBack.current) {
         castingNeedsRunBack.current = false;
         runBackHandled.current = false;
@@ -661,7 +737,19 @@ export default function BattleScreen({
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
     }
-  }, [animPhase, battle.phase, onFinishPlayerTurn]);
+  }, [animPhase, battle.phase, onFinishPlayerTurn, windBladeActive]);
+
+  useEffect(() => {
+    if (battle.phase === "victory" || battle.phase === "defeat") {
+      if (windBladeActive || windBladeFrozenEnemy !== null || windSparkleTarget !== null) {
+        setWindBladeActive(false);
+        setWindBladeSlashes([]);
+        setWindSparkleTarget(null);
+        setWindBladeFrozenEnemy(null);
+        windSparkleAfterRunBack.current = null;
+      }
+    }
+  }, [battle.phase, windBladeActive, windBladeFrozenEnemy, windSparkleTarget]);
 
   const startFujinSlice = useCallback((targetIdx: number, spell: Spell) => {
     setSelectedAction(null);
@@ -1301,6 +1389,9 @@ export default function BattleScreen({
       case "attacking":
         return atk;
       case "casting":
+        if (windBladeActive) {
+          return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1 };
+        }
         return atk;
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
@@ -1659,11 +1750,20 @@ export default function BattleScreen({
                 onAnimationEnd={onSpriteComplete}
               />
             )}
-            {animPhase === "casting" && (
+            {animPhase === "casting" && !windBladeActive && (
               <div
                 className="absolute -inset-8 z-30 animate-[magicGlow_0.9s_ease-out_forwards]"
                 style={{ background: `radial-gradient(circle, ${elementColor}50 0%, ${elementColor}20 40%, transparent 70%)` }}
                 onAnimationEnd={onSpriteComplete}
+              />
+            )}
+            {windBladeActive && (
+              <div
+                className="absolute -inset-10 z-30 pointer-events-none"
+                style={{
+                  background: "radial-gradient(circle, rgba(100,255,100,0.3) 0%, rgba(50,200,50,0.15) 40%, transparent 70%)",
+                  animation: "pulse 0.5s ease-in-out infinite",
+                }}
               />
             )}
             <div className="relative">
@@ -2046,10 +2146,68 @@ export default function BattleScreen({
                   <span className="text-xs" data-testid={`text-enemy-name-${idx}`}>{enemy.name}</span>
                 </div>
 
-                <div className={`relative ${isDead ? "" : "animate-[idleBob_2.8s_ease-in-out_infinite]"}`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                <div className={`relative ${isDead ? "" : windBladeFrozenEnemy === idx ? "" : "animate-[idleBob_2.8s_ease-in-out_infinite]"}`} style={{ animationDelay: `${idx * 0.5}s` }}>
                   
                   {isHit && (
                     <div className="absolute inset-0 z-20 animate-[flashDamage_0.3s_ease-out]" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.7) 0%, transparent 70%)" }} />
+                  )}
+
+                  {windBladeSlashes.length > 0 && windBladeFrozenEnemy === idx && (
+                    <div className="absolute z-30 pointer-events-none" style={{
+                      top: "-80%",
+                      left: "-60%",
+                      width: "220%",
+                      height: "260%",
+                    }}>
+                      {windBladeSlashes.filter(s => s.active).map((slash) => (
+                        <div
+                          key={slash.id}
+                          className="absolute"
+                          style={{
+                            top: `${35 + slash.offsetY}%`,
+                            left: `${35 + slash.offsetX}%`,
+                            width: "50%",
+                            height: "50%",
+                            transform: `rotate(${slash.rotation}deg) scale(${slash.scale})`,
+                            filter: "drop-shadow(0 0 12px rgba(100,255,100,0.8))",
+                            animation: "windSlashFade 0.6s ease-out forwards",
+                          }}
+                        >
+                          <SpriteAnimator
+                            spriteSheet={windSlashAnim}
+                            frameWidth={128}
+                            frameHeight={128}
+                            totalFrames={10}
+                            fps={16}
+                            scale={2}
+                            loop={false}
+                            style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {windSparkleTarget === idx && (
+                    <div className="absolute z-30 pointer-events-none" style={{
+                      top: "-40%",
+                      left: "-30%",
+                      width: "160%",
+                      height: "160%",
+                      filter: "drop-shadow(0 0 15px rgba(150,255,150,0.9))",
+                      animation: "windSparkleGlow 1.2s ease-out forwards",
+                    }}>
+                      <SpriteAnimator
+                        spriteSheet={windSparkleSheet}
+                        frameWidth={64}
+                        frameHeight={64}
+                        totalFrames={18}
+                        fps={16}
+                        scale={3}
+                        loop={false}
+                        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
+                      />
+                    </div>
                   )}
                   
                   {windSpellVfx && windSpellVfx.targets.includes(idx) && windSpellVfx.type !== "tempest" && (

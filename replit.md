@@ -70,3 +70,11 @@ The application uses a **React + Vite + Tailwind CSS** frontend with **shadcn/ui
 - Fujin dash: player moves to target.x + 12%, target.y (passes through enemy)
 - Movement uses CSS left/bottom transitions (not transform-based), fires onTransitionEnd on "left" property
 - runBackHandled ref prevents double-firing; fallback timer (500ms) ensures phase advances if transition doesn't fire
+
+## Wind Blade Cinematic Animation
+- **Flow**: Samurai runs to enemy → attack animation pauses at last frame → 5 staggered wind slash VFX (randomly rotated/offset, 400ms apart over 2s) → runBack → wind sparkle on target → unfreeze enemy → finish turn
+- **State**: `windBladeActive` (bool), `windBladeSlashes` (array of {id, rotation, offsetX, offsetY, scale, active}), `windSparkleTarget` (enemy idx), `windBladeFrozenEnemy` (enemy idx), `windSparkleAfterRunBack` (ref)
+- **Sprites**: `wind-slash-anim.png` (640x256, 128x128 frames, 10 total), `wind-sparkle.png` (1152x64, 64x64 frames, 18 total)
+- **Enemy freeze**: Target enemy stops idle bob animation during attack, resumes after wind sparkle completes
+- **Cleanup**: Battle phase changes to victory/defeat auto-clear all wind blade state
+- **Fallback**: runBack has 600ms fallback timer guarded by runBackHandled ref to prevent double-firing
