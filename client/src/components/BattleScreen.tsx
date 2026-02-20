@@ -903,8 +903,8 @@ export default function BattleScreen({
               setTimeout(() => onFinishPlayerTurn(), 1000);
             }
           }
-        }, 350);
-      }, 600);
+        }, 400);
+      }, 1000);
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
