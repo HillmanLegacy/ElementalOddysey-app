@@ -89,10 +89,11 @@ function Game() {
   const [saveConfirmSlot, setSaveConfirmSlot] = useState<number | null>(null);
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
-  const [battleTransition, setBattleTransition] = useState<{ nodeId: number; direction: "in" } | null>(null);
+  const [battleTransition, setBattleTransition] = useState<{ nodeId: number; elementColor: string } | null>(null);
   const [battleExitTransition, setBattleExitTransition] = useState<{ victory: boolean } | null>(null);
   const [postBattleReveal, setPostBattleReveal] = useState(false);
   const [battleEntryReveal, setBattleEntryReveal] = useState(false);
+  const [transitionElementColor, setTransitionElementColor] = useState<string | undefined>(undefined);
 
   const handleSaveToSlot = async (slotNumber: number) => {
     if (!state.player) return;
@@ -158,7 +159,11 @@ function Game() {
               }}
               onNodeSelect={(nodeId: number, pos?: { x: number; y: number }) => {
                 if (!state.player) return;
-                setBattleTransition({ nodeId, direction: "in" });
+                const t = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
+                const r = getRegionForTier(state.player.currentRegion, t);
+                const ec = ELEMENT_COLORS[r.theme] || "#c9a44a";
+                setTransitionElementColor(ec);
+                setBattleTransition({ nodeId, elementColor: ec });
               }}
               onShopOpen={(nodeId: number) => {
                 updatePlayer({ clearedNodes: state.player!.clearedNodes.includes(nodeId) ? state.player!.clearedNodes : [...state.player!.clearedNodes, nodeId] });
@@ -396,6 +401,7 @@ function Game() {
             {battleTransition && (
               <BattleTransition
                 direction="in"
+                elementColor={battleTransition.elementColor}
                 onComplete={() => {
                   const nodeId = battleTransition.nodeId;
                   setBattleTransition(null);
@@ -407,6 +413,7 @@ function Game() {
             {postBattleReveal && (
               <BattleTransition
                 direction="out"
+                elementColor={transitionElementColor}
                 onComplete={() => setPostBattleReveal(false)}
               />
             )}
@@ -443,12 +450,14 @@ function Game() {
             {battleEntryReveal && (
               <BattleTransition
                 direction="out"
+                elementColor={transitionElementColor}
                 onComplete={() => setBattleEntryReveal(false)}
               />
             )}
             {battleExitTransition && (
               <BattleTransition
                 direction="in"
+                elementColor={transitionElementColor}
                 onComplete={() => {
                   const v = battleExitTransition.victory;
                   setBattleExitTransition(null);
@@ -473,6 +482,7 @@ function Game() {
             {postBattleReveal && (
               <BattleTransition
                 direction="out"
+                elementColor={transitionElementColor}
                 onComplete={() => setPostBattleReveal(false)}
               />
             )}
