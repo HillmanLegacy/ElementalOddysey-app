@@ -111,12 +111,16 @@ export default function SpriteAnimator({
     let currentImage: HTMLImageElement | null = imageCache.get(spriteSheet) || null;
 
     const drawFrame = (img: HTMLImageElement, frame: number) => {
-      const { frameWidth: cfw, frameHeight: cfh, flipX: cfx, scale: csc } = propsRef.current;
+      const { frameWidth: cfw, frameHeight: cfh, flipX: cfx, scale: csc, totalFrames: tf } = propsRef.current;
+      if (!img.naturalWidth || !img.naturalHeight) return;
+      
       const dw = Math.round(cfw * csc);
       const dh = Math.round(cfh * csc);
+      const safeFrame = Math.max(0, Math.min(frame, tf - 1));
       const cols = Math.floor(img.naturalWidth / cfw);
-      const col = cols > 0 ? frame % cols : frame;
-      const row = cols > 0 ? Math.floor(frame / cols) : 0;
+      const col = cols > 0 ? safeFrame % cols : safeFrame;
+      const row = cols > 0 ? Math.floor(safeFrame / cols) : 0;
+      
       ctx.clearRect(0, 0, dw, dh);
       ctx.save();
       if (cfx) {

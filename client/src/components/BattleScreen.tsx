@@ -891,17 +891,16 @@ export default function BattleScreen({
 
   const onSpriteComplete = useCallback(() => {
     if (animPhase === "attacking") {
-      runBackHandled.current = false;
+      if (runBackHandled.current) return;
+      runBackHandled.current = true;
       
-      // The attack animation just finished. 
-      // We explicitly wait here BEFORE changing the state to runBack.
+      // PAUSE phase: Knight stays at the enemy position
+      // We don't change animPhase yet, we just wait.
       scheduleTimer(() => {
-        // Double check we haven't already handled this or moved to a new phase
-        if (runBackHandled.current) return;
-        
+        runBackHandled.current = false; // Reset for the actual runBack
         setAnimPhase("runBack");
         
-        // The transition for runBack is 0.35s (defined in the style transition)
+        // MOVEMENT phase: Knight slides back
         scheduleTimer(() => {
           if (!runBackHandled.current) {
             runBackHandled.current = true;
@@ -912,7 +911,7 @@ export default function BattleScreen({
             }
           }
         }, 400);
-      }, 1500); // 1.5s literal pause at the enemy
+      }, 1200); 
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
