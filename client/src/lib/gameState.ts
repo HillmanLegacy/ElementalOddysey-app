@@ -1124,6 +1124,30 @@ export function useGameState() {
     });
   }, []);
 
+  const unequipItem = useCallback((slot: "weapon" | "armor" | "accessory") => {
+    setState(s => {
+      if (!s.player) return s;
+      const currentEquipped = s.player.equipment[slot];
+      if (!currentEquipped) return s;
+
+      const newInventory = [...s.player.inventory, currentEquipped];
+      const newStats = { ...s.player.stats };
+      if (currentEquipped.effect.stat && currentEquipped.effect.amount) {
+        (newStats as any)[currentEquipped.effect.stat] -= currentEquipped.effect.amount;
+      }
+
+      return {
+        ...s,
+        player: {
+          ...s.player,
+          inventory: newInventory,
+          equipment: { ...s.player.equipment, [slot]: null },
+          stats: newStats,
+        },
+      };
+    });
+  }, []);
+
   const restAtNode = useCallback(() => {
     setState(s => {
       if (!s.player) return s;
@@ -1262,6 +1286,7 @@ export function useGameState() {
     openShop,
     buyItem,
     equipItem,
+    unequipItem,
     restAtNode,
     loadGame,
     setAnimating,

@@ -69,7 +69,7 @@ function Game() {
     startBattle, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
     partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, allocateStat, selectPerk, openShop,
-    buyItem, equipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
+    buyItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
     confirmUnlock,
     changeRegion,
     openShaman, learnShamanSpell,
@@ -603,6 +603,7 @@ function Game() {
           <InventoryScreen
             player={state.player}
             onEquip={equipItem}
+            onUnequip={unequipItem}
             onUseItem={useItemOverworld}
             onBack={() => setScreen("overworld")}
           />

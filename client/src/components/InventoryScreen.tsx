@@ -6,13 +6,14 @@ import { groupConsumables } from "@/lib/utils";
 interface InventoryScreenProps {
   player: PlayerCharacter;
   onEquip: (itemId: string) => void;
+  onUnequip: (slot: "weapon" | "armor" | "accessory") => void;
   onUseItem: (itemId: string, targetPartyIndex?: number) => void;
   onBack: () => void;
 }
 
 const ACCENT = "#c9a44a";
 
-export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: InventoryScreenProps) {
+export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem, onBack }: InventoryScreenProps) {
   const consumables = player.inventory.filter(i => i.type === "consumable");
   const equipables = player.inventory.filter(i => i.type === "weapon" || i.type === "armor" || i.type === "accessory");
   const [targetingItemId, setTargetingItemId] = useState<string | null>(null);
@@ -294,10 +295,26 @@ export default function InventoryScreen({ player, onEquip, onUseItem, onBack }: 
                   >
                     <p style={{ fontSize: "7px", color: `${ACCENT}60`, textTransform: "uppercase", letterSpacing: "1px" }}>{slot}</p>
                     {item ? (
-                      <>
-                        <p style={{ fontSize: "8px", color: "#e8e0d0", marginTop: "2px" }}>{item.name}</p>
-                        <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
-                      </>
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginTop: "2px" }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
+                          <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
+                        </div>
+                        <button
+                          onClick={() => onUnequip(slot)}
+                          style={{
+                            fontFamily: "'Press Start 2P', cursive",
+                            fontSize: "7px",
+                            padding: "4px 8px",
+                            border: `1px solid ${ACCENT}60`,
+                            background: "transparent",
+                            color: ACCENT,
+                            cursor: "pointer",
+                          }}
+                        >
+                          UNEQUIP
+                        </button>
+                      </div>
                     ) : (
                       <p style={{ fontSize: "8px", color: `${ACCENT}40`, fontStyle: "italic", marginTop: "2px" }}>Empty</p>
                     )}
