@@ -113,6 +113,14 @@ const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: str
   axewarrior: { idle: axewarriorIdle, attack: axewarriorAttack, hurt: axewarriorHurt, frameWidth: 94, frameHeight: 91, idleFrames: 6, attackFrames: 8, hurtFrames: 3, scale: 3.5 },
 };
 
+const GAME_CONTAINER_HEIGHT = 640;
+
+function getSpriteCenterOffset(spriteId: string): number {
+  const sprites = PARTY_SPRITE_MAP[spriteId] || PARTY_SPRITE_MAP.samurai;
+  const displayH = Math.round(sprites.frameHeight * (sprites.scale || 3.5));
+  return (displayH / GAME_CONTAINER_HEIGHT) * 50;
+}
+
 const SPRITE_COLORS: Record<string, string> = {
   samurai: "#a3e635",
   knight: "#ef4444",
@@ -359,14 +367,17 @@ export default function BattleScreen({
       color = evt.isCrit ? "#fbbf24" : "#ef4444";
     } else if (evt.targetType === "player") {
       const pp = ALLY_SLOTS[0];
+      const dmgOffset = getSpriteCenterOffset(player.spriteId || "samurai") + 3;
       posX = pp.x + (Math.random() * 4 - 2);
-      posY = 100 - pp.y - 16;
+      posY = 100 - pp.y - dmgOffset;
       color = evt.element === "Fire" ? "#ff6b2b" : "#ef4444";
     } else {
       const slotIdx = (evt.targetIndex % PARTY_POSITIONS.length) + 1;
       const pp = ALLY_SLOTS[slotIdx];
+      const memberSpriteId = battle.party[evt.targetIndex]?.spriteId || "samurai";
+      const dmgOffset = getSpriteCenterOffset(memberSpriteId) + 1;
       posX = pp.x + (Math.random() * 4 - 2);
-      posY = 100 - pp.y - 14;
+      posY = 100 - pp.y - dmgOffset;
       color = "#ef4444";
     }
 
@@ -400,13 +411,16 @@ export default function BattleScreen({
           posY = 100 - ep.y - 15 + (Math.random() * 4 - 2);
         } else if (evt.targetType === "player") {
           const pp = ALLY_SLOTS[0];
+          const dmgOff = getSpriteCenterOffset(player.spriteId || "samurai") + 3;
           posX = pp.x + (Math.random() * 4 - 2);
-          posY = 100 - pp.y - 16;
+          posY = 100 - pp.y - dmgOff;
         } else {
           const slotIdx = (evt.targetIndex % PARTY_POSITIONS.length) + 1;
           const pp = ALLY_SLOTS[slotIdx];
+          const mSpriteId = battle.party[evt.targetIndex]?.spriteId || "samurai";
+          const dmgOff = getSpriteCenterOffset(mSpriteId) + 1;
           posX = pp.x + (Math.random() * 4 - 2);
-          posY = 100 - pp.y - 14;
+          posY = 100 - pp.y - dmgOff;
         }
 
         if (evt.isHeal) color = "#22c55e";
@@ -1048,12 +1062,15 @@ export default function BattleScreen({
       const attackRoll = Math.random();
       const attackType = attackRoll < 0.30 ? "fireBurst" : attackRoll < 0.55 ? "firePillar" : attackRoll < 0.75 ? "darkMagic" : "melee";
 
+      const playerCenterY = getSpriteCenterOffset(player.spriteId || "samurai");
       const getTargetPos = (result: { dodged: boolean; target: { type: "player" | "party"; index: number } }) => {
         if (result.target.type === "party" && result.target.index >= 0) {
           const tp = PARTY_POSITIONS[result.target.index % PARTY_POSITIONS.length];
-          return { x: tp.x, y: tp.y };
+          const memberSpriteId = battle.party[result.target.index]?.spriteId || "samurai";
+          const memberCenterY = getSpriteCenterOffset(memberSpriteId);
+          return { x: tp.x, y: tp.y + memberCenterY };
         }
-        return { x: PLAYER_POS.x, y: PLAYER_POS.y };
+        return { x: PLAYER_POS.x, y: PLAYER_POS.y + playerCenterY };
       };
 
       if (attackType === "fireBurst") {
@@ -1270,14 +1287,15 @@ export default function BattleScreen({
       }
 
       let targetX: number, targetY: number;
-      const spriteVerticalOffset = 15;
       if (preTarget.type === "party" && preTarget.index >= 0) {
         const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
+        const memberSpriteId = battle.party[preTarget.index]?.spriteId || "samurai";
         targetX = tp.x;
-        targetY = tp.y + spriteVerticalOffset;
+        targetY = tp.y + getSpriteCenterOffset(memberSpriteId);
       } else {
+        const pCenterY = getSpriteCenterOffset(player.spriteId || "samurai");
         targetX = PLAYER_POS.x;
-        targetY = PLAYER_POS.y + spriteVerticalOffset;
+        targetY = PLAYER_POS.y + pCenterY;
       }
 
       scheduleTimer(() => {
@@ -1623,7 +1641,6 @@ export default function BattleScreen({
   };
 
   const spriteConfig = getSpriteSheet();
-
 
   const getPlayerPosition = (): { x: number; y: number } => {
     if (animPhase === "fujinSlice" && fujinTargetIdx !== null) {

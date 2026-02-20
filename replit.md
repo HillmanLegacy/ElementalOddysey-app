@@ -38,7 +38,7 @@ The application features a **React + Vite + Tailwind CSS** frontend using **shad
 -   **Animation System**:
     -   **Battle Transition**: Pixel-dissolve fade to black for seamless transitions between overworld and battle.
     -   **Battle Animations**: Event-driven queue manages character actions (attack, run, hurt).
-    -   **Knight Animations**: Full sprite sheet with idle (7f), special attack (7f), basic attack (7f), and death (7f) at 86x49px per frame.
+    -   **Knight Animations**: Full sprite sheet with idle (4f), special attack (7f), basic attack (7f), and death (7f) at 86x49px per frame.
     -   **Incineration Slash**: Fire magic spell (replaces Fire Bolt) with custom animation — player runs to enemy, plays special attack sprite, fire explosion VFX triggers on 3rd and 6th frames.
     -   **Animated Enemy Sprites**: Detailed idle, attack, hurt, and death animations for key enemies.
     -   **Special VFX**: Cinematic spell animations with camera zooms, sprite transformations, and staggered visual effects.
