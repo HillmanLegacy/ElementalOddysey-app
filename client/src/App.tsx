@@ -94,6 +94,8 @@ function Game() {
   const [postBattleReveal, setPostBattleReveal] = useState(false);
   const [battleEntryReveal, setBattleEntryReveal] = useState(false);
   const [transitionElementColor, setTransitionElementColor] = useState<string | undefined>(undefined);
+  const [menuFadeOut, setMenuFadeOut] = useState<{ save: any } | null>(null);
+  const [menuFadeIn, setMenuFadeIn] = useState(false);
 
   const handleSaveToSlot = async (slotNumber: number) => {
     if (!state.player) return;
@@ -112,13 +114,13 @@ function Game() {
   };
 
   const handleLoadSlot = (save: any) => {
-    loadGame(save.playerData as PlayerCharacter);
+    setMenuFadeOut({ save });
   };
 
   const handleContinue = () => {
     if (saves && saves.length > 0) {
       const sorted = [...saves].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
-      loadGame(sorted[0].playerData as PlayerCharacter);
+      setMenuFadeOut({ save: sorted[0] });
     }
   };
 
@@ -126,18 +128,31 @@ function Game() {
     switch (state.screen) {
       case "menu":
         return (
-          <MainMenu
-            onNewGame={() => setScreen("creation")}
-            onContinue={handleContinue}
-            onLoadGame={handleLoadSlot}
-            hasSave={hasSave}
-            saves={saves || []}
-            textSpeed={state.textSpeed}
-            musicVolume={state.musicVolume}
-            sfxVolume={state.sfxVolume}
-            showDamageNumbers={state.showDamageNumbers}
-            onSettingsChange={(settings) => setState(s => ({ ...s, ...settings }))}
-          />
+          <>
+            <MainMenu
+              onNewGame={() => setScreen("creation")}
+              onContinue={handleContinue}
+              onLoadGame={handleLoadSlot}
+              hasSave={hasSave}
+              saves={saves || []}
+              textSpeed={state.textSpeed}
+              musicVolume={state.musicVolume}
+              sfxVolume={state.sfxVolume}
+              showDamageNumbers={state.showDamageNumbers}
+              onSettingsChange={(settings) => setState(s => ({ ...s, ...settings }))}
+            />
+            {menuFadeOut && (
+              <BattleTransition
+                direction="in"
+                onComplete={() => {
+                  const save = menuFadeOut.save;
+                  setMenuFadeOut(null);
+                  setMenuFadeIn(true);
+                  loadGame(save.playerData as PlayerCharacter);
+                }}
+              />
+            )}
+          </>
         );
 
       case "creation":
@@ -408,6 +423,12 @@ function Game() {
                   setBattleEntryReveal(true);
                   startBattle(nodeId);
                 }}
+              />
+            )}
+            {menuFadeIn && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setMenuFadeIn(false)}
               />
             )}
             {postBattleReveal && (
