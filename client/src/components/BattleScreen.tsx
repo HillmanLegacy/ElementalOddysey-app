@@ -413,6 +413,7 @@ export default function BattleScreen({
   const startFujinSliceRef = useRef<((targetIdx: number, spell: Spell) => void) | null>(null);
 
   const pendingWindBlade = useRef<{ targetIdx: number; spell: Spell } | null>(null);
+  const windBladeAnimPending = useRef(false);
   const castingNeedsRunBack = useRef(false);
 
   const handleSpellTarget = useCallback((targetIdx: number) => {
@@ -486,73 +487,80 @@ export default function BattleScreen({
         pendingWindBlade.current = null;
         castingNeedsRunBack.current = true;
         setAnimPhase("casting");
-        setWindBladeActive(true);
+        windBladeAnimPending.current = true;
         setWindBladeFrozenEnemy(targetIdx);
         playSfx("mifuneSlice");
         playSfx("gruntAttack", 0.7);
 
-        const slashes = Array.from({ length: 5 }, (_, i) => ({
-          id: i,
-          rotation: Math.random() * 360,
-          offsetX: (Math.random() - 0.5) * 40,
-          offsetY: (Math.random() - 0.5) * 40,
-          scale: 0.8 + Math.random() * 0.5,
-          active: false,
-        }));
-        setWindBladeSlashes(slashes);
-
-        for (let i = 0; i < 5; i++) {
-          scheduleTimer(() => {
-            setWindBladeSlashes(prev => prev.map((s, si) => si === i ? { ...s, active: true } : s));
-            playSfxPitched("windSlash", 0.7, 1.4, 0.8);
-            const hitEnemy = battle.enemies[targetIdx];
-            const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
-            if (hasAnim) {
-              setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
-              scheduleTimer(() => {
-                setEnemyAnimStates(prev => {
-                  if (prev[targetIdx] === "death") return prev;
-                  return { ...prev, [targetIdx]: "idle" };
-                });
-              }, 180);
-            }
-            setEnemyHitIdx(targetIdx);
-            scheduleTimer(() => setEnemyHitIdx(null), 180);
-          }, i * 240);
-        }
+        const attackDuration = 500;
 
         scheduleTimer(() => {
-          setWindSparkleTarget(targetIdx);
-          playSfx("magicRing", 0.4);
-        }, 800);
+          windBladeAnimPending.current = false;
+          setWindBladeActive(true);
 
-        scheduleTimer(() => {
-          setWindBladeSlashes([]);
-          setWindBladeActive(false);
-          castingNeedsRunBack.current = false;
-          runBackHandled.current = false;
-          setAnimPhase("runBack");
-          scheduleTimer(() => {
-            if (!runBackHandled.current) {
-              runBackHandled.current = true;
-              setAnimPhase("idle");
-              setPendingTargetIdx(null);
-            }
-          }, 600);
-        }, 1200);
+          const slashes = Array.from({ length: 5 }, (_, i) => ({
+            id: i,
+            rotation: Math.random() * 360,
+            offsetX: (Math.random() - 0.5) * 40,
+            offsetY: (Math.random() - 0.5) * 40,
+            scale: 0.8 + Math.random() * 0.5,
+            active: false,
+          }));
+          setWindBladeSlashes(slashes);
 
-        scheduleTimer(() => {
-          windBladeDamageTarget.current = targetIdx;
-          onCastSpell(spell, targetIdx);
-        }, 1600);
-
-        scheduleTimer(() => {
-          setWindSparkleTarget(null);
-          setWindBladeFrozenEnemy(null);
-          if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 600);
+          for (let i = 0; i < 5; i++) {
+            scheduleTimer(() => {
+              setWindBladeSlashes(prev => prev.map((s, si) => si === i ? { ...s, active: true } : s));
+              playSfxPitched("windSlash", 0.7, 1.4, 0.8);
+              const hitEnemy = battle.enemies[targetIdx];
+              const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
+              if (hasAnim) {
+                setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+                scheduleTimer(() => {
+                  setEnemyAnimStates(prev => {
+                    if (prev[targetIdx] === "death") return prev;
+                    return { ...prev, [targetIdx]: "idle" };
+                  });
+                }, 180);
+              }
+              setEnemyHitIdx(targetIdx);
+              scheduleTimer(() => setEnemyHitIdx(null), 180);
+            }, i * 240);
           }
-        }, 2200);
+
+          scheduleTimer(() => {
+            setWindSparkleTarget(targetIdx);
+            playSfx("magicRing", 0.4);
+          }, 800);
+
+          scheduleTimer(() => {
+            setWindBladeSlashes([]);
+            setWindBladeActive(false);
+            castingNeedsRunBack.current = false;
+            runBackHandled.current = false;
+            setAnimPhase("runBack");
+            scheduleTimer(() => {
+              if (!runBackHandled.current) {
+                runBackHandled.current = true;
+                setAnimPhase("idle");
+                setPendingTargetIdx(null);
+              }
+            }, 600);
+          }, 1200);
+
+          scheduleTimer(() => {
+            windBladeDamageTarget.current = targetIdx;
+            onCastSpell(spell, targetIdx);
+          }, 1600);
+
+          scheduleTimer(() => {
+            setWindSparkleTarget(null);
+            setWindBladeFrozenEnemy(null);
+            if (battle.phase !== "victory" && battle.phase !== "defeat") {
+              setTimeout(() => onFinishPlayerTurn(), 600);
+            }
+          }, 2200);
+        }, attackDuration);
       } else {
         setAnimPhase("attacking");
         playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
@@ -746,7 +754,7 @@ export default function BattleScreen({
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
-      if (windBladeActive) {
+      if (windBladeActive || windBladeAnimPending.current) {
         return;
       }
       if (castingNeedsRunBack.current) {
@@ -787,6 +795,7 @@ export default function BattleScreen({
         setWindBladeFrozenEnemy(null);
         windSparkleAfterRunBack.current = null;
         windBladeDamageTarget.current = null;
+        windBladeAnimPending.current = false;
       }
     }
   }, [battle.phase, windBladeActive, windBladeFrozenEnemy, windSparkleTarget]);
@@ -1834,7 +1843,7 @@ export default function BattleScreen({
                 onAnimationEnd={onSpriteComplete}
               />
             )}
-            {animPhase === "casting" && !windBladeActive && (
+            {animPhase === "casting" && !windBladeActive && !windBladeFrozenEnemy && (
               <div
                 className="absolute -inset-8 z-30 animate-[magicGlow_0.9s_ease-out_forwards]"
                 style={{ background: `radial-gradient(circle, ${elementColor}50 0%, ${elementColor}20 40%, transparent 70%)` }}
