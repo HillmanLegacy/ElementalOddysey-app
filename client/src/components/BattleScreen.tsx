@@ -756,7 +756,7 @@ export default function BattleScreen({
         }
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies]);
+  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, battle.enemies, runBackHandled]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
