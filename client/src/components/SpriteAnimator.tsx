@@ -47,12 +47,14 @@ export default function SpriteAnimator({
   startFrame,
   pauseAtFrame,
 }: SpriteAnimatorProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const animRef = useRef<number>(0);
   const frameRef = useRef(0);
   const lastTimeRef = useRef(0);
   const stoppedRef = useRef(false);
-  const currentSheetRef = useRef("");
+  const mountedSheetRef = useRef("");
 
   const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, frameWidth, frameHeight, scale });
   propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, frameWidth, frameHeight, scale };
@@ -64,24 +66,33 @@ export default function SpriteAnimator({
   }, []);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+    const container = containerRef.current;
+    if (!container) return;
+
+    const displayW = Math.round(frameWidth * scale);
+    const displayH = Math.round(frameHeight * scale);
+
+    let canvas = canvasRef.current;
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.style.imageRendering = "pixelated";
+      canvas.style.display = "block";
+      container.appendChild(canvas);
+      canvasRef.current = canvas;
+    }
+
+    canvas.width = displayW;
+    canvas.height = displayH;
+    canvas.style.width = displayW + "px";
+    canvas.style.height = displayH + "px";
 
     const ctx = canvas.getContext("2d", { alpha: true });
     if (!ctx) return;
-
-    const { frameWidth: fw, frameHeight: fh, scale: sc } = propsRef.current;
-    const displayW = fw * sc;
-    const displayH = fh * sc;
-
-    if (canvas.width !== displayW || canvas.height !== displayH) {
-      canvas.width = displayW;
-      canvas.height = displayH;
-    }
     ctx.imageSmoothingEnabled = false;
+    ctxRef.current = ctx;
 
-    const sheetChanged = currentSheetRef.current !== spriteSheet;
-    currentSheetRef.current = spriteSheet;
+    const sheetChanged = mountedSheetRef.current !== spriteSheet;
+    mountedSheetRef.current = spriteSheet;
 
     if (sheetChanged || stoppedRef.current) {
       frameRef.current = startFrame ?? 0;
@@ -94,8 +105,8 @@ export default function SpriteAnimator({
 
     const drawFrame = (img: HTMLImageElement, frame: number) => {
       const { frameWidth: cfw, frameHeight: cfh, flipX: cfx, scale: csc } = propsRef.current;
-      const dw = cfw * csc;
-      const dh = cfh * csc;
+      const dw = Math.round(cfw * csc);
+      const dh = Math.round(cfh * csc);
       const cols = Math.floor(img.naturalWidth / cfw);
       const col = cols > 0 ? frame % cols : frame;
       const row = cols > 0 ? Math.floor(frame / cols) : 0;
@@ -169,17 +180,27 @@ export default function SpriteAnimator({
     };
   }, [spriteSheet, startFrame]);
 
-  const displayW = frameWidth * scale;
-  const displayH = frameHeight * scale;
+  useEffect(() => {
+    return () => {
+      if (canvasRef.current && containerRef.current) {
+        try { containerRef.current.removeChild(canvasRef.current); } catch {}
+        canvasRef.current = null;
+        ctxRef.current = null;
+      }
+    };
+  }, []);
+
+  const displayW = Math.round(frameWidth * scale);
+  const displayH = Math.round(frameHeight * scale);
 
   return (
-    <canvas
-      ref={canvasRef}
+    <div
+      ref={containerRef}
       className={className}
       style={{
         width: displayW,
         height: displayH,
-        imageRendering: "pixelated" as const,
+        overflow: "hidden",
         ...(style || {}),
       }}
     />
