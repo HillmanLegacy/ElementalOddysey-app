@@ -1697,6 +1697,12 @@ export default function BattleScreen({
       const isBossTarget = targetEnemy && targetEnemy.isBoss;
       return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
     }
+    if (animPhase === "runBack" && pendingTargetIdx !== null) {
+      const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
+      const targetEnemy = battle.enemies[pendingTargetIdx];
+      const isBossTarget = targetEnemy && targetEnemy.isBoss;
+      return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
+    }
     if (animPhase === "hurt") {
       return { x: PLAYER_POS.x - 1, y: PLAYER_POS.y };
     }
