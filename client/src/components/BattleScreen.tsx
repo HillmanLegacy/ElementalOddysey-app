@@ -115,10 +115,10 @@ const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: str
 
 const GAME_CONTAINER_HEIGHT = 640;
 
-function getSpriteCenterOffset(spriteId: string): number {
+function getSpriteCenterOffset(spriteId: string, fraction: number = 0.3): number {
   const sprites = PARTY_SPRITE_MAP[spriteId] || PARTY_SPRITE_MAP.samurai;
   const displayH = Math.round(sprites.frameHeight * (sprites.scale || 3.5));
-  return (displayH / GAME_CONTAINER_HEIGHT) * 50;
+  return (displayH / GAME_CONTAINER_HEIGHT) * (fraction * 100);
 }
 
 const SPRITE_COLORS: Record<string, string> = {
@@ -367,7 +367,7 @@ export default function BattleScreen({
       color = evt.isCrit ? "#fbbf24" : "#ef4444";
     } else if (evt.targetType === "player") {
       const pp = ALLY_SLOTS[0];
-      const dmgOffset = getSpriteCenterOffset(player.spriteId || "samurai") + 3;
+      const dmgOffset = getSpriteCenterOffset(player.spriteId || "samurai", 0.5) + 3;
       posX = pp.x + (Math.random() * 4 - 2);
       posY = 100 - pp.y - dmgOffset;
       color = evt.element === "Fire" ? "#ff6b2b" : "#ef4444";
@@ -375,7 +375,7 @@ export default function BattleScreen({
       const slotIdx = (evt.targetIndex % PARTY_POSITIONS.length) + 1;
       const pp = ALLY_SLOTS[slotIdx];
       const memberSpriteId = battle.party[evt.targetIndex]?.spriteId || "samurai";
-      const dmgOffset = getSpriteCenterOffset(memberSpriteId) + 1;
+      const dmgOffset = getSpriteCenterOffset(memberSpriteId, 0.5) + 1;
       posX = pp.x + (Math.random() * 4 - 2);
       posY = 100 - pp.y - dmgOffset;
       color = "#ef4444";
@@ -411,14 +411,14 @@ export default function BattleScreen({
           posY = 100 - ep.y - 15 + (Math.random() * 4 - 2);
         } else if (evt.targetType === "player") {
           const pp = ALLY_SLOTS[0];
-          const dmgOff = getSpriteCenterOffset(player.spriteId || "samurai") + 3;
+          const dmgOff = getSpriteCenterOffset(player.spriteId || "samurai", 0.5) + 3;
           posX = pp.x + (Math.random() * 4 - 2);
           posY = 100 - pp.y - dmgOff;
         } else {
           const slotIdx = (evt.targetIndex % PARTY_POSITIONS.length) + 1;
           const pp = ALLY_SLOTS[slotIdx];
           const mSpriteId = battle.party[evt.targetIndex]?.spriteId || "samurai";
-          const dmgOff = getSpriteCenterOffset(mSpriteId) + 1;
+          const dmgOff = getSpriteCenterOffset(mSpriteId, 0.5) + 1;
           posX = pp.x + (Math.random() * 4 - 2);
           posY = 100 - pp.y - dmgOff;
         }
@@ -2596,12 +2596,12 @@ export default function BattleScreen({
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
-                      className="w-48 h-48 md:w-[320px] md:h-[320px]"
+                      className="w-48 h-48 md:w-[420px] md:h-[420px]"
                       style={{
                         display: "flex",
                         alignItems: "flex-end",
                         justifyContent: "center",
-                        overflow: "hidden",
+                        overflow: "visible",
                         filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
@@ -2640,9 +2640,9 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={
-                          enemyAnimStates[idx] === "death" ? 1.95
+                          enemyAnimStates[idx] === "death" ? 2.6
                           : enemyAnimStates[idx] === "attack" ? 4.4
-                          : enemyAnimStates[idx] === "hurt" ? 2.4
+                          : enemyAnimStates[idx] === "hurt" ? 3.2
                           : 4.2
                         }
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}

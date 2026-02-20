@@ -310,13 +310,13 @@
   0% {
     left: var(--fb-start-x);
     bottom: var(--fb-start-y);
-    transform: scale(1.5);
+    transform: translate(-50%, 50%) scale(1.5);
     opacity: 1;
   }
   100% {
     left: var(--fb-end-x, 12%);
     bottom: var(--fb-end-y, 18%);
-    transform: scale(2);
+    transform: translate(-50%, 50%) scale(2);
     opacity: 1;
   }
 }
