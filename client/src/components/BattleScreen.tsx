@@ -540,14 +540,17 @@ export default function BattleScreen({
         }, 1200);
 
         scheduleTimer(() => {
-          setWindSparkleTarget(null);
           windBladeDamageTarget.current = targetIdx;
           onCastSpell(spell, targetIdx);
+        }, 1600);
+
+        scheduleTimer(() => {
+          setWindSparkleTarget(null);
           setWindBladeFrozenEnemy(null);
           if (battle.phase !== "victory" && battle.phase !== "defeat") {
             setTimeout(() => onFinishPlayerTurn(), 600);
           }
-        }, 2000);
+        }, 2200);
       } else {
         setAnimPhase("attacking");
         playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
@@ -891,6 +894,19 @@ export default function BattleScreen({
       return () => clearTimeout(fallback);
     }
   }, [deathAnimPending]);
+
+  useEffect(() => {
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    battle.enemies.forEach((enemy, idx) => {
+      if (enemy.currentHp <= 0 && isAnimatedEnemyCheck(enemy) && enemyAnimStates[idx] !== "death" && enemyAnimStates[idx] !== "hurt" && !deathAnimPending.has(idx)) {
+        timers.push(setTimeout(() => {
+          setDeathAnimPending(prev => new Set(prev).add(idx));
+          setEnemyAnimStates(prev => ({ ...prev, [idx]: "death" }));
+        }, 600));
+      }
+    });
+    return () => timers.forEach(t => clearTimeout(t));
+  }, [battle.enemies, isAnimatedEnemyCheck, enemyAnimStates, deathAnimPending]);
 
   const animateEnemyAttack = useCallback((enemyIdx: number, enemy: typeof battle.enemies[0], onDone: () => void) => {
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
@@ -2149,6 +2165,7 @@ export default function BattleScreen({
 
           {battle.enemies.map((enemy, idx) => {
             const isDead = enemy.currentHp <= 0;
+            const isPlayingDeathAnim = deathAnimPending.has(idx) || enemyAnimStates[idx] === "death";
             const enemyHpPct = (enemy.currentHp / enemy.stats.hp) * 100;
             const isTargetable = !isDead && (
               (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
@@ -2320,7 +2337,7 @@ export default function BattleScreen({
                     <div
                       className="w-36 h-36 md:w-48 md:h-48"
                       style={{
-                        filter: isDead
+                        filter: (isDead && !isPlayingDeathAnim)
                           ? "grayscale(1) brightness(0.2)"
                           : `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
                       }}
@@ -2328,26 +2345,26 @@ export default function BattleScreen({
                     >
                       <SpriteAnimator
                         spriteSheet={
-                          (enemyAnimStates[idx] === "death" || isDead) ? dragonLordDeath
+                          enemyAnimStates[idx] === "death" ? dragonLordDeath
                           : enemyAnimStates[idx] === "attack" ? dragonLordAttack
                           : enemyAnimStates[idx] === "hurt" ? dragonLordHurt
                           : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? dragonLordWalk
                           : dragonLordIdle
                         }
                         frameWidth={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 160
+                          enemyAnimStates[idx] === "death" ? 160
                           : enemyAnimStates[idx] === "attack" ? 90
                           : enemyAnimStates[idx] === "hurt" ? 130
                           : 74
                         }
                         frameHeight={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 160
+                          enemyAnimStates[idx] === "death" ? 160
                           : enemyAnimStates[idx] === "attack" ? 70
                           : enemyAnimStates[idx] === "hurt" ? 130
                           : 74
                         }
                         totalFrames={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 36
+                          enemyAnimStates[idx] === "death" ? 36
                           : enemyAnimStates[idx] === "attack" ? 16
                           : enemyAnimStates[idx] === "hurt" ? 5
                           : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
@@ -2360,15 +2377,15 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 1.4
+                          enemyAnimStates[idx] === "death" ? 1.4
                           : enemyAnimStates[idx] === "attack" ? 2.5
                           : enemyAnimStates[idx] === "hurt" ? 1.7
                           : 3
                         }
-                        loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
                         onComplete={
-                          (enemyAnimStates[idx] === "death" || isDead)
+                          enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
                             : undefined
                         }
@@ -2379,7 +2396,7 @@ export default function BattleScreen({
                     <div
                       className={`w-32 h-32 md:w-40 md:h-40 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
-                        filter: isDead
+                        filter: (isDead && !isPlayingDeathAnim)
                           ? "grayscale(1) brightness(0.2)"
                           : `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
@@ -2387,7 +2404,7 @@ export default function BattleScreen({
                     >
                       <SpriteAnimator
                         spriteSheet={
-                          (enemyAnimStates[idx] === "death" || isDead) ? jotemDeath
+                          enemyAnimStates[idx] === "death" ? jotemDeath
                           : enemyAnimStates[idx] === "slash" ? jotemSlash
                           : enemyAnimStates[idx] === "attack" ? jotemAttack
                           : enemyAnimStates[idx] === "hurt" ? jotemHurt
@@ -2397,7 +2414,7 @@ export default function BattleScreen({
                         frameWidth={128}
                         frameHeight={128}
                         totalFrames={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 12
+                          enemyAnimStates[idx] === "death" ? 12
                           : enemyAnimStates[idx] === "slash" ? 10
                           : enemyAnimStates[idx] === "attack" ? 10
                           : enemyAnimStates[idx] === "hurt" ? 5
@@ -2411,10 +2428,10 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={2.5}
-                        loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death" && enemyAnimStates[idx] !== "slash"}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death" && enemyAnimStates[idx] !== "slash"}
                         flipX={true}
                         onComplete={
-                          (enemyAnimStates[idx] === "death" || isDead)
+                          enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
                             : undefined
                         }
@@ -2425,7 +2442,7 @@ export default function BattleScreen({
                     <div
                       className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
-                        filter: isDead
+                        filter: (isDead && !isPlayingDeathAnim)
                           ? "grayscale(1) brightness(0.2)"
                           : `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
@@ -2433,23 +2450,23 @@ export default function BattleScreen({
                     >
                       <SpriteAnimator
                         spriteSheet={
-                          (enemyAnimStates[idx] === "death" || isDead) ? demonDeath
+                          enemyAnimStates[idx] === "death" ? demonDeath
                           : enemyAnimStates[idx] === "attack" ? demonAttack
                           : enemyAnimStates[idx] === "hurt" ? demonHurt
                           : demonIdle
                         }
                         frameWidth={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 79
+                          enemyAnimStates[idx] === "death" ? 79
                           : enemyAnimStates[idx] === "hurt" ? 79
                           : 81
                         }
                         frameHeight={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 69
+                          enemyAnimStates[idx] === "death" ? 69
                           : enemyAnimStates[idx] === "hurt" ? 69
                           : 71
                         }
                         totalFrames={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 7
+                          enemyAnimStates[idx] === "death" ? 7
                           : enemyAnimStates[idx] === "attack" ? 8
                           : enemyAnimStates[idx] === "hurt" ? 4
                           : 4
@@ -2461,10 +2478,10 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={isBoss ? 4 : 2.5}
-                        loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={false}
                         onComplete={
-                          (enemyAnimStates[idx] === "death" || isDead)
+                          enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
                             : undefined
                         }
@@ -2475,7 +2492,7 @@ export default function BattleScreen({
                     <div
                       className={`w-20 h-20 md:w-28 md:h-28 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
-                        filter: isDead
+                        filter: (isDead && !isPlayingDeathAnim)
                           ? "grayscale(1) brightness(0.2)"
                           : `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
@@ -2483,7 +2500,7 @@ export default function BattleScreen({
                     >
                       <SpriteAnimator
                         spriteSheet={
-                          (enemyAnimStates[idx] === "death" || isDead) ? frostLizardHurt
+                          enemyAnimStates[idx] === "death" ? frostLizardHurt
                           : enemyAnimStates[idx] === "attack" ? frostLizardAttack
                           : enemyAnimStates[idx] === "hurt" ? frostLizardHurt
                           : frostLizardIdle
@@ -2491,7 +2508,7 @@ export default function BattleScreen({
                         frameWidth={148}
                         frameHeight={96}
                         totalFrames={
-                          (enemyAnimStates[idx] === "death" || isDead) ? 2
+                          enemyAnimStates[idx] === "death" ? 2
                           : enemyAnimStates[idx] === "attack" ? 5
                           : enemyAnimStates[idx] === "hurt" ? 2
                           : 6
@@ -2502,10 +2519,10 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={1.5}
-                        loop={!isDead && enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
                         onComplete={
-                          (enemyAnimStates[idx] === "death" || isDead)
+                          enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
                             : undefined
                         }
