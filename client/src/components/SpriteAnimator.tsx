@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, memo } from "react";
 
 const imageCache = new Map<string, HTMLImageElement>();
 
@@ -31,7 +31,7 @@ interface SpriteAnimatorProps {
   pauseAtFrame?: number;
 }
 
-export default function SpriteAnimator({
+function SpriteAnimatorInner({
   spriteSheet,
   frameWidth,
   frameHeight,
@@ -52,39 +52,17 @@ export default function SpriteAnimator({
   const frameRef = useRef(0);
   const lastTimeRef = useRef(0);
   const stoppedRef = useRef(false);
+  const currentSheetRef = useRef(spriteSheet);
+  const canvasSizeRef = useRef({ w: 0, h: 0 });
 
-  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame });
-  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame };
+  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, frameWidth, frameHeight });
+  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, frameWidth, frameHeight };
 
   useEffect(() => {
     if (preloadSheets) {
       preloadSheets.forEach(src => preloadImage(src));
     }
   }, []);
-
-  const drawFrame = useCallback((ctx: CanvasRenderingContext2D, img: HTMLImageElement, frame: number, dw: number, dh: number, flip: boolean) => {
-    ctx.clearRect(0, 0, dw, dh);
-    ctx.save();
-    if (flip) {
-      ctx.scale(-1, 1);
-      ctx.translate(-dw, 0);
-    }
-    const cols = Math.floor(img.naturalWidth / frameWidth);
-    const col = cols > 0 ? frame % cols : frame;
-    const row = cols > 0 ? Math.floor(frame / cols) : 0;
-    ctx.drawImage(
-      img,
-      col * frameWidth,
-      row * frameHeight,
-      frameWidth,
-      frameHeight,
-      0,
-      0,
-      dw,
-      dh
-    );
-    ctx.restore();
-  }, [frameWidth, frameHeight]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -95,18 +73,41 @@ export default function SpriteAnimator({
 
     const displayW = frameWidth * scale;
     const displayH = frameHeight * scale;
-    canvas.width = displayW;
-    canvas.height = displayH;
+
+    if (canvasSizeRef.current.w !== displayW || canvasSizeRef.current.h !== displayH) {
+      canvas.width = displayW;
+      canvas.height = displayH;
+      canvasSizeRef.current = { w: displayW, h: displayH };
+    }
     ctx.imageSmoothingEnabled = false;
 
-    frameRef.current = startFrame ?? 0;
-    lastTimeRef.current = 0;
+    const sheetChanged = currentSheetRef.current !== spriteSheet;
+    currentSheetRef.current = spriteSheet;
+
+    if (sheetChanged) {
+      frameRef.current = startFrame ?? 0;
+      lastTimeRef.current = 0;
+    } else if (stoppedRef.current) {
+      frameRef.current = startFrame ?? 0;
+      lastTimeRef.current = 0;
+    }
     stoppedRef.current = false;
 
-    const initialFrame = startFrame ?? 0;
+    const initialFrame = frameRef.current;
     const cachedImg = imageCache.get(spriteSheet);
     if (cachedImg) {
-      drawFrame(ctx, cachedImg, initialFrame, displayW, displayH, flipX);
+      const { frameWidth: fw, frameHeight: fh, flipX: fx } = propsRef.current;
+      const cols = Math.floor(cachedImg.naturalWidth / fw);
+      const col = cols > 0 ? initialFrame % cols : initialFrame;
+      const row = cols > 0 ? Math.floor(initialFrame / cols) : 0;
+      ctx.clearRect(0, 0, displayW, displayH);
+      ctx.save();
+      if (fx) {
+        ctx.scale(-1, 1);
+        ctx.translate(-displayW, 0);
+      }
+      ctx.drawImage(cachedImg, col * fw, row * fh, fw, fh, 0, 0, displayW, displayH);
+      ctx.restore();
     }
 
     let currentImage: HTMLImageElement | null = cachedImg || null;
@@ -114,7 +115,18 @@ export default function SpriteAnimator({
       preloadImage(spriteSheet).then(img => {
         if (!stoppedRef.current) {
           currentImage = img;
-          drawFrame(ctx, img, initialFrame, displayW, displayH, propsRef.current.flipX);
+          const { frameWidth: fw, frameHeight: fh, flipX: fx } = propsRef.current;
+          const cols = Math.floor(img.naturalWidth / fw);
+          const col = cols > 0 ? initialFrame % cols : initialFrame;
+          const row = cols > 0 ? Math.floor(initialFrame / cols) : 0;
+          ctx.clearRect(0, 0, displayW, displayH);
+          ctx.save();
+          if (fx) {
+            ctx.scale(-1, 1);
+            ctx.translate(-displayW, 0);
+          }
+          ctx.drawImage(img, col * fw, row * fh, fw, fh, 0, 0, displayW, displayH);
+          ctx.restore();
         }
       });
     }
@@ -122,7 +134,7 @@ export default function SpriteAnimator({
     const render = (timestamp: number) => {
       if (stoppedRef.current) return;
 
-      const { totalFrames: tf, fps: f, loop: l, flipX: fx, onComplete: oc, pauseAtFrame: paf } = propsRef.current;
+      const { totalFrames: tf, fps: f, loop: l, flipX: fx, onComplete: oc, pauseAtFrame: paf, frameWidth: fw, frameHeight: fh } = propsRef.current;
       const interval = 1000 / f;
 
       if (!lastTimeRef.current) lastTimeRef.current = timestamp;
@@ -137,7 +149,18 @@ export default function SpriteAnimator({
         lastTimeRef.current = timestamp - (delta % interval);
 
         const currentFrame = Math.min(frameRef.current, tf - 1);
-        drawFrame(ctx, currentImage, currentFrame, displayW, displayH, fx);
+        const cols = Math.floor(currentImage.naturalWidth / fw);
+        const col = cols > 0 ? currentFrame % cols : currentFrame;
+        const row = cols > 0 ? Math.floor(currentFrame / cols) : 0;
+
+        ctx.clearRect(0, 0, displayW, displayH);
+        ctx.save();
+        if (fx) {
+          ctx.scale(-1, 1);
+          ctx.translate(-displayW, 0);
+        }
+        ctx.drawImage(currentImage, col * fw, row * fh, fw, fh, 0, 0, displayW, displayH);
+        ctx.restore();
 
         if (paf !== undefined && currentFrame >= paf) {
           stoppedRef.current = true;
@@ -167,7 +190,7 @@ export default function SpriteAnimator({
       stoppedRef.current = true;
       cancelAnimationFrame(animRef.current);
     };
-  }, [spriteSheet, frameWidth, frameHeight, scale, drawFrame, flipX, startFrame]);
+  }, [spriteSheet, scale, startFrame]);
 
   const displayW = frameWidth * scale;
   const displayH = frameHeight * scale;
@@ -187,3 +210,6 @@ export default function SpriteAnimator({
     />
   );
 }
+
+const SpriteAnimator = memo(SpriteAnimatorInner);
+export default SpriteAnimator;

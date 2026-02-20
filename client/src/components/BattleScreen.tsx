@@ -1711,11 +1711,11 @@ export default function BattleScreen({
   })();
 
   const magicZoomOrigin = (() => {
-    if (magicZoomTarget !== null) {
-      const tp = ENEMY_POSITIONS[magicZoomTarget % ENEMY_POSITIONS.length];
-      return `${(PLAYER_POS.x + tp.x) / 2}% ${100 - (PLAYER_POS.y + tp.y) / 2}%`;
+    if (battle.phase === "partyTurn" && battle.activePartyIndex >= 0) {
+      const pp = PARTY_POSITIONS[battle.activePartyIndex % PARTY_POSITIONS.length];
+      return `${pp.x}% ${100 - pp.y}%`;
     }
-    return `${PLAYER_POS.x}% ${100 - PLAYER_POS.y}%`;
+    return `${playerPos.x}% ${100 - playerPos.y}%`;
   })();
 
   const turnSpriteId = battle.phase === "partyTurn" && battle.activePartyIndex >= 0 && battle.activePartyIndex < player.party.length
