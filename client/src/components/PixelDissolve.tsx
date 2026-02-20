@@ -5,6 +5,7 @@ interface PixelDissolveProps {
   onComplete?: () => void;
   duration?: number;
   pixelSize?: number;
+  reverse?: boolean;
   children: ReactNode;
 }
 
@@ -13,6 +14,7 @@ export default function PixelDissolve({
   onComplete,
   duration = 800,
   pixelSize = 4,
+  reverse = false,
   children,
 }: PixelDissolveProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -32,7 +34,7 @@ export default function PixelDissolve({
         el.style.webkitMaskImage = "";
         el.style.maskSize = "";
         el.style.webkitMaskSize = "";
-        el.style.visibility = "";
+        el.style.visibility = reverse ? "hidden" : "";
       }
       return;
     }
@@ -75,6 +77,8 @@ export default function PixelDissolve({
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
+    el.style.visibility = "";
+
     const start = performance.now();
     let lastCount = -1;
 
@@ -84,14 +88,24 @@ export default function PixelDissolve({
       const count = Math.floor(t * total);
 
       if (count !== lastCount) {
-        maskCtx.fillStyle = "#fff";
-        maskCtx.fillRect(0, 0, w, h);
-
-        for (let i = 0; i < count; i++) {
-          const idx = indices[i];
-          const col = idx % cols;
-          const row = Math.floor(idx / cols);
-          maskCtx.clearRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+        if (reverse) {
+          maskCtx.clearRect(0, 0, w, h);
+          for (let i = 0; i < count; i++) {
+            const idx = indices[i];
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+            maskCtx.fillStyle = "#fff";
+            maskCtx.fillRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+          }
+        } else {
+          maskCtx.fillStyle = "#fff";
+          maskCtx.fillRect(0, 0, w, h);
+          for (let i = 0; i < count; i++) {
+            const idx = indices[i];
+            const col = idx % cols;
+            const row = Math.floor(idx / cols);
+            maskCtx.clearRect(col * pixelSize, row * pixelSize, pixelSize, pixelSize);
+          }
         }
 
         const dataUrl = maskCanvas.toDataURL();
@@ -105,17 +119,25 @@ export default function PixelDissolve({
       if (t < 1) {
         animIdRef.current = requestAnimationFrame(draw);
       } else {
-        el.style.visibility = "hidden";
+        if (reverse) {
+          el.style.maskImage = "";
+          el.style.webkitMaskImage = "";
+          el.style.maskSize = "";
+          el.style.webkitMaskSize = "";
+          el.style.visibility = "";
+        } else {
+          el.style.visibility = "hidden";
+        }
         runningRef.current = false;
         onCompleteRef.current?.();
       }
     };
 
     animIdRef.current = requestAnimationFrame(draw);
-  }, [active, duration, pixelSize]);
+  }, [active, duration, pixelSize, reverse]);
 
   return (
-    <div ref={containerRef} style={{ display: "inline-block" }}>
+    <div ref={containerRef} style={{ display: "inline-block", visibility: reverse && !active ? "hidden" : undefined }}>
       {children}
     </div>
   );

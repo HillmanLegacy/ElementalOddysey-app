@@ -4,7 +4,7 @@
 Elemental Odyssey is a browser-based turn-based RPG focused on strategic combat and character progression. Players explore a board-style overworld, engage in turn-based combat, manage an inventory, equip items, and develop characters through leveling and perks. The game features character selection, a party system where new members are unlocked by defeating bosses, and persistent save functionality. The vision is to deliver an engaging and persistent RPG experience directly in a web browser.
 
 ## User Preferences
-No explicit user preferences were provided.
+- **EO Fade**: The pixel dissolve transition effect (PixelDissolve component) is referred to as "EO fade." Used for battle transitions, enemy death, and UI popup appearances (e.g., victory screen fade-in uses `reverse` mode).
 
 ## System Architecture
 The application features a **React + Vite + Tailwind CSS** frontend using **shadcn/ui** for UI components. The backend uses **Express.js** with **PostgreSQL** and **Drizzle ORM** for data persistence.

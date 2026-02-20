@@ -3187,10 +3187,11 @@ export default function BattleScreen({
       {battle.phase === "victory" && showVictoryUI && (() => {
         const ec = "#facc15";
         return (
-          <div className="absolute inset-0 z-[200] flex items-center justify-center animate-[fadeIn_0.5s_ease-out]">
+          <div className="absolute inset-0 z-[200] flex items-center justify-center">
             <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.75) 70%)` }} />
+            <PixelDissolve active={showVictoryUI} reverse={true} duration={600} pixelSize={5}>
             <div
-              className="relative w-[300px] overflow-hidden"
+              className="relative w-[320px] h-[220px] overflow-hidden flex flex-col"
               style={{
                 fontFamily: "'Press Start 2P', cursive",
                 imageRendering: "pixelated",
@@ -3211,7 +3212,7 @@ export default function BattleScreen({
                 <Trophy className="w-4 h-4" style={{ color: ec }} />
               </div>
 
-              <div className="relative px-4 py-4 space-y-3">
+              <div className="relative px-4 py-4 flex-1 flex flex-col justify-center space-y-3">
                 <div className="flex items-center justify-center gap-4 text-xs" style={{ fontFamily: "'Press Start 2P', cursive" }}>
                   <div className="flex flex-col items-center gap-1 px-3 py-2" style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${ec}30` }}>
                     <span style={{ fontSize: "7px", color: `${ec}80` }}>EXP</span>
@@ -3259,6 +3260,7 @@ export default function BattleScreen({
                 )}
               </div>
             </div>
+            </PixelDissolve>
           </div>
         );
       })()}
