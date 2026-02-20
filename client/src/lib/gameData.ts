@@ -484,7 +484,7 @@ export const PERKS: Perk[] = [
 
 export const SPELLS: Spell[] = [
   { id: "speed_up", name: "Speed Up", description: "+5 AGI for 2 turns", mpCost: 8, type: "buff", targetType: "self", effect: { stat: "agi", amount: 5, duration: 2 } },
-  { id: "fire_bolt", name: "Fire Bolt", description: "Fire damage to one enemy", mpCost: 10, type: "damage", element: "Fire", targetType: "enemy", effect: { damageMultiplier: 1.8 } },
+  { id: "fire_bolt", name: "Incineration Slash", description: "Blazing slash engulfing one enemy in flames", mpCost: 10, type: "damage", element: "Fire", targetType: "enemy", animation: "incinerationSlash", effect: { damageMultiplier: 1.8 } },
   { id: "ice_lance", name: "Ice Lance", description: "Ice damage to one enemy", mpCost: 10, type: "damage", element: "Ice", targetType: "enemy", effect: { damageMultiplier: 1.8 } },
   { id: "thunder", name: "Thunder", description: "Lightning damage to one enemy", mpCost: 12, type: "damage", element: "Lightning", targetType: "enemy", effect: { damageMultiplier: 2.0 } },
   { id: "shadow_strike", name: "Shadow Strike", description: "Shadow damage to one enemy", mpCost: 10, type: "damage", element: "Shadow", targetType: "enemy", effect: { damageMultiplier: 1.8 } },

@@ -15,6 +15,9 @@ import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
 import knightRun from "@/assets/images/knight-run.png";
+import knightSpecial from "@/assets/images/knight-special.png";
+import knightDeath from "@/assets/images/knight-death.png";
+import vfxFireImpact from "@/assets/images/vfx-fire-impact.png";
 import baskenRun from "@/assets/images/basken-run.png";
 import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
 import smearH1 from "@/assets/images/smear-h1.png";
@@ -100,9 +103,9 @@ const ENEMY_SPRITES: Record<string, string> = {
   crystal_titan: crystalTitanImg,
 };
 
-const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; scale?: number }> = {
+const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; special?: string; death?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; specialFrames?: number; deathFrames?: number; scale?: number }> = {
   samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 4, runFrames: 8, scale: 3.5 },
-  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, run: knightRun, frameWidth: 86, frameHeight: 49, idleFrames: 4, attackFrames: 7, hurtFrames: 2, runFrames: 6, scale: 3.5 },
+  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, run: knightRun, special: knightSpecial, death: knightDeath, frameWidth: 86, frameHeight: 49, idleFrames: 7, attackFrames: 7, hurtFrames: 2, runFrames: 6, specialFrames: 7, deathFrames: 7, scale: 3.5 },
   basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, runFrames: 6, scale: 3.5 },
   ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6, scale: 3.5 },
   knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3, scale: 3.5 },
