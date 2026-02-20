@@ -15,6 +15,7 @@ import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
 import knightRun from "@/assets/images/knight-run.png";
+import knightWalk from "@/assets/images/knight-walk.png";
 import knightSpecial from "@/assets/images/knight-special.png";
 import knightDeath from "@/assets/images/knight-death.png";
 import vfxFireImpact from "@/assets/images/vfx-fire-impact.png";
@@ -103,9 +104,9 @@ const ENEMY_SPRITES: Record<string, string> = {
   crystal_titan: crystalTitanImg,
 };
 
-const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; special?: string; death?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; specialFrames?: number; deathFrames?: number; scale?: number }> = {
+const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; walk?: string; special?: string; death?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; walkFrames?: number; specialFrames?: number; deathFrames?: number; scale?: number }> = {
   samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 4, runFrames: 8, scale: 3.5 },
-  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, run: knightRun, special: knightSpecial, death: knightDeath, frameWidth: 86, frameHeight: 49, idleFrames: 7, attackFrames: 7, hurtFrames: 2, runFrames: 6, specialFrames: 7, deathFrames: 7, scale: 3.5 },
+  knight: { idle: knightIdle, attack: knightAttack, hurt: knightHurt, run: knightRun, walk: knightWalk, special: knightSpecial, death: knightDeath, frameWidth: 86, frameHeight: 49, idleFrames: 7, attackFrames: 7, hurtFrames: 2, runFrames: 6, walkFrames: 4, specialFrames: 7, deathFrames: 7, scale: 3.5 },
   basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, runFrames: 6, scale: 3.5 },
   ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6, scale: 3.5 },
   knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3, scale: 3.5 },
@@ -1564,12 +1565,14 @@ export default function BattleScreen({
     const hurt = { src: playerSprites.hurt, frames: playerSprites.hurtFrames, fps: 10, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
     const runSheet = playerSprites.run;
     const runConfig = runSheet ? { src: runSheet, frames: playerSprites.runFrames || 6, fps: 14, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : idle;
+    const walkSheet = playerSprites.walk;
+    const walkConfig = walkSheet ? { src: walkSheet, frames: playerSprites.walkFrames || 4, fps: 8, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : runConfig;
 
     switch (animPhase) {
       case "runToEnemy":
         return runConfig;
       case "runBack":
-        return runConfig;
+        return walkConfig;
       case "attacking":
         return atk;
       case "casting":
