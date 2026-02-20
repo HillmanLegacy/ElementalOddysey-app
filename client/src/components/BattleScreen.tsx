@@ -618,8 +618,9 @@ export default function BattleScreen({
         playSfx("gruntAttack", 0.7);
 
         const frameDuration = 1000 / 14;
+        const holdDuration = 333;
         const frame3Time = frameDuration * 2;
-        const frame6Time = frameDuration * 5;
+        const frame6Time = frameDuration * 5 + holdDuration;
 
         scheduleTimer(() => {
           const id1 = ++fireImpactId.current;
@@ -632,7 +633,7 @@ export default function BattleScreen({
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
           scheduleTimer(() => {
             setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
-          }, 250);
+          }, 333);
         }, frame3Time);
 
         scheduleTimer(() => {
@@ -646,10 +647,10 @@ export default function BattleScreen({
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
           scheduleTimer(() => {
             setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
-          }, 250);
+          }, 333);
         }, frame6Time);
 
-        const totalAnimTime = frameDuration * 7;
+        const totalAnimTime = frameDuration * 7 + holdDuration * 2;
 
         scheduleTimer(() => {
           setIncinerationSlashActive(false);
@@ -1593,7 +1594,7 @@ export default function BattleScreen({
 
   const playerSprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
 
-  const getSpriteSheet = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number; startAt?: number; w: number; h: number } => {
+  const getSpriteSheet = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number; startAt?: number; holdFrames?: Record<number, number>; w: number; h: number } => {
     const idle = { src: playerSprites.idle, frames: playerSprites.idleFrames, fps: 8, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
     const atk = { src: playerSprites.attack, frames: playerSprites.attackFrames, fps: 14, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
     const hurt = { src: playerSprites.hurt, frames: playerSprites.hurtFrames, fps: 10, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
@@ -1617,10 +1618,11 @@ export default function BattleScreen({
       case "incinerationSlash": {
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
+        const incHoldFrames = { 2: 333, 5: 333 };
         if (specialSheet) {
-          return { src: specialSheet, frames: specialFrames, fps: 14, loop: false, pauseAt: specialFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+          return { src: specialSheet, frames: specialFrames, fps: 14, loop: false, pauseAt: specialFrames - 1, holdFrames: incHoldFrames, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
-        return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1 };
+        return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
@@ -2015,6 +2017,7 @@ export default function BattleScreen({
                 preloadSheets={[playerSprites.idle, playerSprites.attack, playerSprites.hurt, ...(playerSprites.run ? [playerSprites.run] : []), ...(playerSprites.walk ? [playerSprites.walk] : []), ...(playerSprites.special ? [playerSprites.special] : []), ...(playerSprites.death ? [playerSprites.death] : [])]}
                 startFrame={spriteConfig.startAt}
                 pauseAtFrame={spriteConfig.pauseAt}
+                holdFrames={spriteConfig.holdFrames}
               />
               <div
                 className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-3 rounded-full blur-md opacity-40"
@@ -2522,8 +2525,8 @@ export default function BattleScreen({
                     <div key={v.id} className="absolute z-25 pointer-events-none" style={{
                       top: "50%",
                       left: "50%",
-                      width: "220%",
-                      height: "220%",
+                      width: 192,
+                      height: 192,
                       transform: "translate(-50%, -50%)",
                       filter: "drop-shadow(0 0 12px rgba(255,120,0,0.8)) drop-shadow(0 0 24px rgba(255,60,0,0.4))",
                     }}>
@@ -2535,7 +2538,6 @@ export default function BattleScreen({
                         fps={16}
                         scale={3}
                         loop={false}
-                        style={{ width: "100%", height: "100%", position: "absolute", top: 0, left: 0 }}
                       />
                     </div>
                   ))}

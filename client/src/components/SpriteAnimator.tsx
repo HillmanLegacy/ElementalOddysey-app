@@ -29,6 +29,7 @@ interface SpriteAnimatorProps {
   preloadSheets?: string[];
   startFrame?: number;
   pauseAtFrame?: number;
+  holdFrames?: Record<number, number>;
 }
 
 export default function SpriteAnimator({
@@ -46,6 +47,7 @@ export default function SpriteAnimator({
   preloadSheets,
   startFrame,
   pauseAtFrame,
+  holdFrames,
 }: SpriteAnimatorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -55,9 +57,11 @@ export default function SpriteAnimator({
   const lastTimeRef = useRef(0);
   const stoppedRef = useRef(false);
   const mountedSheetRef = useRef("");
+  const holdUntilRef = useRef(0);
+  const heldFramesRef = useRef<Set<number>>(new Set());
 
-  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, frameWidth, frameHeight, scale });
-  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, frameWidth, frameHeight, scale };
+  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale });
+  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale };
 
   useEffect(() => {
     if (preloadSheets) {
@@ -68,6 +72,9 @@ export default function SpriteAnimator({
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
+
+    heldFramesRef.current.clear();
+    holdUntilRef.current = 0;
 
     const displayW = Math.round(frameWidth * scale);
     const displayH = Math.round(frameHeight * scale);
@@ -138,15 +145,29 @@ export default function SpriteAnimator({
       const interval = 1000 / f;
 
       if (!lastTimeRef.current) lastTimeRef.current = timestamp;
-      const delta = timestamp - lastTimeRef.current;
 
       if (!currentImage) {
         const cached = imageCache.get(propsRef.current.spriteSheet);
         if (cached) currentImage = cached;
       }
 
-      if (delta >= interval && currentImage) {
-        lastTimeRef.current = timestamp - (delta % interval);
+      if (holdUntilRef.current > 0) {
+        if (timestamp < holdUntilRef.current) {
+          animRef.current = requestAnimationFrame(render);
+          return;
+        }
+        holdUntilRef.current = 0;
+        lastTimeRef.current = timestamp;
+        animRef.current = requestAnimationFrame(render);
+        return;
+      }
+
+      const actualDelta = timestamp - lastTimeRef.current;
+
+      if (actualDelta >= interval && currentImage) {
+        const { holdFrames: hf } = propsRef.current;
+
+        lastTimeRef.current = timestamp - (actualDelta % interval);
         const currentFrame = Math.min(frameRef.current, tf - 1);
         drawFrame(currentImage, currentFrame);
 
@@ -156,10 +177,18 @@ export default function SpriteAnimator({
           return;
         }
 
+        if (hf && hf[currentFrame] !== undefined && !heldFramesRef.current.has(currentFrame)) {
+          heldFramesRef.current.add(currentFrame);
+          holdUntilRef.current = timestamp + hf[currentFrame];
+          animRef.current = requestAnimationFrame(render);
+          return;
+        }
+
         frameRef.current++;
         if (frameRef.current >= tf) {
           if (l) {
             frameRef.current = 0;
+            heldFramesRef.current.clear();
           } else {
             frameRef.current = tf - 1;
             stoppedRef.current = true;
