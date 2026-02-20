@@ -895,7 +895,6 @@ export default function BattleScreen({
       runBackHandled.current = true;
       
       // PAUSE phase: Knight stays at the enemy position
-      // We don't change animPhase yet, we just wait.
       scheduleTimer(() => {
         runBackHandled.current = false; // Reset for the actual runBack
         setAnimPhase("runBack");
@@ -910,8 +909,8 @@ export default function BattleScreen({
               setTimeout(() => onFinishPlayerTurn(), 1000);
             }
           }
-        }, 400);
-      }, 1200); 
+        }, 350);
+      }, 350); 
     } else if (animPhase === "hurt") {
       setAnimPhase("idle");
     } else if (animPhase === "casting") {
@@ -2052,11 +2051,11 @@ export default function BattleScreen({
                 totalFrames={spriteConfig.frames}
                 fps={spriteConfig.fps}
                 scale={playerSprites.scale || 3.5}
-                loop={spriteConfig.loop}
+                loop={animPhase !== "attacking" && spriteConfig.loop}
                 onComplete={onSpriteComplete}
                 preloadSheets={[playerSprites.idle, playerSprites.attack, playerSprites.hurt, ...(playerSprites.run ? [playerSprites.run] : []), ...(playerSprites.walk ? [playerSprites.walk] : []), ...(playerSprites.special ? [playerSprites.special] : []), ...(playerSprites.death ? [playerSprites.death] : [])]}
                 startFrame={0}
-                pauseAtFrame={spriteConfig.pauseAt}
+                pauseAtFrame={animPhase === "attacking" ? spriteConfig.frames - 1 : spriteConfig.pauseAt}
                 holdFrames={spriteConfig.holdFrames}
               />
               <div
