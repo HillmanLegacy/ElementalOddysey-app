@@ -111,13 +111,13 @@ const ENEMY_ANIM_DATA: Record<string, { idle: string; attack: string; hurt: stri
     attack: dragonLordAttack, 
     hurt: dragonLordHurt, 
     death: dragonLordDeath, 
-    frameWidth: 128, 
-    frameHeight: 128, 
-    idleFrames: 8, 
-    attackFrames: 8, 
-    hurtFrames: 3, 
-    deathFrames: 8, 
-    scale: 3.5,
+    frameWidth: 74, 
+    frameHeight: 74, 
+    idleFrames: 4, 
+    attackFrames: 16, 
+    hurtFrames: 5, 
+    deathFrames: 36, 
+    scale: 4.2,
     yOffset: -10
   },
   demon: { idle: demonIdle, attack: demonAttack, hurt: demonHurt, death: demonDeath, frameWidth: 96, frameHeight: 96, idleFrames: 6, attackFrames: 8, hurtFrames: 4, deathFrames: 6, scale: 3 },
@@ -2660,22 +2660,37 @@ export default function BattleScreen({
                           : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? dragonLordWalk
                           : dragonLordIdle
                         }
-                        frameWidth={128}
-                        frameHeight={128}
+                        frameWidth={
+                          enemyAnimStates[idx] === "death" ? 160
+                          : enemyAnimStates[idx] === "attack" ? 90
+                          : enemyAnimStates[idx] === "hurt" ? 130
+                          : 74
+                        }
+                        frameHeight={
+                          enemyAnimStates[idx] === "death" ? 160
+                          : enemyAnimStates[idx] === "attack" ? 90
+                          : enemyAnimStates[idx] === "hurt" ? 130
+                          : 74
+                        }
                         totalFrames={
-                          enemyAnimStates[idx] === "death" ? 8
-                          : enemyAnimStates[idx] === "attack" ? 8
-                          : enemyAnimStates[idx] === "hurt" ? 3
-                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 6
-                          : 8
+                          enemyAnimStates[idx] === "death" ? 36
+                          : enemyAnimStates[idx] === "attack" ? 16
+                          : enemyAnimStates[idx] === "hurt" ? 5
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
+                          : 4
                         }
                         fps={
-                          enemyAnimStates[idx] === "attack" ? 10
-                          : enemyAnimStates[idx] === "death" ? 8
+                          enemyAnimStates[idx] === "attack" ? 16
+                          : enemyAnimStates[idx] === "death" ? 12
                           : enemyAnimStates[idx] === "hurt" ? 10
                           : 8
                         }
-                        scale={3.5}
+                        scale={
+                          enemyAnimStates[idx] === "death" ? 2.6
+                          : enemyAnimStates[idx] === "attack" ? 4.4
+                          : enemyAnimStates[idx] === "hurt" ? 3.2
+                          : 4.2
+                        }
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
                         onComplete={
