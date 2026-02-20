@@ -1516,7 +1516,9 @@ export default function BattleScreen({
     }
     if ((animPhase === "runToEnemy" || animPhase === "attacking" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
-      return { x: target.x - 8, y: target.y - 4 };
+      const targetEnemy = battle.enemies[pendingTargetIdx];
+      const isBossTarget = targetEnemy && targetEnemy.isBoss;
+      return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
     }
     if (animPhase === "hurt") {
       return { x: PLAYER_POS.x - 1, y: PLAYER_POS.y };
@@ -1618,7 +1620,7 @@ export default function BattleScreen({
                 style={{
                   opacity: 0,
                   animationDelay: `${slash.delay}ms`,
-                  filter: "drop-shadow(0 0 8px rgba(100,255,150,0.7)) drop-shadow(0 0 20px rgba(50,200,100,0.4))",
+                  filter: "drop-shadow(0 0 8px rgba(255,255,255,0.6)) drop-shadow(0 0 20px rgba(200,220,255,0.3))",
                 }}
               >
                 <SpriteAnimator
@@ -1886,7 +1888,9 @@ export default function BattleScreen({
             if (isActiveParty && partyTargetIdx !== null) {
               const tgt = ENEMY_POSITIONS[partyTargetIdx % ENEMY_POSITIONS.length];
               if (partyAnimPhase === "runToEnemy" || partyAnimPhase === "attacking") {
-                posX = tgt.x - 8;
+                const tgtEnemy = battle.enemies[partyTargetIdx];
+                const isBossTgt = tgtEnemy && tgtEnemy.isBoss;
+                posX = tgt.x - (isBossTgt ? 16 : 8);
                 posY = tgt.y - 4;
               }
             }
@@ -2323,7 +2327,7 @@ export default function BattleScreen({
                             width: "50%",
                             height: "50%",
                             transform: `rotate(${slash.rotation}deg) scale(${slash.scale})`,
-                            filter: "drop-shadow(0 0 12px rgba(100,255,100,0.8))",
+                            filter: "drop-shadow(0 0 12px rgba(255,255,255,0.7))",
                             animation: "windSlashFade 0.6s ease-out forwards",
                           }}
                         >
@@ -2370,7 +2374,7 @@ export default function BattleScreen({
                       left: "-50%",
                       width: "200%",
                       height: "200%",
-                      filter: "drop-shadow(0 0 10px rgba(100,255,100,0.7))",
+                      filter: "drop-shadow(0 0 10px rgba(255,255,255,0.6))",
                     }}>
                       <SpriteAnimator
                         spriteSheet={windSpellVfx.type === "windBlade" ? vfxWindSlash2 : vfxWindSlash3}
@@ -2426,6 +2430,7 @@ export default function BattleScreen({
                         display: "flex",
                         alignItems: "flex-end",
                         justifyContent: "center",
+                        overflow: "hidden",
                         filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
@@ -2464,8 +2469,8 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={
-                          enemyAnimStates[idx] === "death" ? 2.0
-                          : enemyAnimStates[idx] === "attack" ? 3.5
+                          enemyAnimStates[idx] === "death" ? 1.95
+                          : enemyAnimStates[idx] === "attack" ? 4.4
                           : enemyAnimStates[idx] === "hurt" ? 2.4
                           : 4.2
                         }
