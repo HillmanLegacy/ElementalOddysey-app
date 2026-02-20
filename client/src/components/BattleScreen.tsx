@@ -36,6 +36,8 @@ import demonFireball from "@/assets/images/demon-fireball.png";
 import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
 import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
 import guardSpriteSheet from "@assets/10_weaponhit_spritesheet_1771628904150.png";
+import flamelashSheet from "@assets/6_flamelash_spritesheet_1771631377663.png";
+import nukeExplosionSheet from "@assets/Nuke_Explosion_1771631384679.png";
 
 import fireSlimeImg from "@/assets/images/enemy-fire-slime.png";
 import aquaSlimeImg from "@/assets/images/enemy-aqua-slime.png";
@@ -153,7 +155,7 @@ interface BattleScreenProps {
   regionTheme?: string;
 }
 
-type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash";
+type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave";
 
 const ALLY_SLOTS = [
   { x: 12, y: 18 },
@@ -228,6 +230,12 @@ export default function BattleScreen({
   const [incinerationSlashActive, setIncinerationSlashActive] = useState(false);
   const [incinerationFrozenEnemy, setIncinerationFrozenEnemy] = useState<number | null>(null);
   const pendingIncinerationSlash = useRef<{ targetIdx: number; spell: Spell } | null>(null);
+  const [eruptionCleaveActive, setEruptionCleaveActive] = useState(false);
+  const [eruptionFlamelashActive, setEruptionFlamelashActive] = useState(false);
+  const [eruptionNukeActive, setEruptionNukeActive] = useState(false);
+  const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
+  const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
+  const pendingEruptionCleave = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const fireImpactId = useRef(0);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
@@ -469,6 +477,18 @@ export default function BattleScreen({
     }
     if (selectedSpell.animation === "incinerationSlash") {
       pendingIncinerationSlash.current = { targetIdx, spell: selectedSpell };
+      setSelectedAction(null);
+      setPendingTargetIdx(targetIdx);
+      onSetAnimating();
+      setMagicZoom(true);
+      setMagicZoomTarget(targetIdx);
+      setAnimPhase("runToEnemy");
+      setSelectedSpell(null);
+      setShowSpells(false);
+      return;
+    }
+    if (selectedSpell.animation === "eruptionCleave") {
+      pendingEruptionCleave.current = { targetIdx, spell: selectedSpell };
       setSelectedAction(null);
       setPendingTargetIdx(targetIdx);
       onSetAnimating();
