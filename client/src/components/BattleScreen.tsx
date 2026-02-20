@@ -2165,7 +2165,6 @@ export default function BattleScreen({
 
           {battle.enemies.map((enemy, idx) => {
             const isDead = enemy.currentHp <= 0;
-            const isPlayingDeathAnim = deathAnimPending.has(idx) || enemyAnimStates[idx] === "death";
             const enemyHpPct = (enemy.currentHp / enemy.stats.hp) * 100;
             const isTargetable = !isDead && (
               (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
@@ -2337,9 +2336,7 @@ export default function BattleScreen({
                     <div
                       className="w-36 h-36 md:w-48 md:h-48"
                       style={{
-                        filter: (isDead && !isPlayingDeathAnim)
-                          ? "grayscale(1) brightness(0.2)"
-                          : `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
+                        filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
@@ -2396,9 +2393,7 @@ export default function BattleScreen({
                     <div
                       className={`w-32 h-32 md:w-40 md:h-40 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
-                        filter: (isDead && !isPlayingDeathAnim)
-                          ? "grayscale(1) brightness(0.2)"
-                          : `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
+                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
@@ -2442,9 +2437,7 @@ export default function BattleScreen({
                     <div
                       className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
-                        filter: (isDead && !isPlayingDeathAnim)
-                          ? "grayscale(1) brightness(0.2)"
-                          : `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
+                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
@@ -2492,9 +2485,7 @@ export default function BattleScreen({
                     <div
                       className={`w-20 h-20 md:w-28 md:h-28 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
-                        filter: (isDead && !isPlayingDeathAnim)
-                          ? "grayscale(1) brightness(0.2)"
-                          : `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
+                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
@@ -2535,9 +2526,7 @@ export default function BattleScreen({
                       alt={enemy.name}
                       className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} object-contain ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
                       style={{
-                        filter: isDead
-                          ? "grayscale(1) brightness(0.2)"
-                          : `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
+                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                         imageRendering: "auto",
                       }}
                       data-testid={`img-enemy-${idx}`}
