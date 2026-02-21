@@ -38,6 +38,7 @@ import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
 import guardSpriteSheet from "@assets/10_weaponhit_spritesheet_1771628904150.png";
 import flamelashSheet from "@assets/6_flamelash_spritesheet_1771631377663.png";
 import nukeExplosionSheet from "@assets/Nuke_Explosion_1771631384679.png";
+import knightEruptionSheet from "@assets/knight_1771631932532.png";
 
 import fireSlimeImg from "@/assets/images/enemy-fire-slime.png";
 import aquaSlimeImg from "@/assets/images/enemy-aqua-slime.png";
@@ -730,10 +731,10 @@ export default function BattleScreen({
         const pauseFrame2Duration = 200;
         const flamelashDuration = 1200;
         const resumeAfterFlamelash = pauseFrame2Time + pauseFrame2Duration + flamelashDuration;
-        const pauseFrame5Time = resumeAfterFlamelash + (frameDuration * 3);
-        const pauseFrame5Duration = 1000;
+        const pauseFrame4Time = resumeAfterFlamelash + (frameDuration * 2);
+        const pauseFrame4Duration = 1000;
         const nukeDuration = 11 * (1000 / 18);
-        const nukeStartTime = pauseFrame5Time + pauseFrame5Duration;
+        const nukeStartTime = pauseFrame4Time + pauseFrame4Duration;
         const totalAnimTime = nukeStartTime + nukeDuration + 400;
 
         scheduleTimer(() => {
@@ -1736,13 +1737,8 @@ export default function BattleScreen({
         return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
       case "eruptionCleave": {
-        const specialSheet = playerSprites.special;
-        const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
-        const ecHoldFrames: Record<number, number> = { 2: 1400, 5: 1000 };
-        if (specialSheet) {
-          return { src: specialSheet, frames: specialFrames, fps: 14, loop: false, pauseAt: specialFrames - 1, holdFrames: ecHoldFrames, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
-        }
-        return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: ecHoldFrames };
+        const ecHoldFrames: Record<number, number> = { 16: 1400, 18: 1000 };
+        return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, holdFrames: ecHoldFrames, w: 86, h: 49 };
       }
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
