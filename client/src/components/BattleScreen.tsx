@@ -2092,8 +2092,8 @@ export default function BattleScreen({
               <div className="absolute z-40 pointer-events-none" style={{
                 top: "50%",
                 left: "50%",
-                width: 250,
-                height: 250,
+                width: 350,
+                height: 350,
                 transform: "translate(-50%, -50%)",
                 filter: "drop-shadow(0 0 14px rgba(255,100,0,0.9)) drop-shadow(0 0 28px rgba(255,50,0,0.5))",
               }}>
@@ -2103,7 +2103,7 @@ export default function BattleScreen({
                   frameHeight={100}
                   totalFrames={49}
                   fps={38}
-                  scale={2.5}
+                  scale={3.5}
                   loop={false}
                 />
               </div>
@@ -2719,10 +2719,10 @@ export default function BattleScreen({
                     <div className="absolute z-50 pointer-events-none" style={{
                       top: "50%",
                       left: "50%",
-                      width: 256,
-                      height: 256,
+                      width: 576,
+                      height: 576,
                       transform: "translate(-50%, -50%)",
-                      filter: "drop-shadow(0 0 16px rgba(255,80,0,0.9)) drop-shadow(0 0 32px rgba(255,40,0,0.5))",
+                      filter: "drop-shadow(0 0 24px rgba(255,80,0,0.9)) drop-shadow(0 0 48px rgba(255,40,0,0.5))",
                     }}>
                       <SpriteAnimator
                         spriteSheet={nukeExplosionSheet}
@@ -2730,7 +2730,7 @@ export default function BattleScreen({
                         frameHeight={64}
                         totalFrames={11}
                         fps={18}
-                        scale={4}
+                        scale={9}
                         loop={false}
                       />
                     </div>
