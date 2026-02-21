@@ -651,8 +651,6 @@ export default function BattleScreen({
         setAnimPhase("incinerationSlash");
         setIncinerationSlashActive(true);
         setIncinerationFrozenEnemy(targetIdx);
-        playSfx("incinerationCleave", 0.8);
-        playSfx("gruntAttack", 0.7);
 
         const frameDuration = 1000 / 14;
         const holdDuration = 333;
@@ -662,7 +660,7 @@ export default function BattleScreen({
         scheduleTimer(() => {
           const id1 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id1 }]);
-          playSfx("hitMetal");
+          playSfx("incinerationCleave", 0.8);
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);
@@ -676,7 +674,7 @@ export default function BattleScreen({
         scheduleTimer(() => {
           const id2 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id2 }]);
-          playSfx("hitMetal");
+          playSfx("incinerationCleave", 0.8);
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);
