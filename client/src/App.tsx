@@ -92,9 +92,11 @@ function Game() {
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [returnToHut, setReturnToHut] = useState(false);
+  const [forceHutOpen, setForceHutOpen] = useState(false);
 
   useEffect(() => {
-    const handleOpenOptions = () => setShowOptions(true);
+    const handleOpenOptions = () => { setShowOptions(true); setReturnToHut(true); };
     window.addEventListener('open-options', handleOpenOptions);
     return () => window.removeEventListener('open-options', handleOpenOptions);
   }, []);
@@ -198,9 +200,11 @@ function Game() {
                 toast({ title: "Rested", description: "HP and MP fully restored!" });
               }}
               onShamanVisit={openShaman}
-              onInventory={() => setScreen("inventory")}
-              onPartyManage={() => setShowPartyManagement(true)}
-              onSaveOpen={() => setShowSaveScreen(true)}
+              onInventory={() => { setReturnToHut(true); setScreen("inventory"); }}
+              onPartyManage={() => { setReturnToHut(true); setShowPartyManagement(true); }}
+              onSaveOpen={() => { setReturnToHut(true); setShowSaveScreen(true); }}
+              forceHutMenuOpen={forceHutOpen}
+              onHutMenuClosed={() => setForceHutOpen(false)}
               onRegionChange={changeRegion}
             />
             {showPartyManagement && state.player && (
@@ -223,7 +227,7 @@ function Game() {
                       benchedParty: (state.player!.benchedParty || []).filter(m => m.id !== memberId),
                     });
                   }}
-                  onClose={() => setShowPartyManagement(false)}
+                  onClose={() => { setShowPartyManagement(false); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
                 />
               </div>
             )}
@@ -244,7 +248,7 @@ function Game() {
                   <div className="relative flex items-center justify-between" style={{ padding: "8px 12px", background: "#0d0b0bf0", borderBottom: "3px solid #c9a44a" }}>
                     <h3 style={{ fontSize: "10px", color: "#c9a44a", letterSpacing: "2px" }}>OPTIONS</h3>
                     <button 
-                      onClick={() => setShowOptions(false)}
+                      onClick={() => { setShowOptions(false); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
                       className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
                       style={{ border: "1px solid #c9a44a50", background: "transparent" }}
                     >
@@ -328,7 +332,7 @@ function Game() {
                       <button
                         className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
                         style={{ border: `1px solid ${ac}50`, background: "transparent" }}
-                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
                       >
                         <span style={{ fontSize: "8px", color: ac }}>✕</span>
                       </button>
@@ -407,7 +411,7 @@ function Game() {
                           (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
                           (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
                         }}
-                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
                       >
                         <span style={{ fontSize: "8px", color: ac, letterSpacing: "1px" }}>← BACK</span>
                       </button>
@@ -608,7 +612,7 @@ function Game() {
             onEquip={equipItem}
             onUnequip={unequipItem}
             onUseItem={useItemOverworld}
-            onBack={() => setScreen("overworld")}
+            onBack={() => { setScreen("overworld"); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
           />
         );
 

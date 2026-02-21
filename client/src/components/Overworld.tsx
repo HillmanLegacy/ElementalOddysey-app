@@ -139,14 +139,23 @@ interface OverworldProps {
   onPartyManage: () => void;
   onSaveOpen: () => void;
   onRegionChange: (regionId: number) => void;
+  forceHutMenuOpen?: boolean;
+  onHutMenuClosed?: () => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSaveOpen, onRegionChange }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSaveOpen, onRegionChange, forceHutMenuOpen, onHutMenuClosed }: OverworldProps) {
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
   const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
   const [hutMenuOpen, setHutMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (forceHutMenuOpen) {
+      setHutMenuOpen(true);
+      onHutMenuClosed?.();
+    }
+  }, [forceHutMenuOpen]);
   const [charPos, setCharPos] = useState<{ x: number; y: number }>(() => {
     const currentNode = region.nodes.find(n => n.id === player.currentNode);
     return currentNode ? getNodePosition(currentNode) : { x: 8, y: 82 };
