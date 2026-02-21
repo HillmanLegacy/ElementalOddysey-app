@@ -34,7 +34,7 @@ import drinkSlurp from "@/assets/audio/drink-slurp.wav";
 import mifuneSwordSlice from "@/assets/audio/mifune-sword-slice.wav";
 import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1771634677180.wav";
 import eruptionCleave from "@assets/Eruption_Cleave_1771634677181.wav";
-import incinerationCleave from "@assets/Incineration_Cleave_1771658499340.wav";
+import incinerationCleave from "@assets/Incineration_Cleave_1771658647621.wav";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
