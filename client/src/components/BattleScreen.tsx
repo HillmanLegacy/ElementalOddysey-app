@@ -230,8 +230,6 @@ export default function BattleScreen({
   const [fireImpactVfx, setFireImpactVfx] = useState<{ targetIdx: number; id: number }[]>([]);
   const [incinerationSlashActive, setIncinerationSlashActive] = useState(false);
   const [incinerationFrozenEnemy, setIncinerationFrozenEnemy] = useState<number | null>(null);
-  const [incinerationNukeActive, setIncinerationNukeActive] = useState(false);
-  const [incinerationNukeTargetIdx, setIncinerationNukeTargetIdx] = useState<number | null>(null);
   const pendingIncinerationSlash = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const [eruptionCleaveActive, setEruptionCleaveActive] = useState(false);
   const [eruptionFlamelashActive, setEruptionFlamelashActive] = useState(false);
@@ -689,33 +687,11 @@ export default function BattleScreen({
           }, 333);
         }, frame6Time);
 
-        const slashEndTime = frameDuration * 7 + holdDuration * 2;
-        const nukeDuration = 11 * (1000 / 18);
-        const nukeStartTime = slashEndTime + 100;
-        const totalAnimTime = nukeStartTime + nukeDuration + 400;
-
-        scheduleTimer(() => {
-          setIncinerationNukeActive(true);
-          setIncinerationNukeTargetIdx(targetIdx);
-          setFireImpactVfx([]);
-          playSfx("eruptionCleave");
-          setShakeScreen(true);
-          scheduleTimer(() => setShakeScreen(false), 500);
-          setEnemyHitIdx(targetIdx);
-          scheduleTimer(() => setEnemyHitIdx(null), 300);
-          setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
-          scheduleTimer(() => {
-            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
-          }, 500);
-        }, nukeStartTime);
-
-        scheduleTimer(() => {
-          setIncinerationNukeActive(false);
-          setIncinerationNukeTargetIdx(null);
-        }, nukeStartTime + nukeDuration);
+        const totalAnimTime = frameDuration * 7 + holdDuration * 2;
 
         scheduleTimer(() => {
           setIncinerationSlashActive(false);
+          setFireImpactVfx([]);
           setMagicZoom(false);
           setMagicZoomTarget(null);
           castingNeedsRunBack.current = false;
@@ -728,19 +704,19 @@ export default function BattleScreen({
               setPendingTargetIdx(null);
             }
           }, 600);
-        }, totalAnimTime);
+        }, totalAnimTime + 200);
 
         scheduleTimer(() => {
           onCastSpell(spell, targetIdx);
           playSfx("magicRing", 0.4);
-        }, totalAnimTime + 200);
+        }, totalAnimTime + 400);
 
         scheduleTimer(() => {
           setIncinerationFrozenEnemy(null);
           if (battle.phase !== "victory" && battle.phase !== "defeat") {
             setTimeout(() => onFinishPlayerTurn(), 600);
           }
-        }, totalAnimTime + 800);
+        }, totalAnimTime + 1000);
       } else if (pendingEruptionCleave.current) {
         const { targetIdx, spell } = pendingEruptionCleave.current;
         pendingEruptionCleave.current = null;
@@ -2743,26 +2719,6 @@ export default function BattleScreen({
                       />
                     </div>
                   ))}
-                  {incinerationNukeActive && incinerationNukeTargetIdx === idx && (
-                    <div className="absolute z-50 pointer-events-none" style={{
-                      top: "50%",
-                      left: "50%",
-                      width: 576,
-                      height: 576,
-                      transform: "translate(-50%, -50%)",
-                      filter: "drop-shadow(0 0 24px rgba(255,80,0,0.9)) drop-shadow(0 0 48px rgba(255,40,0,0.5))",
-                    }}>
-                      <SpriteAnimator
-                        spriteSheet={nukeExplosionSheet}
-                        frameWidth={64}
-                        frameHeight={64}
-                        totalFrames={11}
-                        fps={18}
-                        scale={9}
-                        loop={false}
-                      />
-                    </div>
-                  )}
                   {eruptionNukeActive && eruptionNukeTargetIdx === idx && (
                     <div className="absolute z-50 pointer-events-none" style={{
                       top: "50%",
