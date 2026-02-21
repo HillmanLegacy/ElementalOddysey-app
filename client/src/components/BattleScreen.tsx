@@ -737,7 +737,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(true);
-          playSfx("magicRing", 0.6);
+          playSfx("eruptionFirecharge", 0.8);
         }, pauseFrame1Time + pauseFrame1Duration);
 
         scheduleTimer(() => {
@@ -747,7 +747,7 @@ export default function BattleScreen({
         scheduleTimer(() => {
           setEruptionNukeActive(true);
           setEruptionNukeTargetIdx(targetIdx);
-          playSfx("hitMetal");
+          playSfx("eruptionCleave");
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 500);
           setEnemyHitIdx(targetIdx);
