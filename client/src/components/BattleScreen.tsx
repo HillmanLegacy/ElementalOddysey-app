@@ -152,31 +152,85 @@ interface BattleScreenProps {
   onEndBattle: (victory: boolean) => void;
   onSetAnimating: () => void;
   onFinishPlayerTurn: () => void;
+  onRepositionUnit: (unitType: "player" | "party", unitIndex: number, newRow: number, newCol: number) => void;
   showDamageNumbers: boolean;
   regionTheme?: string;
 }
 
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave";
 
-const ALLY_SLOTS = [
-  { x: 12, y: 18 },
-  { x: 4, y: 12 },
-  { x: 20, y: 12 },
+const ALLY_GRID: { x: number; y: number }[][] = [
+  [{ x: 2, y: 8 },  { x: 10, y: 8 },  { x: 18, y: 8 }],
+  [{ x: 2, y: 18 }, { x: 10, y: 18 }, { x: 18, y: 18 }],
+  [{ x: 2, y: 28 }, { x: 10, y: 28 }, { x: 18, y: 28 }],
 ];
 
+const ENEMY_GRID: { x: number; y: number; z: number }[][] = [
+  [{ x: 56, y: 32, z: 0.85 }, { x: 64, y: 32, z: 0.85 }, { x: 72, y: 32, z: 0.85 }],
+  [{ x: 56, y: 42, z: 0.95 }, { x: 64, y: 42, z: 0.95 }, { x: 72, y: 42, z: 0.95 }],
+  [{ x: 56, y: 52, z: 1.0 },  { x: 64, y: 52, z: 1.0 },  { x: 72, y: 52, z: 1.0 }],
+];
+
+const ALLY_SLOTS = [ALLY_GRID[1][1], ALLY_GRID[0][0], ALLY_GRID[2][0]];
 const ENEMY_SLOTS = [
-  { x: 62, y: 42, z: 0.95 },
-  { x: 74, y: 36, z: 0.85 },
-  { x: 68, y: 50, z: 1.0 },
+  { ...ENEMY_GRID[1][1], z: 0.95 },
+  { ...ENEMY_GRID[0][2], z: 0.85 },
+  { ...ENEMY_GRID[2][0], z: 1.0 },
 ];
-
 const PLAYER_POS = ALLY_SLOTS[0];
 const PARTY_POSITIONS = [ALLY_SLOTS[1], ALLY_SLOTS[2]];
 const ENEMY_POSITIONS = ENEMY_SLOTS;
 
 export default function BattleScreen({
-  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, regionTheme,
+  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, regionTheme,
 }: BattleScreenProps) {
+
+  const getPlayerGridPos = () => {
+    const gp = battle.gridPositions;
+    if (!gp) return ALLY_GRID[1][1];
+    return ALLY_GRID[gp.player.row][gp.player.col];
+  };
+
+  const getPartyGridPos = (idx: number) => {
+    const gp = battle.gridPositions;
+    if (!gp || !gp.party[idx]) return PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
+    return ALLY_GRID[gp.party[idx].row][gp.party[idx].col];
+  };
+
+  const getEnemyGridPos = (idx: number) => {
+    const gp = battle.gridPositions;
+    if (!gp || !gp.enemies[idx]) return ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
+    const pos = gp.enemies[idx];
+    return ENEMY_GRID[pos.row][pos.col];
+  };
+
+  const getAdjacentCells = (row: number, col: number): { row: number; col: number }[] => {
+    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
+    return dirs
+      .map(([dr, dc]) => ({ row: row + dr, col: col + dc }))
+      .filter(p => p.row >= 0 && p.row < 3 && p.col >= 0 && p.col < 3);
+  };
+
+  const getOccupiedAllyCells = (): { row: number; col: number }[] => {
+    const gp = battle.gridPositions;
+    if (!gp) return [];
+    const cells = [gp.player];
+    gp.party.forEach((p, i) => {
+      if (battle.party[i] && battle.party[i].currentHp > 0) cells.push(p);
+    });
+    return cells;
+  };
+
+  const getAvailableRepositionCells = (unitType: "player" | "party", unitIndex: number): { row: number; col: number }[] => {
+    const gp = battle.gridPositions;
+    if (!gp) return [];
+    const currentPos = unitType === "player" ? gp.player : gp.party[unitIndex];
+    if (!currentPos) return [];
+    const adjacent = getAdjacentCells(currentPos.row, currentPos.col);
+    const occupied = getOccupiedAllyCells();
+    return adjacent.filter(cell => !occupied.some(o => o.row === cell.row && o.col === cell.col));
+  };
+
   const [selectedAction, setSelectedAction] = useState<string | null>(null);
   const [showItems, setShowItems] = useState(false);
   const [showSpells, setShowSpells] = useState(false);
@@ -206,6 +260,7 @@ export default function BattleScreen({
   const [partyAnimPhase, setPartyAnimPhase] = useState<"idle" | "runToEnemy" | "attacking" | "runBack" | "done">("idle");
   const [partyTargetIdx, setPartyTargetIdx] = useState<number | null>(null);
   const [partyAction, setPartyAction] = useState<"menu" | "selectTarget" | "selectMagicTarget" | "showSpells" | "showItems">("menu");
+  const [repositionMode, setRepositionMode] = useState<{ unitType: "player" | "party"; unitIndex: number } | null>(null);
   const [partySelectedSpell, setPartySelectedSpell] = useState<Spell | null>(null);
   const [partyHurtIndex, setPartyHurtIndex] = useState(-1);
   const [partyGuardIndex, setPartyGuardIndex] = useState(-1);
@@ -1765,7 +1820,7 @@ export default function BattleScreen({
       if (fujinDashPhase === "dash" || fujinDashPhase === "strike" || fujinDashPhase === "fadeout") {
         return { x: target.x + 12, y: target.y - 4 };
       }
-      return PLAYER_POS;
+      return getPlayerGridPos();
     }
     if ((animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "incinerationSlash" || animPhase === "eruptionCleave" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
@@ -1774,9 +1829,10 @@ export default function BattleScreen({
       return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
     }
     if (animPhase === "hurt") {
-      return { x: PLAYER_POS.x - 1, y: PLAYER_POS.y };
+      const pp = getPlayerGridPos();
+      return { x: pp.x - 1, y: pp.y };
     }
-    return PLAYER_POS;
+    return getPlayerGridPos();
   };
 
   const playerPos = getPlayerPosition();
@@ -2190,7 +2246,7 @@ export default function BattleScreen({
             const isAttacking = isActiveParty && partyAnimPhase === "attacking";
             const isHurt = partyHurtIndex === idx;
             const isDead = member.currentHp <= 0;
-            const basePos = PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
+            const basePos = getPartyGridPos(idx);
 
             let posX = basePos.x;
             let posY = basePos.y;
@@ -2592,7 +2648,7 @@ export default function BattleScreen({
             const isHit = enemyHitIdx === idx;
             const spriteImg = getEnemySprite(enemy.id);
             const isBoss = enemy.isBoss;
-            const pos = ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
+            const pos = getEnemyGridPos(idx);
 
             const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
             const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
@@ -3079,7 +3135,7 @@ export default function BattleScreen({
 
           {battle.enemies.map((enemy, idx) => {
             const isDead = enemy.currentHp <= 0;
-            const pos = ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
+            const pos = getEnemyGridPos(idx);
             const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
             const labelLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
             const labelBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
@@ -3273,12 +3329,13 @@ export default function BattleScreen({
           
 
           {battle.phase === "playerTurn" && !showItems && !showSpells && !isInputBlocked && (
-            <div className="grid grid-cols-4 gap-2 mb-1">
+            <div className="grid grid-cols-5 gap-2 mb-1">
               {[
-                { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
-                { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", activeColor: "#2563eb", onClick: handleDefend, active: false, testId: "button-action-defend" },
-                { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); }, active: false, testId: "button-action-magic" },
-                { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => setShowItems(true), active: false, disabled: consumables.length === 0, testId: "button-action-item" },
+                { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); setRepositionMode(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
+                { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", activeColor: "#2563eb", onClick: () => { setRepositionMode(null); handleDefend(); }, active: false, testId: "button-action-defend" },
+                { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); setRepositionMode(null); }, active: false, testId: "button-action-magic" },
+                { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => { setShowItems(true); setRepositionMode(null); }, active: false, disabled: consumables.length === 0, testId: "button-action-item" },
+                { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", activeColor: "#d97706", onClick: () => { setRepositionMode({ unitType: "player", unitIndex: 0 }); setSelectedAction(null); setSelectedSpell(null); setShowSpells(false); setShowItems(false); }, active: repositionMode?.unitType === "player", testId: "button-action-reposition", disabled: getAvailableRepositionCells("player", 0).length === 0 },
               ].map(btn => (
                 <button
                   key={btn.key}
@@ -3394,6 +3451,64 @@ export default function BattleScreen({
             </div>
           )}
 
+          {repositionMode && (battle.phase === "playerTurn" || battle.phase === "partyTurn") && (
+            <div className="space-y-1 mb-1">
+              <div className="flex items-center justify-between gap-2 mb-1">
+                <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#f59e0b" }}>
+                  <Target className="w-3.5 h-3.5" /> Reposition
+                </span>
+                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setRepositionMode(null)}>
+                  <ArrowLeft className="w-3 h-3" /> Back
+                </button>
+              </div>
+              <div className="grid grid-cols-3 gap-1" style={{ maxWidth: "180px", margin: "0 auto" }}>
+                {Array.from({ length: 9 }).map((_, cellIdx) => {
+                  const row = Math.floor(cellIdx / 3);
+                  const col = cellIdx % 3;
+                  const available = getAvailableRepositionCells(repositionMode.unitType, repositionMode.unitIndex);
+                  const isAvailable = available.some(c => c.row === row && c.col === col);
+                  const gp = battle.gridPositions;
+                  const isCurrentPos = gp && (
+                    (repositionMode.unitType === "player" && gp.player.row === row && gp.player.col === col) ||
+                    (repositionMode.unitType === "party" && gp.party[repositionMode.unitIndex]?.row === row && gp.party[repositionMode.unitIndex]?.col === col)
+                  );
+                  const isOccupied = getOccupiedAllyCells().some(o => o.row === row && o.col === col) && !isCurrentPos;
+                  return (
+                    <button
+                      key={cellIdx}
+                      className="aspect-square flex items-center justify-center transition-all"
+                      style={{
+                        background: isCurrentPos ? "rgba(245,158,11,0.3)" : isAvailable ? "rgba(34,197,94,0.15)" : isOccupied ? "rgba(239,68,68,0.1)" : "rgba(30,20,50,0.3)",
+                        border: `2px solid ${isCurrentPos ? "#f59e0b" : isAvailable ? "rgba(34,197,94,0.4)" : isOccupied ? "rgba(239,68,68,0.2)" : "rgba(60,40,80,0.2)"}`,
+                        cursor: isAvailable ? "pointer" : "default",
+                        opacity: isAvailable || isCurrentPos ? 1 : 0.4,
+                      }}
+                      disabled={!isAvailable}
+                      onClick={() => {
+                        if (isAvailable) {
+                          onRepositionUnit(repositionMode.unitType, repositionMode.unitIndex, row, col);
+                          setRepositionMode(null);
+                          if (repositionMode.unitType === "player") {
+                            onFinishPlayerTurn();
+                          } else {
+                            onAdvancePartyTurn();
+                          }
+                        }
+                      }}
+                    >
+                      <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "7px", color: isCurrentPos ? "#f59e0b" : isAvailable ? "#86efac" : isOccupied ? "#ef4444" : "rgba(100,80,140,0.3)" }}>
+                        {isCurrentPos ? "YOU" : isOccupied ? "X" : isAvailable ? "●" : "·"}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="text-center mt-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "7px", color: "rgba(245,158,11,0.5)" }}>
+                Select adjacent square
+              </p>
+            </div>
+          )}
+
           {battle.phase === "partyTurn" && battle.phase !== "victory" && battle.phase !== "defeat" && (() => {
             const activeMember = battle.party[battle.activePartyIndex];
             if (!activeMember || activeMember.currentHp <= 0) return null;
@@ -3405,12 +3520,13 @@ export default function BattleScreen({
                   {activeMember.name}'s Turn
                 </p>
                 {partyAction === "menu" && (
-                  <div className="grid grid-cols-4 gap-2 mb-1">
+                  <div className="grid grid-cols-5 gap-2 mb-1">
                     {[
                       { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => setPartyAction("selectTarget") },
                       { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", onClick: () => { setPartyGuardIndex(battle.activePartyIndex); playSfx("block"); onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 1200); } },
                       { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", onClick: () => setPartyAction("showSpells"), disabled: partySpells.length === 0 },
                       { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", onClick: () => setPartyAction("showItems"), disabled: consumables.length === 0 },
+                      { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", onClick: () => { setRepositionMode({ unitType: "party", unitIndex: battle.activePartyIndex }); setPartyAction("menu"); }, disabled: getAvailableRepositionCells("party", battle.activePartyIndex).length === 0 },
                     ].map(btn => (
                       <button
                         key={btn.key}

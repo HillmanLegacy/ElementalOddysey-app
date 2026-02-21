@@ -76,6 +76,14 @@ export function useGameState() {
         xpToNext: pm.xpToNext || xpForLevel(pm.level),
       }));
 
+      const defaultPartyGrid = [
+        { row: 0, col: 0 },
+        { row: 2, col: 0 },
+      ];
+      if (battle.gridPositions) {
+        battle.gridPositions.party = s.player.party.map((_, i) => defaultPartyGrid[i] || { row: i % 3, col: 0 });
+      }
+
       const queue = buildTurnQueue(s.player.stats.agi || 10, battle.party, battle.enemies);
       battle.turnQueue = queue;
       battle.turnQueueIndex = 0;
@@ -206,6 +214,21 @@ export function useGameState() {
       return { ...s, battle: advanceTurnQueue(battle, s.player) };
     });
   }, [advanceTurnQueue]);
+
+  const repositionUnit = useCallback((unitType: "player" | "party", unitIndex: number, newRow: number, newCol: number) => {
+    setState(s => {
+      if (!s.battle || !s.player || !s.battle.gridPositions) return s;
+      const battle = { ...s.battle, gridPositions: { ...s.battle.gridPositions } };
+      if (unitType === "player") {
+        battle.gridPositions.player = { row: newRow, col: newCol };
+      } else {
+        battle.gridPositions.party = battle.gridPositions.party.map((p, i) =>
+          i === unitIndex ? { row: newRow, col: newCol } : p
+        );
+      }
+      return { ...s, battle };
+    });
+  }, []);
 
   const castSpell = useCallback((spell: Spell, targetIndex?: number) => {
     setState(s => {
@@ -1291,6 +1314,7 @@ export function useGameState() {
     loadGame,
     setAnimating,
     finishPlayerTurn,
+    repositionUnit,
     confirmUnlock,
     changeRegion,
     openShaman,

@@ -237,6 +237,11 @@ export interface BattleState {
   lastItemUsed?: { stat: "hp" | "mp"; amount: number; targetType: "player" | "party"; targetIndex: number };
   lastDamageEvent?: { id: number; amount: number; targetType: "enemy" | "player" | "party"; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean; isBlocked?: boolean };
   lastDamageEvents?: Array<{ id: number; amount: number; targetType: string; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean; isBlocked?: boolean }>;
+  gridPositions?: {
+    player: { row: number; col: number };
+    party: { row: number; col: number }[];
+    enemies: { row: number; col: number }[];
+  };
 }
 
 export interface ShopItem extends InventoryItem {

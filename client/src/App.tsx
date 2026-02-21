@@ -69,7 +69,7 @@ function Game() {
     startBattle, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
     partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, allocateStat, selectPerk, openShop,
-    buyItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn,
+    buyItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn, repositionUnit,
     confirmUnlock,
     changeRegion,
     openShaman, learnShamanSpell,
@@ -533,6 +533,7 @@ function Game() {
               onEndBattle={(victory: boolean) => setBattleExitTransition({ victory })}
               onSetAnimating={setAnimating}
               onFinishPlayerTurn={finishPlayerTurn}
+              onRepositionUnit={repositionUnit}
             />
             {battleEntryReveal && (
               <BattleTransition
