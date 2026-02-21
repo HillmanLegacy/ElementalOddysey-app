@@ -97,13 +97,20 @@ function pickRandom<T>(arr: readonly T[]): T {
   return arr[Math.floor(Math.random() * arr.length)];
 }
 
-export function playSfx(name: SfxName, volumeScale = 1.0): void {
-  if (globalVolume <= 0) return;
+export function playSfx(name: SfxName, volumeScale = 1.0): HTMLAudioElement | null {
+  if (globalVolume <= 0) return null;
   const group = SFX_GROUPS[name];
   const src = pickRandom(group);
   const el = getPooled(src);
   el.volume = Math.min(1, globalVolume * volumeScale);
   el.play().catch(() => {});
+  return el;
+}
+
+export function stopSfx(el: HTMLAudioElement | null): void {
+  if (!el) return;
+  el.pause();
+  el.currentTime = 0;
 }
 
 export function playSfxPitched(name: SfxName, pitchMin = 0.8, pitchMax = 1.3, volumeScale = 1.0): void {

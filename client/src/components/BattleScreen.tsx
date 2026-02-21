@@ -9,7 +9,7 @@ import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
-import { playSfx, playSfxPitched } from "@/lib/sfx";
+import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
@@ -237,6 +237,7 @@ export default function BattleScreen({
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
   const pendingEruptionCleave = useRef<{ targetIdx: number; spell: Spell } | null>(null);
+  const eruptionFirechargeAudio = useRef<HTMLAudioElement | null>(null);
   const fireImpactId = useRef(0);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
@@ -737,7 +738,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(true);
-          playSfx("eruptionFirecharge", 0.8);
+          eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0.8);
         }, pauseFrame1Time + pauseFrame1Duration);
 
         scheduleTimer(() => {
@@ -745,6 +746,8 @@ export default function BattleScreen({
         }, pauseFrame1Time + pauseFrame1Duration + flamelashDuration);
 
         scheduleTimer(() => {
+          stopSfx(eruptionFirechargeAudio.current);
+          eruptionFirechargeAudio.current = null;
           setEruptionNukeActive(true);
           setEruptionNukeTargetIdx(targetIdx);
           playSfx("eruptionCleave");
