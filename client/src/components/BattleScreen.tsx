@@ -727,24 +727,24 @@ export default function BattleScreen({
         playSfx("gruntAttack", 0.7);
 
         const frameDuration = 1000 / 14;
-        const pauseFrame2Time = frameDuration * 2;
-        const pauseFrame2Duration = 200;
+        const pauseFrame1Time = frameDuration * 1;
+        const pauseFrame1Duration = 200;
         const flamelashDuration = 1200;
-        const resumeAfterFlamelash = pauseFrame2Time + pauseFrame2Duration + flamelashDuration;
-        const pauseFrame4Time = resumeAfterFlamelash + (frameDuration * 2);
-        const pauseFrame4Duration = 1000;
+        const resumeAfterFlamelash = pauseFrame1Time + pauseFrame1Duration + flamelashDuration;
+        const pauseFrame3Time = resumeAfterFlamelash + (frameDuration * 2);
+        const pauseFrame3Duration = 1000;
         const nukeDuration = 11 * (1000 / 18);
-        const nukeStartTime = pauseFrame4Time + pauseFrame4Duration;
+        const nukeStartTime = pauseFrame3Time + pauseFrame3Duration;
         const totalAnimTime = nukeStartTime + nukeDuration + 400;
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(true);
           playSfx("magicRing", 0.6);
-        }, pauseFrame2Time + pauseFrame2Duration);
+        }, pauseFrame1Time + pauseFrame1Duration);
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(false);
-        }, pauseFrame2Time + pauseFrame2Duration + flamelashDuration);
+        }, pauseFrame1Time + pauseFrame1Duration + flamelashDuration);
 
         scheduleTimer(() => {
           setEruptionNukeActive(true);
@@ -1737,7 +1737,7 @@ export default function BattleScreen({
         return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
       case "eruptionCleave": {
-        const ecHoldFrames: Record<number, number> = { 16: 1400, 18: 1000 };
+        const ecHoldFrames: Record<number, number> = { 15: 1400, 17: 1000 };
         return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, holdFrames: ecHoldFrames, w: 86, h: 49 };
       }
       case "fujinSlice":
