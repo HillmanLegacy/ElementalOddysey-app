@@ -731,10 +731,8 @@ export default function BattleScreen({
         const pauseFrame1Duration = 200;
         const flamelashDuration = 1200;
         const resumeAfterFlamelash = pauseFrame1Time + pauseFrame1Duration + flamelashDuration;
-        const pauseFrame3Time = resumeAfterFlamelash + (frameDuration * 2);
-        const pauseFrame3Duration = 1000;
         const nukeDuration = 11 * (1000 / 18);
-        const nukeStartTime = pauseFrame3Time + pauseFrame3Duration;
+        const nukeStartTime = resumeAfterFlamelash + (frameDuration * 3);
         const totalAnimTime = nukeStartTime + nukeDuration + 400;
 
         scheduleTimer(() => {
@@ -1737,7 +1735,7 @@ export default function BattleScreen({
         return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
       case "eruptionCleave": {
-        const ecHoldFrames: Record<number, number> = { 15: 1400, 17: 1000 };
+        const ecHoldFrames: Record<number, number> = { 15: 1400 };
         return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, holdFrames: ecHoldFrames, w: 86, h: 49 };
       }
       case "fujinSlice":
