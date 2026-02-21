@@ -791,7 +791,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
       </div>
 
       {hutMenuOpen && (() => {
-        const ec = elemColor;
+        const ac = "#c9a44a";
         const regionNames: Record<string, string> = { Fire: "Ember Hearth", Ice: "Frost Lodge", Shadow: "Shadow Refuge", Earth: "Stone Haven" };
         const flavorText: Record<string, string> = { Fire: "Warmth against the inferno", Ice: "Shelter from the frost", Shadow: "Light in the darkness", Earth: "Rooted and restored" };
         const hutName = regionNames[region.theme] || "The Hut";
@@ -808,35 +808,35 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
         return (
           <div className="absolute inset-0 z-[200] flex items-center justify-center" onClick={() => setHutMenuOpen(false)}>
-            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.75) 70%)` }} />
+            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ac}15 0%, rgba(0,0,0,0.85) 70%)` }} />
             <div
               className="relative w-[280px] overflow-hidden"
               style={{
                 fontFamily: "'Press Start 2P', cursive",
                 imageRendering: "pixelated",
-                background: `linear-gradient(180deg, ${theme.sky[0]}f0 0%, ${theme.terrain}f5 100%)`,
-                border: `3px solid ${ec}`,
-                boxShadow: `0 0 20px ${ec}40, 0 0 60px ${ec}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                border: `3px solid ${ac}`,
+                boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
               }}
               onClick={e => e.stopPropagation()}
             >
               <div style={{
                 position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
                 pointerEvents: "none",
               }} />
 
-              <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: `2px solid ${ec}60` }}>
+              <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid ${ac}` }}>
                 <div className="flex items-center gap-2">
-                  <Home className="w-4 h-4" style={{ color: ec }} />
-                  <span style={{ fontSize: "10px", color: ec, letterSpacing: "2px" }}>{hutName.toUpperCase()}</span>
+                  <Home className="w-4 h-4" style={{ color: ac }} />
+                  <span style={{ fontSize: "10px", color: ac, letterSpacing: "2px" }}>{hutName.toUpperCase()}</span>
                 </div>
                 <button
                   className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
-                  style={{ border: `1px solid ${ec}50`, background: "rgba(0,0,0,0.4)" }}
+                  style={{ border: `1px solid ${ac}50`, background: "transparent" }}
                   onClick={() => setHutMenuOpen(false)}
                 >
-                  <X className="w-3 h-3" style={{ color: ec }} />
+                  <X className="w-3 h-3" style={{ color: ac }} />
                 </button>
               </div>
 
@@ -848,30 +848,30 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                       key={item.label}
                       className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all group"
                       style={{
-                        background: "rgba(0,0,0,0.3)",
-                        border: `1px solid ${ec}30`,
+                        background: "#0d0b0bf0",
+                        border: `1px solid ${ac}30`,
                         animation: `fadeIn 0.2s ease-out ${i * 0.05}s both`,
                       }}
                       onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.background = `${ec}25`;
-                        (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
-                        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}30, inset 0 0 8px ${ec}10`;
+                        (e.currentTarget as HTMLElement).style.background = `${ac}25`;
+                        (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
+                        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ac}30, inset 0 0 8px ${ac}10`;
                       }}
                       onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
-                        (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                        (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                        (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
                         (e.currentTarget as HTMLElement).style.boxShadow = "none";
                       }}
                       onClick={item.action}
                     >
-                      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ec}40`, background: `${ec}15` }}>
-                        <Icon className="w-3.5 h-3.5" style={{ color: ec }} />
+                      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ac}40`, background: "#0a080840" }}>
+                        <Icon className="w-3.5 h-3.5" style={{ color: ac }} />
                       </div>
                       <div className="flex flex-col">
-                        <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.9)", letterSpacing: "1px" }}>{item.label}</span>
-                        <span style={{ fontSize: "7px", color: `${ec}80`, marginTop: "2px" }}>{item.desc}</span>
+                        <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{item.label}</span>
+                        <span style={{ fontSize: "7px", color: `${ac}60`, marginTop: "2px" }}>{item.desc}</span>
                       </div>
-                      <svg className="w-3 h-3 ml-auto opacity-40 group-hover:opacity-80 transition-opacity" viewBox="0 0 12 12" style={{ color: ec }}>
+                      <svg className="w-3 h-3 ml-auto opacity-40 group-hover:opacity-80 transition-opacity" viewBox="0 0 12 12" style={{ color: ac }}>
                         <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="2" />
                       </svg>
                     </button>
@@ -879,11 +879,11 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                 })}
               </div>
 
-              <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ec}20` }}>
-                <p className="text-center" style={{ fontSize: "6px", color: `${ec}50`, letterSpacing: "1px" }}>{hutFlavor}</p>
+              <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ac}20` }}>
+                <p className="text-center" style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>{hutFlavor}</p>
               </div>
 
-              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ec}40, transparent)` }} />
+              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
             </div>
           </div>
         );

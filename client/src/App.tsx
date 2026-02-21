@@ -228,33 +228,41 @@ function Game() {
               </div>
             )}
             {showOptions && (
-              <div className="absolute inset-0 z-[400] flex items-center justify-center bg-black/60 backdrop-blur-sm">
-                <div className="w-80 p-5 overflow-hidden relative" style={{
-                  background: "rgba(8,8,12,0.95)",
-                  border: `3px solid ${ELEMENT_COLORS[getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {})).theme]}`,
-                  boxShadow: `0 0 30px rgba(0,0,0,0.5)`,
-                  fontFamily: "'Press Start 2P', cursive"
+              <div className="absolute inset-0 z-[400] flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #c9a44a15 0%, rgba(0,0,0,0.85) 70%)" }}>
+                <div className="w-80 overflow-hidden relative" style={{
+                  background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                  border: `3px solid #c9a44a`,
+                  boxShadow: `0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                  fontFamily: "'Press Start 2P', cursive",
+                  imageRendering: "pixelated" as any,
                 }}>
-                  <div className="flex items-center justify-between mb-6">
+                  <div style={{
+                    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)",
+                    pointerEvents: "none",
+                  }} />
+                  <div className="relative flex items-center justify-between" style={{ padding: "8px 12px", background: "#0d0b0bf0", borderBottom: "3px solid #c9a44a" }}>
                     <h3 style={{ fontSize: "10px", color: "#c9a44a", letterSpacing: "2px" }}>OPTIONS</h3>
                     <button 
                       onClick={() => setShowOptions(false)}
-                      className="w-8 h-8 flex items-center justify-center border border-[#c9a44a]50 bg-black/40"
+                      className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                      style={{ border: "1px solid #c9a44a50", background: "transparent" }}
                     >
-                      <X className="w-4 h-4 text-[#c9a44a]" />
+                      <X className="w-3 h-3" style={{ color: "#c9a44a" }} />
                     </button>
                   </div>
-                  <div className="space-y-6">
+                  <div className="relative space-y-6" style={{ padding: "16px 12px" }}>
                     <div>
-                      <label style={{ fontSize: "7px", color: "#c9a44a80", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>TEXT SPEED</label>
+                      <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>TEXT SPEED</label>
                       <div className="flex gap-2">
                         {(["slow", "medium", "fast"] as const).map(sp => (
                           <button
                             key={sp}
                             className="flex-1 py-2 text-[7px]"
                             style={{
+                              fontFamily: "'Press Start 2P', cursive",
                               border: state.textSpeed === sp ? `2px solid #c9a44a` : `1px solid #c9a44a30`,
-                              background: state.textSpeed === sp ? `#c9a44a25` : "transparent",
+                              background: state.textSpeed === sp ? `#c9a44a25` : "#0d0b0bf0",
                               color: state.textSpeed === sp ? "#c9a44a" : "#c9a44a60",
                             }}
                             onClick={() => setState(s => ({ ...s, textSpeed: sp }))}
@@ -265,7 +273,7 @@ function Game() {
                       </div>
                     </div>
                     <div>
-                      <label style={{ fontSize: "7px", color: "#c9a44a80", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>MUSIC: {state.musicVolume}%</label>
+                      <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>MUSIC: {state.musicVolume}%</label>
                       <Slider
                         value={[state.musicVolume]}
                         max={100} step={1}
@@ -273,7 +281,7 @@ function Game() {
                       />
                     </div>
                     <div>
-                      <label style={{ fontSize: "7px", color: "#c9a44a80", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>SFX: {state.sfxVolume}%</label>
+                      <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>SFX: {state.sfxVolume}%</label>
                       <Slider
                         value={[state.sfxVolume]}
                         max={100} step={1}
@@ -281,18 +289,12 @@ function Game() {
                       />
                     </div>
                   </div>
+                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, transparent, #c9a44a40, transparent)" }} />
                 </div>
               </div>
             )}
             {showSaveScreen && state.player && (() => {
-              const saveTier = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
-              const saveReg = getRegionForTier(state.player.currentRegion, saveTier);
-              const ec = ELEMENT_COLORS[saveReg.theme];
-              const skyColors: Record<string, string[]> = {
-                Fire: ["#1a0508", "#3d0a10"], Ice: ["#050a1a", "#0a1535"],
-                Shadow: ["#08050a", "#150a20"], Earth: ["#0a0800", "#1a1508"],
-              };
-              const sky = skyColors[saveReg.theme] || skyColors.Fire;
+              const ac = "#c9a44a";
 
               const getSlotSave = (slotNum: number) => {
                 if (!saves) return null;
@@ -303,32 +305,32 @@ function Game() {
                 <div className="absolute inset-0 z-[300] flex items-center justify-center"
                   style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" }}
                 >
-                  <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.85) 70%)` }} />
+                  <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ac}15 0%, rgba(0,0,0,0.85) 70%)` }} />
                   <div className="absolute inset-0 pointer-events-none" style={{
-                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
                   }} />
 
                   <div className="relative w-[340px] overflow-hidden"
                     style={{
-                      background: `linear-gradient(180deg, ${sky[0]}f0 0%, ${sky[1]}f5 100%)`,
-                      border: `3px solid ${ec}`,
-                      boxShadow: `0 0 20px ${ec}40, 0 0 60px ${ec}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                      background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                      border: `3px solid ${ac}`,
+                      boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
                     }}
                   >
                     <div style={{
                       position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
                       pointerEvents: "none",
                     }} />
 
-                    <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: `2px solid ${ec}60` }}>
-                      <span style={{ fontSize: "10px", color: ec, letterSpacing: "2px" }}>SAVE GAME</span>
+                    <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid ${ac}` }}>
+                      <span style={{ fontSize: "10px", color: ac, letterSpacing: "2px" }}>SAVE GAME</span>
                       <button
                         className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
-                        style={{ border: `1px solid ${ec}50`, background: "rgba(0,0,0,0.4)" }}
+                        style={{ border: `1px solid ${ac}50`, background: "transparent" }}
                         onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
                       >
-                        <span style={{ fontSize: "8px", color: ec }}>✕</span>
+                        <span style={{ fontSize: "8px", color: ac }}>✕</span>
                       </button>
                     </div>
 
@@ -341,21 +343,21 @@ function Game() {
                             key={slotNum}
                             className="w-full text-left px-3 py-3 transition-all"
                             style={{
-                              background: isSuccess ? `${ec}25` : "rgba(0,0,0,0.3)",
-                              border: `1px solid ${isSuccess ? ec : `${ec}30`}`,
-                              boxShadow: isSuccess ? `0 0 12px ${ec}30` : "none",
+                              background: isSuccess ? `${ac}25` : "#0d0b0bf0",
+                              border: `1px solid ${isSuccess ? ac : `${ac}30`}`,
+                              boxShadow: isSuccess ? `0 0 12px ${ac}30` : "none",
                             }}
                             onMouseEnter={e => {
                               if (!isSuccess) {
-                                (e.currentTarget as HTMLElement).style.background = `${ec}25`;
-                                (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
-                                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}30, inset 0 0 8px ${ec}10`;
+                                (e.currentTarget as HTMLElement).style.background = `${ac}25`;
+                                (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
+                                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ac}30, inset 0 0 8px ${ac}10`;
                               }
                             }}
                             onMouseLeave={e => {
                               if (!isSuccess) {
-                                (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
-                                (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                                (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                                (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
                                 (e.currentTarget as HTMLElement).style.boxShadow = "none";
                               }
                             }}
@@ -363,27 +365,27 @@ function Game() {
                           >
                             {isSuccess ? (
                               <div className="flex items-center gap-2">
-                                <span style={{ fontSize: "9px", color: ec }}>✓ SAVED!</span>
+                                <span style={{ fontSize: "9px", color: ac }}>✓ SAVED!</span>
                               </div>
                             ) : (
                               <>
                                 <div className="flex items-center justify-between">
-                                  <span style={{ fontSize: "9px", color: "rgba(255,255,255,0.9)", letterSpacing: "1px" }}>SLOT {slotNum}</span>
+                                  <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>SLOT {slotNum}</span>
                                   {slotSave && (
-                                    <span style={{ fontSize: "6px", color: `${ec}60` }}>
+                                    <span style={{ fontSize: "6px", color: `${ac}60` }}>
                                       {new Date(slotSave.updatedAt).toLocaleDateString()}
                                     </span>
                                   )}
                                 </div>
                                 {slotSave ? (
                                   <div style={{ marginTop: "4px" }}>
-                                    <span style={{ fontSize: "7px", color: `${ec}80` }}>
+                                    <span style={{ fontSize: "7px", color: `${ac}60` }}>
                                       {(slotSave.playerData as any).name} · Lv.{(slotSave.playerData as any).level} · {(slotSave.playerData as any).element}
                                     </span>
                                   </div>
                                 ) : (
                                   <div style={{ marginTop: "4px" }}>
-                                    <span style={{ fontSize: "7px", color: "rgba(255,255,255,0.3)" }}>EMPTY SLOT</span>
+                                    <span style={{ fontSize: "7px", color: `${ac}40` }}>EMPTY SLOT</span>
                                   </div>
                                 )}
                               </>
@@ -393,25 +395,25 @@ function Game() {
                       })}
                     </div>
 
-                    <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ec}20` }}>
+                    <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ac}20` }}>
                       <button
                         className="w-full flex items-center justify-center gap-2 px-3 py-2 transition-all"
-                        style={{ border: `1px solid ${ec}30`, background: "rgba(0,0,0,0.3)" }}
+                        style={{ border: `1px solid ${ac}30`, background: "#0d0b0bf0" }}
                         onMouseEnter={e => {
-                          (e.currentTarget as HTMLElement).style.background = `${ec}25`;
-                          (e.currentTarget as HTMLElement).style.borderColor = `${ec}80`;
+                          (e.currentTarget as HTMLElement).style.background = `${ac}25`;
+                          (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
                         }}
                         onMouseLeave={e => {
-                          (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
-                          (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                          (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                          (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
                         }}
                         onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
                       >
-                        <span style={{ fontSize: "8px", color: ec, letterSpacing: "1px" }}>BACK</span>
+                        <span style={{ fontSize: "8px", color: ac, letterSpacing: "1px" }}>← BACK</span>
                       </button>
                     </div>
 
-                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ec}40, transparent)` }} />
+                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
                   </div>
 
                   {saveConfirmSlot !== null && (
@@ -419,23 +421,23 @@ function Game() {
                       <div className="absolute inset-0 bg-black/60" onClick={() => setSaveConfirmSlot(null)} />
                       <div className="relative w-[260px] overflow-hidden"
                         style={{
-                          background: `linear-gradient(180deg, ${sky[0]}f8 0%, ${sky[1]}fc 100%)`,
-                          border: `3px solid ${ec}`,
-                          boxShadow: `0 0 30px ${ec}50, 0 0 80px ${ec}20, inset 0 0 30px rgba(0,0,0,0.5)`,
+                          background: "linear-gradient(180deg, #0a0808f8 0%, #151010fc 100%)",
+                          border: `3px solid ${ac}`,
+                          boxShadow: `0 0 30px ${ac}50, 0 0 80px ${ac}20, inset 0 0 30px rgba(0,0,0,0.5)`,
                         }}
                       >
                         <div style={{
                           position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ec}08 3px, ${ec}08 4px)`,
+                          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
                           pointerEvents: "none",
                         }} />
 
                         <div className="relative px-4 py-4 text-center">
-                          <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.9)", letterSpacing: "1px", lineHeight: "1.8" }}>
+                          <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px", lineHeight: "1.8" }}>
                             Save to Slot {saveConfirmSlot}?
                           </p>
                           {getSlotSave(saveConfirmSlot) && (
-                            <p style={{ fontSize: "7px", color: `${ec}70`, marginTop: "6px" }}>
+                            <p style={{ fontSize: "7px", color: `${ac}60`, marginTop: "6px" }}>
                               This will overwrite existing data
                             </p>
                           )}
@@ -444,33 +446,33 @@ function Game() {
                         <div className="relative px-3 pb-3 flex gap-2">
                           <button
                             className="flex-1 px-3 py-2 transition-all text-center"
-                            style={{ border: `1px solid ${ec}`, background: `${ec}20` }}
+                            style={{ border: `1px solid ${ac}`, background: `${ac}20` }}
                             onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.background = `${ec}40`;
-                              (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ec}40`;
+                              (e.currentTarget as HTMLElement).style.background = `${ac}40`;
+                              (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ac}40`;
                             }}
                             onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.background = `${ec}20`;
+                              (e.currentTarget as HTMLElement).style.background = `${ac}20`;
                               (e.currentTarget as HTMLElement).style.boxShadow = "none";
                             }}
                             onClick={() => handleSaveToSlot(saveConfirmSlot)}
                           >
-                            <span style={{ fontSize: "8px", color: ec, letterSpacing: "1px" }}>CONFIRM</span>
+                            <span style={{ fontSize: "8px", color: ac, letterSpacing: "1px" }}>CONFIRM</span>
                           </button>
                           <button
                             className="flex-1 px-3 py-2 transition-all text-center"
-                            style={{ border: `1px solid ${ec}30`, background: "rgba(0,0,0,0.3)" }}
+                            style={{ border: `1px solid ${ac}30`, background: "#0d0b0bf0" }}
                             onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.background = `${ec}15`;
-                              (e.currentTarget as HTMLElement).style.borderColor = `${ec}60`;
+                              (e.currentTarget as HTMLElement).style.background = `${ac}15`;
+                              (e.currentTarget as HTMLElement).style.borderColor = `${ac}60`;
                             }}
                             onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
-                              (e.currentTarget as HTMLElement).style.borderColor = `${ec}30`;
+                              (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                              (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
                             }}
                             onClick={() => setSaveConfirmSlot(null)}
                           >
-                            <span style={{ fontSize: "8px", color: "rgba(255,255,255,0.6)", letterSpacing: "1px" }}>CANCEL</span>
+                            <span style={{ fontSize: "8px", color: `${ac}60`, letterSpacing: "1px" }}>CANCEL</span>
                           </button>
                         </div>
                       </div>
