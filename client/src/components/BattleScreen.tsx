@@ -2108,6 +2108,7 @@ export default function BattleScreen({
                   fps={38}
                   scale={3.5}
                   loop={false}
+                  flipX={true}
                 />
               </div>
             )}
