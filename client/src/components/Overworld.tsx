@@ -8,7 +8,7 @@ import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { playSfx } from "@/lib/sfx";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Sparkles, Home, Shield, Package, Lock, Menu, Zap } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Sparkles, Home, Shield, Package, Lock, Menu, Zap } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -764,7 +764,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           <div
             className="relative overflow-hidden"
             style={{
-              width: "320px",
+              width: "280px",
               maxHeight: "580px",
               background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
               border: `3px solid #c9a44a`,
@@ -777,14 +777,14 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               pointerEvents: "none",
             }} />
 
-            <div className="relative px-3 pt-2 pb-1.5 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid #c9a44a` }}>
+            <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid #c9a44a` }}>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  <Gem className="w-3 h-3 text-yellow-500" />
-                  <span style={{ fontSize: "8px", color: "#fbbf24" }}>{player.gold}</span>
+                  <Coins className="w-4 h-4" style={{ color: "#fbbf24" }} />
+                  <span style={{ fontSize: "10px", color: "#fbbf24", letterSpacing: "1px" }}>{player.gold}</span>
                 </div>
-                <span style={{ fontSize: "8px", color: "#c9a44a60" }}>|</span>
-                <span style={{ fontSize: "8px", color: ELEMENT_COLORS[region.theme] }}>{region.name}</span>
+                <span style={{ fontSize: "10px", color: "#c9a44a60" }}>|</span>
+                <span style={{ fontSize: "10px", color: ELEMENT_COLORS[region.theme], letterSpacing: "1px" }}>{region.name}</span>
                 <div className="flex items-center gap-0.5 ml-1">
                   {[0, 1, 2].map(i => (
                     <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: i < tier ? "#4ade80" : "#ffffff20" }} />
@@ -801,20 +801,21 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               </button>
             </div>
 
-            <div className="relative flex gap-0 px-3 pt-2">
+            <div className="relative flex gap-0 px-4 pt-2">
               {(["party", "items", "gear"] as const).map(tab => (
                 <button
                   key={tab}
                   onClick={() => { playSfx('menuSelect'); setMenuTab(tab); setTargetingItemId(null); }}
                   style={{
                     fontFamily: "'Press Start 2P', cursive",
-                    fontSize: "7px",
-                    padding: "5px 10px",
+                    fontSize: "8px",
+                    padding: "6px 12px",
                     border: `1px solid #c9a44a`,
                     borderBottom: menuTab === tab ? "none" : `1px solid #c9a44a`,
                     background: menuTab === tab ? "#c9a44a" : "transparent",
                     color: menuTab === tab ? "#0a0808" : "#c9a44a80",
                     cursor: "pointer",
+                    letterSpacing: "1px",
                   }}
                   data-testid={`tab-overworld-${tab}`}
                 >
@@ -823,41 +824,41 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               ))}
             </div>
 
-            <div className="relative px-3 py-2" style={{ maxHeight: "440px", overflowY: "auto" }}>
+            <div className="relative px-4 py-3" style={{ maxHeight: "440px", overflowY: "auto" }}>
               {menuTab === "party" && (
                 <div className="space-y-2">
                   {[{ name: player.name, stats: player.stats, level: player.level, element: player.element, xp: player.xp, xpToNext: player.xpToNext },
                     ...player.party.map(m => ({ name: m.name, stats: m.stats, level: m.level, element: m.element, xp: m.xp || 0, xpToNext: m.xpToNext || 100 }))
                   ].map((member, idx) => (
-                    <div key={idx} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
-                      <div className="flex items-center justify-between mb-1.5">
+                    <div key={idx} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                      <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <span style={{ fontSize: "8px", color: "#e8e0d0" }}>{member.name}</span>
-                          <span style={{ fontSize: "7px", color: "#c9a44a60" }}>Lv.{member.level}</span>
+                          <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{member.name}</span>
+                          <span style={{ fontSize: "8px", color: "#c9a44a60" }}>Lv.{member.level}</span>
                         </div>
-                        <span style={{ fontSize: "7px", color: ELEMENT_COLORS[member.element] || "#c9a44a" }}>{member.element}</span>
+                        <span style={{ fontSize: "8px", color: ELEMENT_COLORS[member.element] || "#c9a44a" }}>{member.element}</span>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1.5">
                         <div className="flex items-center gap-1.5">
-                          <Heart className="w-2.5 h-2.5 text-red-500 flex-shrink-0" />
-                          <div className="flex-1 h-2 relative" style={{ background: "#1a0808", border: "1px solid #ef444440" }}>
+                          <Heart className="w-3 h-3 text-red-500 flex-shrink-0" />
+                          <div className="flex-1 h-2.5 relative" style={{ background: "#1a0808", border: "1px solid #ef444440" }}>
                             <div className="absolute inset-0" style={{ width: `${(member.stats.hp / member.stats.maxHp) * 100}%`, background: "linear-gradient(90deg, #dc2626, #ef4444)", transition: "width 0.3s" }} />
                           </div>
-                          <span style={{ fontSize: "6px", color: "#fca5a5", minWidth: "45px", textAlign: "right" }}>{member.stats.hp}/{member.stats.maxHp}</span>
+                          <span style={{ fontSize: "7px", color: "#fca5a5", minWidth: "48px", textAlign: "right" }}>{member.stats.hp}/{member.stats.maxHp}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Droplets className="w-2.5 h-2.5 text-blue-500 flex-shrink-0" />
-                          <div className="flex-1 h-2 relative" style={{ background: "#080818", border: "1px solid #3b82f640" }}>
+                          <Droplets className="w-3 h-3 text-blue-500 flex-shrink-0" />
+                          <div className="flex-1 h-2.5 relative" style={{ background: "#080818", border: "1px solid #3b82f640" }}>
                             <div className="absolute inset-0" style={{ width: `${(member.stats.mp / member.stats.maxMp) * 100}%`, background: "linear-gradient(90deg, #2563eb, #3b82f6)", transition: "width 0.3s" }} />
                           </div>
-                          <span style={{ fontSize: "6px", color: "#93c5fd", minWidth: "45px", textAlign: "right" }}>{member.stats.mp}/{member.stats.maxMp}</span>
+                          <span style={{ fontSize: "7px", color: "#93c5fd", minWidth: "48px", textAlign: "right" }}>{member.stats.mp}/{member.stats.maxMp}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <Zap className="w-2.5 h-2.5 text-yellow-500 flex-shrink-0" />
-                          <div className="flex-1 h-2 relative" style={{ background: "#181808", border: "1px solid #eab30840" }}>
+                          <Zap className="w-3 h-3 text-yellow-500 flex-shrink-0" />
+                          <div className="flex-1 h-2.5 relative" style={{ background: "#181808", border: "1px solid #eab30840" }}>
                             <div className="absolute inset-0" style={{ width: `${(member.xp / member.xpToNext) * 100}%`, background: "linear-gradient(90deg, #ca8a04, #eab308)", transition: "width 0.3s" }} />
                           </div>
-                          <span style={{ fontSize: "6px", color: "#fde68a", minWidth: "45px", textAlign: "right" }}>{member.xp}/{member.xpToNext}</span>
+                          <span style={{ fontSize: "7px", color: "#fde68a", minWidth: "48px", textAlign: "right" }}>{member.xp}/{member.xpToNext}</span>
                         </div>
                       </div>
                     </div>
@@ -871,7 +872,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                   <div className="space-y-1.5">
                     {consumables.length === 0 ? (
                       <div style={{ textAlign: "center", padding: "24px 0" }}>
-                        <p style={{ fontSize: "8px", color: "#c9a44a50" }}>No consumable items</p>
+                        <p style={{ fontSize: "9px", color: "#c9a44a50" }}>No consumable items</p>
                       </div>
                     ) : (
                       groupConsumables(consumables).map(({ item, count, ids }) => {
@@ -887,13 +888,13 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                         );
                         const isTargeting = targetingItemId === item.name;
                         return (
-                          <div key={item.name} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                          <div key={item.name} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
                             <div className="flex items-center justify-between gap-2">
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: "8px", color: "#e8e0d0" }}>
+                                <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>
                                   {item.name} <span style={{ color: "#c9a44acc" }}>x{count}</span>
                                 </p>
-                                <p style={{ fontSize: "6px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
+                                <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
                               </div>
                               <button
                                 onClick={() => {
@@ -907,8 +908,8 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                                 disabled={!canUseOnAny}
                                 style={{
                                   fontFamily: "'Press Start 2P', cursive",
-                                  fontSize: "7px",
-                                  padding: "3px 6px",
+                                  fontSize: "8px",
+                                  padding: "4px 8px",
                                   border: `1px solid ${isTargeting ? "#e8c030" : "#c9a44a"}60`,
                                   background: isTargeting ? "#e8c03020" : "transparent",
                                   color: isTargeting ? "#e8c030" : "#c9a44a",
@@ -921,7 +922,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                             </div>
                             {isTargeting && (
                               <div style={{ marginTop: "4px", paddingTop: "4px", borderTop: `1px solid #c9a44a20` }}>
-                                <p style={{ fontSize: "6px", color: "#c9a44a50", marginBottom: "3px" }}>Select target:</p>
+                                <p style={{ fontSize: "7px", color: "#c9a44a50", marginBottom: "3px" }}>Select target:</p>
                                 <button
                                   disabled={!canUseOnPlayer}
                                   onClick={() => { playSfx('menuSelect'); onUseItem(ids[0]); setTargetingItemId(null); }}
@@ -1008,22 +1009,22 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                 const equipables = player.inventory.filter(i => i.type === "weapon" || i.type === "armor" || i.type === "accessory");
                 return (
                   <div className="space-y-1.5">
-                    <p style={{ fontSize: "7px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Equipped</p>
+                    <p style={{ fontSize: "8px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Equipped</p>
                     {(["weapon", "armor", "accessory"] as const).map(slot => {
                       const item = player.equipment[slot];
                       return (
-                        <div key={slot} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
-                          <p style={{ fontSize: "6px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>{slot}</p>
+                        <div key={slot} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                          <p style={{ fontSize: "7px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>{slot}</p>
                           {item ? (
                             <div className="flex items-center justify-between gap-2 mt-1">
                               <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
-                                <p style={{ fontSize: "6px", color: "#c9a44a60", marginTop: "1px" }}>{item.description}</p>
+                                <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{item.name}</p>
+                                <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
                               </div>
                               <button
                                 onClick={() => { playSfx('menuSelect'); onUnequip(slot); }}
                                 style={{
-                                  fontFamily: "'Press Start 2P', cursive", fontSize: "6px", padding: "3px 6px",
+                                  fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "4px 8px",
                                   border: `1px solid #c9a44a60`, background: "transparent", color: "#c9a44a", cursor: "pointer",
                                 }}
                               >
@@ -1031,30 +1032,30 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                               </button>
                             </div>
                           ) : (
-                            <p style={{ fontSize: "7px", color: "#c9a44a40", fontStyle: "italic", marginTop: "1px" }}>Empty</p>
+                            <p style={{ fontSize: "8px", color: "#c9a44a40", fontStyle: "italic", marginTop: "2px" }}>Empty</p>
                           )}
                         </div>
                       );
                     })}
                     {equipables.length > 0 && (
                       <>
-                        <div style={{ borderTop: `1px solid #c9a44a20`, marginTop: "4px", paddingTop: "4px" }}>
-                          <p style={{ fontSize: "7px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Unequipped</p>
+                        <div style={{ borderTop: `1px solid #c9a44a20`, marginTop: "6px", paddingTop: "6px" }}>
+                          <p style={{ fontSize: "8px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Unequipped</p>
                         </div>
                         {equipables.map(item => (
-                          <div key={item.id} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                          <div key={item.id} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
                             <div className="flex items-center justify-between gap-2">
                               <div style={{ flex: 1, minWidth: 0 }}>
                                 <div className="flex items-center gap-1.5">
-                                  <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
-                                  <span style={{ fontSize: "5px", padding: "1px 3px", border: `1px solid #c9a44a30`, color: "#c9a44a80", textTransform: "capitalize" }}>{item.type}</span>
+                                  <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{item.name}</p>
+                                  <span style={{ fontSize: "6px", padding: "1px 4px", border: `1px solid #c9a44a30`, color: "#c9a44a80", textTransform: "capitalize" }}>{item.type}</span>
                                 </div>
-                                <p style={{ fontSize: "6px", color: "#c9a44a60", marginTop: "1px" }}>{item.description}</p>
+                                <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
                               </div>
                               <button
                                 onClick={() => { playSfx('menuSelect'); onEquip(item.id); }}
                                 style={{
-                                  fontFamily: "'Press Start 2P', cursive", fontSize: "6px", padding: "3px 6px",
+                                  fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "4px 8px",
                                   border: `1px solid #c9a44a60`, background: "transparent", color: "#c9a44a", cursor: "pointer",
                                 }}
                               >
