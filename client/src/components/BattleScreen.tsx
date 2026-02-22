@@ -278,7 +278,9 @@ export default function BattleScreen({
   const [deathAnimPending, setDeathAnimPending] = useState<Set<number>>(new Set());
   const deathSfxPlayed = useRef<Set<number>>(new Set());
   const [pixelDissolving, setPixelDissolving] = useState<Set<number>>(new Set());
+  const [dissolvedEnemies, setDissolvedEnemies] = useState<Set<number>>(new Set());
   const [showVictoryUI, setShowVictoryUI] = useState(false);
+  const [victoryReady, setVictoryReady] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
@@ -333,15 +335,10 @@ export default function BattleScreen({
       setMagicZoomTarget(null);
     }
     if (battle.phase === "victory") {
-      if (deathAnimPending.size > 0) return;
-      fadeMusicTo(0.3, 600);
-      playJingle("battle_victory", () => {
-        fadeOutMusic(1200);
-      });
-      const timer = setTimeout(() => setShowVictoryUI(true), 1200);
-      return () => clearTimeout(timer);
+      setVictoryReady(false);
     } else {
       setShowVictoryUI(false);
+      setVictoryReady(false);
       setXpBarPhase("waiting");
       setXpBarPercent(0);
       setXpBarLevel(player.level);
@@ -358,7 +355,36 @@ export default function BattleScreen({
     } else {
       setShowDefeatUI(false);
     }
-  }, [battle.phase, deathAnimPending]);
+  }, [battle.phase]);
+
+  useEffect(() => {
+    if (battle.phase !== "victory") return;
+    const allEnemiesDead = battle.enemies.every(e => e.currentHp <= 0);
+    if (!allEnemiesDead) return;
+    const anyDeathPending = deathAnimPending.size > 0;
+    const anyDissolving = pixelDissolving.size > 0;
+    const anyNeedDeathStart = battle.enemies.some((enemy, idx) => {
+      if (enemy.currentHp > 0) return false;
+      if (dissolvedEnemies.has(idx)) return false;
+      if (isAnimatedEnemyCheck(enemy)) {
+        return enemyAnimStates[idx] !== "death" && !deathAnimPending.has(idx) && !pixelDissolving.has(idx);
+      }
+      return !pixelDissolving.has(idx);
+    });
+    if (!anyDeathPending && !anyDissolving && !anyNeedDeathStart && !victoryReady) {
+      setVictoryReady(true);
+    }
+  }, [battle.phase, battle.enemies, deathAnimPending, pixelDissolving, dissolvedEnemies, enemyAnimStates, victoryReady]);
+
+  useEffect(() => {
+    if (!victoryReady || battle.phase !== "victory") return;
+    fadeMusicTo(0.3, 600);
+    playJingle("battle_victory", () => {
+      fadeOutMusic(1200);
+    });
+    const timer = setTimeout(() => setShowVictoryUI(true), 1200);
+    return () => clearTimeout(timer);
+  }, [victoryReady]);
 
   useEffect(() => {
     if (!showVictoryUI || battle.phase !== "victory") return;
@@ -1225,6 +1251,7 @@ export default function BattleScreen({
       next.delete(idx);
       return next;
     });
+    setDissolvedEnemies(prev => new Set(prev).add(idx));
   }, []);
 
   useEffect(() => {
@@ -1957,7 +1984,7 @@ export default function BattleScreen({
   const tc = SPRITE_COLORS[turnSpriteId] || "#c9a44a";
   const turnLabel = battle.phase === "partyTurn"
     ? (battle.activePartyIndex >= 0 && battle.activePartyIndex < player.party.length ? player.party[battle.activePartyIndex].name : "Party")
-    : battle.phase === "victory" ? "Victory" : battle.phase === "defeat" ? "Defeat" : player.name;
+    : battle.phase === "defeat" ? "Defeat" : player.name;
 
   return (
     <div className={`relative w-full h-screen overflow-hidden ${shakeScreen ? "animate-[shake_0.3s_ease-out]" : ""}`}>
@@ -3345,9 +3372,9 @@ export default function BattleScreen({
         <div
           className="absolute bottom-0 left-0 right-0 z-30 transition-all duration-300"
           style={{
-            opacity: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") && battle.phase !== "victory" && battle.phase !== "defeat" ? 0 : 1,
-            transform: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") && battle.phase !== "victory" && battle.phase !== "defeat" ? "translateY(20px)" : "translateY(0)",
-            pointerEvents: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn") ? "none" : "auto",
+            opacity: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn" || battle.phase === "victory") && battle.phase !== "defeat" ? 0 : 1,
+            transform: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn" || battle.phase === "victory") && battle.phase !== "defeat" ? "translateY(20px)" : "translateY(0)",
+            pointerEvents: (animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn" || battle.phase === "victory") ? "none" : "auto",
           }}
         >
           <div
