@@ -293,6 +293,7 @@ export default function BattleScreen({
   const pendingIncinerationSlash = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const [eruptionCleaveActive, setEruptionCleaveActive] = useState(false);
   const [eruptionFlamelashActive, setEruptionFlamelashActive] = useState(false);
+  const [eruptionShakeIntensity, setEruptionShakeIntensity] = useState(0);
   const [eruptionNukeActive, setEruptionNukeActive] = useState(false);
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
@@ -847,10 +848,19 @@ export default function BattleScreen({
           setEruptionFlamelashActive(true);
           eruptionFlamelashAudio.current = playSfx("eruptionFlamelash", 0.8);
           eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0.8);
+          setEruptionShakeIntensity(1);
+          const shakeSteps = 8;
+          const stepTime = flamelashDuration / shakeSteps;
+          for (let i = 1; i <= shakeSteps; i++) {
+            scheduleTimer(() => {
+              setEruptionShakeIntensity(Math.min(i + 1, shakeSteps));
+            }, stepTime * i);
+          }
         }, pauseFrame1Time + pauseFrame1Duration);
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(false);
+          setEruptionShakeIntensity(0);
           playSfx("eruptionDownwardSlash", 0.9);
         }, pauseFrame1Time + pauseFrame1Duration + flamelashDuration);
 
@@ -2174,7 +2184,9 @@ export default function BattleScreen({
               zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave") ? 55 : 20,
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
-              transform: "translateX(-50%)",
+              transform: `translateX(-50%)`,
+              animation: eruptionShakeIntensity > 0 ? `eruptionChargeShake ${Math.max(0.03, 0.12 - eruptionShakeIntensity * 0.01)}s infinite` : "none",
+              ["--shake-px" as string]: `${eruptionShakeIntensity * 0.6}px`,
               opacity: fujinDashPhase === "fadeout" ? 0 : 1,
               filter: dodgeBlur && dodgeBlur.type === "player" ? "blur(3px) opacity(0.6)" : "none",
               transition: animPhase === "fujinSlice"
@@ -3903,6 +3915,13 @@ export default function BattleScreen({
           40% { transform: translateX(6px) rotate(0.5deg); }
           60% { transform: translateX(-4px); }
           80% { transform: translateX(4px); }
+        }
+        @keyframes eruptionChargeShake {
+          0% { transform: translateX(-50%) translate(calc(var(--shake-px) * -1), calc(var(--shake-px) * 0.5)); }
+          25% { transform: translateX(-50%) translate(var(--shake-px), calc(var(--shake-px) * -0.7)); }
+          50% { transform: translateX(-50%) translate(calc(var(--shake-px) * -0.7), var(--shake-px)); }
+          75% { transform: translateX(-50%) translate(var(--shake-px), calc(var(--shake-px) * 0.3)); }
+          100% { transform: translateX(-50%) translate(calc(var(--shake-px) * -0.5), calc(var(--shake-px) * -1)); }
         }
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(10px); }
