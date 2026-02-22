@@ -230,7 +230,7 @@ function Game() {
                 setTransitionElementColor(ec);
                 fadeOutMusic(700);
                 const trSfx = playSfx('battleTransition');
-                if (trSfx) trSfx.playbackRate = 1.5;
+                if (trSfx) trSfx.playbackRate = 2.0;
                 setBattleTransition({ nodeId, elementColor: ec });
               }}
               onShopOpen={(nodeId: number) => {
@@ -744,7 +744,7 @@ function Game() {
                   fadeOutMusic(700);
                 }
                 const trSfx2 = playSfx('battleTransition');
-                if (trSfx2) trSfx2.playbackRate = 1.5;
+                if (trSfx2) trSfx2.playbackRate = 2.0;
                 setBattleExitTransition({ victory });
               }}
               onSetAnimating={setAnimating}
