@@ -2774,9 +2774,7 @@ export default function BattleScreen({
 
                 <div className={`relative ${isDead ? "" : windBladeFrozenEnemy === idx ? "" : "animate-[idleBob_2.8s_ease-in-out_infinite]"}`} style={{ animationDelay: `${idx * 0.5}s` }}>
                   
-                  {isHit && (
-                    <div className="absolute inset-0 z-20 animate-[flashDamage_0.3s_ease-out]" style={{ background: "radial-gradient(circle, rgba(255,255,255,0.7) 0%, transparent 70%)" }} />
-                  )}
+                  
 
                   {windBladeSlashes.length > 0 && windBladeFrozenEnemy === idx && (
                     <div className="absolute z-30 pointer-events-none" style={{
