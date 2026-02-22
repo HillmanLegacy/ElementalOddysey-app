@@ -33,7 +33,7 @@ import potionMana from "@/assets/audio/potion-mana.wav";
 import drinkSlurp from "@/assets/audio/drink-slurp.wav";
 import mifuneSwordSlice from "@/assets/audio/mifune-sword-slice.wav";
 import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1771634677180.wav";
-import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771793599518.mp3";
+import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771800952507.mp3";
 import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1771793599519.wav";
 import eruptionDownwardSlash from "@assets/eruption_cleave_downward_slash_sfx_1771794785560.mp3";
 import incinerationCleave from "@assets/Incineration_Cleave_1771658647621.wav";
