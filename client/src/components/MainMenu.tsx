@@ -276,32 +276,28 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
     return saves.find((s: any) => s.slotName === `Slot ${slotNum}`) || null;
   };
 
-  const menuButtonStyle: React.CSSProperties = {
-    fontFamily: PIXEL_FONT,
-    fontSize: "10px",
-    letterSpacing: "2px",
-    border: `2px solid #ffd700`,
-    background: "rgba(0,0,0,0.75)",
-    color: "#ffe680",
-    padding: "10px 20px",
-    cursor: "pointer",
-    textTransform: "uppercase" as const,
-    borderRadius: 0,
-    width: "100%",
-    textAlign: "center" as const,
-    transition: "all 0.15s",
-    textShadow: `0 0 10px rgba(255,215,0,0.4), 0 1px 2px rgba(0,0,0,0.8)`,
-    backdropFilter: "blur(6px)",
-    boxShadow: `0 0 8px rgba(255,215,0,0.15)`,
-  };
+  const swordSvg = (color: string) => (
+    <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style={{ flexShrink: 0 }}>
+      <rect x="7" y="1" width="2" height="9" fill={color} />
+      <rect x="6" y="1" width="1" height="1" fill={color} opacity="0.6" />
+      <rect x="9" y="1" width="1" height="1" fill={color} opacity="0.6" />
+      <rect x="4" y="10" width="8" height="2" fill={color} />
+      <rect x="6" y="12" width="4" height="3" fill={color} opacity="0.8" />
+      <rect x="7" y="15" width="2" height="1" fill={color} opacity="0.5" />
+    </svg>
+  );
 
   const menuButtonHover = (e: React.MouseEvent) => {
-    (e.currentTarget as HTMLElement).style.background = `rgba(255,215,0,0.2)`;
-    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px rgba(255,215,0,0.3), inset 0 0 12px rgba(255,215,0,0.1)`;
+    const el = e.currentTarget as HTMLElement;
+    el.style.background = `rgba(255,215,0,0.2)`;
+    el.style.boxShadow = `0 0 20px rgba(255,215,0,0.4), inset 0 0 15px rgba(255,215,0,0.12)`;
+    el.style.borderColor = `#ffd700`;
   };
   const menuButtonLeave = (e: React.MouseEvent) => {
-    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.75)";
-    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 8px rgba(255,215,0,0.15)`;
+    const el = e.currentTarget as HTMLElement;
+    el.style.background = "rgba(0,0,0,0.8)";
+    el.style.boxShadow = `0 0 10px rgba(255,215,0,0.15)`;
+    el.style.borderColor = `#ffd700cc`;
   };
 
   if (showLoadScreen) {
@@ -433,6 +429,11 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
         zIndex: 3,
       }} />
 
+      <div className="absolute inset-0 pointer-events-none" style={{
+        background: "radial-gradient(ellipse 80% 60% at 50% 45%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 50%, transparent 80%)",
+        zIndex: 4,
+      }} />
+
       <div className="relative flex flex-col h-full" style={{ zIndex: 10 }}>
         <div className="flex-1 flex flex-col items-center justify-center">
           <div className="text-center">
@@ -451,8 +452,16 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 className="text-4xl md:text-5xl font-bold tracking-wider transition-all duration-[1500ms] ease-out"
                 style={{
                   fontFamily: PIXEL_FONT,
-                  color: "#fff8dc",
-                  textShadow: `0 0 30px rgba(255,215,0,0.6), 0 3px 0px rgba(0,0,0,1), 0 0 80px rgba(255,200,50,0.3), 2px 2px 0px rgba(0,0,0,0.8), -1px -1px 0px rgba(0,0,0,0.5), 1px -1px 0px rgba(0,0,0,0.5), -1px 1px 0px rgba(0,0,0,0.5)`,
+                  color: "#ffd700",
+                  textShadow: `
+                    0 0 40px rgba(255,215,0,0.9),
+                    0 0 80px rgba(255,180,0,0.5),
+                    3px 3px 0px #000, -3px -3px 0px #000,
+                    3px -3px 0px #000, -3px 3px 0px #000,
+                    2px 0px 0px #000, -2px 0px 0px #000,
+                    0px 2px 0px #000, 0px -2px 0px #000,
+                    0 5px 10px rgba(0,0,0,0.8)
+                  `,
                   letterSpacing: "0.14em",
                   opacity: titleVisible ? 1 : 0,
                   transform: titleVisible ? "translateY(0) scale(1)" : "translateY(15px) scale(0.95)",
@@ -466,8 +475,15 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 className="text-xl md:text-2xl tracking-[0.5em] mt-1 transition-all duration-[1200ms] ease-out"
                 style={{
                   fontFamily: PIXEL_FONT,
-                  color: "#ffe680",
-                  textShadow: `0 0 20px rgba(255,215,0,0.4), 0 2px 0px rgba(0,0,0,0.9), 1px 1px 0px rgba(0,0,0,0.6), -1px -1px 0px rgba(0,0,0,0.4)`,
+                  color: "#ffeb3b",
+                  textShadow: `
+                    0 0 25px rgba(255,215,0,0.7),
+                    2px 2px 0px #000, -2px -2px 0px #000,
+                    2px -2px 0px #000, -2px 2px 0px #000,
+                    1px 0px 0px #000, -1px 0px 0px #000,
+                    0px 1px 0px #000, 0px -1px 0px #000,
+                    0 4px 8px rgba(0,0,0,0.7)
+                  `,
                   fontWeight: 400,
                   opacity: subtitleVisible ? 1 : 0,
                   transform: subtitleVisible ? "translateY(0)" : "translateY(10px)",
@@ -483,18 +499,23 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                   transform: taglineVisible ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <div className="h-px w-14" style={{ background: `linear-gradient(to right, transparent, #ffd700aa)` }} />
+                <div className="h-px w-14" style={{ background: `linear-gradient(to right, transparent, #ffd700)` }} />
                 <p style={{
                   fontSize: "7px",
                   letterSpacing: "0.25em",
-                  color: "#ffe08a",
+                  color: "#ffd700",
                   fontFamily: PIXEL_FONT,
                   textTransform: "uppercase",
-                  textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(255,215,0,0.2)",
+                  textShadow: `
+                    0 0 10px rgba(255,215,0,0.6),
+                    1px 1px 0px #000, -1px -1px 0px #000,
+                    1px -1px 0px #000, -1px 1px 0px #000,
+                    0 2px 6px rgba(0,0,0,0.8)
+                  `,
                 }}>
                   A Medieval Fantasy
                 </p>
-                <div className="h-px w-14" style={{ background: `linear-gradient(to left, transparent, #ffd700aa)` }} />
+                <div className="h-px w-14" style={{ background: `linear-gradient(to left, transparent, #ffd700)` }} />
               </div>
             </div>
           </div>
@@ -507,47 +528,41 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
             }}
           >
           {!showOptions ? (
-            <div className="flex flex-col gap-2 w-56">
-              <button
-                style={menuButtonStyle}
-                onMouseEnter={menuButtonHover}
-                onMouseLeave={menuButtonLeave}
-                onClick={() => { playSfx('menuSelect'); onNewGame(); }}
-                data-testid="button-new-game"
-              >
-                NEW GAME
-              </button>
-              {hasSave && (
+            <div className="flex flex-col gap-2 w-64">
+              {[
+                { label: "NEW GAME", action: () => onNewGame(), testId: "button-new-game", show: true },
+                { label: "CONTINUE", action: () => onContinue(), testId: "button-continue", show: hasSave },
+                { label: "LOAD GAME", action: () => setShowLoadScreen(true), testId: "button-load-game", show: hasSaves },
+                { label: "OPTIONS", action: () => setShowOptions(true), testId: "button-options", show: true },
+              ].filter(b => b.show).map((btn) => (
                 <button
-                  style={{ ...menuButtonStyle, borderColor: `#ffd700cc`, color: `#ffe680` }}
+                  key={btn.testId}
+                  className="flex items-center gap-3 w-full transition-all"
+                  style={{
+                    fontFamily: PIXEL_FONT,
+                    fontSize: "10px",
+                    letterSpacing: "3px",
+                    border: `2px solid #ffd700cc`,
+                    background: "rgba(0,0,0,0.8)",
+                    color: "#fff8dc",
+                    padding: "10px 16px",
+                    cursor: "pointer",
+                    textTransform: "uppercase" as const,
+                    borderRadius: 0,
+                    textAlign: "left" as const,
+                    textShadow: `0 0 12px rgba(255,215,0,0.5), 0 1px 2px rgba(0,0,0,0.9)`,
+                    backdropFilter: "blur(6px)",
+                    boxShadow: `0 0 10px rgba(255,215,0,0.15)`,
+                  }}
                   onMouseEnter={menuButtonHover}
                   onMouseLeave={menuButtonLeave}
-                  onClick={() => { playSfx('menuSelect'); onContinue(); }}
-                  data-testid="button-continue"
+                  onClick={() => { playSfx('menuSelect'); btn.action(); }}
+                  data-testid={btn.testId}
                 >
-                  CONTINUE
+                  {swordSvg("#ffd700")}
+                  <span>{btn.label}</span>
                 </button>
-              )}
-              {hasSaves && (
-                <button
-                  style={{ ...menuButtonStyle, borderColor: `#ffd700aa`, color: `#ffe680dd` }}
-                  onMouseEnter={menuButtonHover}
-                  onMouseLeave={menuButtonLeave}
-                  onClick={() => { playSfx('menuSelect'); setShowLoadScreen(true); }}
-                  data-testid="button-load-game"
-                >
-                  LOAD GAME
-                </button>
-              )}
-              <button
-                style={{ ...menuButtonStyle, borderColor: `#ffd70088`, color: `#ffe680bb` }}
-                onMouseEnter={menuButtonHover}
-                onMouseLeave={menuButtonLeave}
-                onClick={() => { playSfx('menuSelect'); setShowOptions(true); }}
-                data-testid="button-options"
-              >
-                OPTIONS
-              </button>
+              ))}
             </div>
           ) : (
             <div className="w-80 p-5 overflow-hidden" style={{
