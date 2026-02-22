@@ -434,7 +434,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
       }} />
 
       <div className="relative flex flex-col h-full" style={{ zIndex: 10 }}>
-        <div className="flex-1 flex items-center justify-center" style={{ paddingBottom: "8%" }}>
+        <div className="flex-1 flex flex-col items-center justify-center">
           <div className="text-center">
             <div className="relative inline-block">
               <div
@@ -498,15 +498,14 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               </div>
             </div>
           </div>
-        </div>
 
-        <div
-          className="pb-6 flex justify-center transition-all duration-[1500ms] ease-out"
-          style={{
-            opacity: buttonsVisible ? 1 : 0,
-            transform: buttonsVisible ? "translateY(0)" : "translateY(30px)",
-          }}
-        >
+          <div
+            className="mt-5 flex justify-center transition-all duration-[1500ms] ease-out"
+            style={{
+              opacity: buttonsVisible ? 1 : 0,
+              transform: buttonsVisible ? "translateY(0)" : "translateY(30px)",
+            }}
+          >
           {!showOptions ? (
             <div className="flex flex-col gap-2 w-56">
               <button
@@ -643,6 +642,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               </div>
             </div>
           )}
+        </div>
         </div>
       </div>
 
