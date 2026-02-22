@@ -429,10 +429,6 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
         zIndex: 3,
       }} />
 
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: "radial-gradient(ellipse 80% 60% at 50% 45%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.2) 50%, transparent 80%)",
-        zIndex: 4,
-      }} />
 
       <div className="relative flex flex-col h-full" style={{ zIndex: 10 }}>
         <div className="flex-1 flex flex-col items-center justify-center">
