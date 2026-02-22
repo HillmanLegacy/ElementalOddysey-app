@@ -33,8 +33,10 @@ import potionMana from "@/assets/audio/potion-mana.wav";
 import drinkSlurp from "@/assets/audio/drink-slurp.wav";
 import mifuneSwordSlice from "@/assets/audio/mifune-sword-slice.wav";
 import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1771634677180.wav";
-import eruptionCleave from "@assets/Eruption_Cleave_1771634677181.wav";
+import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771793599518.mp3";
+import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1771793599519.wav";
 import incinerationCleave from "@assets/Incineration_Cleave_1771658647621.wav";
+import blockingSound from "@assets/blocking_sound_1771793599518.mp3";
 import menuSelect from "@assets/menu_select_1771792929044.mp3";
 
 const SFX_GROUPS = {
@@ -43,7 +45,7 @@ const SFX_GROUPS = {
   windSlash: [mifuneSwordSlice],
   hitMetal: [hitMetal1, hitMetal2],
   hitCombo: [hitCombo1, hitCombo2],
-  block: [block1, block2],
+  block: [blockingSound],
   stabRing: [stabRing1, stabRing2],
   magicRing: [magicRing1, magicRing2, magicRing3],
   whoosh: [whoosh1, whoosh2],
@@ -58,6 +60,7 @@ const SFX_GROUPS = {
   potionMana: [drinkSlurp, potionMana],
   eruptionFirecharge: [eruptionFirecharge],
   eruptionCleave: [eruptionCleave],
+  eruptionFlamelash: [eruptionFlamelash],
   incinerationCleave: [incinerationCleave],
   menuSelect: [menuSelect],
 } as const;

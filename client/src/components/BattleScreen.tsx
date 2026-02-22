@@ -804,6 +804,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(true);
+          playSfx("eruptionFlamelash", 0.8);
           eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0.8);
         }, pauseFrame1Time + pauseFrame1Duration);
 
