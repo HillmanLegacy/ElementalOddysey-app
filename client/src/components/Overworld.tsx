@@ -7,7 +7,7 @@ import SpriteAnimator from "./SpriteAnimator";
 import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, Save, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Users, Sparkles, Home, Shield, Package, Moon, Lock, ArrowLeft } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Sparkles, Home, Shield, Package, Lock } from "lucide-react";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -135,27 +135,15 @@ interface OverworldProps {
   onShopOpen: (nodeId: number) => void;
   onRest: (nodeId: number) => void;
   onShamanVisit: (nodeId: number) => void;
-  onInventory: () => void;
-  onPartyManage: () => void;
-  onSaveOpen: () => void;
+  onHutEnter: () => void;
   onRegionChange: (regionId: number) => void;
-  forceHutMenuOpen?: boolean;
-  onHutMenuClosed?: () => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onInventory, onPartyManage, onSaveOpen, onRegionChange, forceHutMenuOpen, onHutMenuClosed }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange }: OverworldProps) {
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
   const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
-  const [hutMenuOpen, setHutMenuOpen] = useState(false);
-
-  useEffect(() => {
-    if (forceHutMenuOpen) {
-      setHutMenuOpen(true);
-      onHutMenuClosed?.();
-    }
-  }, [forceHutMenuOpen]);
   const [charPos, setCharPos] = useState<{ x: number; y: number }>(() => {
     const currentNode = region.nodes.find(n => n.id === player.currentNode);
     return currentNode ? getNodePosition(currentNode) : { x: 8, y: 82 };
@@ -284,7 +272,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   };
 
   const handleArrowClick = (targetNode: OverworldNode) => {
-    if (isMoving || hutMenuOpen) return;
+    if (isMoving) return;
     const targetPos = getNodePosition(targetNode);
     setFacingRight(targetPos.x > charPos.x);
     moveCharacterTo(targetPos, () => {
@@ -294,7 +282,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
   const triggerNodeAction = (node: OverworldNode) => {
     if (node.type === "hut") {
-      setHutMenuOpen(true);
+      onHutEnter();
     } else if (node.type === "battle" || node.type === "boss") {
       onNodeSelect(node.id, charPos);
     } else if (node.type === "shop") {
@@ -662,7 +650,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         );
       })}
 
-      {!isMoving && !hutMenuOpen && (() => {
+      {!isMoving && (() => {
         const currentNode = region.nodes.find(n => n.id === player.currentNode);
         if (!currentNode) return null;
         return currentNode.connections.map(connId => {
@@ -786,7 +774,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
         <div className="relative flex items-center gap-2">
           <button
-            onClick={onInventory}
+            onClick={onHutEnter}
             className="flex items-center justify-center w-8 h-8 transition-all hover:scale-110 active:scale-95"
             style={{
               background: "rgba(0,0,0,0.4)",
@@ -799,104 +787,6 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         </div>
       </div>
 
-      {hutMenuOpen && (() => {
-        const ac = "#c9a44a";
-        const regionNames: Record<string, string> = { Fire: "Ember Hearth", Ice: "Frost Lodge", Shadow: "Shadow Refuge", Earth: "Stone Haven" };
-        const flavorText: Record<string, string> = { Fire: "Warmth against the inferno", Ice: "Shelter from the frost", Shadow: "Light in the darkness", Earth: "Rooted and restored" };
-        const hutName = regionNames[region.theme] || "The Hut";
-        const hutFlavor = flavorText[region.theme] || "A safe haven";
-
-        const menuItems = [
-          { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { setHutMenuOpen(false); const h = region.nodes.find(n => n.type === "hut"); if (h) onRest(h.id); } },
-          { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setHutMenuOpen(false); onInventory(); } },
-          ...(player.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setHutMenuOpen(false); onPartyManage(); } }] : []),
-          { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setHutMenuOpen(false); onSaveOpen(); } },
-          { label: "OPTIONS", desc: "Game settings", icon: Sparkles, action: () => { setHutMenuOpen(false); /* Handled by App */ window.dispatchEvent(new CustomEvent('open-options')); } },
-          { label: "MAIN MENU", desc: "Return to title", icon: ArrowLeft, action: () => { if (confirm("Return to Main Menu? Unsaved progress will be lost.")) window.location.reload(); } },
-        ];
-
-        return (
-          <div className="absolute inset-0 z-[200] flex items-center justify-center" onClick={() => setHutMenuOpen(false)}>
-            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ac}15 0%, rgba(0,0,0,0.85) 70%)` }} />
-            <div
-              className="relative w-[280px] overflow-hidden"
-              style={{
-                fontFamily: "'Press Start 2P', cursive",
-                imageRendering: "pixelated",
-                background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
-                border: `3px solid ${ac}`,
-                boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
-              }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div style={{
-                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
-                pointerEvents: "none",
-              }} />
-
-              <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid ${ac}` }}>
-                <div className="flex items-center gap-2">
-                  <Home className="w-4 h-4" style={{ color: ac }} />
-                  <span style={{ fontSize: "10px", color: ac, letterSpacing: "2px" }}>{hutName.toUpperCase()}</span>
-                </div>
-                <button
-                  className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
-                  style={{ border: `1px solid ${ac}50`, background: "transparent" }}
-                  onClick={() => setHutMenuOpen(false)}
-                >
-                  <X className="w-3 h-3" style={{ color: ac }} />
-                </button>
-              </div>
-
-              <div className="relative px-3 py-3 space-y-1.5">
-                {menuItems.map((item, i) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.label}
-                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all group"
-                      style={{
-                        background: "#0d0b0bf0",
-                        border: `1px solid ${ac}30`,
-                        animation: `fadeIn 0.2s ease-out ${i * 0.05}s both`,
-                      }}
-                      onMouseEnter={e => {
-                        (e.currentTarget as HTMLElement).style.background = `${ac}25`;
-                        (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
-                        (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ac}30, inset 0 0 8px ${ac}10`;
-                      }}
-                      onMouseLeave={e => {
-                        (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
-                        (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
-                        (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                      }}
-                      onClick={item.action}
-                    >
-                      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ac}40`, background: "#0a080840" }}>
-                        <Icon className="w-3.5 h-3.5" style={{ color: ac }} />
-                      </div>
-                      <div className="flex flex-col">
-                        <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{item.label}</span>
-                        <span style={{ fontSize: "7px", color: `${ac}60`, marginTop: "2px" }}>{item.desc}</span>
-                      </div>
-                      <svg className="w-3 h-3 ml-auto opacity-40 group-hover:opacity-80 transition-opacity" viewBox="0 0 12 12" style={{ color: ac }}>
-                        <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="2" />
-                      </svg>
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ac}20` }}>
-                <p className="text-center" style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>{hutFlavor}</p>
-              </div>
-
-              <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
-            </div>
-          </div>
-        );
-      })()}
 
       <div className="absolute bottom-0 left-0 right-0 z-30 bg-black/50 backdrop-blur-sm border-t border-white/5">
         <div className="flex items-center justify-between px-3 py-1.5">

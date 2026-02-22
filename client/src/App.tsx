@@ -22,8 +22,9 @@ import BattleTransition from "@/components/BattleTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
-import { X } from "lucide-react";
+import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft } from "lucide-react";
 import type { PlayerCharacter } from "@shared/schema";
+import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
 
 const DESIGN_WIDTH = 1024;
 const DESIGN_HEIGHT = 640;
@@ -92,11 +93,11 @@ function Game() {
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
-  const [returnToHut, setReturnToHut] = useState(false);
-  const [forceHutOpen, setForceHutOpen] = useState(false);
+  const [hutTransitionIn, setHutTransitionIn] = useState(false);
+  const [hutTransitionOut, setHutTransitionOut] = useState(false);
 
   useEffect(() => {
-    const handleOpenOptions = () => { setShowOptions(true); setReturnToHut(true); };
+    const handleOpenOptions = () => { setShowOptions(true); };
     window.addEventListener('open-options', handleOpenOptions);
     return () => window.removeEventListener('open-options', handleOpenOptions);
   }, []);
@@ -200,291 +201,19 @@ function Game() {
                 toast({ title: "Rested", description: "HP and MP fully restored!" });
               }}
               onShamanVisit={openShaman}
-              onInventory={() => { setReturnToHut(true); setScreen("inventory"); }}
-              onPartyManage={() => { setReturnToHut(true); setShowPartyManagement(true); }}
-              onSaveOpen={() => { setReturnToHut(true); setShowSaveScreen(true); }}
-              forceHutMenuOpen={forceHutOpen}
-              onHutMenuClosed={() => setForceHutOpen(false)}
+              onHutEnter={() => setHutTransitionIn(true)}
               onRegionChange={changeRegion}
             />
-            {showPartyManagement && state.player && (
-              <div className="absolute inset-0 z-[300]">
-                <PartyManagementScreen
-                  player={state.player}
-                  onRemoveMember={(memberId) => {
-                    const member = state.player!.party.find(m => m.id === memberId);
-                    if (!member) return;
-                    updatePlayer({
-                      party: state.player!.party.filter(m => m.id !== memberId),
-                      benchedParty: [...(state.player!.benchedParty || []), member],
-                    });
-                  }}
-                  onAddMember={(memberId) => {
-                    const member = (state.player!.benchedParty || []).find(m => m.id === memberId);
-                    if (!member) return;
-                    updatePlayer({
-                      party: [...state.player!.party, member],
-                      benchedParty: (state.player!.benchedParty || []).filter(m => m.id !== memberId),
-                    });
-                  }}
-                  onClose={() => { setShowPartyManagement(false); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
-                />
-              </div>
+            {hutTransitionIn && (
+              <BattleTransition
+                direction="in"
+                onComplete={() => {
+                  setHutTransitionIn(false);
+                  setHutTransitionOut(true);
+                  setScreen("hut");
+                }}
+              />
             )}
-            {showOptions && (
-              <div className="absolute inset-0 z-[400] flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #c9a44a15 0%, rgba(0,0,0,0.85) 70%)" }}>
-                <div className="w-80 overflow-hidden relative" style={{
-                  background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
-                  border: `3px solid #c9a44a`,
-                  boxShadow: `0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)`,
-                  fontFamily: "'Press Start 2P', cursive",
-                  imageRendering: "pixelated" as any,
-                }}>
-                  <div style={{
-                    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                    backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)",
-                    pointerEvents: "none",
-                  }} />
-                  <div className="relative flex items-center justify-between" style={{ padding: "8px 12px", background: "#0d0b0bf0", borderBottom: "3px solid #c9a44a" }}>
-                    <h3 style={{ fontSize: "10px", color: "#c9a44a", letterSpacing: "2px" }}>OPTIONS</h3>
-                    <button 
-                      onClick={() => { setShowOptions(false); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
-                      className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
-                      style={{ border: "1px solid #c9a44a50", background: "transparent" }}
-                    >
-                      <X className="w-3 h-3" style={{ color: "#c9a44a" }} />
-                    </button>
-                  </div>
-                  <div className="relative space-y-6" style={{ padding: "16px 12px" }}>
-                    <div>
-                      <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>TEXT SPEED</label>
-                      <div className="flex gap-2">
-                        {(["slow", "medium", "fast"] as const).map(sp => (
-                          <button
-                            key={sp}
-                            className="flex-1 py-2 text-[7px]"
-                            style={{
-                              fontFamily: "'Press Start 2P', cursive",
-                              border: state.textSpeed === sp ? `2px solid #c9a44a` : `1px solid #c9a44a30`,
-                              background: state.textSpeed === sp ? `#c9a44a25` : "#0d0b0bf0",
-                              color: state.textSpeed === sp ? "#c9a44a" : "#c9a44a60",
-                            }}
-                            onClick={() => setState(s => ({ ...s, textSpeed: sp }))}
-                          >
-                            {sp.toUpperCase()}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>MUSIC: {state.musicVolume}%</label>
-                      <Slider
-                        value={[state.musicVolume]}
-                        max={100} step={1}
-                        onValueChange={([v]: number[]) => setState(s => ({ ...s, musicVolume: v }))}
-                      />
-                    </div>
-                    <div>
-                      <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>SFX: {state.sfxVolume}%</label>
-                      <Slider
-                        value={[state.sfxVolume]}
-                        max={100} step={1}
-                        onValueChange={([v]: number[]) => setState(s => ({ ...s, sfxVolume: v }))}
-                      />
-                    </div>
-                  </div>
-                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, transparent, #c9a44a40, transparent)" }} />
-                </div>
-              </div>
-            )}
-            {showSaveScreen && state.player && (() => {
-              const ac = "#c9a44a";
-
-              const getSlotSave = (slotNum: number) => {
-                if (!saves) return null;
-                return saves.find(s => s.slotName === `Slot ${slotNum}`) || null;
-              };
-
-              return (
-                <div className="absolute inset-0 z-[300] flex items-center justify-center"
-                  style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" }}
-                >
-                  <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ac}15 0%, rgba(0,0,0,0.85) 70%)` }} />
-                  <div className="absolute inset-0 pointer-events-none" style={{
-                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
-                  }} />
-
-                  <div className="relative w-[340px] overflow-hidden"
-                    style={{
-                      background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
-                      border: `3px solid ${ac}`,
-                      boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
-                    }}
-                  >
-                    <div style={{
-                      position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
-                      pointerEvents: "none",
-                    }} />
-
-                    <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid ${ac}` }}>
-                      <span style={{ fontSize: "10px", color: ac, letterSpacing: "2px" }}>SAVE GAME</span>
-                      <button
-                        className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
-                        style={{ border: `1px solid ${ac}50`, background: "transparent" }}
-                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
-                      >
-                        <span style={{ fontSize: "8px", color: ac }}>✕</span>
-                      </button>
-                    </div>
-
-                    <div className="relative px-3 py-3 space-y-2">
-                      {[1, 2, 3].map(slotNum => {
-                        const slotSave = getSlotSave(slotNum);
-                        const isSuccess = saveSuccessSlot === slotNum;
-                        return (
-                          <button
-                            key={slotNum}
-                            className="w-full text-left px-3 py-3 transition-all"
-                            style={{
-                              background: isSuccess ? `${ac}25` : "#0d0b0bf0",
-                              border: `1px solid ${isSuccess ? ac : `${ac}30`}`,
-                              boxShadow: isSuccess ? `0 0 12px ${ac}30` : "none",
-                            }}
-                            onMouseEnter={e => {
-                              if (!isSuccess) {
-                                (e.currentTarget as HTMLElement).style.background = `${ac}25`;
-                                (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
-                                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ac}30, inset 0 0 8px ${ac}10`;
-                              }
-                            }}
-                            onMouseLeave={e => {
-                              if (!isSuccess) {
-                                (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
-                                (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
-                                (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                              }
-                            }}
-                            onClick={() => { if (!isSuccess) setSaveConfirmSlot(slotNum); }}
-                          >
-                            {isSuccess ? (
-                              <div className="flex items-center gap-2">
-                                <span style={{ fontSize: "9px", color: ac }}>✓ SAVED!</span>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="flex items-center justify-between">
-                                  <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>SLOT {slotNum}</span>
-                                  {slotSave && (
-                                    <span style={{ fontSize: "6px", color: `${ac}60` }}>
-                                      {new Date(slotSave.updatedAt).toLocaleDateString()}
-                                    </span>
-                                  )}
-                                </div>
-                                {slotSave ? (
-                                  <div style={{ marginTop: "4px" }}>
-                                    <span style={{ fontSize: "7px", color: `${ac}60` }}>
-                                      {(slotSave.playerData as any).name} · Lv.{(slotSave.playerData as any).level} · {(slotSave.playerData as any).element}
-                                    </span>
-                                  </div>
-                                ) : (
-                                  <div style={{ marginTop: "4px" }}>
-                                    <span style={{ fontSize: "7px", color: `${ac}40` }}>EMPTY SLOT</span>
-                                  </div>
-                                )}
-                              </>
-                            )}
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ac}20` }}>
-                      <button
-                        className="w-full flex items-center justify-center gap-2 px-3 py-2 transition-all"
-                        style={{ border: `1px solid ${ac}30`, background: "#0d0b0bf0" }}
-                        onMouseEnter={e => {
-                          (e.currentTarget as HTMLElement).style.background = `${ac}25`;
-                          (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
-                        }}
-                        onMouseLeave={e => {
-                          (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
-                          (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
-                        }}
-                        onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
-                      >
-                        <span style={{ fontSize: "8px", color: ac, letterSpacing: "1px" }}>← BACK</span>
-                      </button>
-                    </div>
-
-                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
-                  </div>
-
-                  {saveConfirmSlot !== null && (
-                    <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
-                      <div className="absolute inset-0 bg-black/60" onClick={() => setSaveConfirmSlot(null)} />
-                      <div className="relative w-[260px] overflow-hidden"
-                        style={{
-                          background: "linear-gradient(180deg, #0a0808f8 0%, #151010fc 100%)",
-                          border: `3px solid ${ac}`,
-                          boxShadow: `0 0 30px ${ac}50, 0 0 80px ${ac}20, inset 0 0 30px rgba(0,0,0,0.5)`,
-                        }}
-                      >
-                        <div style={{
-                          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
-                          pointerEvents: "none",
-                        }} />
-
-                        <div className="relative px-4 py-4 text-center">
-                          <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px", lineHeight: "1.8" }}>
-                            Save to Slot {saveConfirmSlot}?
-                          </p>
-                          {getSlotSave(saveConfirmSlot) && (
-                            <p style={{ fontSize: "7px", color: `${ac}60`, marginTop: "6px" }}>
-                              This will overwrite existing data
-                            </p>
-                          )}
-                        </div>
-
-                        <div className="relative px-3 pb-3 flex gap-2">
-                          <button
-                            className="flex-1 px-3 py-2 transition-all text-center"
-                            style={{ border: `1px solid ${ac}`, background: `${ac}20` }}
-                            onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.background = `${ac}40`;
-                              (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ac}40`;
-                            }}
-                            onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.background = `${ac}20`;
-                              (e.currentTarget as HTMLElement).style.boxShadow = "none";
-                            }}
-                            onClick={() => handleSaveToSlot(saveConfirmSlot)}
-                          >
-                            <span style={{ fontSize: "8px", color: ac, letterSpacing: "1px" }}>CONFIRM</span>
-                          </button>
-                          <button
-                            className="flex-1 px-3 py-2 transition-all text-center"
-                            style={{ border: `1px solid ${ac}30`, background: "#0d0b0bf0" }}
-                            onMouseEnter={e => {
-                              (e.currentTarget as HTMLElement).style.background = `${ac}15`;
-                              (e.currentTarget as HTMLElement).style.borderColor = `${ac}60`;
-                            }}
-                            onMouseLeave={e => {
-                              (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
-                              (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
-                            }}
-                            onClick={() => setSaveConfirmSlot(null)}
-                          >
-                            <span style={{ fontSize: "8px", color: `${ac}60`, letterSpacing: "1px" }}>CANCEL</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
             {battleTransition && (
               <BattleTransition
                 direction="in"
@@ -510,8 +239,419 @@ function Game() {
                 onComplete={() => setPostBattleReveal(false)}
               />
             )}
+            {hutTransitionOut && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setHutTransitionOut(false)}
+              />
+            )}
           </>
         );
+
+      case "hut":
+        if (!state.player) return null;
+        return (() => {
+          const ac = "#c9a44a";
+          const tier = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
+          const region = getRegionForTier(state.player.currentRegion, tier);
+          const regionNames: Record<string, string> = { Fire: "Ember Hearth", Ice: "Frost Lodge", Shadow: "Shadow Refuge", Earth: "Stone Haven" };
+          const flavorText: Record<string, string> = { Fire: "Warmth against the inferno", Ice: "Shelter from the frost", Shadow: "Light in the darkness", Earth: "Rooted and restored" };
+          const hutName = regionNames[region.theme] || "The Hut";
+          const hutFlavor = flavorText[region.theme] || "A safe haven";
+
+          const leaveHut = () => {
+            setHutTransitionIn(true);
+          };
+
+          const menuItems = [
+            { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { restAtNode(); toast({ title: "Rested", description: "HP and MP fully restored!" }); } },
+            { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setScreen("inventory"); } },
+            ...(state.player!.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setShowPartyManagement(true); } }] : []),
+            { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setShowSaveScreen(true); } },
+            { label: "OPTIONS", desc: "Game settings", icon: Sparkles, action: () => { setShowOptions(true); } },
+            { label: "LEAVE", desc: "Return to overworld", icon: ArrowLeft, action: leaveHut },
+          ];
+
+          return (
+            <>
+              <div className="absolute inset-0" style={{ background: "#000" }}>
+                <img
+                  src={hutBackground}
+                  alt="Hut interior"
+                  className="w-full h-full object-cover"
+                  style={{ imageRendering: "pixelated", opacity: 0.85 }}
+                />
+                <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.6) 100%)" }} />
+              </div>
+
+              <div className="absolute inset-0 z-[100] flex items-center justify-center">
+                <div
+                  className="relative w-[280px] overflow-hidden"
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    imageRendering: "pixelated",
+                    background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                    border: `3px solid ${ac}`,
+                    boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                  }}
+                >
+                  <div style={{
+                    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                    backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
+                    pointerEvents: "none",
+                  }} />
+
+                  <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid ${ac}` }}>
+                    <div className="flex items-center gap-2">
+                      <Home className="w-4 h-4" style={{ color: ac }} />
+                      <span style={{ fontSize: "10px", color: ac, letterSpacing: "2px" }}>{hutName.toUpperCase()}</span>
+                    </div>
+                    <button
+                      className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                      style={{ border: `1px solid ${ac}50`, background: "transparent" }}
+                      onClick={leaveHut}
+                    >
+                      <X className="w-3 h-3" style={{ color: ac }} />
+                    </button>
+                  </div>
+
+                  <div className="relative px-3 py-3 space-y-1.5">
+                    {menuItems.map((item, i) => {
+                      const Icon = item.icon;
+                      return (
+                        <button
+                          key={item.label}
+                          className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all group"
+                          style={{
+                            background: "#0d0b0bf0",
+                            border: `1px solid ${ac}30`,
+                            animation: `fadeIn 0.2s ease-out ${i * 0.05}s both`,
+                          }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = `${ac}25`;
+                            (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
+                            (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${ac}30, inset 0 0 8px ${ac}10`;
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                            (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
+                            (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                          }}
+                          onClick={item.action}
+                        >
+                          <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ac}40`, background: "#0a080840" }}>
+                            <Icon className="w-3.5 h-3.5" style={{ color: ac }} />
+                          </div>
+                          <div className="flex flex-col">
+                            <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{item.label}</span>
+                            <span style={{ fontSize: "7px", color: `${ac}60`, marginTop: "2px" }}>{item.desc}</span>
+                          </div>
+                          <svg className="w-3 h-3 ml-auto opacity-40 group-hover:opacity-80 transition-opacity" viewBox="0 0 12 12" style={{ color: ac }}>
+                            <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="2" />
+                          </svg>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ac}20` }}>
+                    <p className="text-center" style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>{hutFlavor}</p>
+                  </div>
+
+                  <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
+                </div>
+              </div>
+
+              {showPartyManagement && state.player && (
+                <div className="absolute inset-0 z-[300]">
+                  <PartyManagementScreen
+                    player={state.player}
+                    onRemoveMember={(memberId) => {
+                      const member = state.player!.party.find(m => m.id === memberId);
+                      if (!member) return;
+                      updatePlayer({
+                        party: state.player!.party.filter(m => m.id !== memberId),
+                        benchedParty: [...(state.player!.benchedParty || []), member],
+                      });
+                    }}
+                    onAddMember={(memberId) => {
+                      const member = (state.player!.benchedParty || []).find(m => m.id === memberId);
+                      if (!member) return;
+                      updatePlayer({
+                        party: [...state.player!.party, member],
+                        benchedParty: (state.player!.benchedParty || []).filter(m => m.id !== memberId),
+                      });
+                    }}
+                    onClose={() => setShowPartyManagement(false)}
+                  />
+                </div>
+              )}
+
+              {showOptions && (
+                <div className="absolute inset-0 z-[400] flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #c9a44a15 0%, rgba(0,0,0,0.85) 70%)" }}>
+                  <div className="w-80 overflow-hidden relative" style={{
+                    background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                    border: `3px solid #c9a44a`,
+                    boxShadow: `0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                    fontFamily: "'Press Start 2P', cursive",
+                    imageRendering: "pixelated" as any,
+                  }}>
+                    <div style={{
+                      position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                      backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)",
+                      pointerEvents: "none",
+                    }} />
+                    <div className="relative flex items-center justify-between" style={{ padding: "8px 12px", background: "#0d0b0bf0", borderBottom: "3px solid #c9a44a" }}>
+                      <h3 style={{ fontSize: "10px", color: "#c9a44a", letterSpacing: "2px" }}>OPTIONS</h3>
+                      <button
+                        onClick={() => setShowOptions(false)}
+                        className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                        style={{ border: "1px solid #c9a44a50", background: "transparent" }}
+                      >
+                        <X className="w-3 h-3" style={{ color: "#c9a44a" }} />
+                      </button>
+                    </div>
+                    <div className="relative space-y-6" style={{ padding: "16px 12px" }}>
+                      <div>
+                        <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>TEXT SPEED</label>
+                        <div className="flex gap-2">
+                          {(["slow", "medium", "fast"] as const).map(sp => (
+                            <button
+                              key={sp}
+                              className="flex-1 py-2 text-[7px]"
+                              style={{
+                                fontFamily: "'Press Start 2P', cursive",
+                                border: state.textSpeed === sp ? `2px solid #c9a44a` : `1px solid #c9a44a30`,
+                                background: state.textSpeed === sp ? `#c9a44a25` : "#0d0b0bf0",
+                                color: state.textSpeed === sp ? "#c9a44a" : "#c9a44a60",
+                              }}
+                              onClick={() => setState(s => ({ ...s, textSpeed: sp }))}
+                            >
+                              {sp.toUpperCase()}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>MUSIC: {state.musicVolume}%</label>
+                        <Slider
+                          value={[state.musicVolume]}
+                          max={100} step={1}
+                          onValueChange={([v]: number[]) => setState(s => ({ ...s, musicVolume: v }))}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>SFX: {state.sfxVolume}%</label>
+                        <Slider
+                          value={[state.sfxVolume]}
+                          max={100} step={1}
+                          onValueChange={([v]: number[]) => setState(s => ({ ...s, sfxVolume: v }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: "linear-gradient(90deg, transparent, #c9a44a40, transparent)" }} />
+                  </div>
+                </div>
+              )}
+
+              {showSaveScreen && state.player && (() => {
+                const sac = "#c9a44a";
+                const getSlotSave = (slotNum: number) => {
+                  if (!saves) return null;
+                  return saves.find(s => s.slotName === `Slot ${slotNum}`) || null;
+                };
+                return (
+                  <div className="absolute inset-0 z-[300] flex items-center justify-center"
+                    style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" }}
+                  >
+                    <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${sac}15 0%, rgba(0,0,0,0.85) 70%)` }} />
+                    <div className="absolute inset-0 pointer-events-none" style={{
+                      backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${sac}08 3px, ${sac}08 4px)`,
+                    }} />
+                    <div className="relative w-[340px] overflow-hidden"
+                      style={{
+                        background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                        border: `3px solid ${sac}`,
+                        boxShadow: `0 0 20px ${sac}40, 0 0 60px ${sac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                      }}
+                    >
+                      <div style={{
+                        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${sac}08 3px, ${sac}08 4px)`,
+                        pointerEvents: "none",
+                      }} />
+                      <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid ${sac}` }}>
+                        <span style={{ fontSize: "10px", color: sac, letterSpacing: "2px" }}>SAVE GAME</span>
+                        <button
+                          className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                          style={{ border: `1px solid ${sac}50`, background: "transparent" }}
+                          onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                        >
+                          <span style={{ fontSize: "8px", color: sac }}>✕</span>
+                        </button>
+                      </div>
+                      <div className="relative px-3 py-3 space-y-2">
+                        {[1, 2, 3].map(slotNum => {
+                          const slotSave = getSlotSave(slotNum);
+                          const isSuccess = saveSuccessSlot === slotNum;
+                          return (
+                            <button
+                              key={slotNum}
+                              className="w-full text-left px-3 py-3 transition-all"
+                              style={{
+                                background: isSuccess ? `${sac}25` : "#0d0b0bf0",
+                                border: `1px solid ${isSuccess ? sac : `${sac}30`}`,
+                                boxShadow: isSuccess ? `0 0 12px ${sac}30` : "none",
+                              }}
+                              onMouseEnter={e => {
+                                if (!isSuccess) {
+                                  (e.currentTarget as HTMLElement).style.background = `${sac}25`;
+                                  (e.currentTarget as HTMLElement).style.borderColor = `${sac}80`;
+                                  (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${sac}30, inset 0 0 8px ${sac}10`;
+                                }
+                              }}
+                              onMouseLeave={e => {
+                                if (!isSuccess) {
+                                  (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                                  (e.currentTarget as HTMLElement).style.borderColor = `${sac}30`;
+                                  (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                                }
+                              }}
+                              onClick={() => { if (!isSuccess) setSaveConfirmSlot(slotNum); }}
+                            >
+                              {isSuccess ? (
+                                <div className="flex items-center gap-2">
+                                  <span style={{ fontSize: "9px", color: sac }}>✓ SAVED!</span>
+                                </div>
+                              ) : (
+                                <>
+                                  <div className="flex items-center justify-between">
+                                    <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>SLOT {slotNum}</span>
+                                    {slotSave && (
+                                      <span style={{ fontSize: "6px", color: `${sac}60` }}>
+                                        {new Date(slotSave.updatedAt).toLocaleDateString()}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {slotSave ? (
+                                    <div style={{ marginTop: "4px" }}>
+                                      <span style={{ fontSize: "7px", color: `${sac}60` }}>
+                                        {(slotSave.playerData as any).name} · Lv.{(slotSave.playerData as any).level} · {(slotSave.playerData as any).element}
+                                      </span>
+                                    </div>
+                                  ) : (
+                                    <div style={{ marginTop: "4px" }}>
+                                      <span style={{ fontSize: "7px", color: `${sac}40` }}>EMPTY SLOT</span>
+                                    </div>
+                                  )}
+                                </>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${sac}20` }}>
+                        <button
+                          className="w-full flex items-center justify-center gap-2 px-3 py-2 transition-all"
+                          style={{ border: `1px solid ${sac}30`, background: "#0d0b0bf0" }}
+                          onMouseEnter={e => {
+                            (e.currentTarget as HTMLElement).style.background = `${sac}25`;
+                            (e.currentTarget as HTMLElement).style.borderColor = `${sac}80`;
+                          }}
+                          onMouseLeave={e => {
+                            (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                            (e.currentTarget as HTMLElement).style.borderColor = `${sac}30`;
+                          }}
+                          onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                        >
+                          <span style={{ fontSize: "8px", color: sac, letterSpacing: "1px" }}>← BACK</span>
+                        </button>
+                      </div>
+                      <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${sac}40, transparent)` }} />
+                    </div>
+                    {saveConfirmSlot !== null && (
+                      <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 10 }}>
+                        <div className="absolute inset-0 bg-black/60" onClick={() => setSaveConfirmSlot(null)} />
+                        <div className="relative w-[260px] overflow-hidden"
+                          style={{
+                            background: "linear-gradient(180deg, #0a0808f8 0%, #151010fc 100%)",
+                            border: `3px solid ${sac}`,
+                            boxShadow: `0 0 30px ${sac}50, 0 0 80px ${sac}20, inset 0 0 30px rgba(0,0,0,0.5)`,
+                          }}
+                        >
+                          <div style={{
+                            position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${sac}08 3px, ${sac}08 4px)`,
+                            pointerEvents: "none",
+                          }} />
+                          <div className="relative px-4 py-4 text-center">
+                            <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px", lineHeight: "1.8" }}>
+                              Save to Slot {saveConfirmSlot}?
+                            </p>
+                            {getSlotSave(saveConfirmSlot) && (
+                              <p style={{ fontSize: "7px", color: `${sac}60`, marginTop: "6px" }}>
+                                This will overwrite existing data
+                              </p>
+                            )}
+                          </div>
+                          <div className="relative px-3 pb-3 flex gap-2">
+                            <button
+                              className="flex-1 px-3 py-2 transition-all text-center"
+                              style={{ border: `1px solid ${sac}`, background: `${sac}20` }}
+                              onMouseEnter={e => {
+                                (e.currentTarget as HTMLElement).style.background = `${sac}40`;
+                                (e.currentTarget as HTMLElement).style.boxShadow = `0 0 12px ${sac}40`;
+                              }}
+                              onMouseLeave={e => {
+                                (e.currentTarget as HTMLElement).style.background = `${sac}20`;
+                                (e.currentTarget as HTMLElement).style.boxShadow = "none";
+                              }}
+                              onClick={() => handleSaveToSlot(saveConfirmSlot)}
+                            >
+                              <span style={{ fontSize: "8px", color: sac, letterSpacing: "1px" }}>CONFIRM</span>
+                            </button>
+                            <button
+                              className="flex-1 px-3 py-2 transition-all text-center"
+                              style={{ border: `1px solid ${sac}30`, background: "#0d0b0bf0" }}
+                              onMouseEnter={e => {
+                                (e.currentTarget as HTMLElement).style.background = `${sac}15`;
+                                (e.currentTarget as HTMLElement).style.borderColor = `${sac}60`;
+                              }}
+                              onMouseLeave={e => {
+                                (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
+                                (e.currentTarget as HTMLElement).style.borderColor = `${sac}30`;
+                              }}
+                              onClick={() => setSaveConfirmSlot(null)}
+                            >
+                              <span style={{ fontSize: "8px", color: `${sac}60`, letterSpacing: "1px" }}>CANCEL</span>
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {hutTransitionIn && (
+                <BattleTransition
+                  direction="in"
+                  onComplete={() => {
+                    setHutTransitionIn(false);
+                    setHutTransitionOut(true);
+                    setScreen("overworld");
+                  }}
+                />
+              )}
+              {hutTransitionOut && (
+                <BattleTransition
+                  direction="out"
+                  onComplete={() => setHutTransitionOut(false)}
+                />
+              )}
+            </>
+          );
+        })();
 
       case "battle":
         if (!state.player || !state.battle) return null;
@@ -612,7 +752,7 @@ function Game() {
             onEquip={equipItem}
             onUnequip={unequipItem}
             onUseItem={useItemOverworld}
-            onBack={() => { setScreen("overworld"); if (returnToHut) { setReturnToHut(false); setForceHutOpen(true); } }}
+            onBack={() => setScreen("hut")}
           />
         );
 

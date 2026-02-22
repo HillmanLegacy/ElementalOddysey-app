@@ -16,7 +16,7 @@ The application features a **React + Vite + Tailwind CSS** frontend using **shad
 -   **Overworld & Progression**: A node-based map with branching paths and distinct node types (hut, battle, shop, rest, shaman, boss). Navigation uses directional arrows. Defeating a region boss three times unlocks new party members and progresses to the next region.
     -   **Movement Blocking**: Uncleared battle/boss nodes block forward progression, requiring players to clear them or retreat to safe/cleared nodes.
     -   **Defeat Mechanic**: Defeat returns the player to the current region's hut.
-    -   **Hut Menu**: Provides access to Rest, Items, Party, and Save options with region-specific theming.
+    -   **Hut Screen**: Clicking the hut node triggers an EO fade transition to a dedicated hut interior screen (with a pixel-art background image). The hut menu popup appears on this screen, providing access to Rest, Items, Party, Save, Options, and Leave. Leaving the hut triggers an EO fade back to the overworld. Sub-screens (Items, Party, Save, Options) return to the hut screen on close/back.
 -   **Overworld Camera System**: A zoomed (1.8x) camera follows the player, with fixed UI overlays. Smooth panning is achieved with CSS transitions.
 -   **Tier-Based Map Variants**: Each region has 3 distinct map layouts that change with progression, offering fresh exploration.
 -   **Party System**: Defeating region bosses unlocks new party members from a pool. A bench system allows managing active and benched party members.
