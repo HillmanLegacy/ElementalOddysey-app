@@ -118,6 +118,7 @@ function Game() {
   const [showOptions, setShowOptions] = useState(false);
   const [hutTransitionIn, setHutTransitionIn] = useState(false);
   const [hutTransitionOut, setHutTransitionOut] = useState(false);
+  const [exitToMenuTransition, setExitToMenuTransition] = useState(false);
 
   useEffect(() => {
     const handleOpenOptions = () => { setShowOptions(true); };
@@ -293,7 +294,7 @@ function Game() {
             { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setShowSaveScreen(true); } },
             { label: "OPTIONS", desc: "Game settings", icon: Sparkles, action: () => { setShowOptions(true); } },
             { label: "LEAVE", desc: "Return to overworld", icon: ArrowLeft, action: leaveHut },
-            { label: "MAIN MENU", desc: "Exit to title screen", icon: LogOut, action: () => { stopAll(); setScreen("menu"); } },
+            { label: "MAIN MENU", desc: "Exit to title screen", icon: LogOut, action: () => { setExitToMenuTransition(true); } },
           ];
 
           return (
@@ -671,6 +672,16 @@ function Game() {
                 <BattleTransition
                   direction="out"
                   onComplete={() => setHutTransitionOut(false)}
+                />
+              )}
+              {exitToMenuTransition && (
+                <BattleTransition
+                  direction="in"
+                  onComplete={() => {
+                    setExitToMenuTransition(false);
+                    stopAll();
+                    setScreen("menu");
+                  }}
                 />
               )}
             </>
