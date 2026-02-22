@@ -285,6 +285,15 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
     setFacingRight(targetPos.x > charPos.x);
     moveCharacterTo(targetPos, () => {
       onMoveToNode(targetNode.id);
+      if (
+        targetNode.type === "battle" &&
+        player.clearedNodes.includes(targetNode.id) &&
+        Math.random() < 0.3
+      ) {
+        setTimeout(() => {
+          onNodeSelect(targetNode.id, targetPos);
+        }, 150);
+      }
     });
   };
 
