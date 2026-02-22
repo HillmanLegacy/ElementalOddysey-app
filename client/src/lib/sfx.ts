@@ -45,6 +45,7 @@ import fireballImpact from "@assets/fireball_impact_fire_demon_1771795321952.mp3
 import fireballWhoosh from "@assets/fireball_whoosh_fire_demon_1771795321953.mp3";
 import battleTransitionEffect from "@assets/battle_screen_transition_effect_1771797007586.mp3";
 import saveGameSound from "@assets/save_game_sfx_1771797899621.mp3";
+import healthPotionSfx from "@assets/health_potion_sfx_1771797980404.mp3";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
@@ -63,8 +64,8 @@ const SFX_GROUPS = {
   explosion: [explosionMedium],
   effectiveHit: [effectiveChime],
   notEffectiveHit: [notEffective],
-  potionHeal: [drinkSlurp, potionHeal],
-  potionMana: [drinkSlurp, potionMana],
+  potionHeal: [healthPotionSfx],
+  potionMana: [healthPotionSfx],
   eruptionFirecharge: [eruptionFirecharge],
   eruptionCleave: [eruptionCleave],
   eruptionFlamelash: [eruptionFlamelash],
