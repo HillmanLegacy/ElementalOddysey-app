@@ -738,12 +738,9 @@ export default function BattleScreen({
           scheduleTimer(() => {
             windBladeDamageTarget.current = targetIdx;
             onCastSpell(spell, targetIdx);
-            setWindSparkleTarget(targetIdx);
-            playSfx("magicRing", 0.4);
           }, 1600);
 
           scheduleTimer(() => {
-            setWindSparkleTarget(null);
             setWindBladeFrozenEnemy(null);
             if (battle.phase !== "victory" && battle.phase !== "defeat") {
               setTimeout(() => onFinishPlayerTurn(), 600);
