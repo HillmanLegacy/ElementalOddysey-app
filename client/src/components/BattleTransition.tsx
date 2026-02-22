@@ -272,7 +272,7 @@ export default function BattleTransition({ onComplete, direction = "in", element
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ zIndex: 999, pointerEvents: "all" }}
+      style={{ zIndex: 999, pointerEvents: "all", background: direction === "out" ? "#000" : "transparent" }}
     />
   );
 }

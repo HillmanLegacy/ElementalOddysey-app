@@ -250,13 +250,10 @@ function Game() {
               />
             )}
             {menuFadeIn && (
-              <>
-                <div className="absolute inset-0 bg-black" style={{ zIndex: 998 }} />
-                <BattleTransition
-                  direction="out"
-                  onComplete={() => setMenuFadeIn(false)}
-                />
-              </>
+              <BattleTransition
+                direction="out"
+                onComplete={() => setMenuFadeIn(false)}
+              />
             )}
             {postBattleReveal && (
               <BattleTransition
