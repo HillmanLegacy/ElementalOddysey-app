@@ -276,6 +276,7 @@ export default function BattleScreen({
   const windSparkleAfterRunBack = useRef<number | null>(null);
   const windBladeDamageTarget = useRef<number | null>(null);
   const [deathAnimPending, setDeathAnimPending] = useState<Set<number>>(new Set());
+  const deathSfxPlayed = useRef<Set<number>>(new Set());
   const [pixelDissolving, setPixelDissolving] = useState<Set<number>>(new Set());
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
@@ -1238,9 +1239,6 @@ export default function BattleScreen({
         timers.push(setTimeout(() => {
           setDeathAnimPending(prev => new Set(prev).add(idx));
           setEnemyAnimStates(prev => ({ ...prev, [idx]: "death" }));
-          if (enemy.element === "Fire" && !enemy.isBoss) {
-            playSfx("fireDemonDeath", 0.8);
-          }
         }, 600));
       }
       if (enemy.currentHp <= 0 && !isAnimatedEnemyCheck(enemy) && !pixelDissolving.has(idx)) {
@@ -1251,6 +1249,17 @@ export default function BattleScreen({
     });
     return () => timers.forEach(t => clearTimeout(t));
   }, [battle.enemies, isAnimatedEnemyCheck, enemyAnimStates, deathAnimPending, pixelDissolving]);
+
+  useEffect(() => {
+    battle.enemies.forEach((enemy, idx) => {
+      if (enemyAnimStates[idx] === "death" && !deathSfxPlayed.current.has(idx)) {
+        deathSfxPlayed.current.add(idx);
+        if (enemy.element === "Fire" && !enemy.isBoss) {
+          playSfx("fireDemonDeath", 0.8);
+        }
+      }
+    });
+  }, [enemyAnimStates, battle.enemies]);
 
   const animateEnemyAttack = useCallback((enemyIdx: number, enemy: typeof battle.enemies[0], onDone: () => void) => {
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
