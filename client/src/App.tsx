@@ -240,6 +240,7 @@ function Game() {
               }}
               onRest={() => {
                 restAtNode();
+                playSfx('recover');
                 toast({ title: "Rested", description: "HP and MP fully restored!" });
               }}
               onShamanVisit={openShaman}
@@ -315,7 +316,7 @@ function Game() {
           };
 
           const menuItems = [
-            { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { restAtNode(); toast({ title: "Rested", description: "HP and MP fully restored!" }); } },
+            { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { restAtNode(); playSfx('recover'); toast({ title: "Rested", description: "HP and MP fully restored!" }); } },
             { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setScreen("inventory"); } },
             ...(state.player!.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setShowPartyManagement(true); } }] : []),
             { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setShowSaveScreen(true); } },
