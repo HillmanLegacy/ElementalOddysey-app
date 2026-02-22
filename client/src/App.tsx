@@ -22,7 +22,7 @@ import BattleTransition from "@/components/BattleTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
-import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume } from "@/lib/music";
+import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume, fadeOutMusic, stopJingle } from "@/lib/music";
 import { playSfx } from "@/lib/sfx";
 import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut } from "lucide-react";
 import type { PlayerCharacter } from "@shared/schema";
@@ -91,22 +91,22 @@ function Game() {
   useEffect(() => {
     if (state.screen === "hut") {
       playAmbient("hut");
-      playMusic("lava_region_music");
+      if (!battleTransition && !battleEntryReveal) {
+        playMusic("lava_region_music");
+      }
     } else if (state.screen === "overworld" && state.player) {
       const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
       if (region.theme === "Fire") {
         playAmbient("lava_region");
-        playMusic("lava_region_music");
+        if (!postBattleReveal && !battleTransition) {
+          playMusic("lava_region_music");
+        }
       } else {
         stopAmbient();
         stopMusic();
       }
     } else if (state.screen === "battle" && state.player) {
       stopAmbient();
-      const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
-      if (region.theme === "Fire") {
-        playMusic("lava_region_battle");
-      }
     } else {
       stopAll();
     }
@@ -228,6 +228,7 @@ function Game() {
                 const r = getRegionForTier(state.player.currentRegion, t);
                 const ec = ELEMENT_COLORS[r.theme] || "#c9a44a";
                 setTransitionElementColor(ec);
+                fadeOutMusic(700);
                 setBattleTransition({ nodeId, elementColor: ec });
               }}
               onShopOpen={(nodeId: number) => {
@@ -274,7 +275,16 @@ function Game() {
               <BattleTransition
                 direction="out"
                 elementColor={transitionElementColor}
-                onComplete={() => setPostBattleReveal(false)}
+                onComplete={() => {
+                  setPostBattleReveal(false);
+                  if (state.player) {
+                    const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
+                    if (region.theme === "Fire") {
+                      playAmbient("lava_region");
+                      playMusic("lava_region_music");
+                    }
+                  }
+                }}
               />
             )}
             {hutTransitionOut && (
@@ -726,7 +736,13 @@ function Game() {
               onFinishPartyTurn={finishPartyTurn}
               onEnemyAttack={enemyAttack}
               onEnemyTurnEnd={enemyTurnEnd}
-              onEndBattle={(victory: boolean) => setBattleExitTransition({ victory })}
+              onEndBattle={(victory: boolean) => {
+                stopJingle();
+                if (!victory) {
+                  fadeOutMusic(700);
+                }
+                setBattleExitTransition({ victory });
+              }}
               onSetAnimating={setAnimating}
               onFinishPlayerTurn={finishPlayerTurn}
               onRepositionUnit={repositionUnit}
@@ -735,7 +751,15 @@ function Game() {
               <BattleTransition
                 direction="out"
                 elementColor={transitionElementColor}
-                onComplete={() => setBattleEntryReveal(false)}
+                onComplete={() => {
+                  setBattleEntryReveal(false);
+                  if (state.player) {
+                    const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
+                    if (region.theme === "Fire") {
+                      playMusic("lava_region_battle");
+                    }
+                  }
+                }}
               />
             )}
             {battleExitTransition && (
@@ -767,7 +791,16 @@ function Game() {
               <BattleTransition
                 direction="out"
                 elementColor={transitionElementColor}
-                onComplete={() => setPostBattleReveal(false)}
+                onComplete={() => {
+                  setPostBattleReveal(false);
+                  if (state.player) {
+                    const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
+                    if (region.theme === "Fire") {
+                      playAmbient("lava_region");
+                      playMusic("lava_region_music");
+                    }
+                  }
+                }}
               />
             )}
           </>

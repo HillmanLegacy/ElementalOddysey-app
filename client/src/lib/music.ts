@@ -3,9 +3,11 @@ import lavaRegion from "@assets/Lava_Region_1771785430844.mp3";
 import gameOverBgm from "@assets/Game_Over_BGM_1771786937036.mp3";
 import lavaRegionMusic from "@assets/Lava_Region_Music_1771787079908.mp3";
 import lavaRegionBattle from "@assets/Lava_Region_Battle_Music_Main_1771793565507.mp3";
+import battleVictory from "@assets/Battle_Victory_1771795972091.mp3";
 
 export type AmbientTrack = "hut" | "lava_region" | "game_over" | null;
 export type MusicTrack = "lava_region_music" | "lava_region_battle" | null;
+export type JingleTrack = "battle_victory";
 
 const AMBIENT_TRACKS: Record<string, string> = {
   hut: hutTheme,
@@ -16,6 +18,10 @@ const AMBIENT_TRACKS: Record<string, string> = {
 const MUSIC_TRACKS: Record<string, string> = {
   lava_region_music: lavaRegionMusic,
   lava_region_battle: lavaRegionBattle,
+};
+
+const JINGLE_TRACKS: Record<string, string> = {
+  battle_victory: battleVictory,
 };
 
 const FADE_DURATION = 800;
@@ -30,6 +36,8 @@ interface AudioLayer {
 const ambientLayer: AudioLayer = { element: null, currentTrack: null, fadeInterval: null };
 const musicLayer: AudioLayer = { element: null, currentTrack: null, fadeInterval: null };
 
+let jingleElement: HTMLAudioElement | null = null;
+
 let musicVolume = 0.5;
 
 function clearLayerFade(layer: AudioLayer) {
@@ -39,7 +47,7 @@ function clearLayerFade(layer: AudioLayer) {
   }
 }
 
-function fadeOutLayer(layer: AudioLayer, onDone: () => void) {
+function fadeOutLayer(layer: AudioLayer, onDone: () => void, duration = FADE_DURATION) {
   if (!layer.element || layer.element.paused) {
     onDone();
     return;
@@ -47,7 +55,7 @@ function fadeOutLayer(layer: AudioLayer, onDone: () => void) {
 
   clearLayerFade(layer);
   const startVol = layer.element.volume;
-  const steps = Math.ceil(FADE_DURATION / FADE_STEP);
+  const steps = Math.ceil(duration / FADE_STEP);
   let step = 0;
 
   layer.fadeInterval = setInterval(() => {
@@ -65,6 +73,29 @@ function fadeOutLayer(layer: AudioLayer, onDone: () => void) {
       layer.element.pause();
       layer.element.currentTime = 0;
       onDone();
+    }
+  }, FADE_STEP);
+}
+
+function fadeLayerToVolume(layer: AudioLayer, targetVol: number, duration = FADE_DURATION) {
+  if (!layer.element || layer.element.paused) return;
+  clearLayerFade(layer);
+  const startVol = layer.element.volume;
+  const steps = Math.ceil(duration / FADE_STEP);
+  let step = 0;
+
+  layer.fadeInterval = setInterval(() => {
+    step++;
+    if (!layer.element) {
+      clearLayerFade(layer);
+      return;
+    }
+    const progress = step / steps;
+    layer.element.volume = startVol + (targetVol - startVol) * progress;
+
+    if (step >= steps) {
+      layer.element.volume = targetVol;
+      clearLayerFade(layer);
     }
   }, FADE_STEP);
 }
@@ -170,13 +201,61 @@ export function playMusic(track: MusicTrack) {
   }
 }
 
+export function fadeOutMusic(duration = FADE_DURATION) {
+  if (musicLayer.element && !musicLayer.element.paused) {
+    fadeOutLayer(musicLayer, () => {
+      musicLayer.currentTrack = null;
+      if (musicLayer.element) {
+        musicLayer.element.src = "";
+        musicLayer.element = null;
+      }
+    }, duration);
+  }
+}
+
+export function fadeMusicTo(fraction: number, duration = FADE_DURATION) {
+  fadeLayerToVolume(musicLayer, musicVolume * fraction, duration);
+}
+
 export function stopMusic() {
   stopLayer(musicLayer);
+}
+
+export function playJingle(track: JingleTrack, onEnd?: () => void) {
+  const src = JINGLE_TRACKS[track];
+  if (!src) return;
+
+  if (jingleElement) {
+    jingleElement.pause();
+    jingleElement.src = "";
+  }
+
+  jingleElement = new Audio(src);
+  jingleElement.loop = false;
+  jingleElement.volume = musicVolume;
+  jingleElement.play().catch(() => {});
+
+  jingleElement.addEventListener("ended", () => {
+    if (jingleElement) {
+      jingleElement.src = "";
+      jingleElement = null;
+    }
+    onEnd?.();
+  }, { once: true });
+}
+
+export function stopJingle() {
+  if (jingleElement) {
+    jingleElement.pause();
+    jingleElement.src = "";
+    jingleElement = null;
+  }
 }
 
 export function stopAll() {
   stopAmbient();
   stopMusic();
+  stopJingle();
 }
 
 export function setMusicVolume(percent: number) {
@@ -186,5 +265,8 @@ export function setMusicVolume(percent: number) {
   }
   if (musicLayer.element && !musicLayer.element.paused && !musicLayer.fadeInterval) {
     musicLayer.element.volume = musicVolume;
+  }
+  if (jingleElement && !jingleElement.paused) {
+    jingleElement.volume = musicVolume;
   }
 }
