@@ -719,6 +719,7 @@ export default function BattleScreen({
         setAnimPhase("incinerationSlash");
         setIncinerationSlashActive(true);
         setIncinerationFrozenEnemy(targetIdx);
+        playSfx("incinerationBladeSwings", 0.8);
 
         const frameDuration = 1000 / 14;
         const holdDuration = 333;
