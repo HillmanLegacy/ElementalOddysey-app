@@ -47,6 +47,7 @@ import battleTransitionEffect from "@assets/battle_screen_transition_effect_1771
 import saveGameSound from "@assets/save_game_sfx_1771797899621.mp3";
 import healthPotionSfx from "@assets/health_potion_sfx_1771797980404.mp3";
 import recoverSfx from "@assets/recover_sfx_1771798298190.mp3";
+import damageSfx from "@assets/damage_sfx_1771801964292.mp3";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
@@ -80,6 +81,7 @@ const SFX_GROUPS = {
   battleTransition: [battleTransitionEffect],
   saveGame: [saveGameSound],
   recover: [recoverSfx],
+  damage: [damageSfx],
 } as const;
 
 export type SfxName = keyof typeof SFX_GROUPS;

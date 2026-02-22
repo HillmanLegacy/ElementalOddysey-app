@@ -1065,6 +1065,7 @@ export default function BattleScreen({
           setTimeout(() => setPlayerFlash(false), 500);
         }
         playSfx("gruntHurt", 0.8);
+        playSfx("damage", 0.9);
       }
     }
   }, [battle.log.length, animPhase, partyAnimPhase, pendingTargetIdx, battle.enemies, battle.animation, spawnDamageNumber, battle.lastElementLabel, scheduleTimer]);
@@ -2186,7 +2187,7 @@ export default function BattleScreen({
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               transform: `translateX(-50%)`,
-              animation: eruptionShakeIntensity > 0 ? `eruptionChargeShake ${Math.max(0.03, 0.12 - eruptionShakeIntensity * 0.01)}s infinite` : "none",
+              animation: eruptionShakeIntensity > 0 ? `eruptionChargeShake ${Math.max(0.03, 0.12 - eruptionShakeIntensity * 0.01)}s infinite` : playerFlash ? `enemyHit 0.4s ease-out` : "none",
               ["--shake-px" as string]: `${eruptionShakeIntensity * 0.6}px`,
               opacity: fujinDashPhase === "fadeout" ? 0 : 1,
               filter: dodgeBlur && dodgeBlur.type === "player" ? "blur(3px) opacity(0.6)" : "none",
