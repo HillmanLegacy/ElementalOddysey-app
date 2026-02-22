@@ -771,7 +771,7 @@ export default function BattleScreen({
         scheduleTimer(() => {
           const id1 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id1 }]);
-          playSfx("incinerationCleave", 1.0);
+          playSfx("incinerationCleave", 1.2);
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);
@@ -785,7 +785,7 @@ export default function BattleScreen({
         scheduleTimer(() => {
           const id2 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id2 }]);
-          playSfx("incinerationCleave", 1.0);
+          playSfx("incinerationCleave", 1.2);
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);

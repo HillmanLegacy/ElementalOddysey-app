@@ -16,6 +16,10 @@ const AMBIENT_TRACKS: Record<string, string> = {
   game_over: gameOverBgm,
 };
 
+const AMBIENT_VOLUME_SCALE: Record<string, number> = {
+  hut: 0.85,
+};
+
 const MUSIC_TRACKS: Record<string, string> = {
   lava_region_music: lavaRegionMusic,
   lava_region_battle: lavaRegionBattle,
@@ -170,12 +174,15 @@ export function playAmbient(track: AmbientTrack) {
   const src = AMBIENT_TRACKS[track];
   if (!src) return;
 
+  const scale = AMBIENT_VOLUME_SCALE[track] ?? 1.0;
+  const vol = musicVolume * scale;
+
   if (ambientLayer.currentTrack && ambientLayer.element && !ambientLayer.element.paused) {
     fadeOutLayer(ambientLayer, () => {
-      startLayerTrack(ambientLayer, src, track, musicVolume);
+      startLayerTrack(ambientLayer, src, track, vol);
     });
   } else {
-    startLayerTrack(ambientLayer, src, track, musicVolume);
+    startLayerTrack(ambientLayer, src, track, vol);
   }
 }
 
@@ -263,7 +270,8 @@ export function stopAll() {
 export function setMusicVolume(percent: number) {
   musicVolume = Math.max(0, Math.min(1, percent / 100));
   if (ambientLayer.element && !ambientLayer.element.paused && !ambientLayer.fadeInterval) {
-    ambientLayer.element.volume = musicVolume;
+    const scale = ambientLayer.currentTrack ? (AMBIENT_VOLUME_SCALE[ambientLayer.currentTrack] ?? 1.0) : 1.0;
+    ambientLayer.element.volume = musicVolume * scale;
   }
   if (musicLayer.element && !musicLayer.element.paused && !musicLayer.fadeInterval) {
     musicLayer.element.volume = musicVolume;
