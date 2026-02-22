@@ -90,7 +90,7 @@ const SFX_GROUPS = {
 
 export type SfxName = keyof typeof SFX_GROUPS;
 
-const POOL_SIZE = 3;
+const POOL_SIZE = 6;
 const audioPool = new Map<string, HTMLAudioElement[]>();
 
 let globalVolume = 0.8;

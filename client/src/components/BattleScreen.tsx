@@ -683,7 +683,10 @@ export default function BattleScreen({
           windBladeAnimPending.current = false;
           setWindBladeActive(true);
 
-          const slashes = Array.from({ length: 5 }, (_, i) => ({
+          playSfxPitched("windSlash", 0.8, 1.2, 0.9);
+
+          const slashCount = 7;
+          const slashes = Array.from({ length: slashCount }, (_, i) => ({
             id: i,
             rotation: Math.random() * 360,
             offsetX: (Math.random() - 0.5) * 40,
@@ -693,10 +696,11 @@ export default function BattleScreen({
           }));
           setWindBladeSlashes(slashes);
 
-          for (let i = 0; i < 5; i++) {
+          const slashInterval = 120;
+          for (let i = 0; i < slashCount; i++) {
             scheduleTimer(() => {
               setWindBladeSlashes(prev => prev.map((s, si) => si === i ? { ...s, active: true } : s));
-              playSfxPitched("windSlash", 0.7, 1.4, 0.8);
+              playSfxPitched("windSlash", 0.7, 1.4, 0.7 + Math.random() * 0.3);
               const hitEnemy = battle.enemies[targetIdx];
               const hasAnim = hitEnemy && ((hitEnemy.element === "Fire" && !hitEnemy.isBoss) || hitEnemy.id === "dragon_lord" || hitEnemy.id === "frost_lizard" || hitEnemy.id === "jotem");
               if (hasAnim) {
@@ -706,11 +710,11 @@ export default function BattleScreen({
                     if (prev[targetIdx] === "death") return prev;
                     return { ...prev, [targetIdx]: "idle" };
                   });
-                }, 180);
+                }, 100);
               }
               setEnemyHitIdx(targetIdx);
-              scheduleTimer(() => setEnemyHitIdx(null), 180);
-            }, i * 240);
+              scheduleTimer(() => setEnemyHitIdx(null), 100);
+            }, i * slashInterval);
           }
 
           scheduleTimer(() => {
