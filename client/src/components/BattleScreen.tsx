@@ -295,6 +295,7 @@ export default function BattleScreen({
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
   const pendingEruptionCleave = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const eruptionFirechargeAudio = useRef<HTMLAudioElement | null>(null);
+  const eruptionFlamelashAudio = useRef<HTMLAudioElement | null>(null);
   const fireImpactId = useRef(0);
   const fujinSlashId = useRef(0);
   const damageIdRef = useRef(0);
@@ -814,7 +815,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(true);
-          playSfx("eruptionFlamelash", 0.8);
+          eruptionFlamelashAudio.current = playSfx("eruptionFlamelash", 0.8);
           eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0.8);
         }, pauseFrame1Time + pauseFrame1Duration);
 
@@ -825,6 +826,8 @@ export default function BattleScreen({
         scheduleTimer(() => {
           stopSfx(eruptionFirechargeAudio.current);
           eruptionFirechargeAudio.current = null;
+          stopSfx(eruptionFlamelashAudio.current);
+          eruptionFlamelashAudio.current = null;
           setEruptionNukeActive(true);
           setEruptionNukeTargetIdx(targetIdx);
           playSfx("eruptionCleave");
