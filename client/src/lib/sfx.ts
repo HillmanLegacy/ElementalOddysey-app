@@ -36,7 +36,7 @@ import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1771634677180
 import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771800952507.mp3";
 import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1771793599519.wav";
 import eruptionDownwardSlash from "@assets/eruption_cleave_downward_slash_sfx_1771794785560.mp3";
-import incinerationCleave from "@assets/Incineration_Cleave_1771658647621.wav";
+import incinerationCleave from "@assets/incineration_slash_flame_swings_1771801484016.mp3";
 import incinerationBladeSwings from "@assets/incineration_slash_blade_swings_1771793878417.mp3";
 import blockingSound from "@assets/blocking_sound_1771793599518.mp3";
 import menuSelect from "@assets/menu_select_1771792929044.mp3";
