@@ -1066,13 +1066,6 @@ function Game() {
                 elementColor={transitionElementColor}
                 onComplete={() => {
                   setPostBattleReveal(false);
-                  if (state.player) {
-                    const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
-                    if (region.theme === "Fire") {
-                      playAmbient("lava_region");
-                      playMusic("lava_region_music");
-                    }
-                  }
                 }}
               />
             )}
