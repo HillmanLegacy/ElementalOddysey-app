@@ -35,6 +35,7 @@ import mifuneSwordSlice from "@/assets/audio/mifune-sword-slice.wav";
 import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1771634677180.wav";
 import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771793599518.mp3";
 import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1771793599519.wav";
+import eruptionDownwardSlash from "@assets/eruption_cleave_downward_slash_sfx_1771794785560.mp3";
 import incinerationCleave from "@assets/Incineration_Cleave_1771658647621.wav";
 import incinerationBladeSwings from "@assets/incineration_slash_blade_swings_1771793878417.mp3";
 import blockingSound from "@assets/blocking_sound_1771793599518.mp3";
@@ -62,6 +63,7 @@ const SFX_GROUPS = {
   eruptionFirecharge: [eruptionFirecharge],
   eruptionCleave: [eruptionCleave],
   eruptionFlamelash: [eruptionFlamelash],
+  eruptionDownwardSlash: [eruptionDownwardSlash],
   incinerationCleave: [incinerationCleave],
   incinerationBladeSwings: [incinerationBladeSwings],
   menuSelect: [menuSelect],
