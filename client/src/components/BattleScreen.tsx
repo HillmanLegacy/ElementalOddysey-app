@@ -844,19 +844,20 @@ export default function BattleScreen({
         const nukeStartTime = resumeAfterFlamelash + (frameDuration * 3);
         const totalAnimTime = nukeStartTime + nukeDuration + 400;
 
+        const flamelashStart = pauseFrame1Time + pauseFrame1Duration;
         scheduleTimer(() => {
           setEruptionFlamelashActive(true);
           eruptionFlamelashAudio.current = playSfx("eruptionFlamelash", 0.8);
           eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0.8);
           setEruptionShakeIntensity(1);
-          const shakeSteps = 8;
-          const stepTime = flamelashDuration / shakeSteps;
-          for (let i = 1; i <= shakeSteps; i++) {
-            scheduleTimer(() => {
-              setEruptionShakeIntensity(Math.min(i + 1, shakeSteps));
-            }, stepTime * i);
-          }
-        }, pauseFrame1Time + pauseFrame1Duration);
+        }, flamelashStart);
+        const shakeSteps = 8;
+        const stepTime = flamelashDuration / shakeSteps;
+        for (let i = 1; i <= shakeSteps; i++) {
+          scheduleTimer(() => {
+            setEruptionShakeIntensity(Math.min(i + 1, shakeSteps));
+          }, flamelashStart + stepTime * i);
+        }
 
         scheduleTimer(() => {
           setEruptionFlamelashActive(false);
