@@ -132,6 +132,7 @@ function Game() {
   const [transitionElementColor, setTransitionElementColor] = useState<string | undefined>(undefined);
   const [menuFadeOut, setMenuFadeOut] = useState<{ save: any } | null>(null);
   const [menuFadeIn, setMenuFadeIn] = useState(false);
+  const [menuReveal, setMenuReveal] = useState(false);
 
   const handleSaveToSlot = async (slotNumber: number) => {
     if (!state.player) return;
@@ -186,6 +187,12 @@ function Game() {
                   setMenuFadeIn(true);
                   loadGame(save.playerData as PlayerCharacter);
                 }}
+              />
+            )}
+            {menuReveal && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setMenuReveal(false)}
               />
             )}
           </>
@@ -680,6 +687,7 @@ function Game() {
                   onComplete={() => {
                     setExitToMenuTransition(false);
                     stopAll();
+                    setMenuReveal(true);
                     setScreen("menu");
                   }}
                 />
