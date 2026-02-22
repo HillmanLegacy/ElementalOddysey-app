@@ -117,6 +117,8 @@ export default function BattleTransition({ onComplete, direction = "in", element
   const completedRef = useRef(false);
   const orderRef = useRef<number[]>([]);
   const particlesRef = useRef<Particle[]>([]);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -142,6 +144,7 @@ export default function BattleTransition({ onComplete, direction = "in", element
       particlesRef.current = createParticles(w, h, elementColor, 80);
     }
 
+    completedRef.current = false;
     startTimeRef.current = performance.now();
     let lastTime = startTimeRef.current;
     let animId: number;
@@ -256,14 +259,14 @@ export default function BattleTransition({ onComplete, direction = "in", element
         }
         if (!completedRef.current) {
           completedRef.current = true;
-          setTimeout(onComplete, 50);
+          setTimeout(() => onCompleteRef.current(), 50);
         }
       }
     };
 
     animId = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animId);
-  }, [onComplete, direction, elementColor]);
+  }, [direction, elementColor]);
 
   return (
     <canvas
