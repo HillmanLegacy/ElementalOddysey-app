@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Slider } from "@/components/ui/slider";
 import type { GameState } from "@shared/schema";
 import { Swords, ArrowLeft } from "lucide-react";
@@ -20,6 +20,234 @@ interface MainMenuProps {
 
 const ACCENT = "#c9a44a";
 const PIXEL_FONT = "'Press Start 2P', cursive";
+
+function AnimatedOverlay() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+
+    let animId: number;
+    let time = 0;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    interface GrassBlade {
+      x: number;
+      baseY: number;
+      h: number;
+      w: number;
+      phase: number;
+      speed: number;
+      color: string;
+    }
+
+    interface CloudPuff {
+      x: number;
+      y: number;
+      w: number;
+      h: number;
+      speed: number;
+      opacity: number;
+    }
+
+    interface Bird {
+      x: number;
+      y: number;
+      speed: number;
+      wingPhase: number;
+      wingSpeed: number;
+      size: number;
+    }
+
+    interface WindParticle {
+      x: number;
+      y: number;
+      speed: number;
+      length: number;
+      opacity: number;
+      life: number;
+      maxLife: number;
+    }
+
+    const grassBlades: GrassBlade[] = [];
+    const grassColors = [
+      "rgba(80,140,40,0.7)", "rgba(60,120,30,0.6)", "rgba(100,160,50,0.5)",
+      "rgba(40,100,20,0.6)", "rgba(120,180,60,0.4)", "rgba(70,130,35,0.65)",
+    ];
+    for (let i = 0; i < 200; i++) {
+      grassBlades.push({
+        x: Math.random(),
+        baseY: 0.72 + Math.random() * 0.28,
+        h: 8 + Math.random() * 18,
+        w: 1 + Math.random() * 2,
+        phase: Math.random() * Math.PI * 2,
+        speed: 0.02 + Math.random() * 0.03,
+        color: grassColors[Math.floor(Math.random() * grassColors.length)],
+      });
+    }
+
+    const clouds: CloudPuff[] = [];
+    for (let i = 0; i < 6; i++) {
+      clouds.push({
+        x: Math.random() * 1.4 - 0.2,
+        y: 0.05 + Math.random() * 0.2,
+        w: 0.08 + Math.random() * 0.12,
+        h: 0.015 + Math.random() * 0.02,
+        speed: 0.0002 + Math.random() * 0.0004,
+        opacity: 0.06 + Math.random() * 0.1,
+      });
+    }
+
+    const birds: Bird[] = [];
+    function spawnBird() {
+      birds.push({
+        x: -0.05,
+        y: 0.08 + Math.random() * 0.25,
+        speed: 0.0004 + Math.random() * 0.0006,
+        wingPhase: Math.random() * Math.PI * 2,
+        wingSpeed: 0.08 + Math.random() * 0.06,
+        size: 2 + Math.random() * 2,
+      });
+    }
+    for (let i = 0; i < 3; i++) {
+      const b = {
+        x: 0.3 + Math.random() * 0.5,
+        y: 0.08 + Math.random() * 0.2,
+        speed: 0.0004 + Math.random() * 0.0006,
+        wingPhase: Math.random() * Math.PI * 2,
+        wingSpeed: 0.08 + Math.random() * 0.06,
+        size: 2 + Math.random() * 2,
+      };
+      birds.push(b);
+    }
+
+    const windParticles: WindParticle[] = [];
+
+    function draw() {
+      const W = canvas!.width;
+      const H = canvas!.height;
+      time++;
+
+      ctx!.clearRect(0, 0, W, H);
+
+      for (const cloud of clouds) {
+        cloud.x += cloud.speed;
+        if (cloud.x > 1.3) cloud.x = -0.2;
+        const cx = cloud.x * W;
+        const cy = cloud.y * H;
+        const cw = cloud.w * W;
+        const ch = cloud.h * H;
+        ctx!.fillStyle = `rgba(255,255,255,${cloud.opacity})`;
+        for (let j = 0; j < 4; j++) {
+          const ox = (j - 1.5) * cw * 0.35;
+          const oy = Math.sin(j * 1.5) * ch * 0.4;
+          ctx!.beginPath();
+          ctx!.ellipse(cx + ox, cy + oy, cw * 0.3, ch, 0, 0, Math.PI * 2);
+          ctx!.fill();
+        }
+      }
+
+      for (let i = birds.length - 1; i >= 0; i--) {
+        const bird = birds[i];
+        bird.x += bird.speed;
+        bird.wingPhase += bird.wingSpeed;
+        if (bird.x > 1.1) { birds.splice(i, 1); continue; }
+
+        const bx = bird.x * W;
+        const by = bird.y * H + Math.sin(time * 0.015 + bird.wingPhase) * 3;
+        const wing = Math.sin(bird.wingPhase) * bird.size * 1.5;
+        const s = bird.size;
+
+        ctx!.strokeStyle = "rgba(30,30,50,0.5)";
+        ctx!.lineWidth = Math.max(1, s * 0.4);
+        ctx!.beginPath();
+        ctx!.moveTo(bx - s * 2, by - wing);
+        ctx!.quadraticCurveTo(bx - s * 0.5, by - Math.abs(wing) * 0.3, bx, by);
+        ctx!.quadraticCurveTo(bx + s * 0.5, by - Math.abs(wing) * 0.3, bx + s * 2, by - wing);
+        ctx!.stroke();
+      }
+
+      if (time % 180 === 0 && birds.length < 6) {
+        spawnBird();
+        if (Math.random() > 0.5) spawnBird();
+      }
+
+      if (time % 8 === 0 && windParticles.length < 15) {
+        windParticles.push({
+          x: -0.02,
+          y: 0.3 + Math.random() * 0.5,
+          speed: 0.003 + Math.random() * 0.004,
+          length: 0.03 + Math.random() * 0.05,
+          opacity: 0.04 + Math.random() * 0.08,
+          life: 0,
+          maxLife: 80 + Math.random() * 120,
+        });
+      }
+
+      for (let i = windParticles.length - 1; i >= 0; i--) {
+        const wp = windParticles[i];
+        wp.x += wp.speed;
+        wp.y += Math.sin(time * 0.02 + wp.x * 10) * 0.001;
+        wp.life++;
+        if (wp.life > wp.maxLife || wp.x > 1.1) { windParticles.splice(i, 1); continue; }
+
+        const fadeIn = Math.min(1, wp.life / 20);
+        const fadeOut = Math.max(0, 1 - (wp.life - wp.maxLife + 30) / 30);
+        const alpha = wp.opacity * fadeIn * fadeOut;
+
+        const wx = wp.x * W;
+        const wy = wp.y * H;
+        const wl = wp.length * W;
+
+        ctx!.strokeStyle = `rgba(255,255,255,${alpha})`;
+        ctx!.lineWidth = 1;
+        ctx!.beginPath();
+        ctx!.moveTo(wx, wy);
+        ctx!.lineTo(wx + wl, wy + Math.sin(wp.x * 20) * 2);
+        ctx!.stroke();
+      }
+
+      const windOffset = Math.sin(time * 0.025) * 0.6 + Math.sin(time * 0.01) * 0.3;
+
+      for (const blade of grassBlades) {
+        const gx = blade.x * W;
+        const gy = blade.baseY * H;
+        const sway = Math.sin(time * blade.speed + blade.phase + blade.x * 8) * 4 + windOffset * 3;
+
+        ctx!.strokeStyle = blade.color;
+        ctx!.lineWidth = blade.w;
+        ctx!.beginPath();
+        ctx!.moveTo(gx, gy);
+        ctx!.quadraticCurveTo(
+          gx + sway * 0.6,
+          gy - blade.h * 0.5,
+          gx + sway,
+          gy - blade.h
+        );
+        ctx!.stroke();
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+
+    animId = requestAnimationFrame(draw);
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", resize);
+    };
+  }, []);
+
+  return <canvas ref={canvasRef} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 2 }} />;
+}
 
 export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, saves, textSpeed, musicVolume, sfxVolume, showDamageNumbers, onSettingsChange }: MainMenuProps) {
   const [showOptions, setShowOptions] = useState(false);
@@ -50,12 +278,12 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
 
   const menuButtonStyle: React.CSSProperties = {
     fontFamily: PIXEL_FONT,
-    fontSize: "11px",
+    fontSize: "10px",
     letterSpacing: "2px",
-    border: `2px solid ${ACCENT}`,
-    background: "rgba(0,0,0,0.7)",
+    border: `2px solid ${ACCENT}90`,
+    background: "rgba(0,0,0,0.55)",
     color: ACCENT,
-    padding: "14px 24px",
+    padding: "10px 20px",
     cursor: "pointer",
     textTransform: "uppercase" as const,
     borderRadius: 0,
@@ -63,6 +291,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
     textAlign: "center" as const,
     transition: "all 0.15s",
     textShadow: `0 0 8px ${ACCENT}40`,
+    backdropFilter: "blur(4px)",
   };
 
   const menuButtonHover = (e: React.MouseEvent) => {
@@ -70,7 +299,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
     (e.currentTarget as HTMLElement).style.boxShadow = `0 0 15px ${ACCENT}40, inset 0 0 10px ${ACCENT}15`;
   };
   const menuButtonLeave = (e: React.MouseEvent) => {
-    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.7)";
+    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.55)";
     (e.currentTarget as HTMLElement).style.boxShadow = "none";
   };
 
@@ -80,10 +309,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
         <div className="absolute inset-0">
           <img src={mainMenuBg} alt="" className="w-full h-full object-cover" style={{ imageRendering: "pixelated" }} />
         </div>
-        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.85)" }} />
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ACCENT}08 3px, ${ACCENT}08 4px)`,
-        }} />
+        <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.8)" }} />
 
         <div className="relative z-10 flex flex-col items-center justify-center h-full px-4">
           <div className="w-[340px] overflow-hidden" style={{
@@ -91,10 +317,6 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
             border: `3px solid ${ACCENT}`,
             boxShadow: `0 0 20px ${ACCENT}40, 0 0 60px ${ACCENT}15, inset 0 0 30px rgba(0,0,0,0.5)`,
           }}>
-            <div className="absolute inset-0 pointer-events-none" style={{
-              backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ACCENT}08 3px, ${ACCENT}08 4px)`,
-            }} />
-
             <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ borderBottom: `2px solid ${ACCENT}60` }}>
               <span style={{ fontSize: "10px", color: ACCENT, letterSpacing: "2px" }}>LOAD GAME</span>
               <button
@@ -102,7 +324,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 style={{ border: `1px solid ${ACCENT}50`, background: "rgba(0,0,0,0.4)" }}
                 onClick={() => { playSfx('menuSelect'); setShowLoadScreen(false); }}
               >
-                <span style={{ fontSize: "8px", color: ACCENT }}>✕</span>
+                <span style={{ fontSize: "8px", color: ACCENT }}>X</span>
               </button>
             </div>
 
@@ -203,81 +425,89 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
         />
       </div>
 
-      <div className="absolute inset-0 pointer-events-none" style={{
-        background: "linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 30%, transparent 60%, rgba(0,0,0,0.5) 100%)",
-      }} />
+      <AnimatedOverlay />
 
       <div className="absolute inset-0 pointer-events-none" style={{
-        boxShadow: "inset 0 0 120px 40px rgba(0,0,0,0.4)",
+        background: "linear-gradient(to bottom, rgba(0,0,0,0.08) 0%, transparent 25%, transparent 65%, rgba(0,0,0,0.35) 100%)",
+        zIndex: 3,
       }} />
 
-      <div className="relative z-10 flex flex-col items-center justify-center h-full gap-6 px-4">
-        <div className="text-center mb-2">
-          <div className="relative inline-block">
-            <div
-              className="transition-all duration-[1200ms] ease-out"
-              style={{
-                opacity: swordVisible ? 1 : 0,
-                transform: swordVisible ? "translateY(0) scale(1)" : "translateY(-20px) scale(0.5)",
-              }}
-            >
-              <Swords className="w-8 h-8 mx-auto mb-3" style={{ color: ACCENT, filter: `drop-shadow(0 0 8px ${ACCENT}80)` }} />
-            </div>
+      <div className="relative flex flex-col h-full" style={{ zIndex: 10 }}>
+        <div className="flex-1 flex items-center justify-center" style={{ paddingBottom: "8%" }}>
+          <div className="text-center">
+            <div className="relative inline-block">
+              <div
+                className="transition-all duration-[1200ms] ease-out"
+                style={{
+                  opacity: swordVisible ? 1 : 0,
+                  transform: swordVisible ? "translateY(0) scale(1)" : "translateY(-20px) scale(0.5)",
+                }}
+              >
+                <Swords className="w-9 h-9 mx-auto mb-3" style={{ color: ACCENT, filter: `drop-shadow(0 0 10px ${ACCENT}90) drop-shadow(0 2px 3px rgba(0,0,0,0.6))` }} />
+              </div>
 
-            <h1
-              className="text-3xl md:text-5xl font-bold tracking-wider transition-all duration-[1500ms] ease-out"
-              style={{
-                fontFamily: PIXEL_FONT,
-                color: "#d4a843",
-                textShadow: `0 0 20px rgba(212,168,67,0.4), 0 2px 4px rgba(0,0,0,0.9), 0 0 60px rgba(180,130,40,0.2)`,
-                letterSpacing: "0.12em",
-                opacity: titleVisible ? 1 : 0,
-                transform: titleVisible ? "translateY(0) scale(1)" : "translateY(15px) scale(0.95)",
-              }}
-              data-testid="text-game-title"
-            >
-              ELEMENTAL
-            </h1>
+              <h1
+                className="text-4xl md:text-5xl font-bold tracking-wider transition-all duration-[1500ms] ease-out"
+                style={{
+                  fontFamily: PIXEL_FONT,
+                  color: "#e8c55a",
+                  textShadow: `0 0 30px rgba(232,197,90,0.5), 0 3px 6px rgba(0,0,0,0.9), 0 0 80px rgba(200,160,50,0.2), 2px 2px 0px rgba(0,0,0,0.5)`,
+                  letterSpacing: "0.14em",
+                  opacity: titleVisible ? 1 : 0,
+                  transform: titleVisible ? "translateY(0) scale(1)" : "translateY(15px) scale(0.95)",
+                }}
+                data-testid="text-game-title"
+              >
+                ELEMENTAL
+              </h1>
 
-            <h2
-              className="text-xl md:text-2xl tracking-[0.4em] mt-1 transition-all duration-[1200ms] ease-out"
-              style={{
-                fontFamily: PIXEL_FONT,
-                color: "#a08030",
-                textShadow: "0 0 15px rgba(160,128,48,0.3), 0 1px 3px rgba(0,0,0,0.8)",
-                fontWeight: 400,
-                opacity: subtitleVisible ? 1 : 0,
-                transform: subtitleVisible ? "translateY(0)" : "translateY(10px)",
-              }}
-            >
-              ODYSSEY
-            </h2>
+              <h2
+                className="text-xl md:text-2xl tracking-[0.5em] mt-1 transition-all duration-[1200ms] ease-out"
+                style={{
+                  fontFamily: PIXEL_FONT,
+                  color: "#c4a040",
+                  textShadow: `0 0 20px rgba(196,160,64,0.3), 0 2px 4px rgba(0,0,0,0.8), 1px 1px 0px rgba(0,0,0,0.4)`,
+                  fontWeight: 400,
+                  opacity: subtitleVisible ? 1 : 0,
+                  transform: subtitleVisible ? "translateY(0)" : "translateY(10px)",
+                }}
+              >
+                ODYSSEY
+              </h2>
 
-            <div
-              className="flex items-center justify-center gap-3 mt-3 transition-all duration-[1000ms] ease-out"
-              style={{
-                opacity: taglineVisible ? 1 : 0,
-                transform: taglineVisible ? "translateY(0)" : "translateY(8px)",
-              }}
-            >
-              <div className="h-px w-12" style={{ background: `linear-gradient(to right, transparent, ${ACCENT}60)` }} />
-              <p style={{ fontSize: "7px", letterSpacing: "0.2em", color: "#8a7040", fontFamily: PIXEL_FONT, textTransform: "uppercase" }}>
-                A Medieval Fantasy
-              </p>
-              <div className="h-px w-12" style={{ background: `linear-gradient(to left, transparent, ${ACCENT}60)` }} />
+              <div
+                className="flex items-center justify-center gap-3 mt-4 transition-all duration-[1000ms] ease-out"
+                style={{
+                  opacity: taglineVisible ? 1 : 0,
+                  transform: taglineVisible ? "translateY(0)" : "translateY(8px)",
+                }}
+              >
+                <div className="h-px w-14" style={{ background: `linear-gradient(to right, transparent, ${ACCENT}70)` }} />
+                <p style={{
+                  fontSize: "7px",
+                  letterSpacing: "0.25em",
+                  color: "#b8963a",
+                  fontFamily: PIXEL_FONT,
+                  textTransform: "uppercase",
+                  textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                }}>
+                  A Medieval Fantasy
+                </p>
+                <div className="h-px w-14" style={{ background: `linear-gradient(to left, transparent, ${ACCENT}70)` }} />
+              </div>
             </div>
           </div>
         </div>
 
         <div
-          className="transition-all duration-[1500ms] ease-out"
+          className="pb-6 flex justify-center transition-all duration-[1500ms] ease-out"
           style={{
             opacity: buttonsVisible ? 1 : 0,
-            transform: buttonsVisible ? "translateY(0)" : "translateY(20px)",
+            transform: buttonsVisible ? "translateY(0)" : "translateY(30px)",
           }}
         >
           {!showOptions ? (
-            <div className="flex flex-col gap-3 w-64">
+            <div className="flex flex-col gap-2 w-56">
               <button
                 style={menuButtonStyle}
                 onMouseEnter={menuButtonHover}
@@ -289,7 +519,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               </button>
               {hasSave && (
                 <button
-                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}80`, color: `${ACCENT}cc` }}
+                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}70`, color: `${ACCENT}cc` }}
                   onMouseEnter={menuButtonHover}
                   onMouseLeave={menuButtonLeave}
                   onClick={() => { playSfx('menuSelect'); onContinue(); }}
@@ -300,7 +530,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               )}
               {hasSaves && (
                 <button
-                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}60`, color: `${ACCENT}aa` }}
+                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}50`, color: `${ACCENT}aa` }}
                   onMouseEnter={menuButtonHover}
                   onMouseLeave={menuButtonLeave}
                   onClick={() => { playSfx('menuSelect'); setShowLoadScreen(true); }}
@@ -310,7 +540,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 </button>
               )}
               <button
-                style={{ ...menuButtonStyle, borderColor: `${ACCENT}40`, color: `${ACCENT}80`, fontSize: "11px" }}
+                style={{ ...menuButtonStyle, borderColor: `${ACCENT}35`, color: `${ACCENT}80`, fontSize: "10px" }}
                 onMouseEnter={menuButtonHover}
                 onMouseLeave={menuButtonLeave}
                 onClick={() => { playSfx('menuSelect'); setShowOptions(true); }}
@@ -325,11 +555,8 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               border: `3px solid ${ACCENT}`,
               boxShadow: `0 0 20px ${ACCENT}30, inset 0 0 20px rgba(0,0,0,0.5)`,
               borderRadius: 0,
+              backdropFilter: "blur(8px)",
             }}>
-              <div className="absolute inset-0 pointer-events-none" style={{
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ACCENT}06 3px, ${ACCENT}06 4px)`,
-              }} />
-
               <div className="flex items-center justify-between mb-4">
                 <h3 style={{ fontSize: "10px", color: ACCENT, fontFamily: PIXEL_FONT, letterSpacing: "2px" }} data-testid="text-options-title">OPTIONS</h3>
                 <button
@@ -416,19 +643,6 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
             </div>
           )}
         </div>
-
-        <p
-          className="absolute bottom-4 transition-all duration-[1000ms]"
-          style={{
-            fontSize: "6px",
-            letterSpacing: "0.3em",
-            color: `${ACCENT}30`,
-            fontFamily: PIXEL_FONT,
-            opacity: buttonsVisible ? 1 : 0,
-          }}
-        >
-          ELEMENTAL ODYSSEY
-        </p>
       </div>
 
       <style>{`
