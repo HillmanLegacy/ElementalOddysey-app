@@ -10,7 +10,7 @@ import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
 import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
-import { playMusic, stopMusic } from "@/lib/music";
+import { playAmbient, stopAll } from "@/lib/music";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
@@ -344,7 +344,7 @@ export default function BattleScreen({
     if (battle.phase === "defeat") {
       const timer = setTimeout(() => {
         setShowDefeatUI(true);
-        playMusic("game_over");
+        playAmbient("game_over");
       }, 1500);
       return () => clearTimeout(timer);
     } else {
@@ -3798,7 +3798,7 @@ export default function BattleScreen({
                 </p>
                 <button
                   onClick={() => {
-                    stopMusic();
+                    stopAll();
                     onEndBattle(false);
                   }}
                   className="w-full flex items-center justify-center gap-3 px-3 py-2.5 text-left transition-all"

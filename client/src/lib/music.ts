@@ -1,145 +1,188 @@
 import hutTheme from "@assets/Hut_1771785430844.mp3";
 import lavaRegion from "@assets/Lava_Region_1771785430844.mp3";
 import gameOverBgm from "@assets/Game_Over_BGM_1771786937036.mp3";
+import lavaRegionMusic from "@assets/Lava_Region_Music_1771787079908.mp3";
 
-export type MusicTrack = "hut" | "lava_region" | "game_over" | null;
+export type AmbientTrack = "hut" | "lava_region" | "game_over" | null;
+export type MusicTrack = "lava_region_music" | null;
 
-const TRACKS: Record<string, string> = {
+const AMBIENT_TRACKS: Record<string, string> = {
   hut: hutTheme,
   lava_region: lavaRegion,
   game_over: gameOverBgm,
 };
 
-let currentTrack: MusicTrack = null;
-let audioElement: HTMLAudioElement | null = null;
-let musicVolume = 0.5;
-let fadeInterval: ReturnType<typeof setInterval> | null = null;
+const MUSIC_TRACKS: Record<string, string> = {
+  lava_region_music: lavaRegionMusic,
+};
 
 const FADE_DURATION = 800;
 const FADE_STEP = 30;
 
-function clearFade() {
-  if (fadeInterval) {
-    clearInterval(fadeInterval);
-    fadeInterval = null;
+interface AudioLayer {
+  element: HTMLAudioElement | null;
+  currentTrack: string | null;
+  fadeInterval: ReturnType<typeof setInterval> | null;
+}
+
+const ambientLayer: AudioLayer = { element: null, currentTrack: null, fadeInterval: null };
+const musicLayer: AudioLayer = { element: null, currentTrack: null, fadeInterval: null };
+
+let musicVolume = 0.5;
+
+function clearLayerFade(layer: AudioLayer) {
+  if (layer.fadeInterval) {
+    clearInterval(layer.fadeInterval);
+    layer.fadeInterval = null;
   }
 }
 
-function fadeOut(onDone: () => void) {
-  if (!audioElement || audioElement.paused) {
+function fadeOutLayer(layer: AudioLayer, onDone: () => void) {
+  if (!layer.element || layer.element.paused) {
     onDone();
     return;
   }
 
-  clearFade();
-  const startVol = audioElement.volume;
+  clearLayerFade(layer);
+  const startVol = layer.element.volume;
   const steps = Math.ceil(FADE_DURATION / FADE_STEP);
   let step = 0;
 
-  fadeInterval = setInterval(() => {
+  layer.fadeInterval = setInterval(() => {
     step++;
-    if (!audioElement) {
-      clearFade();
+    if (!layer.element) {
+      clearLayerFade(layer);
       onDone();
       return;
     }
     const progress = step / steps;
-    audioElement.volume = Math.max(0, startVol * (1 - progress));
+    layer.element.volume = Math.max(0, startVol * (1 - progress));
 
     if (step >= steps) {
-      clearFade();
-      audioElement.pause();
-      audioElement.currentTime = 0;
+      clearLayerFade(layer);
+      layer.element.pause();
+      layer.element.currentTime = 0;
       onDone();
     }
   }, FADE_STEP);
 }
 
-function fadeIn() {
-  if (!audioElement) return;
-  clearFade();
-  const targetVol = musicVolume;
-  audioElement.volume = 0;
-  audioElement.play().catch(() => {});
+function fadeInLayer(layer: AudioLayer, targetVol: number) {
+  if (!layer.element) return;
+  clearLayerFade(layer);
+  layer.element.volume = 0;
+  layer.element.play().catch(() => {});
 
   const steps = Math.ceil(FADE_DURATION / FADE_STEP);
   let step = 0;
 
-  fadeInterval = setInterval(() => {
+  layer.fadeInterval = setInterval(() => {
     step++;
-    if (!audioElement) {
-      clearFade();
+    if (!layer.element) {
+      clearLayerFade(layer);
       return;
     }
     const progress = step / steps;
-    audioElement.volume = Math.min(targetVol, targetVol * progress);
+    layer.element.volume = Math.min(targetVol, targetVol * progress);
 
     if (step >= steps) {
-      clearFade();
+      clearLayerFade(layer);
     }
   }, FADE_STEP);
+}
+
+function startLayerTrack(layer: AudioLayer, src: string, track: string, volume: number) {
+  if (layer.element) {
+    layer.element.pause();
+    layer.element.src = "";
+  }
+
+  layer.element = new Audio(src);
+  layer.element.loop = true;
+  layer.element.volume = 0;
+  layer.currentTrack = track;
+  fadeInLayer(layer, volume);
+}
+
+function stopLayer(layer: AudioLayer) {
+  if (layer.element && !layer.element.paused) {
+    fadeOutLayer(layer, () => {
+      layer.currentTrack = null;
+      if (layer.element) {
+        layer.element.src = "";
+        layer.element = null;
+      }
+    });
+  } else {
+    clearLayerFade(layer);
+    layer.currentTrack = null;
+    if (layer.element) {
+      layer.element.pause();
+      layer.element.src = "";
+      layer.element = null;
+    }
+  }
+}
+
+export function playAmbient(track: AmbientTrack) {
+  if (track === ambientLayer.currentTrack && ambientLayer.element && !ambientLayer.element.paused) return;
+
+  if (!track) {
+    stopAmbient();
+    return;
+  }
+
+  const src = AMBIENT_TRACKS[track];
+  if (!src) return;
+
+  if (ambientLayer.currentTrack && ambientLayer.element && !ambientLayer.element.paused) {
+    fadeOutLayer(ambientLayer, () => {
+      startLayerTrack(ambientLayer, src, track, musicVolume);
+    });
+  } else {
+    startLayerTrack(ambientLayer, src, track, musicVolume);
+  }
+}
+
+export function stopAmbient() {
+  stopLayer(ambientLayer);
 }
 
 export function playMusic(track: MusicTrack) {
-  if (track === currentTrack && audioElement && !audioElement.paused) return;
+  if (track === musicLayer.currentTrack && musicLayer.element && !musicLayer.element.paused) return;
 
   if (!track) {
     stopMusic();
     return;
   }
 
-  const src = TRACKS[track];
+  const src = MUSIC_TRACKS[track];
   if (!src) return;
 
-  if (currentTrack && audioElement && !audioElement.paused) {
-    fadeOut(() => {
-      startTrack(src, track);
+  if (musicLayer.currentTrack && musicLayer.element && !musicLayer.element.paused) {
+    fadeOutLayer(musicLayer, () => {
+      startLayerTrack(musicLayer, src, track, musicVolume);
     });
   } else {
-    startTrack(src, track);
+    startLayerTrack(musicLayer, src, track, musicVolume);
   }
-}
-
-function startTrack(src: string, track: MusicTrack) {
-  if (audioElement) {
-    audioElement.pause();
-    audioElement.src = "";
-  }
-
-  audioElement = new Audio(src);
-  audioElement.loop = true;
-  audioElement.volume = 0;
-  currentTrack = track;
-  fadeIn();
 }
 
 export function stopMusic() {
-  if (audioElement && !audioElement.paused) {
-    fadeOut(() => {
-      currentTrack = null;
-      if (audioElement) {
-        audioElement.src = "";
-        audioElement = null;
-      }
-    });
-  } else {
-    clearFade();
-    currentTrack = null;
-    if (audioElement) {
-      audioElement.pause();
-      audioElement.src = "";
-      audioElement = null;
-    }
-  }
+  stopLayer(musicLayer);
+}
+
+export function stopAll() {
+  stopAmbient();
+  stopMusic();
 }
 
 export function setMusicVolume(percent: number) {
   musicVolume = Math.max(0, Math.min(1, percent / 100));
-  if (audioElement && !audioElement.paused && !fadeInterval) {
-    audioElement.volume = musicVolume;
+  if (ambientLayer.element && !ambientLayer.element.paused && !ambientLayer.fadeInterval) {
+    ambientLayer.element.volume = musicVolume;
   }
-}
-
-export function getCurrentTrack(): MusicTrack {
-  return currentTrack;
+  if (musicLayer.element && !musicLayer.element.paused && !musicLayer.fadeInterval) {
+    musicLayer.element.volume = musicVolume;
+  }
 }

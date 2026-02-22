@@ -44,7 +44,10 @@ The application features a **React + Vite + Tailwind CSS** frontend using **shad
     -   **Special VFX**: Cinematic spell animations with camera zooms, sprite transformations, and staggered visual effects.
     -   **Enemy Death Animation**: Features a pixel-dissolve effect triggered after a death animation or a delay for non-animated enemies.
 -   **Sound System**: An audio engine manages pooled HTMLAudio playback for sound effects with volume control and pitched variations for specific effects.
--   **Music System**: A background music manager (`client/src/lib/music.ts`) handles looping ambient tracks with crossfade transitions. Tracks: hut theme (hut screen), lava region ambiance (fire region overworld). Controlled by the musicVolume setting.
+-   **Music System**: A dual-layer audio manager (`client/src/lib/music.ts`) with crossfade transitions (800ms, 30ms steps):
+    -   **Ambient Layer** (`playAmbient`/`stopAmbient`): Screen-specific sounds — hut theme (hut screen), lava region ambiance (fire region overworld), game over BGM (defeat).
+    -   **Music Layer** (`playMusic`/`stopMusic`): Continuous background music — lava region music plays uninterrupted across overworld and hut screens.
+    -   `stopAll()` stops both layers. Both layers respect the shared musicVolume setting.
 
 ## External Dependencies
 -   **React**: Frontend UI library.

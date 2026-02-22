@@ -22,7 +22,7 @@ import BattleTransition from "@/components/BattleTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
-import { playMusic, stopMusic, setMusicVolume } from "@/lib/music";
+import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume } from "@/lib/music";
 import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft } from "lucide-react";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
@@ -89,16 +89,19 @@ function Game() {
 
   useEffect(() => {
     if (state.screen === "hut") {
-      playMusic("hut");
+      playAmbient("hut");
+      playMusic("lava_region_music");
     } else if (state.screen === "overworld" && state.player) {
       const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
       if (region.theme === "Fire") {
-        playMusic("lava_region");
+        playAmbient("lava_region");
+        playMusic("lava_region_music");
       } else {
+        stopAmbient();
         stopMusic();
       }
     } else {
-      stopMusic();
+      stopAll();
     }
   }, [state.screen, state.player?.currentRegion]);
 
