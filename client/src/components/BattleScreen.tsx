@@ -872,7 +872,7 @@ export default function BattleScreen({
           eruptionFlamelashAudio.current = null;
           setEruptionNukeActive(true);
           setEruptionNukeTargetIdx(targetIdx);
-          playSfx("eruptionCleave", 1.3);
+          playSfx("eruptionCleave", 1.5);
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 500);
           setEnemyHitIdx(targetIdx);
