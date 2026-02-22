@@ -52,6 +52,7 @@ import saveGameSound from "@assets/save_game_sfx_1771797899621.mp3";
 import healthPotionSfx from "@assets/health_potion_sfx_1771797980404.mp3";
 import recoverSfx from "@assets/recover_sfx_1771798298190.mp3";
 import damageSfx from "@assets/damage_sfx_1771801964292.mp3";
+import windBladeSfx from "@assets/wind_blade_sfx_1771803396136.mp3";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
@@ -86,6 +87,7 @@ const SFX_GROUPS = {
   saveGame: [saveGameSound],
   recover: [recoverSfx],
   damage: [damageSfx],
+  windBladeStart: [windBladeSfx],
 } as const;
 
 export type SfxName = keyof typeof SFX_GROUPS;

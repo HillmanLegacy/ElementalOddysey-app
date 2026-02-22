@@ -683,6 +683,7 @@ export default function BattleScreen({
           windBladeAnimPending.current = false;
           setWindBladeActive(true);
 
+          playSfx("windBladeStart");
           playSfxPitched("windSlash", 0.8, 1.2, 0.9);
 
           const slashCount = 7;
@@ -2278,7 +2279,7 @@ export default function BattleScreen({
                 />
               </div>
             )}
-            {animPhase === "casting" && !windBladeActive && !windBladeFrozenEnemy && (
+            {animPhase === "casting" && !windBladeActive && windBladeFrozenEnemy === null && (
               <div
                 className="absolute -inset-8 z-30 animate-[magicGlow_0.9s_ease-out_forwards]"
                 style={{ background: `radial-gradient(circle, ${elementColor}50 0%, ${elementColor}20 40%, transparent 70%)` }}
