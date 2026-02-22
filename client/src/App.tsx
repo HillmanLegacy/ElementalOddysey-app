@@ -23,7 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
 import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume } from "@/lib/music";
-import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft } from "lucide-react";
+import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut } from "lucide-react";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
 
@@ -250,10 +250,13 @@ function Game() {
               />
             )}
             {menuFadeIn && (
-              <BattleTransition
-                direction="out"
-                onComplete={() => setMenuFadeIn(false)}
-              />
+              <>
+                <div className="absolute inset-0 bg-black" style={{ zIndex: 998 }} />
+                <BattleTransition
+                  direction="out"
+                  onComplete={() => setMenuFadeIn(false)}
+                />
+              </>
             )}
             {postBattleReveal && (
               <BattleTransition
@@ -293,6 +296,7 @@ function Game() {
             { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setShowSaveScreen(true); } },
             { label: "OPTIONS", desc: "Game settings", icon: Sparkles, action: () => { setShowOptions(true); } },
             { label: "LEAVE", desc: "Return to overworld", icon: ArrowLeft, action: leaveHut },
+            { label: "MAIN MENU", desc: "Exit to title screen", icon: LogOut, action: () => { stopAll(); setScreen("menu"); } },
           ];
 
           return (
