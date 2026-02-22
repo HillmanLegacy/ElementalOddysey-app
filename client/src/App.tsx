@@ -107,6 +107,9 @@ function Game() {
       }
     } else if (state.screen === "battle" && state.player) {
       stopAmbient();
+    } else if (state.screen === "menu") {
+      stopAmbient();
+      playMusic("main_menu");
     } else {
       stopAll();
     }

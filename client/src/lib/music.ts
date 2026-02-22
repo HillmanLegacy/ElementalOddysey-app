@@ -4,9 +4,10 @@ import gameOverBgm from "@assets/Game_Over_BGM_1771786937036.mp3";
 import lavaRegionMusic from "@assets/Lava_Region_Music_1771787079908.mp3";
 import lavaRegionBattle from "@assets/Lava_Region_Battle_Music_Main_1771793565507.mp3";
 import battleVictory from "@assets/Battle_Victory_1771795972091.mp3";
+import mainMenuTheme from "@assets/main_menu_theme_1771798600989.mp3";
 
 export type AmbientTrack = "hut" | "lava_region" | "game_over" | null;
-export type MusicTrack = "lava_region_music" | "lava_region_battle" | null;
+export type MusicTrack = "lava_region_music" | "lava_region_battle" | "main_menu" | null;
 export type JingleTrack = "battle_victory";
 
 const AMBIENT_TRACKS: Record<string, string> = {
@@ -18,6 +19,7 @@ const AMBIENT_TRACKS: Record<string, string> = {
 const MUSIC_TRACKS: Record<string, string> = {
   lava_region_music: lavaRegionMusic,
   lava_region_battle: lavaRegionBattle,
+  main_menu: mainMenuTheme,
 };
 
 const JINGLE_TRACKS: Record<string, string> = {
