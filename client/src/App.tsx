@@ -229,7 +229,8 @@ function Game() {
                 const ec = ELEMENT_COLORS[r.theme] || "#c9a44a";
                 setTransitionElementColor(ec);
                 fadeOutMusic(700);
-                playSfx('battleTransition');
+                const trSfx = playSfx('battleTransition');
+                if (trSfx) trSfx.playbackRate = 1.5;
                 setBattleTransition({ nodeId, elementColor: ec });
               }}
               onShopOpen={(nodeId: number) => {
@@ -742,7 +743,8 @@ function Game() {
                 if (!victory) {
                   fadeOutMusic(700);
                 }
-                playSfx('battleTransition');
+                const trSfx2 = playSfx('battleTransition');
+                if (trSfx2) trSfx2.playbackRate = 1.5;
                 setBattleExitTransition({ victory });
               }}
               onSetAnimating={setAnimating}
