@@ -151,6 +151,7 @@ function Game() {
       queryClient.invalidateQueries({ queryKey: ["/api/saves"] });
       setSaveConfirmSlot(null);
       setSaveSuccessSlot(slotNumber);
+      playSfx('saveGame');
       setTimeout(() => setSaveSuccessSlot(null), 2000);
     } catch {
       toast({ title: "Save Failed", description: "Could not save game.", variant: "destructive" });
