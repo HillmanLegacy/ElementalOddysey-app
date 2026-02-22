@@ -32,6 +32,10 @@ import potionHeal from "@/assets/audio/potion-heal.wav";
 import potionMana from "@/assets/audio/potion-mana.wav";
 import drinkSlurp from "@/assets/audio/drink-slurp.wav";
 import mifuneSwordSlice from "@/assets/audio/mifune-sword-slice.wav";
+import mifuneSlice1 from "@assets/mifune_slice_1_1771803157515.mp3";
+import mifuneSlice2 from "@assets/mifune_slice_2_1771803157515.mp3";
+import mifuneSlice3 from "@assets/mifune_slice_3_1771803157515.mp3";
+import mifuneSwordSlice2 from "@assets/mifune_sword_slice_1771803157516.mp3";
 import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1771634677180.wav";
 import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771800952507.mp3";
 import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1771793599519.wav";
@@ -52,7 +56,7 @@ import damageSfx from "@assets/damage_sfx_1771801964292.mp3";
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
   mifuneSlice: [mifuneSwordSlice],
-  windSlash: [mifuneSwordSlice],
+  windSlash: [mifuneSlice1, mifuneSlice2, mifuneSlice3, mifuneSwordSlice2],
   hitMetal: [hitMetal1, hitMetal2],
   hitCombo: [hitCombo1, hitCombo2],
   block: [blockingSound],
