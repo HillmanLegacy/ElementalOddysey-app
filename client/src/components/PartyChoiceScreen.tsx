@@ -4,6 +4,7 @@ import SpriteAnimator from "./SpriteAnimator";
 import { ELEMENT_COLORS, PARTY_SPRITE_DATA } from "@/lib/gameData";
 import type { PartyMemberDef } from "@shared/schema";
 import { Sparkles, HelpCircle } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 interface PartyChoiceScreenProps {
   choices: [PartyMemberDef, PartyMemberDef];
@@ -48,7 +49,7 @@ export default function PartyChoiceScreen({ choices, playerLevel, ownedIds, onSe
             return (
               <button
                 key={charDef.id}
-                onClick={() => !isOwned && setSelectedIndex(idx)}
+                onClick={() => { if (!isOwned) { playSfx('menuSelect'); setSelectedIndex(idx); } }}
                 onMouseEnter={() => setHoveredIndex(idx)}
                 onMouseLeave={() => setHoveredIndex(null)}
                 disabled={isOwned}
@@ -144,7 +145,7 @@ export default function PartyChoiceScreen({ choices, playerLevel, ownedIds, onSe
         </div>
 
         <button
-          onClick={() => selectedIndex !== null && onSelect(choices[selectedIndex])}
+          onClick={() => { if (selectedIndex !== null) { playSfx('menuSelect'); onSelect(choices[selectedIndex]); } }}
           disabled={selectedIndex === null}
           style={{
             fontFamily: "'Press Start 2P', cursive",

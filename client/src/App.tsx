@@ -23,6 +23,7 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
 import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume } from "@/lib/music";
+import { playSfx } from "@/lib/sfx";
 import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut } from "lucide-react";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
@@ -341,7 +342,7 @@ function Game() {
                     <button
                       className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
                       style={{ border: `1px solid ${ac}50`, background: "transparent" }}
-                      onClick={leaveHut}
+                      onClick={() => { playSfx('menuSelect'); leaveHut(); }}
                     >
                       <X className="w-3 h-3" style={{ color: ac }} />
                     </button>
@@ -369,7 +370,7 @@ function Game() {
                             (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
                             (e.currentTarget as HTMLElement).style.boxShadow = "none";
                           }}
-                          onClick={item.action}
+                          onClick={() => { playSfx('menuSelect'); item.action(); }}
                         >
                           <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ac}40`, background: "#0a080840" }}>
                             <Icon className="w-3.5 h-3.5" style={{ color: ac }} />
@@ -436,7 +437,7 @@ function Game() {
                     <div className="relative flex items-center justify-between" style={{ padding: "8px 12px", background: "#0d0b0bf0", borderBottom: "3px solid #c9a44a" }}>
                       <h3 style={{ fontSize: "10px", color: "#c9a44a", letterSpacing: "2px" }}>OPTIONS</h3>
                       <button
-                        onClick={() => setShowOptions(false)}
+                        onClick={() => { playSfx('menuSelect'); setShowOptions(false); }}
                         className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
                         style={{ border: "1px solid #c9a44a50", background: "transparent" }}
                       >
@@ -457,7 +458,7 @@ function Game() {
                                 background: state.textSpeed === sp ? `#c9a44a25` : "#0d0b0bf0",
                                 color: state.textSpeed === sp ? "#c9a44a" : "#c9a44a60",
                               }}
-                              onClick={() => setState(s => ({ ...s, textSpeed: sp }))}
+                              onClick={() => { playSfx('menuSelect'); setState(s => ({ ...s, textSpeed: sp })); }}
                             >
                               {sp.toUpperCase()}
                             </button>
@@ -517,7 +518,7 @@ function Game() {
                         <button
                           className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
                           style={{ border: `1px solid ${sac}50`, background: "transparent" }}
-                          onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                          onClick={() => { playSfx('menuSelect'); setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
                         >
                           <span style={{ fontSize: "8px", color: sac }}>✕</span>
                         </button>
@@ -549,7 +550,7 @@ function Game() {
                                   (e.currentTarget as HTMLElement).style.boxShadow = "none";
                                 }
                               }}
-                              onClick={() => { if (!isSuccess) setSaveConfirmSlot(slotNum); }}
+                              onClick={() => { if (!isSuccess) { playSfx('menuSelect'); setSaveConfirmSlot(slotNum); } }}
                             >
                               {isSuccess ? (
                                 <div className="flex items-center gap-2">
@@ -594,7 +595,7 @@ function Game() {
                             (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
                             (e.currentTarget as HTMLElement).style.borderColor = `${sac}30`;
                           }}
-                          onClick={() => { setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
+                          onClick={() => { playSfx('menuSelect'); setShowSaveScreen(false); setSaveConfirmSlot(null); setSaveSuccessSlot(null); }}
                         >
                           <span style={{ fontSize: "8px", color: sac, letterSpacing: "1px" }}>← BACK</span>
                         </button>
@@ -638,7 +639,7 @@ function Game() {
                                 (e.currentTarget as HTMLElement).style.background = `${sac}20`;
                                 (e.currentTarget as HTMLElement).style.boxShadow = "none";
                               }}
-                              onClick={() => handleSaveToSlot(saveConfirmSlot)}
+                              onClick={() => { playSfx('menuSelect'); handleSaveToSlot(saveConfirmSlot); }}
                             >
                               <span style={{ fontSize: "8px", color: sac, letterSpacing: "1px" }}>CONFIRM</span>
                             </button>
@@ -653,7 +654,7 @@ function Game() {
                                 (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
                                 (e.currentTarget as HTMLElement).style.borderColor = `${sac}30`;
                               }}
-                              onClick={() => setSaveConfirmSlot(null)}
+                              onClick={() => { playSfx('menuSelect'); setSaveConfirmSlot(null); }}
                             >
                               <span style={{ fontSize: "8px", color: `${sac}60`, letterSpacing: "1px" }}>CANCEL</span>
                             </button>

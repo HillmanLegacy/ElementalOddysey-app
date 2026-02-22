@@ -3,6 +3,7 @@ import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter, PlayerStats, PendingLevelUp } from "@shared/schema";
 import { ELEMENT_COLORS, PARTY_SPRITE_DATA, SPELLS } from "@/lib/gameData";
 import { Star, Heart, Droplets, Swords, Shield, Zap, Brain, Clover, Sparkles } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 import knightIdle from "@/assets/images/knight-idle-4f.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
@@ -188,7 +189,7 @@ export default function LevelUpScreen({
               return (
                 <button
                   key={key}
-                  onClick={() => onAllocate(key)}
+                  onClick={() => { playSfx('menuSelect'); onAllocate(key); }}
                   disabled={statsRemaining === 0}
                   className="flex flex-col items-center justify-center h-auto py-2 px-1.5 relative overflow-hidden border-2 border-yellow-700 bg-yellow-900/40 hover:bg-yellow-800/60 disabled:opacity-50 disabled:cursor-not-allowed"
                   style={{

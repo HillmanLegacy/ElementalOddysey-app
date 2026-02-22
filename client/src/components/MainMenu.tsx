@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Slider } from "@/components/ui/slider";
 import type { GameState } from "@shared/schema";
 import { Swords, ArrowLeft } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 interface MainMenuProps {
   onNewGame: () => void;
@@ -299,7 +300,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               <button
                 className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
                 style={{ border: `1px solid ${ACCENT}50`, background: "rgba(0,0,0,0.4)" }}
-                onClick={() => setShowLoadScreen(false)}
+                onClick={() => { playSfx('menuSelect'); setShowLoadScreen(false); }}
               >
                 <span style={{ fontSize: "8px", color: ACCENT }}>✕</span>
               </button>
@@ -333,6 +334,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                     }}
                     onClick={() => {
                       if (slotSave) {
+                        playSfx('menuSelect');
                         onLoadGame(slotSave);
                         setShowLoadScreen(false);
                       }
@@ -374,7 +376,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                   (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.3)";
                   (e.currentTarget as HTMLElement).style.borderColor = `${ACCENT}30`;
                 }}
-                onClick={() => setShowLoadScreen(false)}
+                onClick={() => { playSfx('menuSelect'); setShowLoadScreen(false); }}
               >
                 <span style={{ fontSize: "8px", color: ACCENT, letterSpacing: "1px" }}>BACK</span>
               </button>
@@ -437,7 +439,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 style={menuButtonStyle}
                 onMouseEnter={menuButtonHover}
                 onMouseLeave={menuButtonLeave}
-                onClick={onNewGame}
+                onClick={() => { playSfx('menuSelect'); onNewGame(); }}
                 data-testid="button-new-game"
               >
                 NEW GAME
@@ -447,7 +449,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                   style={{ ...menuButtonStyle, borderColor: `${ACCENT}80`, color: `${ACCENT}cc` }}
                   onMouseEnter={menuButtonHover}
                   onMouseLeave={menuButtonLeave}
-                  onClick={onContinue}
+                  onClick={() => { playSfx('menuSelect'); onContinue(); }}
                   data-testid="button-continue"
                 >
                   CONTINUE
@@ -458,7 +460,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                   style={{ ...menuButtonStyle, borderColor: `${ACCENT}60`, color: `${ACCENT}aa` }}
                   onMouseEnter={menuButtonHover}
                   onMouseLeave={menuButtonLeave}
-                  onClick={() => setShowLoadScreen(true)}
+                  onClick={() => { playSfx('menuSelect'); setShowLoadScreen(true); }}
                   data-testid="button-load-game"
                 >
                   LOAD GAME
@@ -468,7 +470,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 style={{ ...menuButtonStyle, borderColor: `${ACCENT}40`, color: `${ACCENT}80`, fontSize: "11px" }}
                 onMouseEnter={menuButtonHover}
                 onMouseLeave={menuButtonLeave}
-                onClick={() => setShowOptions(true)}
+                onClick={() => { playSfx('menuSelect'); setShowOptions(true); }}
                 data-testid="button-options"
               >
                 OPTIONS
@@ -490,7 +492,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 <button
                   className="flex items-center justify-center w-7 h-7 transition-all hover:scale-110"
                   style={{ border: `1px solid ${ACCENT}50`, background: "rgba(0,0,0,0.4)", borderRadius: 0 }}
-                  onClick={() => setShowOptions(false)}
+                  onClick={() => { playSfx('menuSelect'); setShowOptions(false); }}
                   data-testid="button-back-menu"
                 >
                   <ArrowLeft className="w-3 h-3" style={{ color: ACCENT }} />
@@ -515,7 +517,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                           color: textSpeed === sp ? ACCENT : `${ACCENT}60`,
                           boxShadow: textSpeed === sp ? `0 0 8px ${ACCENT}30` : "none",
                         }}
-                        onClick={() => onSettingsChange({ textSpeed: sp })}
+                        onClick={() => { playSfx('menuSelect'); onSettingsChange({ textSpeed: sp }); }}
                         data-testid={`button-speed-${sp}`}
                       >
                         {sp.toUpperCase()}
@@ -561,7 +563,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                       color: showDamageNumbers ? ACCENT : `${ACCENT}60`,
                       boxShadow: showDamageNumbers ? `0 0 8px ${ACCENT}30` : "none",
                     }}
-                    onClick={() => onSettingsChange({ showDamageNumbers: !showDamageNumbers })}
+                    onClick={() => { playSfx('menuSelect'); onSettingsChange({ showDamageNumbers: !showDamageNumbers }); }}
                     data-testid="button-damage-numbers"
                   >
                     {showDamageNumbers ? "ON" : "OFF"}

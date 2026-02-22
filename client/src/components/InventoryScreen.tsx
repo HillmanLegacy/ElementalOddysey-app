@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { PlayerCharacter } from "@shared/schema";
 import { Heart, Droplets } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
+import { playSfx } from "@/lib/sfx";
 
 interface InventoryScreenProps {
   player: PlayerCharacter;
@@ -53,7 +54,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
           }}
         >
           <button
-            onClick={onBack}
+            onClick={() => { playSfx('menuSelect'); onBack(); }}
             data-testid="button-inventory-back"
             style={{
               fontFamily: "'Press Start 2P', cursive",
@@ -73,7 +74,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
 
         <div style={{ display: "flex", gap: 0, padding: "8px 12px 0" }}>
           <button
-            onClick={() => setActiveTab("items")}
+            onClick={() => { playSfx('menuSelect'); setActiveTab("items"); }}
             data-testid="tab-items"
             style={{
               fontFamily: "'Press Start 2P', cursive",
@@ -89,7 +90,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
             ITEMS
           </button>
           <button
-            onClick={() => setActiveTab("equipment")}
+            onClick={() => { playSfx('menuSelect'); setActiveTab("equipment"); }}
             data-testid="tab-equipment"
             style={{
               fontFamily: "'Press Start 2P', cursive",
@@ -145,7 +146,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
                         </div>
                         {player.party.length > 0 ? (
                           <button
-                            onClick={() => setTargetingItemId(isTargeting ? null : item.name)}
+                            onClick={() => { playSfx('menuSelect'); setTargetingItemId(isTargeting ? null : item.name); }}
                             disabled={!canUseOnAny}
                             data-testid={`button-use-${item.name}`}
                             style={{
@@ -163,7 +164,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
                           </button>
                         ) : (
                           <button
-                            onClick={() => onUseItem(ids[0])}
+                            onClick={() => { playSfx('menuSelect'); onUseItem(ids[0]); }}
                             disabled={!canUseOnPlayer}
                             data-testid={`button-use-${item.name}`}
                             style={{
@@ -186,7 +187,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
                           <p style={{ fontSize: "7px", color: `${ACCENT}50`, marginBottom: "4px" }}>Select target:</p>
                           <button
                             disabled={!canUseOnPlayer}
-                            onClick={() => { onUseItem(ids[0]); setTargetingItemId(null); }}
+                            onClick={() => { playSfx('menuSelect'); onUseItem(ids[0]); setTargetingItemId(null); }}
                             style={{
                               width: "100%",
                               display: "flex",
@@ -233,7 +234,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
                               <button
                                 key={member.id}
                                 disabled={!canUseOnMember}
-                                onClick={() => { onUseItem(ids[0], idx); setTargetingItemId(null); }}
+                                onClick={() => { playSfx('menuSelect'); onUseItem(ids[0], idx); setTargetingItemId(null); }}
                                 style={{
                                   width: "100%",
                                   display: "flex",
@@ -301,7 +302,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
                           <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
                         </div>
                         <button
-                          onClick={() => onUnequip(slot)}
+                          onClick={() => { playSfx('menuSelect'); onUnequip(slot); }}
                           style={{
                             fontFamily: "'Press Start 2P', cursive",
                             fontSize: "7px",
@@ -346,7 +347,7 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
                           <p style={{ fontSize: "7px", color: `${ACCENT}60`, marginTop: "2px" }}>{item.description}</p>
                         </div>
                         <button
-                          onClick={() => onEquip(item.id)}
+                          onClick={() => { playSfx('menuSelect'); onEquip(item.id); }}
                           data-testid={`button-equip-${item.id}`}
                           style={{
                             fontFamily: "'Press Start 2P', cursive",

@@ -3,6 +3,7 @@ import SpriteAnimator from "./SpriteAnimator";
 import { ELEMENT_COLORS, PARTY_SPRITE_DATA, getPartyMemberSpells, PERKS } from "@/lib/gameData";
 import type { PlayerCharacter, Spell } from "@shared/schema";
 import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, Sparkles, Crown } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import knightIdle from "@/assets/images/knight-idle-4f.png";
@@ -110,7 +111,7 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
     return (
       <button
         key={member.id}
-        onClick={() => setSelectedId(member.id)}
+        onClick={() => { playSfx('menuSelect'); setSelectedId(member.id); }}
         style={{
           width: "100%",
           display: "flex",
@@ -185,7 +186,7 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
         >
           <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
             <button
-              onClick={onClose}
+              onClick={() => { playSfx('menuSelect'); onClose(); }}
               style={{
                 fontFamily: "'Press Start 2P', cursive",
                 fontSize: "8px",
@@ -272,7 +273,7 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
                       <div style={{ marginTop: "6px" }}>
                         {selectedMember.isBenched ? (
                           <button
-                            onClick={() => { onAddMember(selectedMember.id); setSelectedId(selectedMember.id); }}
+                            onClick={() => { playSfx('menuSelect'); onAddMember(selectedMember.id); setSelectedId(selectedMember.id); }}
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
                               fontSize: "7px",
@@ -287,7 +288,7 @@ export default function PartyManagementScreen({ player, onRemoveMember, onAddMem
                           </button>
                         ) : (
                           <button
-                            onClick={() => { onRemoveMember(selectedMember.id); setSelectedId("__player__"); }}
+                            onClick={() => { playSfx('menuSelect'); onRemoveMember(selectedMember.id); setSelectedId("__player__"); }}
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
                               fontSize: "7px",

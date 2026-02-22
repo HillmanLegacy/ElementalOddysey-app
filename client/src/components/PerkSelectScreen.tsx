@@ -2,6 +2,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import type { PlayerCharacter, PendingLevelUp } from "@shared/schema";
 import { PERKS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { Sparkles } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 interface PerkSelectScreenProps {
   player: PlayerCharacter;
@@ -108,7 +109,7 @@ export default function PerkSelectScreen({ player, pendingLevelUp, onSelect }: P
                 return (
                   <button
                     key={perk.id}
-                    onClick={() => onSelect(perk.id)}
+                    onClick={() => { playSfx('menuSelect'); onSelect(perk.id); }}
                     data-testid={`card-perk-${perk.id}`}
                     style={{
                       background: "rgba(15,10,30,0.85)",
@@ -205,7 +206,7 @@ export default function PerkSelectScreen({ player, pendingLevelUp, onSelect }: P
                     No more perks available for {characterElement}
                   </p>
                   <button
-                    onClick={() => onSelect("")}
+                    onClick={() => { playSfx('menuSelect'); onSelect(""); }}
                     style={{
                       fontFamily: "'Press Start 2P', cursive",
                       fontSize: "8px",

@@ -1,5 +1,6 @@
 import type { PlayerCharacter, ShopItem } from "@shared/schema";
 import { Heart, Droplets, Swords, Shield, Sparkles } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 const ITEM_ICONS: Record<string, any> = {
   heart: Heart,
@@ -53,7 +54,7 @@ export default function ShopScreen({ player, items, onBuy, onBack }: ShopScreenP
           }}
         >
           <button
-            onClick={onBack}
+            onClick={() => { playSfx('menuSelect'); onBack(); }}
             data-testid="button-shop-back"
             style={{
               fontFamily: "'Press Start 2P', cursive",
@@ -113,7 +114,7 @@ export default function ShopScreen({ player, items, onBuy, onBack }: ShopScreenP
                   </div>
                   <button
                     disabled={!canAfford}
-                    onClick={() => onBuy(item)}
+                    onClick={() => { playSfx('menuSelect'); onBuy(item); }}
                     data-testid={`button-buy-${item.id}`}
                     style={{
                       fontFamily: "'Press Start 2P', cursive",

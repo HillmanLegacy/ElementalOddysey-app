@@ -3342,11 +3342,11 @@ export default function BattleScreen({
           {battle.phase === "playerTurn" && !showItems && !showSpells && !isInputBlocked && (
             <div className="grid grid-cols-5 gap-2 mb-1">
               {[
-                { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); setRepositionMode(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
+                { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { playSfx('menuSelect'); setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); setRepositionMode(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
                 { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", activeColor: "#2563eb", onClick: () => { setRepositionMode(null); handleDefend(); }, active: false, testId: "button-action-defend" },
-                { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); setRepositionMode(null); }, active: false, testId: "button-action-magic" },
-                { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => { setShowItems(true); setRepositionMode(null); }, active: false, disabled: consumables.length === 0, testId: "button-action-item" },
-                { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", activeColor: "#d97706", onClick: () => { setRepositionMode({ unitType: "player", unitIndex: 0 }); setSelectedAction(null); setSelectedSpell(null); setShowSpells(false); setShowItems(false); }, active: repositionMode?.unitType === "player", testId: "button-action-reposition", disabled: getAvailableRepositionCells("player", 0).length === 0 },
+                { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { playSfx('menuSelect'); setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); setRepositionMode(null); }, active: false, testId: "button-action-magic" },
+                { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => { playSfx('menuSelect'); setShowItems(true); setRepositionMode(null); }, active: false, disabled: consumables.length === 0, testId: "button-action-item" },
+                { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", activeColor: "#d97706", onClick: () => { playSfx('menuSelect'); setRepositionMode({ unitType: "player", unitIndex: 0 }); setSelectedAction(null); setSelectedSpell(null); setShowSpells(false); setShowItems(false); }, active: repositionMode?.unitType === "player", testId: "button-action-reposition", disabled: getAvailableRepositionCells("player", 0).length === 0 },
               ].map(btn => (
                 <button
                   key={btn.key}
@@ -3391,7 +3391,7 @@ export default function BattleScreen({
                 <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c084fc" }}>
                   <Sparkles className="w-3.5 h-3.5" /> Spells
                 </span>
-                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setShowSpells(false)} data-testid="button-close-spells">
+                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setShowSpells(false); }} data-testid="button-close-spells">
                   <ArrowLeft className="w-3 h-3" /> Back
                 </button>
               </div>
@@ -3410,7 +3410,7 @@ export default function BattleScreen({
                           border: `1px solid ${canCast ? "rgba(139,92,246,0.2)" : "rgba(60,40,80,0.2)"}`,
                           color: canCast ? "#e9d5ff" : "rgba(120,80,160,0.4)",
                         }}
-                        onClick={() => handleSpellSelect(spell)}
+                        onClick={() => { playSfx('menuSelect'); handleSpellSelect(spell); }}
                         disabled={!canCast}
                         data-testid={`button-spell-${spell.id}`}
                       >
@@ -3434,7 +3434,7 @@ export default function BattleScreen({
             <div className="space-y-1 mb-1">
               <div className="flex items-center justify-between gap-2 mb-1">
                 <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#86efac" }}>Items</span>
-                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setShowItems(false)} data-testid="button-close-items">
+                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setShowItems(false); }} data-testid="button-close-items">
                   <ArrowLeft className="w-3 h-3" /> Back
                 </button>
               </div>
@@ -3450,7 +3450,7 @@ export default function BattleScreen({
                       border: "1px solid rgba(34,197,94,0.15)",
                       color: "#bbf7d0",
                     }}
-                    onClick={() => { onUseItem(ids[0]); setShowItems(false); }}
+                    onClick={() => { playSfx('menuSelect'); onUseItem(ids[0]); setShowItems(false); }}
                     data-testid={`button-use-item-${item.id}`}
                   >
                     <Heart className="w-3 h-3 text-red-400 flex-shrink-0" />
@@ -3468,7 +3468,7 @@ export default function BattleScreen({
                 <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#f59e0b" }}>
                   <Target className="w-3.5 h-3.5" /> Reposition
                 </span>
-                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setRepositionMode(null)}>
+                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setRepositionMode(null); }}>
                   <ArrowLeft className="w-3 h-3" /> Back
                 </button>
               </div>
@@ -3533,11 +3533,11 @@ export default function BattleScreen({
                 {partyAction === "menu" && (
                   <div className="grid grid-cols-5 gap-2 mb-1">
                     {[
-                      { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => setPartyAction("selectTarget") },
+                      { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => { playSfx('menuSelect'); setPartyAction("selectTarget"); } },
                       { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", onClick: () => { setPartyGuardIndex(battle.activePartyIndex); playSfx("block"); onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 1200); } },
-                      { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", onClick: () => setPartyAction("showSpells"), disabled: partySpells.length === 0 },
-                      { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", onClick: () => setPartyAction("showItems"), disabled: consumables.length === 0 },
-                      { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", onClick: () => { setRepositionMode({ unitType: "party", unitIndex: battle.activePartyIndex }); setPartyAction("menu"); }, disabled: getAvailableRepositionCells("party", battle.activePartyIndex).length === 0 },
+                      { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", onClick: () => { playSfx('menuSelect'); setPartyAction("showSpells"); }, disabled: partySpells.length === 0 },
+                      { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", onClick: () => { playSfx('menuSelect'); setPartyAction("showItems"); }, disabled: consumables.length === 0 },
+                      { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", onClick: () => { playSfx('menuSelect'); setRepositionMode({ unitType: "party", unitIndex: battle.activePartyIndex }); setPartyAction("menu"); }, disabled: getAvailableRepositionCells("party", battle.activePartyIndex).length === 0 },
                     ].map(btn => (
                       <button
                         key={btn.key}
@@ -3563,7 +3563,7 @@ export default function BattleScreen({
                       <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c084fc" }}>
                         <Sparkles className="w-3.5 h-3.5" /> Spells
                       </span>
-                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setPartyAction("menu")}>
+                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); }}>
                         <ArrowLeft className="w-3 h-3" /> Back
                       </button>
                     </div>
@@ -3584,6 +3584,7 @@ export default function BattleScreen({
                               }}
                               disabled={!canCast}
                               onClick={() => {
+                                playSfx('menuSelect');
                                 if (spell.targetType === "enemy") {
                                   setPartySelectedSpell(spell);
                                   setPartyAction("selectMagicTarget");
@@ -3619,7 +3620,7 @@ export default function BattleScreen({
                   <div className="space-y-1 mb-1">
                     <div className="flex items-center justify-between gap-2 mb-1">
                       <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#86efac" }}>Items</span>
-                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => setPartyAction("menu")}>
+                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); }}>
                         <ArrowLeft className="w-3 h-3" /> Back
                       </button>
                     </div>
@@ -3636,6 +3637,7 @@ export default function BattleScreen({
                             color: "#bbf7d0",
                           }}
                           onClick={() => {
+                            playSfx('menuSelect');
                             onPartyMemberUseItem(battle.activePartyIndex, ids[0]);
                             setPartyAction("menu");
                             setTimeout(() => onAdvancePartyTurn(), 400);
@@ -3657,7 +3659,7 @@ export default function BattleScreen({
                     <button
                       className="flex items-center gap-1 px-2 py-1 mx-auto mt-1 transition-all hover:brightness-125"
                       style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}
-                      onClick={() => { setPartyAction("menu"); setPartySelectedSpell(null); }}
+                      onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); setPartySelectedSpell(null); }}
                     >
                       <ArrowLeft className="w-3 h-3" /> Back
                     </button>
@@ -3726,7 +3728,7 @@ export default function BattleScreen({
                 )}
                 {xpBarPhase === "done" && (
                   <button
-                    onClick={() => onEndBattle(true)}
+                    onClick={() => { playSfx('menuSelect'); onEndBattle(true); }}
                     className="w-full flex items-center justify-center gap-3 px-3 py-2.5 text-left transition-all animate-[fadeIn_0.3s_ease-out]"
                     style={{
                       fontFamily: "'Press Start 2P', cursive",
@@ -3798,6 +3800,7 @@ export default function BattleScreen({
                 </p>
                 <button
                   onClick={() => {
+                    playSfx('menuSelect');
                     stopAll();
                     onEndBattle(false);
                   }}

@@ -7,6 +7,7 @@ import SpriteAnimator from "./SpriteAnimator";
 import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
+import { playSfx } from "@/lib/sfx";
 import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Sparkles, Home, Shield, Package, Lock } from "lucide-react";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -514,7 +515,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               transform: `translate(-50%, -50%) ${isHovered && isCurrent ? "scale(1.15)" : "scale(1)"}`,
               pointerEvents: isCurrent ? "auto" : "none",
             }}
-            onClick={() => handleNodeClick(node)}
+            onClick={() => { playSfx('menuSelect'); handleNodeClick(node); }}
             onMouseEnter={() => setHoveredNode(node.id)}
             onMouseLeave={() => setHoveredNode(null)}
             disabled={!isCurrent || isMoving}
@@ -674,7 +675,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                 top: `${arrowY}%`,
                 zIndex: 80,
               }}
-              onClick={() => handleArrowClick(targetNode)}
+              onClick={() => { playSfx('menuSelect'); handleArrowClick(targetNode); }}
               data-testid={`arrow-to-node-${connId}`}
             >
               <svg
@@ -774,7 +775,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
         <div className="relative flex items-center gap-2">
           <button
-            onClick={onHutEnter}
+            onClick={() => { playSfx('menuSelect'); onHutEnter(); }}
             className="flex items-center justify-center w-8 h-8 transition-all hover:scale-110 active:scale-95"
             style={{
               background: "rgba(0,0,0,0.4)",
@@ -793,6 +794,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           <Button size="icon" variant="ghost"
             disabled={player.currentRegion <= 0}
             onClick={() => {
+              playSfx('menuSelect');
               const prevRegion = player.currentRegion - 1;
               if (prevRegion >= 0) onRegionChange(prevRegion);
             }}
@@ -827,7 +829,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
           <Button size="icon" variant="ghost"
             disabled={!isRegionUnlocked(player.currentRegion + 1, player.regionBossDefeats || {})}
-            onClick={() => onRegionChange(player.currentRegion + 1)}
+            onClick={() => { playSfx('menuSelect'); onRegionChange(player.currentRegion + 1); }}
             className="text-white/50 disabled:opacity-20 h-7 w-7"
             data-testid="button-next-region"
           >

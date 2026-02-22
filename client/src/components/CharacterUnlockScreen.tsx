@@ -4,6 +4,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import { ELEMENT_COLORS } from "@/lib/gameData";
 import type { PartyMemberDef } from "@shared/schema";
 import { Sparkles, Swords, Shield, Zap, Heart } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 import knightIdle from "@/assets/images/knight-idle-4f.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -139,7 +140,7 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
           </p>
 
           <button
-            onClick={() => onConfirm(customName.trim() || character.name)}
+            onClick={() => { playSfx('menuSelect'); onConfirm(customName.trim() || character.name); }}
             style={{
               width: "100%",
               display: "flex",

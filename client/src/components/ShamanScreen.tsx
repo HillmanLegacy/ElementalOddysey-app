@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { PlayerCharacter } from "@shared/schema";
 import { SHAMAN_SPELLS, SPELLS, ELEMENT_COLORS } from "@/lib/gameData";
 import { Sparkles, Check } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 interface ShamanScreenProps {
   player: PlayerCharacter;
@@ -92,7 +93,7 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
           }}
         >
           <button
-            onClick={onBack}
+            onClick={() => { playSfx('menuSelect'); onBack(); }}
             style={{
               fontFamily: "'Press Start 2P', cursive",
               fontSize: "8px",
@@ -148,7 +149,7 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
               return (
                 <button
                   key={`${char.type}-${char.index}`}
-                  onClick={() => setSelectedChar({ type: char.type, index: char.index })}
+                  onClick={() => { playSfx('menuSelect'); setSelectedChar({ type: char.type, index: char.index }); }}
                   style={{
                     width: "100%",
                     textAlign: "left" as const,
@@ -232,7 +233,7 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
                       </div>
                     </div>
                     <button
-                      onClick={() => handleLearn(spell.id)}
+                      onClick={() => { playSfx('menuSelect'); handleLearn(spell.id); }}
                       disabled={player.gold < SPELL_COST}
                       style={{
                         fontFamily: "'Press Start 2P', cursive",

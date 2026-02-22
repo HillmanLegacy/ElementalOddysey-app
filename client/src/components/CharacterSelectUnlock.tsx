@@ -3,6 +3,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import { ELEMENT_COLORS } from "@/lib/gameData";
 import type { PartyMemberDef } from "@shared/schema";
 import { Sparkles } from "lucide-react";
+import { playSfx } from "@/lib/sfx";
 
 import knightIdle from "@/assets/images/knight-idle-4f.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -84,7 +85,7 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
                   e.currentTarget.style.borderColor = "rgba(168,85,247,0.2)";
                   e.currentTarget.style.background = "rgba(15,10,30,0.8)";
                 }}
-                onClick={() => onSelect(char)}
+                onClick={() => { playSfx('menuSelect'); onSelect(char); }}
               >
                 <div className="relative mb-2">
                   <div

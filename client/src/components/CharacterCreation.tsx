@@ -26,6 +26,7 @@ const STARTER_DESCRIPTIONS: Record<string, string> = {
   basken_lightning: "A versatile lightning warrior with good luck and speed. Wields thunder magic in battle.",
 };
 
+import { playSfx } from "@/lib/sfx";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 interface CharacterCreationProps {
@@ -78,7 +79,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 return (
                   <button
                     key={starter.id}
-                    onClick={() => setSelectedStarter(starter.id)}
+                    onClick={() => { playSfx('menuSelect'); setSelectedStarter(starter.id); }}
                     style={{
                       position: "relative",
                       display: "flex",
@@ -290,7 +291,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
 
             <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24, gap: 12 }}>
               <button
-                onClick={() => (step === 0 ? onBack() : setStep(step - 1))}
+                onClick={() => { playSfx('menuSelect'); step === 0 ? onBack() : setStep(step - 1); }}
                 data-testid="button-creation-back"
                 style={{
                   fontFamily,
@@ -315,7 +316,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
 
               {step < 2 ? (
                 <button
-                  onClick={() => setStep(step + 1)}
+                  onClick={() => { playSfx('menuSelect'); setStep(step + 1); }}
                   data-testid="button-creation-next"
                   style={{
                     fontFamily,
@@ -339,7 +340,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 </button>
               ) : (
                 <button
-                  onClick={() => onComplete(selectedStarter, name.trim() || starterDef.name, "Purple", "Orb")}
+                  onClick={() => { playSfx('menuSelect'); onComplete(selectedStarter, name.trim() || starterDef.name, "Purple", "Orb"); }}
                   data-testid="button-begin-adventure"
                   style={{
                     fontFamily,
