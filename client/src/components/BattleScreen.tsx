@@ -436,7 +436,7 @@ export default function BattleScreen({
     if (evt.id <= lastDmgEventIdRef.current) return;
     lastDmgEventIdRef.current = evt.id;
 
-    if (battle.lastDamageEvents && battle.lastDamageEvents.length > 1 && battle.lastDamageEvents.some(e => e.id === evt.id)) return;
+    if (battle.lastDamageEvents && battle.lastDamageEvents.length > 0 && battle.lastDamageEvents.some(e => e.id === evt.id)) return;
 
     let posX: number, posY: number;
     let color = "#ef4444";
