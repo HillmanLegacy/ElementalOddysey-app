@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef } from "react";
 
 interface BattleTransitionProps {
   onComplete: () => void;
@@ -120,7 +120,7 @@ export default function BattleTransition({ onComplete, direction = "in", element
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
@@ -128,6 +128,11 @@ export default function BattleTransition({ onComplete, direction = "in", element
 
     const w = canvas.width = canvas.offsetWidth;
     const h = canvas.height = canvas.offsetHeight;
+
+    if (direction === "out") {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, w, h);
+    }
 
     const cols = Math.ceil(w / PIXEL_SIZE);
     const rows = Math.ceil(h / PIXEL_SIZE);
@@ -272,7 +277,7 @@ export default function BattleTransition({ onComplete, direction = "in", element
     <canvas
       ref={canvasRef}
       className="absolute inset-0 w-full h-full"
-      style={{ zIndex: 999, pointerEvents: "all", background: direction === "out" ? "#000" : "transparent" }}
+      style={{ zIndex: 999, pointerEvents: "all" }}
     />
   );
 }
