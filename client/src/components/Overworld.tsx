@@ -8,7 +8,8 @@ import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { playSfx } from "@/lib/sfx";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Sparkles, Home, Shield, Package, Lock } from "lucide-react";
+import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Gem, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Sparkles, Home, Shield, Package, Lock, Menu, Zap } from "lucide-react";
+import { groupConsumables } from "@/lib/utils";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -138,13 +139,19 @@ interface OverworldProps {
   onShamanVisit: (nodeId: number) => void;
   onHutEnter: () => void;
   onRegionChange: (regionId: number) => void;
+  onEquip: (itemId: string) => void;
+  onUnequip: (slot: "weapon" | "armor" | "accessory") => void;
+  onUseItem: (itemId: string, targetPartyIndex?: number) => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem }: OverworldProps) {
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
   const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [menuTab, setMenuTab] = useState<"party" | "items" | "gear">("party");
+  const [targetingItemId, setTargetingItemId] = useState<string | null>(null);
   const [charPos, setCharPos] = useState<{ x: number; y: number }>(() => {
     const currentNode = region.nodes.find(n => n.id === player.currentNode);
     return currentNode ? getNodePosition(currentNode) : { x: 8, y: 82 };
@@ -735,108 +742,338 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
       })()}
       </div>
 
-      <div className="absolute top-0 left-0 right-0 z-[150] h-12 flex items-center justify-between px-4 overflow-hidden"
-        style={{
-          background: `linear-gradient(180deg, ${theme.sky[0]}f0 0%, ${theme.terrain}f5 100%)`,
-          borderBottom: `3px solid ${elemColor}`,
-          boxShadow: `0 2px 15px rgba(0,0,0,0.5), 0 0 20px ${elemColor}20`,
-        }}
-      >
-        <div className="absolute inset-0 pointer-events-none" style={{
-          backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${elemColor}08 3px, ${elemColor}08 4px)`,
-        }} />
+      {!menuOpen && (
+        <button
+          className="absolute top-3 left-3 z-[200] flex items-center justify-center w-10 h-10 transition-all hover:scale-110 active:scale-95"
+          style={{
+            fontFamily: "'Press Start 2P', cursive",
+            background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+            border: `3px solid #c9a44a`,
+            boxShadow: `0 0 15px #c9a44a40, 0 0 40px #c9a44a15`,
+            imageRendering: "pixelated" as any,
+          }}
+          onClick={() => { playSfx('menuSelect'); setMenuOpen(true); setMenuTab("party"); }}
+          data-testid="button-overworld-menu"
+        >
+          <Menu className="w-5 h-5" style={{ color: "#c9a44a" }} />
+        </button>
+      )}
 
-        <div className="relative flex items-center gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-sm"
-              style={{ backgroundColor: COLOR_MAP[player.energyColor] + "30", border: `2px solid ${COLOR_MAP[player.energyColor]}` }}
-            >
-              <span className="text-[11px] font-bold" style={{ color: COLOR_MAP[player.energyColor], fontFamily: "'Press Start 2P'" }}>{player.level}</span>
-            </div>
-            <div>
-              <p className="text-[10px] font-bold text-white tracking-wider" style={{ fontFamily: "'Press Start 2P'" }}>{player.name.toUpperCase()}</p>
-              <div className="flex gap-3 mt-1">
+      {menuOpen && (
+        <div className="absolute top-3 left-3 z-[200]" style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" as any }}>
+          <div
+            className="relative overflow-hidden"
+            style={{
+              width: "320px",
+              maxHeight: "580px",
+              background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+              border: `3px solid #c9a44a`,
+              boxShadow: `0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)`,
+            }}
+          >
+            <div style={{
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)`,
+              pointerEvents: "none",
+            }} />
+
+            <div className="relative px-3 pt-2 pb-1.5 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid #c9a44a` }}>
+              <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
-                  <Heart className="w-2.5 h-2.5 text-red-500" />
-                  <span className="text-[8px] text-red-200" style={{ fontFamily: "'Press Start 2P'" }}>{player.stats.hp}</span>
+                  <Gem className="w-3 h-3 text-yellow-500" />
+                  <span style={{ fontSize: "8px", color: "#fbbf24" }}>{player.gold}</span>
                 </div>
-                <div className="flex items-center gap-1.5">
-                  <Droplets className="w-2.5 h-2.5 text-blue-500" />
-                  <span className="text-[8px] text-blue-200" style={{ fontFamily: "'Press Start 2P'" }}>{player.stats.mp}</span>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  <Gem className="w-2.5 h-2.5 text-yellow-500" />
-                  <span className="text-[8px] text-yellow-200" style={{ fontFamily: "'Press Start 2P'" }}>{player.gold}</span>
+                <span style={{ fontSize: "8px", color: "#c9a44a60" }}>|</span>
+                <span style={{ fontSize: "8px", color: ELEMENT_COLORS[region.theme] }}>{region.name}</span>
+                <div className="flex items-center gap-0.5 ml-1">
+                  {[0, 1, 2].map(i => (
+                    <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: i < tier ? "#4ade80" : "#ffffff20" }} />
+                  ))}
                 </div>
               </div>
+              <button
+                className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                style={{ border: `1px solid #c9a44a50`, background: "transparent" }}
+                onClick={() => { playSfx('menuSelect'); setMenuOpen(false); setTargetingItemId(null); }}
+                data-testid="button-close-overworld-menu"
+              >
+                <X className="w-3 h-3" style={{ color: "#c9a44a" }} />
+              </button>
             </div>
-          </div>
-        </div>
 
-        <div className="relative flex items-center gap-2">
-          <button
-            onClick={() => { playSfx('menuSelect'); onHutEnter(); }}
-            className="flex items-center justify-center w-8 h-8 transition-all hover:scale-110 active:scale-95"
-            style={{
-              background: "rgba(0,0,0,0.4)",
-              border: `1px solid ${elemColor}60`,
-              boxShadow: `inset 0 0 8px ${elemColor}20`,
-            }}
-          >
-            <Package className="w-4 h-4" style={{ color: elemColor }} />
-          </button>
-        </div>
-      </div>
+            <div className="relative flex gap-0 px-3 pt-2">
+              {(["party", "items", "gear"] as const).map(tab => (
+                <button
+                  key={tab}
+                  onClick={() => { playSfx('menuSelect'); setMenuTab(tab); setTargetingItemId(null); }}
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "7px",
+                    padding: "5px 10px",
+                    border: `1px solid #c9a44a`,
+                    borderBottom: menuTab === tab ? "none" : `1px solid #c9a44a`,
+                    background: menuTab === tab ? "#c9a44a" : "transparent",
+                    color: menuTab === tab ? "#0a0808" : "#c9a44a80",
+                    cursor: "pointer",
+                  }}
+                  data-testid={`tab-overworld-${tab}`}
+                >
+                  {tab.toUpperCase()}
+                </button>
+              ))}
+            </div>
 
+            <div className="relative px-3 py-2" style={{ maxHeight: "440px", overflowY: "auto" }}>
+              {menuTab === "party" && (
+                <div className="space-y-2">
+                  {[{ name: player.name, stats: player.stats, level: player.level, element: player.element, xp: player.xp, xpToNext: player.xpToNext },
+                    ...player.party.map(m => ({ name: m.name, stats: m.stats, level: m.level, element: m.element, xp: m.xp || 0, xpToNext: m.xpToNext || 100 }))
+                  ].map((member, idx) => (
+                    <div key={idx} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <span style={{ fontSize: "8px", color: "#e8e0d0" }}>{member.name}</span>
+                          <span style={{ fontSize: "7px", color: "#c9a44a60" }}>Lv.{member.level}</span>
+                        </div>
+                        <span style={{ fontSize: "7px", color: ELEMENT_COLORS[member.element] || "#c9a44a" }}>{member.element}</span>
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <Heart className="w-2.5 h-2.5 text-red-500 flex-shrink-0" />
+                          <div className="flex-1 h-2 relative" style={{ background: "#1a0808", border: "1px solid #ef444440" }}>
+                            <div className="absolute inset-0" style={{ width: `${(member.stats.hp / member.stats.maxHp) * 100}%`, background: "linear-gradient(90deg, #dc2626, #ef4444)", transition: "width 0.3s" }} />
+                          </div>
+                          <span style={{ fontSize: "6px", color: "#fca5a5", minWidth: "45px", textAlign: "right" }}>{member.stats.hp}/{member.stats.maxHp}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Droplets className="w-2.5 h-2.5 text-blue-500 flex-shrink-0" />
+                          <div className="flex-1 h-2 relative" style={{ background: "#080818", border: "1px solid #3b82f640" }}>
+                            <div className="absolute inset-0" style={{ width: `${(member.stats.mp / member.stats.maxMp) * 100}%`, background: "linear-gradient(90deg, #2563eb, #3b82f6)", transition: "width 0.3s" }} />
+                          </div>
+                          <span style={{ fontSize: "6px", color: "#93c5fd", minWidth: "45px", textAlign: "right" }}>{member.stats.mp}/{member.stats.maxMp}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <Zap className="w-2.5 h-2.5 text-yellow-500 flex-shrink-0" />
+                          <div className="flex-1 h-2 relative" style={{ background: "#181808", border: "1px solid #eab30840" }}>
+                            <div className="absolute inset-0" style={{ width: `${(member.xp / member.xpToNext) * 100}%`, background: "linear-gradient(90deg, #ca8a04, #eab308)", transition: "width 0.3s" }} />
+                          </div>
+                          <span style={{ fontSize: "6px", color: "#fde68a", minWidth: "45px", textAlign: "right" }}>{member.xp}/{member.xpToNext}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
-      <div className="absolute bottom-0 left-0 right-0 z-30 bg-black/50 backdrop-blur-sm border-t border-white/5">
-        <div className="flex items-center justify-between px-3 py-1.5">
-          <Button size="icon" variant="ghost"
-            disabled={player.currentRegion <= 0}
-            onClick={() => {
-              playSfx('menuSelect');
-              const prevRegion = player.currentRegion - 1;
-              if (prevRegion >= 0) onRegionChange(prevRegion);
-            }}
-            className="text-white/50 disabled:opacity-20 h-7 w-7"
-            data-testid="button-prev-region"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-
-          <div className="text-center flex-1">
-            <h2 className="text-sm font-semibold tracking-wide" style={{ color: ELEMENT_COLORS[region.theme] }} data-testid="text-region-name">
-              {region.name}
-            </h2>
-            <div className="flex items-center justify-center gap-1.5 mt-0.5">
-              {(() => {
-                const defeats = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
-                const dots = [];
-                for (let i = 0; i < 3; i++) {
-                  dots.push(
-                    <div key={i} className={`w-2 h-2 rounded-full ${i < defeats ? "bg-green-400" : "bg-white/20"}`} />
-                  );
-                }
+              {menuTab === "items" && (() => {
+                const consumables = player.inventory.filter(i => i.type === "consumable");
                 return (
-                  <>
-                    <span className="text-[9px] text-white/40 mr-1">Clear</span>
-                    {dots}
-                  </>
+                  <div className="space-y-1.5">
+                    {consumables.length === 0 ? (
+                      <div style={{ textAlign: "center", padding: "24px 0" }}>
+                        <p style={{ fontSize: "8px", color: "#c9a44a50" }}>No consumable items</p>
+                      </div>
+                    ) : (
+                      groupConsumables(consumables).map(({ item, count, ids }) => {
+                        const canUseOnPlayer = item.effect.type === "heal" && (
+                          (item.effect.stat === "hp" && player.stats.hp < player.stats.maxHp) ||
+                          (item.effect.stat === "mp" && player.stats.mp < player.stats.maxMp)
+                        );
+                        const canUseOnAny = canUseOnPlayer || player.party.some(m =>
+                          item.effect.type === "heal" && (
+                            (item.effect.stat === "hp" && m.stats.hp < m.stats.maxHp) ||
+                            (item.effect.stat === "mp" && m.stats.mp < m.stats.maxMp)
+                          )
+                        );
+                        const isTargeting = targetingItemId === item.name;
+                        return (
+                          <div key={item.name} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: "8px", color: "#e8e0d0" }}>
+                                  {item.name} <span style={{ color: "#c9a44acc" }}>x{count}</span>
+                                </p>
+                                <p style={{ fontSize: "6px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
+                              </div>
+                              <button
+                                onClick={() => {
+                                  playSfx('menuSelect');
+                                  if (player.party.length > 0) {
+                                    setTargetingItemId(isTargeting ? null : item.name);
+                                  } else {
+                                    onUseItem(ids[0]);
+                                  }
+                                }}
+                                disabled={!canUseOnAny}
+                                style={{
+                                  fontFamily: "'Press Start 2P', cursive",
+                                  fontSize: "7px",
+                                  padding: "3px 6px",
+                                  border: `1px solid ${isTargeting ? "#e8c030" : "#c9a44a"}60`,
+                                  background: isTargeting ? "#e8c03020" : "transparent",
+                                  color: isTargeting ? "#e8c030" : "#c9a44a",
+                                  cursor: canUseOnAny ? "pointer" : "default",
+                                  opacity: canUseOnAny ? 1 : 0.4,
+                                }}
+                              >
+                                {isTargeting ? "CANCEL" : "USE"}
+                              </button>
+                            </div>
+                            {isTargeting && (
+                              <div style={{ marginTop: "4px", paddingTop: "4px", borderTop: `1px solid #c9a44a20` }}>
+                                <p style={{ fontSize: "6px", color: "#c9a44a50", marginBottom: "3px" }}>Select target:</p>
+                                <button
+                                  disabled={!canUseOnPlayer}
+                                  onClick={() => { playSfx('menuSelect'); onUseItem(ids[0]); setTargetingItemId(null); }}
+                                  style={{
+                                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                                    padding: "3px 6px", background: "#0a080820", border: `1px solid #c9a44a15`,
+                                    cursor: canUseOnPlayer ? "pointer" : "default", opacity: canUseOnPlayer ? 1 : 0.3,
+                                    marginBottom: "2px", fontFamily: "'Press Start 2P', cursive",
+                                  }}
+                                >
+                                  <div className="flex items-center gap-1.5">
+                                    <span style={{ fontSize: "7px", color: "#c9a44a" }}>{player.name}</span>
+                                    <span style={{ fontSize: "6px", color: "#c9a44a50" }}>(You)</span>
+                                  </div>
+                                  <div className="flex items-center gap-1.5">
+                                    {item.effect.stat === "hp" && (
+                                      <div className="flex items-center gap-1">
+                                        <Heart style={{ width: 8, height: 8, color: "#ef4444" }} />
+                                        <span style={{ fontSize: "6px", color: player.stats.hp < player.stats.maxHp ? "#fca5a5" : "#86efac" }}>
+                                          {player.stats.hp}/{player.stats.maxHp}
+                                        </span>
+                                      </div>
+                                    )}
+                                    {item.effect.stat === "mp" && (
+                                      <div className="flex items-center gap-1">
+                                        <Droplets style={{ width: 8, height: 8, color: "#60a5fa" }} />
+                                        <span style={{ fontSize: "6px", color: player.stats.mp < player.stats.maxMp ? "#93c5fd" : "#86efac" }}>
+                                          {player.stats.mp}/{player.stats.maxMp}
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                </button>
+                                {player.party.map((member, idx) => {
+                                  const canUseOnMember = item.effect.type === "heal" && (
+                                    (item.effect.stat === "hp" && member.stats.hp < member.stats.maxHp) ||
+                                    (item.effect.stat === "mp" && member.stats.mp < member.stats.maxMp)
+                                  );
+                                  return (
+                                    <button
+                                      key={member.id}
+                                      disabled={!canUseOnMember}
+                                      onClick={() => { playSfx('menuSelect'); onUseItem(ids[0], idx); setTargetingItemId(null); }}
+                                      style={{
+                                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                                        padding: "3px 6px", background: "#0a080820", border: `1px solid #c9a44a15`,
+                                        cursor: canUseOnMember ? "pointer" : "default", opacity: canUseOnMember ? 1 : 0.3,
+                                        marginBottom: "2px", fontFamily: "'Press Start 2P', cursive",
+                                      }}
+                                    >
+                                      <span style={{ fontSize: "7px", color: "#e8e0d0" }}>{member.name}</span>
+                                      <div className="flex items-center gap-1.5">
+                                        {item.effect.stat === "hp" && (
+                                          <div className="flex items-center gap-1">
+                                            <Heart style={{ width: 8, height: 8, color: "#ef4444" }} />
+                                            <span style={{ fontSize: "6px", color: member.stats.hp < member.stats.maxHp ? "#fca5a5" : "#86efac" }}>
+                                              {member.stats.hp}/{member.stats.maxHp}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {item.effect.stat === "mp" && (
+                                          <div className="flex items-center gap-1">
+                                            <Droplets style={{ width: 8, height: 8, color: "#60a5fa" }} />
+                                            <span style={{ fontSize: "6px", color: member.stats.mp < member.stats.maxMp ? "#93c5fd" : "#86efac" }}>
+                                              {member.stats.mp}/{member.stats.maxMp}
+                                            </span>
+                                          </div>
+                                        )}
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                );
+              })()}
+
+              {menuTab === "gear" && (() => {
+                const equipables = player.inventory.filter(i => i.type === "weapon" || i.type === "armor" || i.type === "accessory");
+                return (
+                  <div className="space-y-1.5">
+                    <p style={{ fontSize: "7px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Equipped</p>
+                    {(["weapon", "armor", "accessory"] as const).map(slot => {
+                      const item = player.equipment[slot];
+                      return (
+                        <div key={slot} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                          <p style={{ fontSize: "6px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>{slot}</p>
+                          {item ? (
+                            <div className="flex items-center justify-between gap-2 mt-1">
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
+                                <p style={{ fontSize: "6px", color: "#c9a44a60", marginTop: "1px" }}>{item.description}</p>
+                              </div>
+                              <button
+                                onClick={() => { playSfx('menuSelect'); onUnequip(slot); }}
+                                style={{
+                                  fontFamily: "'Press Start 2P', cursive", fontSize: "6px", padding: "3px 6px",
+                                  border: `1px solid #c9a44a60`, background: "transparent", color: "#c9a44a", cursor: "pointer",
+                                }}
+                              >
+                                UNEQUIP
+                              </button>
+                            </div>
+                          ) : (
+                            <p style={{ fontSize: "7px", color: "#c9a44a40", fontStyle: "italic", marginTop: "1px" }}>Empty</p>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {equipables.length > 0 && (
+                      <>
+                        <div style={{ borderTop: `1px solid #c9a44a20`, marginTop: "4px", paddingTop: "4px" }}>
+                          <p style={{ fontSize: "7px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Unequipped</p>
+                        </div>
+                        {equipables.map(item => (
+                          <div key={item.id} style={{ padding: "6px 8px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
+                            <div className="flex items-center justify-between gap-2">
+                              <div style={{ flex: 1, minWidth: 0 }}>
+                                <div className="flex items-center gap-1.5">
+                                  <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
+                                  <span style={{ fontSize: "5px", padding: "1px 3px", border: `1px solid #c9a44a30`, color: "#c9a44a80", textTransform: "capitalize" }}>{item.type}</span>
+                                </div>
+                                <p style={{ fontSize: "6px", color: "#c9a44a60", marginTop: "1px" }}>{item.description}</p>
+                              </div>
+                              <button
+                                onClick={() => { playSfx('menuSelect'); onEquip(item.id); }}
+                                style={{
+                                  fontFamily: "'Press Start 2P', cursive", fontSize: "6px", padding: "3px 6px",
+                                  border: `1px solid #c9a44a60`, background: "transparent", color: "#c9a44a", cursor: "pointer",
+                                }}
+                              >
+                                EQUIP
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
                 );
               })()}
             </div>
-          </div>
 
-          <Button size="icon" variant="ghost"
-            disabled={!isRegionUnlocked(player.currentRegion + 1, player.regionBossDefeats || {})}
-            onClick={() => { playSfx('menuSelect'); onRegionChange(player.currentRegion + 1); }}
-            className="text-white/50 disabled:opacity-20 h-7 w-7"
-            data-testid="button-next-region"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </Button>
+            <div className="relative h-1" style={{ background: `linear-gradient(90deg, transparent, #c9a44a40, transparent)` }} />
+          </div>
         </div>
-      </div>
+      )}
 
       {hoveredNode !== null && (() => {
         const node = region.nodes.find(n => n.id === hoveredNode);

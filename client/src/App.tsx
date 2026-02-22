@@ -24,7 +24,8 @@ import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
 import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume, fadeOutMusic, stopJingle } from "@/lib/music";
 import { playSfx } from "@/lib/sfx";
-import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut } from "lucide-react";
+import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut, Heart, Droplets } from "lucide-react";
+import { groupConsumables } from "@/lib/utils";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
 
@@ -126,6 +127,9 @@ function Game() {
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
+  const [showHutInventory, setShowHutInventory] = useState(false);
+  const [hutInventoryTab, setHutInventoryTab] = useState<"items" | "gear">("items");
+  const [hutTargetingItemId, setHutTargetingItemId] = useState<string | null>(null);
   const [hutTransitionIn, setHutTransitionIn] = useState(false);
   const [hutTransitionOut, setHutTransitionOut] = useState(false);
   const [exitToMenuTransition, setExitToMenuTransition] = useState(false);
@@ -249,6 +253,9 @@ function Game() {
               onShamanVisit={openShaman}
               onHutEnter={() => setHutTransitionIn(true)}
               onRegionChange={changeRegion}
+              onEquip={equipItem}
+              onUnequip={unequipItem}
+              onUseItem={useItemOverworld}
             />
             {hutTransitionIn && (
               <BattleTransition
@@ -320,7 +327,7 @@ function Game() {
 
           const menuItems = [
             { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { restAtNode(); playSfx('recover'); toast({ title: "Rested", description: "HP and MP fully restored!" }); } },
-            { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setScreen("inventory"); } },
+            { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setShowHutInventory(true); setHutInventoryTab("items"); setHutTargetingItemId(null); } },
             ...(state.player!.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setShowPartyManagement(true); } }] : []),
             { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setShowSaveScreen(true); } },
             { label: "OPTIONS", desc: "Game settings", icon: Sparkles, action: () => { setShowOptions(true); } },
@@ -442,6 +449,263 @@ function Game() {
                   />
                 </div>
               )}
+
+              {showHutInventory && state.player && (() => {
+                const hac = "#c9a44a";
+                const consumables = state.player.inventory.filter(i => i.type === "consumable");
+                const equipables = state.player.inventory.filter(i => i.type === "weapon" || i.type === "armor" || i.type === "accessory");
+                return (
+                  <div className="absolute inset-0 z-[300] flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #c9a44a15 0%, rgba(0,0,0,0.85) 70%)" }}>
+                    <div className="w-80 overflow-hidden relative" style={{
+                      background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                      border: `3px solid ${hac}`,
+                      boxShadow: `0 0 20px ${hac}40, 0 0 60px ${hac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
+                      fontFamily: "'Press Start 2P', cursive",
+                      imageRendering: "pixelated" as any,
+                      maxHeight: "500px",
+                    }}>
+                      <div style={{
+                        position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                        backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${hac}08 3px, ${hac}08 4px)`,
+                        pointerEvents: "none",
+                      }} />
+                      <div className="relative flex items-center justify-between" style={{ padding: "8px 12px", background: "#0d0b0bf0", borderBottom: `3px solid ${hac}` }}>
+                        <h3 style={{ fontSize: "10px", color: hac, letterSpacing: "2px" }}>INVENTORY</h3>
+                        <button
+                          onClick={() => { playSfx('menuSelect'); setShowHutInventory(false); setHutTargetingItemId(null); }}
+                          className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
+                          style={{ border: `1px solid ${hac}50`, background: "transparent" }}
+                        >
+                          <X className="w-3 h-3" style={{ color: hac }} />
+                        </button>
+                      </div>
+
+                      <div className="relative flex gap-0 px-3 pt-2">
+                        {(["items", "gear"] as const).map(tab => (
+                          <button
+                            key={tab}
+                            onClick={() => { playSfx('menuSelect'); setHutInventoryTab(tab); setHutTargetingItemId(null); }}
+                            style={{
+                              fontFamily: "'Press Start 2P', cursive",
+                              fontSize: "7px",
+                              padding: "6px 12px",
+                              border: `1px solid ${hac}`,
+                              borderBottom: hutInventoryTab === tab ? "none" : `1px solid ${hac}`,
+                              background: hutInventoryTab === tab ? hac : "transparent",
+                              color: hutInventoryTab === tab ? "#0a0808" : `${hac}80`,
+                              cursor: "pointer",
+                            }}
+                          >
+                            {tab === "items" ? "ITEMS" : "GEAR"}
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="relative" style={{ padding: "8px 12px", maxHeight: "350px", overflowY: "auto" }}>
+                        {hutInventoryTab === "items" && (
+                          <div className="space-y-1.5">
+                            {consumables.length === 0 ? (
+                              <div style={{ textAlign: "center", padding: "24px 0" }}>
+                                <p style={{ fontSize: "8px", color: `${hac}50` }}>No consumable items</p>
+                              </div>
+                            ) : (
+                              groupConsumables(consumables).map(({ item, count, ids }) => {
+                                const pl = state.player!;
+                                const canUseOnPlayer = item.effect.type === "heal" && (
+                                  (item.effect.stat === "hp" && pl.stats.hp < pl.stats.maxHp) ||
+                                  (item.effect.stat === "mp" && pl.stats.mp < pl.stats.maxMp)
+                                );
+                                const canUseOnAny = canUseOnPlayer || pl.party.some(m =>
+                                  item.effect.type === "heal" && (
+                                    (item.effect.stat === "hp" && m.stats.hp < m.stats.maxHp) ||
+                                    (item.effect.stat === "mp" && m.stats.mp < m.stats.maxMp)
+                                  )
+                                );
+                                const isTargeting = hutTargetingItemId === item.name;
+                                return (
+                                  <div key={item.name} style={{ padding: "8px", background: "#0d0b0bf0", border: `1px solid ${hac}30` }}>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ fontSize: "8px", color: "#e8e0d0" }}>
+                                          {item.name} <span style={{ color: `${hac}cc` }}>x{count}</span>
+                                        </p>
+                                        <p style={{ fontSize: "7px", color: `${hac}60`, marginTop: "2px" }}>{item.description}</p>
+                                      </div>
+                                      <button
+                                        onClick={() => {
+                                          playSfx('menuSelect');
+                                          if (pl.party.length > 0) {
+                                            setHutTargetingItemId(isTargeting ? null : item.name);
+                                          } else {
+                                            useItemOverworld(ids[0]);
+                                          }
+                                        }}
+                                        disabled={!canUseOnAny}
+                                        style={{
+                                          fontFamily: "'Press Start 2P', cursive",
+                                          fontSize: "7px",
+                                          padding: "4px 8px",
+                                          border: `1px solid ${isTargeting ? "#e8c030" : hac}60`,
+                                          background: isTargeting ? "#e8c03020" : "transparent",
+                                          color: isTargeting ? "#e8c030" : hac,
+                                          cursor: canUseOnAny ? "pointer" : "default",
+                                          opacity: canUseOnAny ? 1 : 0.4,
+                                        }}
+                                      >
+                                        {isTargeting ? "CANCEL" : "USE"}
+                                      </button>
+                                    </div>
+                                    {isTargeting && (
+                                      <div style={{ marginTop: "6px", paddingTop: "6px", borderTop: `1px solid ${hac}20` }}>
+                                        <p style={{ fontSize: "7px", color: `${hac}50`, marginBottom: "4px" }}>Select target:</p>
+                                        <button
+                                          disabled={!canUseOnPlayer}
+                                          onClick={() => { playSfx('menuSelect'); useItemOverworld(ids[0]); setHutTargetingItemId(null); }}
+                                          style={{
+                                            width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                                            padding: "4px 8px", background: "#0a080820", border: `1px solid ${hac}15`,
+                                            cursor: canUseOnPlayer ? "pointer" : "default", opacity: canUseOnPlayer ? 1 : 0.3,
+                                            marginBottom: "3px", fontFamily: "'Press Start 2P', cursive",
+                                          }}
+                                        >
+                                          <div className="flex items-center gap-1.5">
+                                            <span style={{ fontSize: "7px", color: hac }}>{pl.name}</span>
+                                            <span style={{ fontSize: "6px", color: `${hac}50` }}>(You)</span>
+                                          </div>
+                                          <div className="flex items-center gap-1.5">
+                                            {item.effect.stat === "hp" && (
+                                              <div className="flex items-center gap-1">
+                                                <Heart style={{ width: 10, height: 10, color: "#ef4444" }} />
+                                                <span style={{ fontSize: "7px", color: pl.stats.hp < pl.stats.maxHp ? "#fca5a5" : "#86efac" }}>
+                                                  {pl.stats.hp}/{pl.stats.maxHp}
+                                                </span>
+                                              </div>
+                                            )}
+                                            {item.effect.stat === "mp" && (
+                                              <div className="flex items-center gap-1">
+                                                <Droplets style={{ width: 10, height: 10, color: "#60a5fa" }} />
+                                                <span style={{ fontSize: "7px", color: pl.stats.mp < pl.stats.maxMp ? "#93c5fd" : "#86efac" }}>
+                                                  {pl.stats.mp}/{pl.stats.maxMp}
+                                                </span>
+                                              </div>
+                                            )}
+                                          </div>
+                                        </button>
+                                        {pl.party.map((member, idx) => {
+                                          const canUseOnMember = item.effect.type === "heal" && (
+                                            (item.effect.stat === "hp" && member.stats.hp < member.stats.maxHp) ||
+                                            (item.effect.stat === "mp" && member.stats.mp < member.stats.maxMp)
+                                          );
+                                          return (
+                                            <button
+                                              key={member.id}
+                                              disabled={!canUseOnMember}
+                                              onClick={() => { playSfx('menuSelect'); useItemOverworld(ids[0], idx); setHutTargetingItemId(null); }}
+                                              style={{
+                                                width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
+                                                padding: "4px 8px", background: "#0a080820", border: `1px solid ${hac}15`,
+                                                cursor: canUseOnMember ? "pointer" : "default", opacity: canUseOnMember ? 1 : 0.3,
+                                                marginBottom: "3px", fontFamily: "'Press Start 2P', cursive",
+                                              }}
+                                            >
+                                              <span style={{ fontSize: "7px", color: "#e8e0d0" }}>{member.name}</span>
+                                              <div className="flex items-center gap-1.5">
+                                                {item.effect.stat === "hp" && (
+                                                  <div className="flex items-center gap-1">
+                                                    <Heart style={{ width: 10, height: 10, color: "#ef4444" }} />
+                                                    <span style={{ fontSize: "7px", color: member.stats.hp < member.stats.maxHp ? "#fca5a5" : "#86efac" }}>
+                                                      {member.stats.hp}/{member.stats.maxHp}
+                                                    </span>
+                                                  </div>
+                                                )}
+                                                {item.effect.stat === "mp" && (
+                                                  <div className="flex items-center gap-1">
+                                                    <Droplets style={{ width: 10, height: 10, color: "#60a5fa" }} />
+                                                    <span style={{ fontSize: "7px", color: member.stats.mp < member.stats.maxMp ? "#93c5fd" : "#86efac" }}>
+                                                      {member.stats.mp}/{member.stats.maxMp}
+                                                    </span>
+                                                  </div>
+                                                )}
+                                              </div>
+                                            </button>
+                                          );
+                                        })}
+                                      </div>
+                                    )}
+                                  </div>
+                                );
+                              })
+                            )}
+                          </div>
+                        )}
+
+                        {hutInventoryTab === "gear" && (
+                          <div className="space-y-1.5">
+                            <p style={{ fontSize: "7px", color: `${hac}60`, textTransform: "uppercase", letterSpacing: "1px", padding: "0 4px" }}>Equipped</p>
+                            {(["weapon", "armor", "accessory"] as const).map(slot => {
+                              const item = state.player!.equipment[slot];
+                              return (
+                                <div key={slot} style={{ padding: "8px", background: "#0d0b0bf0", border: `1px solid ${hac}30` }}>
+                                  <p style={{ fontSize: "7px", color: `${hac}60`, textTransform: "uppercase", letterSpacing: "1px" }}>{slot}</p>
+                                  {item ? (
+                                    <div className="flex items-center justify-between gap-2 mt-1">
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
+                                        <p style={{ fontSize: "7px", color: `${hac}60`, marginTop: "2px" }}>{item.description}</p>
+                                      </div>
+                                      <button
+                                        onClick={() => { playSfx('menuSelect'); unequipItem(slot); }}
+                                        style={{
+                                          fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "4px 8px",
+                                          border: `1px solid ${hac}60`, background: "transparent", color: hac, cursor: "pointer",
+                                        }}
+                                      >
+                                        UNEQUIP
+                                      </button>
+                                    </div>
+                                  ) : (
+                                    <p style={{ fontSize: "8px", color: `${hac}40`, fontStyle: "italic", marginTop: "2px" }}>Empty</p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                            {equipables.length > 0 && (
+                              <>
+                                <div style={{ borderTop: `1px solid ${hac}20`, marginTop: "4px", paddingTop: "6px" }}>
+                                  <p style={{ fontSize: "7px", color: `${hac}60`, textTransform: "uppercase", letterSpacing: "1px", padding: "0 4px" }}>Unequipped</p>
+                                </div>
+                                {equipables.map(item => (
+                                  <div key={item.id} style={{ padding: "8px", background: "#0d0b0bf0", border: `1px solid ${hac}30` }}>
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div className="flex items-center gap-1.5">
+                                          <p style={{ fontSize: "8px", color: "#e8e0d0" }}>{item.name}</p>
+                                          <span style={{ fontSize: "6px", padding: "1px 4px", border: `1px solid ${hac}30`, color: `${hac}80`, textTransform: "capitalize" }}>{item.type}</span>
+                                        </div>
+                                        <p style={{ fontSize: "7px", color: `${hac}60`, marginTop: "2px" }}>{item.description}</p>
+                                      </div>
+                                      <button
+                                        onClick={() => { playSfx('menuSelect'); equipItem(item.id); }}
+                                        style={{
+                                          fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "4px 8px",
+                                          border: `1px solid ${hac}60`, background: "transparent", color: hac, cursor: "pointer",
+                                        }}
+                                      >
+                                        EQUIP
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                              </>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="relative h-1" style={{ background: `linear-gradient(90deg, transparent, ${hac}40, transparent)` }} />
+                    </div>
+                  </div>
+                );
+              })()}
 
               {showOptions && (
                 <div className="absolute inset-0 z-[400] flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #c9a44a15 0%, rgba(0,0,0,0.85) 70%)" }}>
