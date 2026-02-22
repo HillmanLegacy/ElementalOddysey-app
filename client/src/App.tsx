@@ -846,7 +846,7 @@ function Game() {
     );
   }
 
-  return <div className="w-full h-screen overflow-hidden">{renderScreen()}</div>;
+  return <div className="w-full h-screen overflow-hidden bg-black">{renderScreen()}</div>;
 }
 
 function App() {
