@@ -1238,6 +1238,9 @@ export default function BattleScreen({
         timers.push(setTimeout(() => {
           setDeathAnimPending(prev => new Set(prev).add(idx));
           setEnemyAnimStates(prev => ({ ...prev, [idx]: "death" }));
+          if (enemy.element === "Fire" && !enemy.isBoss) {
+            playSfx("fireDemonDeath", 0.8);
+          }
         }, 600));
       }
       if (enemy.currentHp <= 0 && !isAnimatedEnemyCheck(enemy) && !pixelDissolving.has(idx)) {
@@ -1467,7 +1470,7 @@ export default function BattleScreen({
       }
     } else if (enemy.element === "Fire" && !enemy.isBoss) {
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-      playSfx("fireballLaunch", 0.8);
+      playSfx("fireballWhoosh", 0.8);
 
       const aliveParty = battle.party.filter(p => p.currentHp > 0);
       const totalTargets = 1 + aliveParty.length;
@@ -1500,7 +1503,7 @@ export default function BattleScreen({
         setFireballAnim(null);
         const result = onEnemyAttack(enemyIdx, preTarget);
         if (!result.dodged) {
-          playSfx("explosion", 0.7);
+          playSfx("fireballImpact", 0.8);
           setShakeScreen(true);
           if (result.target.type === "party") {
             setPartyHurtIndex(result.target.index);

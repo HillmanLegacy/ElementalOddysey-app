@@ -40,6 +40,9 @@ import incinerationCleave from "@assets/Incineration_Cleave_1771658647621.wav";
 import incinerationBladeSwings from "@assets/incineration_slash_blade_swings_1771793878417.mp3";
 import blockingSound from "@assets/blocking_sound_1771793599518.mp3";
 import menuSelect from "@assets/menu_select_1771792929044.mp3";
+import fireDemonDeath from "@assets/death_sfx_fire_demon_1771795321952.mp3";
+import fireballImpact from "@assets/fireball_impact_fire_demon_1771795321952.mp3";
+import fireballWhoosh from "@assets/fireball_whoosh_fire_demon_1771795321953.mp3";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
@@ -67,6 +70,9 @@ const SFX_GROUPS = {
   incinerationCleave: [incinerationCleave],
   incinerationBladeSwings: [incinerationBladeSwings],
   menuSelect: [menuSelect],
+  fireDemonDeath: [fireDemonDeath],
+  fireballImpact: [fireballImpact],
+  fireballWhoosh: [fireballWhoosh],
 } as const;
 
 export type SfxName = keyof typeof SFX_GROUPS;
