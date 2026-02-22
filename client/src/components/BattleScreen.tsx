@@ -838,7 +838,7 @@ export default function BattleScreen({
         const frameDuration = 1000 / 14;
         const pauseFrame1Time = frameDuration * 1;
         const pauseFrame1Duration = 200;
-        const flamelashDuration = 1200;
+        const flamelashDuration = Math.ceil(61 / 38 * 1000);
         const resumeAfterFlamelash = pauseFrame1Time + pauseFrame1Duration + flamelashDuration;
         const nukeDuration = 11 * (1000 / 18);
         const nukeStartTime = resumeAfterFlamelash + (frameDuration * 3);
