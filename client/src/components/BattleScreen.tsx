@@ -1872,7 +1872,7 @@ export default function BattleScreen({
         return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
       case "eruptionCleave": {
-        const ecHoldFrames: Record<number, number> = { 15: 1400 };
+        const ecHoldFrames: Record<number, number> = { 15: 1800 };
         return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, holdFrames: ecHoldFrames, w: 86, h: 49 };
       }
       case "fujinSlice":
