@@ -10,6 +10,7 @@ import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
 
 import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
+import { playMusic, stopMusic } from "@/lib/music";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
@@ -277,6 +278,7 @@ export default function BattleScreen({
   const [deathAnimPending, setDeathAnimPending] = useState<Set<number>>(new Set());
   const [pixelDissolving, setPixelDissolving] = useState<Set<number>>(new Set());
   const [showVictoryUI, setShowVictoryUI] = useState(false);
+  const [showDefeatUI, setShowDefeatUI] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
   const [xpBarLevel, setXpBarLevel] = useState(player.level);
@@ -338,6 +340,15 @@ export default function BattleScreen({
       setXpBarPercent(0);
       setXpBarLevel(player.level);
       setXpBarLevelUp(false);
+    }
+    if (battle.phase === "defeat") {
+      const timer = setTimeout(() => {
+        setShowDefeatUI(true);
+        playMusic("game_over");
+      }, 1500);
+      return () => clearTimeout(timer);
+    } else {
+      setShowDefeatUI(false);
     }
   }, [battle.phase, deathAnimPending]);
 
@@ -3750,13 +3761,14 @@ export default function BattleScreen({
         );
       })()}
 
-      {battle.phase === "defeat" && (() => {
+      {battle.phase === "defeat" && showDefeatUI && (() => {
         const ec = "#ef4444";
         return (
-          <div className="absolute inset-0 z-[200] flex items-center justify-center animate-[fadeIn_0.5s_ease-out]">
-            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.8) 70%)` }} />
+          <div className="absolute inset-0 z-[200] flex items-center justify-center">
+            <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}10 0%, rgba(0,0,0,0.85) 70%)` }} />
+            <PixelDissolve active={showDefeatUI} reverse={true} duration={600} pixelSize={5}>
             <div
-              className="relative w-[300px] overflow-hidden"
+              className="relative w-[320px] h-[220px] overflow-hidden flex flex-col"
               style={{
                 fontFamily: "'Press Start 2P', cursive",
                 imageRendering: "pixelated",
@@ -3773,13 +3785,22 @@ export default function BattleScreen({
 
               <div className="relative px-4 pt-3 pb-2 flex items-center justify-center gap-2" style={{ borderBottom: `2px solid ${ec}60` }}>
                 <Skull className="w-4 h-4" style={{ color: ec }} />
-                <span style={{ fontSize: "12px", color: ec, letterSpacing: "2px" }}>DEFEATED</span>
+                <span style={{ fontSize: "14px", color: ec, letterSpacing: "3px" }}>GAME OVER</span>
+                <Skull className="w-4 h-4" style={{ color: ec }} />
               </div>
 
-              <div className="relative px-4 py-4 space-y-3">
-                <p className="text-center" style={{ fontSize: "8px", color: `${ec}80` }}>Your journey continues...</p>
+              <div className="relative px-4 py-4 flex-1 flex flex-col justify-center space-y-4">
+                <p className="text-center" style={{ fontSize: "8px", color: `${ec}80`, lineHeight: "1.6" }}>
+                  Your party has fallen...
+                </p>
+                <p className="text-center" style={{ fontSize: "7px", color: "rgba(255,255,255,0.4)" }}>
+                  You will return to the hut.
+                </p>
                 <button
-                  onClick={() => onEndBattle(false)}
+                  onClick={() => {
+                    stopMusic();
+                    onEndBattle(false);
+                  }}
                   className="w-full flex items-center justify-center gap-3 px-3 py-2.5 text-left transition-all"
                   style={{
                     fontFamily: "'Press Start 2P', cursive",
@@ -3801,13 +3822,14 @@ export default function BattleScreen({
                   }}
                   data-testid="button-continue-defeat"
                 >
-                  RETURN TO MAP
+                  CONTINUE
                   <svg className="w-3 h-3 ml-auto opacity-60" viewBox="0 0 12 12" style={{ color: ec }}>
                     <path d="M4 2 L8 6 L4 10" fill="none" stroke="currentColor" strokeWidth="2" />
                   </svg>
                 </button>
               </div>
             </div>
+            </PixelDissolve>
           </div>
         );
       })()}

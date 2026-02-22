@@ -1,11 +1,13 @@
 import hutTheme from "@assets/Hut_1771785430844.mp3";
 import lavaRegion from "@assets/Lava_Region_1771785430844.mp3";
+import gameOverBgm from "@assets/Game_Over_BGM_1771786937036.mp3";
 
-export type MusicTrack = "hut" | "lava_region" | null;
+export type MusicTrack = "hut" | "lava_region" | "game_over" | null;
 
 const TRACKS: Record<string, string> = {
   hut: hutTheme,
   lava_region: lavaRegion,
+  game_over: gameOverBgm,
 };
 
 let currentTrack: MusicTrack = null;
