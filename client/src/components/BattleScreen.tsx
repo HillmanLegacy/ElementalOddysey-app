@@ -1300,7 +1300,7 @@ export default function BattleScreen({
       if (enemyAnimStates[idx] === "death" && !deathSfxPlayed.current.has(idx)) {
         deathSfxPlayed.current.add(idx);
         if (enemy.element === "Fire" && !enemy.isBoss) {
-          playSfx("fireDemonDeath", 0.8);
+          playSfx("fireDemonDeath", 1.0);
         }
       }
     });
