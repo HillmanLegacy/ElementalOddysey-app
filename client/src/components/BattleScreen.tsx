@@ -332,6 +332,7 @@ export default function BattleScreen({
     }
     if (battle.phase === "victory") {
       if (deathAnimPending.size > 0) return;
+      stopAll();
       const timer = setTimeout(() => setShowVictoryUI(true), 1200);
       return () => clearTimeout(timer);
     } else {
@@ -344,6 +345,7 @@ export default function BattleScreen({
     if (battle.phase === "defeat") {
       const timer = setTimeout(() => {
         setShowDefeatUI(true);
+        stopAll();
         playAmbient("game_over");
       }, 1500);
       return () => clearTimeout(timer);

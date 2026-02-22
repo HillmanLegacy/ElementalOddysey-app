@@ -2,9 +2,10 @@ import hutTheme from "@assets/Hut_1771785430844.mp3";
 import lavaRegion from "@assets/Lava_Region_1771785430844.mp3";
 import gameOverBgm from "@assets/Game_Over_BGM_1771786937036.mp3";
 import lavaRegionMusic from "@assets/Lava_Region_Music_1771787079908.mp3";
+import lavaRegionBattle from "@assets/Lava_Region_Battle_Music_Main_1771793565507.mp3";
 
 export type AmbientTrack = "hut" | "lava_region" | "game_over" | null;
-export type MusicTrack = "lava_region_music" | null;
+export type MusicTrack = "lava_region_music" | "lava_region_battle" | null;
 
 const AMBIENT_TRACKS: Record<string, string> = {
   hut: hutTheme,
@@ -14,6 +15,7 @@ const AMBIENT_TRACKS: Record<string, string> = {
 
 const MUSIC_TRACKS: Record<string, string> = {
   lava_region_music: lavaRegionMusic,
+  lava_region_battle: lavaRegionBattle,
 };
 
 const FADE_DURATION = 800;

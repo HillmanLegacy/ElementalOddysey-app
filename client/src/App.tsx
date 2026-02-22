@@ -101,6 +101,12 @@ function Game() {
         stopAmbient();
         stopMusic();
       }
+    } else if (state.screen === "battle" && state.player) {
+      stopAmbient();
+      const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
+      if (region.theme === "Fire") {
+        playMusic("lava_region_battle");
+      }
     } else {
       stopAll();
     }
