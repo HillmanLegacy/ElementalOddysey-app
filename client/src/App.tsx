@@ -22,6 +22,7 @@ import BattleTransition from "@/components/BattleTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
+import { playMusic, stopMusic, setMusicVolume } from "@/lib/music";
 import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft } from "lucide-react";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
@@ -81,6 +82,25 @@ function Game() {
   useEffect(() => {
     setSfxVolume(state.sfxVolume);
   }, [state.sfxVolume]);
+
+  useEffect(() => {
+    setMusicVolume(state.musicVolume);
+  }, [state.musicVolume]);
+
+  useEffect(() => {
+    if (state.screen === "hut") {
+      playMusic("hut");
+    } else if (state.screen === "overworld" && state.player) {
+      const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
+      if (region.theme === "Fire") {
+        playMusic("lava_region");
+      } else {
+        stopMusic();
+      }
+    } else {
+      stopMusic();
+    }
+  }, [state.screen, state.player?.currentRegion]);
 
   const { data: saves } = useQuery<{ id: string; slotName: string; playerData: PlayerCharacter; updatedAt: string }[]>({
     queryKey: ["/api/saves"],
