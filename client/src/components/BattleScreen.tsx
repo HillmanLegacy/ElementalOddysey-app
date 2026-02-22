@@ -37,7 +37,7 @@ import demonFireball from "@/assets/images/demon-fireball.png";
 import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
 import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
 import guardSpriteSheet from "@assets/10_weaponhit_spritesheet_1771628904150.png";
-import flamelashSheet from "@assets/6_flamelash_spritesheet_1771631377663.png";
+import firespinSheet from "@assets/7_firespin_spritesheet_1771795176253.png";
 import nukeExplosionSheet from "@assets/Nuke_Explosion_1771631384679.png";
 import knightEruptionSheet from "@assets/knight_1771631932532.png";
 
@@ -2182,10 +2182,10 @@ export default function BattleScreen({
                 filter: "drop-shadow(0 0 14px rgba(255,100,0,0.9)) drop-shadow(0 0 28px rgba(255,50,0,0.5))",
               }}>
                 <SpriteAnimator
-                  spriteSheet={flamelashSheet}
+                  spriteSheet={firespinSheet}
                   frameWidth={100}
                   frameHeight={100}
-                  totalFrames={49}
+                  totalFrames={61}
                   fps={38}
                   scale={3.85}
                   loop={false}
