@@ -43,6 +43,7 @@ import menuSelect from "@assets/menu_select_1771792929044.mp3";
 import fireDemonDeath from "@assets/death_sfx_fire_demon_1771795321952.mp3";
 import fireballImpact from "@assets/fireball_impact_fire_demon_1771795321952.mp3";
 import fireballWhoosh from "@assets/fireball_whoosh_fire_demon_1771795321953.mp3";
+import battleTransitionEffect from "@assets/battle_screen_transition_effect_1771797007586.mp3";
 
 const SFX_GROUPS = {
   swordSwing: [swordSwing1, swordSwing2, swordSwing3],
@@ -73,6 +74,7 @@ const SFX_GROUPS = {
   fireDemonDeath: [fireDemonDeath],
   fireballImpact: [fireballImpact],
   fireballWhoosh: [fireballWhoosh],
+  battleTransition: [battleTransitionEffect],
 } as const;
 
 export type SfxName = keyof typeof SFX_GROUPS;

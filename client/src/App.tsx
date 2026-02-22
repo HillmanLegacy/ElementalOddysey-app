@@ -229,6 +229,7 @@ function Game() {
                 const ec = ELEMENT_COLORS[r.theme] || "#c9a44a";
                 setTransitionElementColor(ec);
                 fadeOutMusic(700);
+                playSfx('battleTransition');
                 setBattleTransition({ nodeId, elementColor: ec });
               }}
               onShopOpen={(nodeId: number) => {
@@ -741,6 +742,7 @@ function Game() {
                 if (!victory) {
                   fadeOutMusic(700);
                 }
+                playSfx('battleTransition');
                 setBattleExitTransition({ victory });
               }}
               onSetAnimating={setAnimating}
