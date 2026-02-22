@@ -801,7 +801,6 @@ export default function BattleScreen({
         setAnimPhase("eruptionCleave");
         setEruptionCleaveActive(true);
         setEruptionFrozenEnemy(targetIdx);
-        playSfx("swordSwing");
         playSfx("gruntAttack", 0.7);
 
         const frameDuration = 1000 / 14;
@@ -2176,9 +2175,9 @@ export default function BattleScreen({
             {eruptionFlamelashActive && (
               <div className="absolute z-40 pointer-events-none" style={{
                 top: "50%",
-                left: "50%",
-                width: 350,
-                height: 350,
+                left: "48%",
+                width: 385,
+                height: 385,
                 transform: "translate(-50%, -50%)",
                 filter: "drop-shadow(0 0 14px rgba(255,100,0,0.9)) drop-shadow(0 0 28px rgba(255,50,0,0.5))",
               }}>
@@ -2188,7 +2187,7 @@ export default function BattleScreen({
                   frameHeight={100}
                   totalFrames={49}
                   fps={38}
-                  scale={3.5}
+                  scale={3.85}
                   loop={false}
                   flipX={true}
                 />
