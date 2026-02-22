@@ -280,9 +280,9 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
     fontFamily: PIXEL_FONT,
     fontSize: "10px",
     letterSpacing: "2px",
-    border: `2px solid ${ACCENT}90`,
-    background: "rgba(0,0,0,0.55)",
-    color: ACCENT,
+    border: `2px solid #ffd700`,
+    background: "rgba(0,0,0,0.75)",
+    color: "#ffe680",
     padding: "10px 20px",
     cursor: "pointer",
     textTransform: "uppercase" as const,
@@ -290,17 +290,18 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
     width: "100%",
     textAlign: "center" as const,
     transition: "all 0.15s",
-    textShadow: `0 0 8px ${ACCENT}40`,
-    backdropFilter: "blur(4px)",
+    textShadow: `0 0 10px rgba(255,215,0,0.4), 0 1px 2px rgba(0,0,0,0.8)`,
+    backdropFilter: "blur(6px)",
+    boxShadow: `0 0 8px rgba(255,215,0,0.15)`,
   };
 
   const menuButtonHover = (e: React.MouseEvent) => {
-    (e.currentTarget as HTMLElement).style.background = `${ACCENT}30`;
-    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 15px ${ACCENT}40, inset 0 0 10px ${ACCENT}15`;
+    (e.currentTarget as HTMLElement).style.background = `rgba(255,215,0,0.2)`;
+    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 20px rgba(255,215,0,0.3), inset 0 0 12px rgba(255,215,0,0.1)`;
   };
   const menuButtonLeave = (e: React.MouseEvent) => {
-    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.55)";
-    (e.currentTarget as HTMLElement).style.boxShadow = "none";
+    (e.currentTarget as HTMLElement).style.background = "rgba(0,0,0,0.75)";
+    (e.currentTarget as HTMLElement).style.boxShadow = `0 0 8px rgba(255,215,0,0.15)`;
   };
 
   if (showLoadScreen) {
@@ -443,15 +444,15 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                   transform: swordVisible ? "translateY(0) scale(1)" : "translateY(-20px) scale(0.5)",
                 }}
               >
-                <Swords className="w-9 h-9 mx-auto mb-3" style={{ color: ACCENT, filter: `drop-shadow(0 0 10px ${ACCENT}90) drop-shadow(0 2px 3px rgba(0,0,0,0.6))` }} />
+                <Swords className="w-10 h-10 mx-auto mb-3" style={{ color: "#ffd700", filter: `drop-shadow(0 0 12px rgba(255,215,0,0.8)) drop-shadow(0 2px 4px rgba(0,0,0,0.9))` }} />
               </div>
 
               <h1
                 className="text-4xl md:text-5xl font-bold tracking-wider transition-all duration-[1500ms] ease-out"
                 style={{
                   fontFamily: PIXEL_FONT,
-                  color: "#e8c55a",
-                  textShadow: `0 0 30px rgba(232,197,90,0.5), 0 3px 6px rgba(0,0,0,0.9), 0 0 80px rgba(200,160,50,0.2), 2px 2px 0px rgba(0,0,0,0.5)`,
+                  color: "#fff8dc",
+                  textShadow: `0 0 30px rgba(255,215,0,0.6), 0 3px 0px rgba(0,0,0,1), 0 0 80px rgba(255,200,50,0.3), 2px 2px 0px rgba(0,0,0,0.8), -1px -1px 0px rgba(0,0,0,0.5), 1px -1px 0px rgba(0,0,0,0.5), -1px 1px 0px rgba(0,0,0,0.5)`,
                   letterSpacing: "0.14em",
                   opacity: titleVisible ? 1 : 0,
                   transform: titleVisible ? "translateY(0) scale(1)" : "translateY(15px) scale(0.95)",
@@ -465,8 +466,8 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 className="text-xl md:text-2xl tracking-[0.5em] mt-1 transition-all duration-[1200ms] ease-out"
                 style={{
                   fontFamily: PIXEL_FONT,
-                  color: "#c4a040",
-                  textShadow: `0 0 20px rgba(196,160,64,0.3), 0 2px 4px rgba(0,0,0,0.8), 1px 1px 0px rgba(0,0,0,0.4)`,
+                  color: "#ffe680",
+                  textShadow: `0 0 20px rgba(255,215,0,0.4), 0 2px 0px rgba(0,0,0,0.9), 1px 1px 0px rgba(0,0,0,0.6), -1px -1px 0px rgba(0,0,0,0.4)`,
                   fontWeight: 400,
                   opacity: subtitleVisible ? 1 : 0,
                   transform: subtitleVisible ? "translateY(0)" : "translateY(10px)",
@@ -482,18 +483,18 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                   transform: taglineVisible ? "translateY(0)" : "translateY(8px)",
                 }}
               >
-                <div className="h-px w-14" style={{ background: `linear-gradient(to right, transparent, ${ACCENT}70)` }} />
+                <div className="h-px w-14" style={{ background: `linear-gradient(to right, transparent, #ffd700aa)` }} />
                 <p style={{
                   fontSize: "7px",
                   letterSpacing: "0.25em",
-                  color: "#b8963a",
+                  color: "#ffe08a",
                   fontFamily: PIXEL_FONT,
                   textTransform: "uppercase",
-                  textShadow: "0 1px 3px rgba(0,0,0,0.6)",
+                  textShadow: "0 1px 3px rgba(0,0,0,0.8), 0 0 8px rgba(255,215,0,0.2)",
                 }}>
                   A Medieval Fantasy
                 </p>
-                <div className="h-px w-14" style={{ background: `linear-gradient(to left, transparent, ${ACCENT}70)` }} />
+                <div className="h-px w-14" style={{ background: `linear-gradient(to left, transparent, #ffd700aa)` }} />
               </div>
             </div>
           </div>
@@ -519,7 +520,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               </button>
               {hasSave && (
                 <button
-                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}70`, color: `${ACCENT}cc` }}
+                  style={{ ...menuButtonStyle, borderColor: `#ffd700cc`, color: `#ffe680` }}
                   onMouseEnter={menuButtonHover}
                   onMouseLeave={menuButtonLeave}
                   onClick={() => { playSfx('menuSelect'); onContinue(); }}
@@ -530,7 +531,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
               )}
               {hasSaves && (
                 <button
-                  style={{ ...menuButtonStyle, borderColor: `${ACCENT}50`, color: `${ACCENT}aa` }}
+                  style={{ ...menuButtonStyle, borderColor: `#ffd700aa`, color: `#ffe680dd` }}
                   onMouseEnter={menuButtonHover}
                   onMouseLeave={menuButtonLeave}
                   onClick={() => { playSfx('menuSelect'); setShowLoadScreen(true); }}
@@ -540,7 +541,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
                 </button>
               )}
               <button
-                style={{ ...menuButtonStyle, borderColor: `${ACCENT}35`, color: `${ACCENT}80`, fontSize: "10px" }}
+                style={{ ...menuButtonStyle, borderColor: `#ffd70088`, color: `#ffe680bb` }}
                 onMouseEnter={menuButtonHover}
                 onMouseLeave={menuButtonLeave}
                 onClick={() => { playSfx('menuSelect'); setShowOptions(true); }}
