@@ -2302,90 +2302,6 @@ export default function BattleScreen({
       <div className="relative z-10 h-full">
         <div className="absolute inset-0 overflow-hidden">
 
-          {(() => {
-            const gp = battle.gridPositions;
-            const occupiedAlly = getOccupiedAllyCells();
-            const allyMinY = ALLY_GRID[2][0].y;
-            const allyMaxY = ALLY_GRID[0][0].y;
-            const allyMinX = ALLY_GRID[0][0].x;
-            const allyMaxX = ALLY_GRID[0][2].x;
-            const enemyMinY = ENEMY_GRID[2][0].y;
-            const enemyMaxY = ENEMY_GRID[0][0].y;
-            const enemyMinX = ENEMY_GRID[0][0].x;
-            const enemyMaxX = ENEMY_GRID[0][2].x;
-            const cellPadX = 4;
-            const cellPadY = 2;
-            const gridStyle = (minX: number, maxX: number, minY: number, maxY: number): React.CSSProperties => ({
-              position: "absolute",
-              left: `${minX - cellPadX}%`,
-              right: `${100 - maxX - cellPadX}%`,
-              bottom: `${minY - cellPadY}%`,
-              height: `${(maxY - minY) + cellPadY * 2 + 4}%`,
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gridTemplateRows: "repeat(3, 1fr)",
-              gap: "2px",
-              perspective: "400px",
-              perspectiveOrigin: "50% 0%",
-              zIndex: 5,
-              pointerEvents: "none",
-            });
-            const innerStyle: React.CSSProperties = {
-              display: "grid",
-              gridTemplateColumns: "repeat(3, 1fr)",
-              gridTemplateRows: "repeat(3, 1fr)",
-              gap: "2px",
-              width: "100%",
-              height: "100%",
-              transform: "rotateX(55deg)",
-              transformOrigin: "bottom center",
-            };
-            return (
-              <>
-                <div style={gridStyle(allyMinX, allyMaxX, allyMinY, allyMaxY)} data-testid="grid-ally-container">
-                  <div style={innerStyle}>
-                    {Array.from({ length: 9 }).map((_, cellIdx) => {
-                      const ri = Math.floor(cellIdx / 3);
-                      const ci = cellIdx % 3;
-                      const isOccupied = occupiedAlly.some(o => o.row === ri && o.col === ci);
-                      return (
-                        <div
-                          key={`ally-grid-${ri}-${ci}`}
-                          data-testid={`grid-ally-${ri}-${ci}`}
-                          style={{
-                            border: `1px solid ${isOccupied ? "rgba(168,85,247,0.4)" : "rgba(168,85,247,0.18)"}`,
-                            background: isOccupied ? "rgba(168,85,247,0.1)" : "rgba(168,85,247,0.03)",
-                            boxShadow: isOccupied ? "inset 0 0 10px rgba(168,85,247,0.15), 0 0 6px rgba(168,85,247,0.1)" : "none",
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-                <div style={gridStyle(enemyMinX, enemyMaxX, enemyMinY, enemyMaxY)} data-testid="grid-enemy-container">
-                  <div style={innerStyle}>
-                    {Array.from({ length: 9 }).map((_, cellIdx) => {
-                      const ri = Math.floor(cellIdx / 3);
-                      const ci = cellIdx % 3;
-                      const enemyOccupied = gp ? gp.enemies.some((e, idx) => e.row === ri && e.col === ci && battle.enemies[idx]?.currentHp > 0) : false;
-                      return (
-                        <div
-                          key={`enemy-grid-${ri}-${ci}`}
-                          data-testid={`grid-enemy-${ri}-${ci}`}
-                          style={{
-                            border: `1px solid ${enemyOccupied ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.18)"}`,
-                            background: enemyOccupied ? "rgba(239,68,68,0.1)" : "rgba(239,68,68,0.03)",
-                            boxShadow: enemyOccupied ? "inset 0 0 10px rgba(239,68,68,0.15), 0 0 6px rgba(239,68,68,0.1)" : "none",
-                          }}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              </>
-            );
-          })()}
-
           <div
             ref={playerSpriteRef}
             className="absolute"
@@ -3645,13 +3561,12 @@ export default function BattleScreen({
           
 
           {battle.phase === "playerTurn" && !showItems && !showSpells && !isInputBlocked && (
-            <div className="grid grid-cols-5 gap-2 mb-1">
+            <div className="grid grid-cols-4 gap-2 mb-1">
               {[
                 { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { playSfx('menuSelect'); setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); setRepositionMode(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
                 { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", activeColor: "#2563eb", onClick: () => { setRepositionMode(null); handleDefend(); }, active: false, testId: "button-action-defend" },
                 { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { playSfx('menuSelect'); setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); setRepositionMode(null); }, active: false, testId: "button-action-magic" },
                 { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => { playSfx('menuSelect'); setShowItems(true); setRepositionMode(null); }, active: false, disabled: consumables.length === 0, testId: "button-action-item" },
-                { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", activeColor: "#d97706", onClick: () => { playSfx('menuSelect'); setRepositionMode({ unitType: "player", unitIndex: 0 }); setSelectedAction(null); setSelectedSpell(null); setShowSpells(false); setShowItems(false); }, active: repositionMode?.unitType === "player", testId: "button-action-reposition", disabled: getAvailableRepositionCells("player", 0).length === 0 },
               ].map(btn => (
                 <button
                   key={btn.key}
@@ -3767,64 +3682,6 @@ export default function BattleScreen({
             </div>
           )}
 
-          {repositionMode && (battle.phase === "playerTurn" || battle.phase === "partyTurn") && (
-            <div className="space-y-1 mb-1">
-              <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#f59e0b" }}>
-                  <Target className="w-3.5 h-3.5" /> Reposition
-                </span>
-                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setRepositionMode(null); }}>
-                  <ArrowLeft className="w-3 h-3" /> Back
-                </button>
-              </div>
-              <div className="grid grid-cols-3 gap-1" style={{ maxWidth: "180px", margin: "0 auto" }}>
-                {Array.from({ length: 9 }).map((_, cellIdx) => {
-                  const row = Math.floor(cellIdx / 3);
-                  const col = cellIdx % 3;
-                  const available = getAvailableRepositionCells(repositionMode.unitType, repositionMode.unitIndex);
-                  const isAvailable = available.some(c => c.row === row && c.col === col);
-                  const gp = battle.gridPositions;
-                  const isCurrentPos = gp && (
-                    (repositionMode.unitType === "player" && gp.player.row === row && gp.player.col === col) ||
-                    (repositionMode.unitType === "party" && gp.party[repositionMode.unitIndex]?.row === row && gp.party[repositionMode.unitIndex]?.col === col)
-                  );
-                  const isOccupied = getOccupiedAllyCells().some(o => o.row === row && o.col === col) && !isCurrentPos;
-                  return (
-                    <button
-                      key={cellIdx}
-                      className="aspect-square flex items-center justify-center transition-all"
-                      style={{
-                        background: isCurrentPos ? "rgba(245,158,11,0.3)" : isAvailable ? "rgba(34,197,94,0.15)" : isOccupied ? "rgba(239,68,68,0.1)" : "rgba(30,20,50,0.3)",
-                        border: `2px solid ${isCurrentPos ? "#f59e0b" : isAvailable ? "rgba(34,197,94,0.4)" : isOccupied ? "rgba(239,68,68,0.2)" : "rgba(60,40,80,0.2)"}`,
-                        cursor: isAvailable ? "pointer" : "default",
-                        opacity: isAvailable || isCurrentPos ? 1 : 0.4,
-                      }}
-                      disabled={!isAvailable}
-                      onClick={() => {
-                        if (isAvailable) {
-                          onRepositionUnit(repositionMode.unitType, repositionMode.unitIndex, row, col);
-                          setRepositionMode(null);
-                          if (repositionMode.unitType === "player") {
-                            onFinishPlayerTurn();
-                          } else {
-                            onAdvancePartyTurn();
-                          }
-                        }
-                      }}
-                    >
-                      <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "7px", color: isCurrentPos ? "#f59e0b" : isAvailable ? "#86efac" : isOccupied ? "#ef4444" : "rgba(100,80,140,0.3)" }}>
-                        {isCurrentPos ? "YOU" : isOccupied ? "X" : isAvailable ? "●" : "·"}
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
-              <p className="text-center mt-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "7px", color: "rgba(245,158,11,0.5)" }}>
-                Select adjacent square
-              </p>
-            </div>
-          )}
-
           {battle.phase === "partyTurn" && battle.phase !== "victory" && battle.phase !== "defeat" && (() => {
             const activeMember = battle.party[battle.activePartyIndex];
             if (!activeMember || activeMember.currentHp <= 0) return null;
@@ -3836,13 +3693,12 @@ export default function BattleScreen({
                   {activeMember.name}'s Turn
                 </p>
                 {partyAction === "menu" && (
-                  <div className="grid grid-cols-5 gap-2 mb-1">
+                  <div className="grid grid-cols-4 gap-2 mb-1">
                     {[
                       { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => { playSfx('menuSelect'); setPartyAction("selectTarget"); } },
                       { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", onClick: () => { setPartyGuardIndex(battle.activePartyIndex); playSfx("block"); onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 1200); } },
                       { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", onClick: () => { playSfx('menuSelect'); setPartyAction("showSpells"); }, disabled: partySpells.length === 0 },
                       { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", onClick: () => { playSfx('menuSelect'); setPartyAction("showItems"); }, disabled: consumables.length === 0 },
-                      { key: "reposition", label: "MOVE", icon: <Target className="w-5 h-5" />, color: "#f59e0b", onClick: () => { playSfx('menuSelect'); setRepositionMode({ unitType: "party", unitIndex: battle.activePartyIndex }); setPartyAction("menu"); }, disabled: getAvailableRepositionCells("party", battle.activePartyIndex).length === 0 },
                     ].map(btn => (
                       <button
                         key={btn.key}
