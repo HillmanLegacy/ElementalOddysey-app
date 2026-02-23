@@ -710,12 +710,6 @@ export function buildTurnQueue(
   return entries;
 }
 
-const DEFAULT_ENEMY_GRID: { row: number; col: number }[] = [
-  { row: 1, col: 1 },
-  { row: 0, col: 2 },
-  { row: 2, col: 0 },
-];
-
 export function initBattle(enemies: Enemy[]): BattleState {
   return {
     phase: "start",
@@ -736,9 +730,9 @@ export function initBattle(enemies: Enemy[]): BattleState {
     turnQueue: [],
     turnQueueIndex: 0,
     gridPositions: {
-      player: { row: 1, col: 1 },
+      player: 0,
       party: [],
-      enemies: enemies.map((_, i) => DEFAULT_ENEMY_GRID[i] || { row: i % 3, col: Math.floor(i / 3) }),
+      enemies: enemies.map((_, i) => i % 3),
     },
   };
 }

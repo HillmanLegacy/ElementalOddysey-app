@@ -207,24 +207,18 @@ interface BattleScreenProps {
 
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
 
-const ALLY_GRID: { x: number; y: number }[][] = [
-  [{ x: 2, y: 8 },  { x: 10, y: 8 },  { x: 18, y: 8 }],
-  [{ x: 2, y: 18 }, { x: 10, y: 18 }, { x: 18, y: 18 }],
-  [{ x: 2, y: 28 }, { x: 10, y: 28 }, { x: 18, y: 28 }],
+const ALLY_SLOTS: { x: number; y: number }[] = [
+  { x: 10, y: 8 },
+  { x: 10, y: 18 },
+  { x: 10, y: 28 },
 ];
 
-const ENEMY_GRID: { x: number; y: number; z: number }[][] = [
-  [{ x: 56, y: 32, z: 0.85 }, { x: 64, y: 32, z: 0.85 }, { x: 72, y: 32, z: 0.85 }],
-  [{ x: 56, y: 42, z: 0.95 }, { x: 64, y: 42, z: 0.95 }, { x: 72, y: 42, z: 0.95 }],
-  [{ x: 56, y: 52, z: 1.0 },  { x: 64, y: 52, z: 1.0 },  { x: 72, y: 52, z: 1.0 }],
+const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
+  { x: 64, y: 32, z: 0.85 },
+  { x: 64, y: 42, z: 0.95 },
+  { x: 64, y: 52, z: 1.0 },
 ];
 
-const ALLY_SLOTS = [ALLY_GRID[1][1], ALLY_GRID[0][0], ALLY_GRID[2][0]];
-const ENEMY_SLOTS = [
-  { ...ENEMY_GRID[1][1], z: 0.95 },
-  { ...ENEMY_GRID[0][2], z: 0.85 },
-  { ...ENEMY_GRID[2][0], z: 1.0 },
-];
 const PLAYER_POS = ALLY_SLOTS[0];
 const PARTY_POSITIONS = [ALLY_SLOTS[1], ALLY_SLOTS[2]];
 const ENEMY_POSITIONS = ENEMY_SLOTS;
@@ -235,48 +229,20 @@ export default function BattleScreen({
 
   const getPlayerGridPos = () => {
     const gp = battle.gridPositions;
-    if (!gp) return ALLY_GRID[1][1];
-    return ALLY_GRID[gp.player.row][gp.player.col];
+    if (!gp) return ALLY_SLOTS[0];
+    return ALLY_SLOTS[gp.player] || ALLY_SLOTS[0];
   };
 
   const getPartyGridPos = (idx: number) => {
     const gp = battle.gridPositions;
-    if (!gp || !gp.party[idx]) return PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
-    return ALLY_GRID[gp.party[idx].row][gp.party[idx].col];
+    if (!gp || gp.party[idx] === undefined) return PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
+    return ALLY_SLOTS[gp.party[idx]] || PARTY_POSITIONS[idx % PARTY_POSITIONS.length];
   };
 
   const getEnemyGridPos = (idx: number) => {
     const gp = battle.gridPositions;
-    if (!gp || !gp.enemies[idx]) return ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
-    const pos = gp.enemies[idx];
-    return ENEMY_GRID[pos.row][pos.col];
-  };
-
-  const getAdjacentCells = (row: number, col: number): { row: number; col: number }[] => {
-    const dirs = [[-1, 0], [1, 0], [0, -1], [0, 1]];
-    return dirs
-      .map(([dr, dc]) => ({ row: row + dr, col: col + dc }))
-      .filter(p => p.row >= 0 && p.row < 3 && p.col >= 0 && p.col < 3);
-  };
-
-  const getOccupiedAllyCells = (): { row: number; col: number }[] => {
-    const gp = battle.gridPositions;
-    if (!gp) return [];
-    const cells = [gp.player];
-    gp.party.forEach((p, i) => {
-      if (battle.party[i] && battle.party[i].currentHp > 0) cells.push(p);
-    });
-    return cells;
-  };
-
-  const getAvailableRepositionCells = (unitType: "player" | "party", unitIndex: number): { row: number; col: number }[] => {
-    const gp = battle.gridPositions;
-    if (!gp) return [];
-    const currentPos = unitType === "player" ? gp.player : gp.party[unitIndex];
-    if (!currentPos) return [];
-    const adjacent = getAdjacentCells(currentPos.row, currentPos.col);
-    const occupied = getOccupiedAllyCells();
-    return adjacent.filter(cell => !occupied.some(o => o.row === cell.row && o.col === cell.col));
+    if (!gp || gp.enemies[idx] === undefined) return ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
+    return ENEMY_SLOTS[gp.enemies[idx]] || ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
   };
 
   const [selectedAction, setSelectedAction] = useState<string | null>(null);

@@ -238,9 +238,9 @@ export interface BattleState {
   lastDamageEvent?: { id: number; amount: number; targetType: "enemy" | "player" | "party"; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean; isBlocked?: boolean };
   lastDamageEvents?: Array<{ id: number; amount: number; targetType: string; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean; isBlocked?: boolean }>;
   gridPositions?: {
-    player: { row: number; col: number };
-    party: { row: number; col: number }[];
-    enemies: { row: number; col: number }[];
+    player: number;
+    party: number[];
+    enemies: number[];
   };
 }
 

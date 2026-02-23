@@ -76,12 +76,8 @@ export function useGameState() {
         xpToNext: pm.xpToNext || xpForLevel(pm.level),
       }));
 
-      const defaultPartyGrid = [
-        { row: 0, col: 0 },
-        { row: 2, col: 0 },
-      ];
       if (battle.gridPositions) {
-        battle.gridPositions.party = s.player.party.map((_, i) => defaultPartyGrid[i] || { row: i % 3, col: 0 });
+        battle.gridPositions.party = s.player.party.map((_, i) => i + 1);
       }
 
       const queue = buildTurnQueue(s.player.stats.agi || 10, battle.party, battle.enemies);
@@ -218,12 +214,13 @@ export function useGameState() {
   const repositionUnit = useCallback((unitType: "player" | "party", unitIndex: number, newRow: number, newCol: number) => {
     setState(s => {
       if (!s.battle || !s.player || !s.battle.gridPositions) return s;
+      const newSlot = newRow;
       const battle = { ...s.battle, gridPositions: { ...s.battle.gridPositions } };
       if (unitType === "player") {
-        battle.gridPositions.player = { row: newRow, col: newCol };
+        battle.gridPositions.player = newSlot;
       } else {
         battle.gridPositions.party = battle.gridPositions.party.map((p, i) =>
-          i === unitIndex ? { row: newRow, col: newCol } : p
+          i === unitIndex ? newSlot : p
         );
       }
       return { ...s, battle };
