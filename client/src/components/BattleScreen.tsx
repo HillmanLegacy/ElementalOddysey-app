@@ -3420,6 +3420,7 @@ export default function BattleScreen({
 
                 </div>
               </div>
+              </div>
             );
           })}
 
@@ -3539,8 +3540,6 @@ export default function BattleScreen({
             </div>
           )}
         </div>
-
-      </div>
 
         {frostHitSfx && (
           <div
