@@ -1630,7 +1630,9 @@ export default function BattleScreen({
       }
 
       scheduleTimer(() => {
-        setFireballAnim({ fromX: pos.x, fromY: pos.y, toX: targetX, toY: targetY, active: true });
+        const enemySpriteH = 64 * 3;
+        const enemyCenterOffset = (enemySpriteH / GAME_CONTAINER_HEIGHT) * 50;
+        setFireballAnim({ fromX: pos.x, fromY: pos.y + enemyCenterOffset, toX: targetX, toY: targetY, active: true });
       }, 450);
 
       scheduleTimer(() => {
