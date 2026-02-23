@@ -2813,9 +2813,134 @@ export default function BattleScreen({
             </div>
           </div>
 
+          <div
+            className="absolute z-20 pointer-events-none"
+            style={{
+              right: "8px",
+              top: "6px",
+              width: "auto",
+              maxWidth: "420px",
+            }}
+          >
+            <div className="flex flex-col gap-1 items-end">
+              {battle.enemies.map((enemy, idx) => {
+                const isDead = enemy.currentHp <= 0;
+                const eHpPct = Math.max(0, (enemy.currentHp / enemy.stats.hp) * 100);
+                const eLowHp = eHpPct <= 25;
+                const elColor = ELEMENT_COLORS[enemy.element];
+                const isAnimating = animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn";
+                const eOpacity = isDead ? 0.3 : isAnimating ? 0.35 : 1;
+                return (
+                  <div
+                    key={`ehp-${idx}`}
+                    className="relative"
+                    style={{
+                      width: "200px",
+                      opacity: eOpacity,
+                      transition: "opacity 0.4s ease",
+                    }}
+                  >
+                    <div
+                      className="relative overflow-hidden"
+                      style={{
+                        background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
+                        border: `2px solid ${elColor}25`,
+                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+                        imageRendering: "pixelated",
+                      }}
+                    >
+                      <div className="px-2.5 py-1.5" style={{ borderBottom: `1px solid ${elColor}15` }}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-1.5">
+                            <div
+                              className="w-2 h-2 flex-shrink-0"
+                              style={{
+                                background: elColor,
+                                boxShadow: `0 0 2px ${elColor}60`,
+                              }}
+                            />
+                            <span
+                              style={{
+                                fontFamily: "'Press Start 2P', cursive",
+                                fontSize: "9px",
+                                color: "#b8b0c8",
+                                letterSpacing: "0.05em",
+                                imageRendering: "pixelated",
+                              }}
+                              data-testid={`text-enemy-name-${idx}`}
+                            >
+                              {enemy.name}
+                            </span>
+                          </div>
+                          <span style={{
+                            fontFamily: "'Press Start 2P', cursive",
+                            fontSize: "8px",
+                            color: `${elColor}80`,
+                            imageRendering: "pixelated",
+                          }}>
+                            Lv{enemy.level}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="px-2.5 py-1.5 space-y-1">
+                        <div className="flex items-center gap-1.5">
+                          <span style={{
+                            fontFamily: "'Press Start 2P', cursive",
+                            fontSize: "7px",
+                            color: eLowHp ? "#fca5a5" : "#6b8a6b",
+                            width: "18px",
+                            imageRendering: "pixelated",
+                          }}>HP</span>
+                          <div
+                            className="flex-1 h-2.5 overflow-hidden relative"
+                            style={{
+                              background: "rgba(0,0,0,0.6)",
+                              border: "1px solid rgba(255,255,255,0.08)",
+                            }}
+                          >
+                            <div
+                              className={`h-full transition-all duration-500 ease-out ${eLowHp ? "animate-pulse" : ""}`}
+                              style={{
+                                width: `${eHpPct}%`,
+                                background: eLowHp
+                                  ? "#ef4444"
+                                  : eHpPct > 50
+                                    ? "#22c55e"
+                                    : "#eab308",
+                                boxShadow: eLowHp
+                                  ? "0 0 4px rgba(239,68,68,0.6)"
+                                  : eHpPct > 50
+                                    ? "0 0 2px rgba(34,197,94,0.4)"
+                                    : "0 0 2px rgba(234,179,8,0.4)",
+                                imageRendering: "pixelated",
+                              }}
+                            />
+                          </div>
+                          <span
+                            style={{
+                              fontFamily: "'Press Start 2P', cursive",
+                              fontSize: "7px",
+                              color: eLowHp ? "#fca5a5" : "#a8a0b8",
+                              minWidth: "50px",
+                              textAlign: "right",
+                              imageRendering: "pixelated",
+                            }}
+                            data-testid={`text-enemy-hp-${idx}`}
+                          >
+                            {enemy.currentHp}/{enemy.stats.hp}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           {battle.enemies.map((enemy, idx) => {
             const isDead = enemy.currentHp <= 0;
-            const enemyHpPct = (enemy.currentHp / enemy.stats.hp) * 100;
             const isTargetable = !isDead && (
               (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
               (battle.phase === "partyTurn" && (partyAction === "selectTarget" || partyAction === "selectMagicTarget"))
@@ -3267,108 +3392,12 @@ export default function BattleScreen({
                   />
                 </div>
 
-                <div
-                  className="w-full max-w-[100px] mt-1 z-10"
-                  style={{
-                    opacity: pixelDissolving.has(idx) || isDead ? 0 : 1,
-                    transition: "opacity 0.6s ease-out",
-                    pointerEvents: isDead ? "none" : "auto",
-                  }}
-                >
-                  <div
-                    className="overflow-hidden"
-                    style={{
-                      background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
-                      border: `2px solid ${ELEMENT_COLORS[enemy.element]}30`,
-                      imageRendering: "pixelated",
-                    }}
-                  >
-                    <div className="px-1.5 py-1 space-y-0.5">
-                      <div className="flex items-center gap-1">
-                        <span style={{
-                          fontFamily: "'Press Start 2P', cursive",
-                          fontSize: "7px",
-                          color: enemyHpPct <= 25 ? "#fca5a5" : "#6b8a6b",
-                          imageRendering: "pixelated",
-                        }}>HP</span>
-                        <div
-                          className="flex-1 h-2 overflow-hidden relative"
-                          style={{
-                            background: "rgba(0,0,0,0.6)",
-                            border: "1px solid rgba(255,255,255,0.08)",
-                          }}
-                        >
-                          <div
-                            className={`h-full transition-all duration-500 ease-out ${enemyHpPct <= 25 ? "animate-pulse" : ""}`}
-                            style={{
-                              width: `${enemyHpPct}%`,
-                              background: enemyHpPct <= 25
-                                ? "#ef4444"
-                                : enemyHpPct > 50
-                                  ? "#22c55e"
-                                  : "#eab308",
-                              boxShadow: enemyHpPct <= 25
-                                ? "0 0 4px rgba(239,68,68,0.6)"
-                                : enemyHpPct > 50
-                                  ? "0 0 2px rgba(34,197,94,0.4)"
-                                  : "0 0 2px rgba(234,179,8,0.4)",
-                              imageRendering: "pixelated",
-                            }}
-                          />
-                        </div>
-                      </div>
-                      <p style={{
-                        fontFamily: "'Press Start 2P', cursive",
-                        fontSize: "7px",
-                        color: "#a8a0b8",
-                        textAlign: "center",
-                        imageRendering: "pixelated",
-                      }} data-testid={`text-enemy-hp-${idx}`}>{enemy.currentHp}/{enemy.stats.hp}</p>
-                    </div>
-                  </div>
-                </div>
                 </div>
               </button>
               </div>
             );
           })}
 
-          {battle.enemies.map((enemy, idx) => {
-            const isDead = enemy.currentHp <= 0;
-            const pos = getEnemyGridPos(idx);
-            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
-            const labelLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
-            const labelBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
-            return (
-              <div
-                key={`label-${idx}`}
-                className="absolute pointer-events-none"
-                style={{
-                  left: `${labelLeft}%`,
-                  bottom: `${labelBottom + 12}%`,
-                  transform: "translateX(-50%)",
-                  zIndex: 60,
-                  opacity: pixelDissolving.has(idx) || isDead ? 0 : 1,
-                  transition: `opacity 0.6s ease-out${isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? ", left 0.5s ease, bottom 0.5s ease" : ""}`,
-                }}
-              >
-                <div
-                  className="overflow-hidden"
-                  style={{
-                    background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
-                    border: `2px solid ${ELEMENT_COLORS[enemy.element]}30`,
-                    padding: "3px 8px",
-                    imageRendering: "pixelated",
-                  }}
-                >
-                  <div className="flex items-center justify-center gap-1.5" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-                    <span style={{ fontSize: "8px", color: ELEMENT_COLORS[enemy.element], imageRendering: "pixelated" }}>Lv{enemy.level}</span>
-                    <span style={{ fontSize: "9px", color: "#f0eaff", imageRendering: "pixelated" }}>{enemy.name}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
 
           {fireballAnim && fireballAnim.active && (
             <div
