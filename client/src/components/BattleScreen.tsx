@@ -2305,81 +2305,82 @@ export default function BattleScreen({
           {(() => {
             const gp = battle.gridPositions;
             const occupiedAlly = getOccupiedAllyCells();
-            const cellW = 7;
-            const cellH = 6;
-            const gapH = 1;
-            const gapV = 1;
-            const allyGridW = cellW * 3 + gapH * 2;
-            const allyGridH = cellH * 3 + gapV * 2;
-            const allyLeft = ALLY_GRID[0][0].x;
-            const enemyLeft = ENEMY_GRID[0][0].x;
+            const allyMinY = ALLY_GRID[2][0].y;
+            const allyMaxY = ALLY_GRID[0][0].y;
+            const allyMinX = ALLY_GRID[0][0].x;
+            const allyMaxX = ALLY_GRID[0][2].x;
+            const enemyMinY = ENEMY_GRID[2][0].y;
+            const enemyMaxY = ENEMY_GRID[0][0].y;
+            const enemyMinX = ENEMY_GRID[0][0].x;
+            const enemyMaxX = ENEMY_GRID[0][2].x;
+            const cellPadX = 4;
+            const cellPadY = 2;
+            const gridStyle = (minX: number, maxX: number, minY: number, maxY: number): React.CSSProperties => ({
+              position: "absolute",
+              left: `${minX - cellPadX}%`,
+              right: `${100 - maxX - cellPadX}%`,
+              bottom: `${minY - cellPadY}%`,
+              height: `${(maxY - minY) + cellPadY * 2 + 4}%`,
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateRows: "repeat(3, 1fr)",
+              gap: "2px",
+              perspective: "400px",
+              perspectiveOrigin: "50% 0%",
+              zIndex: 5,
+              pointerEvents: "none",
+            });
+            const innerStyle: React.CSSProperties = {
+              display: "grid",
+              gridTemplateColumns: "repeat(3, 1fr)",
+              gridTemplateRows: "repeat(3, 1fr)",
+              gap: "2px",
+              width: "100%",
+              height: "100%",
+              transform: "rotateX(55deg)",
+              transformOrigin: "bottom center",
+            };
             return (
               <>
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: `${allyLeft - 1}%`,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: `${allyGridW}%`,
-                    height: `${allyGridH}%`,
-                    display: "grid",
-                    gridTemplateColumns: `repeat(3, ${cellW}%)`,
-                    gridTemplateRows: `repeat(3, ${cellH}%)`,
-                    gap: `${gapV}% ${gapH}%`,
-                    zIndex: 5,
-                  }}
-                  data-testid="grid-ally-container"
-                >
-                  {Array.from({ length: 9 }).map((_, cellIdx) => {
-                    const ri = Math.floor(cellIdx / 3);
-                    const ci = cellIdx % 3;
-                    const isOccupied = occupiedAlly.some(o => o.row === ri && o.col === ci);
-                    return (
-                      <div
-                        key={`ally-grid-${ri}-${ci}`}
-                        data-testid={`grid-ally-${ri}-${ci}`}
-                        style={{
-                          border: `1px solid ${isOccupied ? "rgba(168,85,247,0.35)" : "rgba(168,85,247,0.15)"}`,
-                          background: isOccupied ? "rgba(168,85,247,0.08)" : "rgba(168,85,247,0.03)",
-                          boxShadow: isOccupied ? "inset 0 0 8px rgba(168,85,247,0.1)" : "none",
-                        }}
-                      />
-                    );
-                  })}
+                <div style={gridStyle(allyMinX, allyMaxX, allyMinY, allyMaxY)} data-testid="grid-ally-container">
+                  <div style={innerStyle}>
+                    {Array.from({ length: 9 }).map((_, cellIdx) => {
+                      const ri = Math.floor(cellIdx / 3);
+                      const ci = cellIdx % 3;
+                      const isOccupied = occupiedAlly.some(o => o.row === ri && o.col === ci);
+                      return (
+                        <div
+                          key={`ally-grid-${ri}-${ci}`}
+                          data-testid={`grid-ally-${ri}-${ci}`}
+                          style={{
+                            border: `1px solid ${isOccupied ? "rgba(168,85,247,0.4)" : "rgba(168,85,247,0.18)"}`,
+                            background: isOccupied ? "rgba(168,85,247,0.1)" : "rgba(168,85,247,0.03)",
+                            boxShadow: isOccupied ? "inset 0 0 10px rgba(168,85,247,0.15), 0 0 6px rgba(168,85,247,0.1)" : "none",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
-                <div
-                  className="absolute pointer-events-none"
-                  style={{
-                    left: `${enemyLeft - 1}%`,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: `${allyGridW}%`,
-                    height: `${allyGridH}%`,
-                    display: "grid",
-                    gridTemplateColumns: `repeat(3, ${cellW}%)`,
-                    gridTemplateRows: `repeat(3, ${cellH}%)`,
-                    gap: `${gapV}% ${gapH}%`,
-                    zIndex: 5,
-                  }}
-                  data-testid="grid-enemy-container"
-                >
-                  {Array.from({ length: 9 }).map((_, cellIdx) => {
-                    const ri = Math.floor(cellIdx / 3);
-                    const ci = cellIdx % 3;
-                    const enemyOccupied = gp ? gp.enemies.some((e, idx) => e.row === ri && e.col === ci && battle.enemies[idx]?.currentHp > 0) : false;
-                    return (
-                      <div
-                        key={`enemy-grid-${ri}-${ci}`}
-                        data-testid={`grid-enemy-${ri}-${ci}`}
-                        style={{
-                          border: `1px solid ${enemyOccupied ? "rgba(239,68,68,0.35)" : "rgba(239,68,68,0.15)"}`,
-                          background: enemyOccupied ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.03)",
-                          boxShadow: enemyOccupied ? "inset 0 0 8px rgba(239,68,68,0.1)" : "none",
-                        }}
-                      />
-                    );
-                  })}
+                <div style={gridStyle(enemyMinX, enemyMaxX, enemyMinY, enemyMaxY)} data-testid="grid-enemy-container">
+                  <div style={innerStyle}>
+                    {Array.from({ length: 9 }).map((_, cellIdx) => {
+                      const ri = Math.floor(cellIdx / 3);
+                      const ci = cellIdx % 3;
+                      const enemyOccupied = gp ? gp.enemies.some((e, idx) => e.row === ri && e.col === ci && battle.enemies[idx]?.currentHp > 0) : false;
+                      return (
+                        <div
+                          key={`enemy-grid-${ri}-${ci}`}
+                          data-testid={`grid-enemy-${ri}-${ci}`}
+                          style={{
+                            border: `1px solid ${enemyOccupied ? "rgba(239,68,68,0.4)" : "rgba(239,68,68,0.18)"}`,
+                            background: enemyOccupied ? "rgba(239,68,68,0.1)" : "rgba(239,68,68,0.03)",
+                            boxShadow: enemyOccupied ? "inset 0 0 10px rgba(239,68,68,0.15), 0 0 6px rgba(239,68,68,0.1)" : "none",
+                          }}
+                        />
+                      );
+                    })}
+                  </div>
                 </div>
               </>
             );
