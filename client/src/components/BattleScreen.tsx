@@ -93,6 +93,53 @@ import axewarriorIdle from "@/assets/images/axewarrior-idle.png";
 import axewarriorAttack from "@/assets/images/axewarrior-attack.png";
 import axewarriorHurt from "@/assets/images/axewarrior-hurt.png";
 
+import baskenThunderCast from "@/assets/images/basken-thunder-cast.png";
+import lightningBeginningPart3 from "@/assets/images/Lightning_beginning3_part.png";
+import lightningBeginningPart4 from "@/assets/images/Lightning_beginning4_part.png";
+import lightningBeginningPart5 from "@/assets/images/Lightning_beginning5_part.png";
+import lightningBeginning1 from "@/assets/images/Lightning_beginning1.png";
+import lightningBeginning2 from "@/assets/images/Lightning_beginning2.png";
+import lightningBeginning3 from "@/assets/images/Lightning_beginning3.png";
+import lightningBeginning4 from "@/assets/images/Lightning_beginning4.png";
+import lightningBeginning5 from "@/assets/images/Lightning_beginning5.png";
+import lightningCycle1 from "@/assets/images/Lightning_cycle1.png";
+import lightningCycle2 from "@/assets/images/Lightning_cycle2.png";
+import lightningCycle3 from "@/assets/images/Lightning_cycle3.png";
+import lightningCycle4 from "@/assets/images/Lightning_cycle4.png";
+import lightningCycle5 from "@/assets/images/Lightning_cycle5.png";
+import lightningCycle6 from "@/assets/images/Lightning_cycle6.png";
+import lightningEnd1 from "@/assets/images/Lightning_end1.png";
+import lightningEnd2 from "@/assets/images/Lightning_end2.png";
+import lightningEnd3 from "@/assets/images/Lightning_end3.png";
+import lightningSpot1 from "@/assets/images/Lightning_spot1.png";
+import lightningSpot2 from "@/assets/images/Lightning_spot2.png";
+import lightningSpot3 from "@/assets/images/Lightning_spot3.png";
+import lightningSpot4 from "@/assets/images/Lightning_spot4.png";
+
+const LIGHTNING_VFX_SEQUENCE = [
+  { src: lightningBeginningPart3, w: 64, h: 64, isSpot: true },
+  { src: lightningBeginningPart4, w: 64, h: 64, isSpot: true },
+  { src: lightningBeginningPart5, w: 64, h: 64, isSpot: true },
+  { src: lightningBeginning1, w: 64, h: 193, isSpot: false },
+  { src: lightningBeginning2, w: 64, h: 193, isSpot: false },
+  { src: lightningBeginning3, w: 64, h: 193, isSpot: false },
+  { src: lightningBeginning4, w: 64, h: 193, isSpot: false },
+  { src: lightningBeginning5, w: 64, h: 193, isSpot: false },
+  { src: lightningCycle1, w: 64, h: 193, isSpot: false },
+  { src: lightningCycle2, w: 64, h: 193, isSpot: false },
+  { src: lightningCycle3, w: 64, h: 193, isSpot: false },
+  { src: lightningCycle4, w: 64, h: 193, isSpot: false },
+  { src: lightningCycle5, w: 64, h: 193, isSpot: false },
+  { src: lightningCycle6, w: 64, h: 193, isSpot: false },
+  { src: lightningEnd1, w: 64, h: 193, isSpot: false },
+  { src: lightningEnd2, w: 64, h: 193, isSpot: false },
+  { src: lightningEnd3, w: 64, h: 193, isSpot: false },
+  { src: lightningSpot1, w: 64, h: 64, isSpot: true },
+  { src: lightningSpot2, w: 64, h: 64, isSpot: true },
+  { src: lightningSpot3, w: 64, h: 64, isSpot: true },
+  { src: lightningSpot4, w: 64, h: 64, isSpot: true },
+];
+
 const ENEMY_SPRITES: Record<string, string> = {
   slime_fire: fireSlimeImg,
   slime_water: aquaSlimeImg,
@@ -158,7 +205,7 @@ interface BattleScreenProps {
   regionTheme?: string;
 }
 
-type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave";
+type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
 
 const ALLY_GRID: { x: number; y: number }[][] = [
   [{ x: 2, y: 8 },  { x: 10, y: 8 },  { x: 18, y: 8 }],
@@ -298,6 +345,10 @@ export default function BattleScreen({
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
   const pendingEruptionCleave = useRef<{ targetIdx: number; spell: Spell } | null>(null);
+  const [thunderBoltActive, setThunderBoltActive] = useState(false);
+  const [thunderBoltFrame, setThunderBoltFrame] = useState(0);
+  const [thunderFrozenEnemy, setThunderFrozenEnemy] = useState<number | null>(null);
+  const pendingThunderBolt = useRef<{ targetIdx: number; spell: any } | null>(null);
   const eruptionFirechargeAudio = useRef<HTMLAudioElement | null>(null);
   const eruptionFlamelashAudio = useRef<HTMLAudioElement | null>(null);
   const fireImpactId = useRef(0);
@@ -598,6 +649,19 @@ export default function BattleScreen({
       setMagicZoom(true);
       setMagicZoomTarget(targetIdx);
       setAnimPhase("runToEnemy");
+      setSelectedSpell(null);
+      setShowSpells(false);
+      return;
+    }
+    if (selectedSpell.animation === "thunderBolt") {
+      pendingThunderBolt.current = { targetIdx, spell: selectedSpell };
+      setSelectedAction(null);
+      setPendingTargetIdx(targetIdx);
+      onSetAnimating();
+      setMagicZoom(true);
+      setMagicZoomTarget(targetIdx);
+      setAnimPhase("casting");
+      playSfx("magicRing", 0.6);
       setSelectedSpell(null);
       setShowSpells(false);
       return;
@@ -931,7 +995,7 @@ export default function BattleScreen({
       setPendingTargetIdx(null);
       setMagicZoom(false);
       setMagicZoomTarget(null);
-      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null || eruptionFrozenEnemy !== null) {
+      if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null || eruptionFrozenEnemy !== null || thunderFrozenEnemy !== null) {
       } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
         setTimeout(() => onFinishPlayerTurn(), 1000);
       }
@@ -1116,6 +1180,51 @@ export default function BattleScreen({
       if (windBladeActive || windBladeAnimPending.current) {
         return;
       }
+      if (pendingThunderBolt.current) {
+        const { targetIdx, spell } = pendingThunderBolt.current;
+        pendingThunderBolt.current = null;
+        setAnimPhase("thunderBolt");
+        setThunderBoltActive(true);
+        setThunderFrozenEnemy(targetIdx);
+        setThunderBoltFrame(0);
+
+        const frameDuration = 80;
+        const totalFrames = LIGHTNING_VFX_SEQUENCE.length;
+
+        for (let i = 0; i < totalFrames; i++) {
+          scheduleTimer(() => {
+            setThunderBoltFrame(i);
+          }, i * frameDuration);
+        }
+
+        const damageTime = 10 * frameDuration;
+        scheduleTimer(() => {
+          onCastSpell(spell, targetIdx);
+          setShakeScreen(true);
+          scheduleTimer(() => setShakeScreen(false), 300);
+          setEnemyHitIdx(targetIdx);
+          scheduleTimer(() => setEnemyHitIdx(null), 180);
+          setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+          scheduleTimer(() => {
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+          }, 333);
+        }, damageTime);
+
+        const endTime = totalFrames * frameDuration + 200;
+        scheduleTimer(() => {
+          setThunderBoltActive(false);
+          setThunderBoltFrame(0);
+          setThunderFrozenEnemy(null);
+          setMagicZoom(false);
+          setMagicZoomTarget(null);
+          setAnimPhase("idle");
+          setPendingTargetIdx(null);
+          if (battle.phase !== "victory" && battle.phase !== "defeat") {
+            setTimeout(() => onFinishPlayerTurn(), 600);
+          }
+        }, endTime);
+        return;
+      }
       setMagicZoom(false);
       setMagicZoomTarget(null);
       if (castingNeedsRunBack.current) {
@@ -1158,8 +1267,13 @@ export default function BattleScreen({
         windBladeDamageTarget.current = null;
         windBladeAnimPending.current = false;
       }
+      if (thunderBoltActive) {
+        setThunderBoltActive(false);
+        setThunderBoltFrame(0);
+        setThunderFrozenEnemy(null);
+      }
     }
-  }, [battle.phase, windBladeActive, windBladeFrozenEnemy, windSparkleTarget]);
+  }, [battle.phase, windBladeActive, windBladeFrozenEnemy, windSparkleTarget, thunderBoltActive]);
 
   const startFujinSlice = useCallback((targetIdx: number, spell: Spell) => {
     setSelectedAction(null);
@@ -1878,6 +1992,12 @@ export default function BattleScreen({
         const ecHoldFrames: Record<number, number> = { 15: 1800 };
         return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, holdFrames: ecHoldFrames, w: 86, h: 49 };
       }
+      case "thunderBolt": {
+        if (player.element === "Lightning") {
+          return { src: baskenThunderCast, frames: 7, fps: 10, loop: false, pauseAt: 6, w: 56, h: 56 };
+        }
+        return atk;
+      }
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
           return { ...atk, fps: 12, pauseAt: Math.min(3, atk.frames - 1) };
@@ -2185,7 +2305,7 @@ export default function BattleScreen({
             ref={playerSpriteRef}
             className="absolute"
             style={{
-              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave") ? 55 : 20,
+              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave" || animPhase === "thunderBolt") ? 55 : 20,
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               transform: `translateX(-50%)`,
@@ -2931,6 +3051,33 @@ export default function BattleScreen({
                       ))}
                     </div>
                   )}
+                  {thunderBoltActive && thunderFrozenEnemy === idx && (() => {
+                    const frame = LIGHTNING_VFX_SEQUENCE[thunderBoltFrame] || LIGHTNING_VFX_SEQUENCE[0];
+                    const scale = 4;
+                    return (
+                      <div
+                        className="absolute z-[60] pointer-events-none"
+                        style={{
+                          left: "50%",
+                          bottom: frame.isSpot ? "-10%" : "10%",
+                          transform: "translateX(-50%)",
+                          width: frame.w * scale,
+                          height: frame.h * scale,
+                          imageRendering: "pixelated" as const,
+                        }}
+                      >
+                        <img
+                          src={frame.src}
+                          alt=""
+                          style={{
+                            width: "100%",
+                            height: "100%",
+                            imageRendering: "pixelated" as const,
+                          }}
+                        />
+                      </div>
+                    );
+                  })()}
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
