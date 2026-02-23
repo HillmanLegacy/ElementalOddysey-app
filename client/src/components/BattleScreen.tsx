@@ -2301,6 +2301,60 @@ export default function BattleScreen({
 
       <div className="relative z-10 h-full">
         <div className="absolute inset-0 overflow-hidden">
+
+          {(() => {
+            const gp = battle.gridPositions;
+            const occupiedAlly = getOccupiedAllyCells();
+            return (
+              <>
+                {ALLY_GRID.map((row, ri) =>
+                  row.map((cell, ci) => {
+                    const isOccupied = occupiedAlly.some(o => o.row === ri && o.col === ci);
+                    return (
+                      <div
+                        key={`ally-grid-${ri}-${ci}`}
+                        className="absolute pointer-events-none"
+                        data-testid={`grid-ally-${ri}-${ci}`}
+                        style={{
+                          left: `${cell.x - 3.5}%`,
+                          bottom: `${cell.y - 2}%`,
+                          width: "7%",
+                          height: "6%",
+                          border: `1px solid ${isOccupied ? "rgba(168,85,247,0.35)" : "rgba(168,85,247,0.15)"}`,
+                          background: isOccupied ? "rgba(168,85,247,0.08)" : "rgba(168,85,247,0.03)",
+                          boxShadow: isOccupied ? "inset 0 0 8px rgba(168,85,247,0.1)" : "none",
+                          zIndex: 5,
+                        }}
+                      />
+                    );
+                  })
+                )}
+                {ENEMY_GRID.map((row, ri) =>
+                  row.map((cell, ci) => {
+                    const enemyOccupied = gp ? gp.enemies.some((e, idx) => e.row === ri && e.col === ci && battle.enemies[idx]?.currentHp > 0) : false;
+                    return (
+                      <div
+                        key={`enemy-grid-${ri}-${ci}`}
+                        className="absolute pointer-events-none"
+                        data-testid={`grid-enemy-${ri}-${ci}`}
+                        style={{
+                          left: `${cell.x - 3.5}%`,
+                          bottom: `${cell.y - 2}%`,
+                          width: "7%",
+                          height: "6%",
+                          border: `1px solid ${enemyOccupied ? "rgba(239,68,68,0.35)" : "rgba(239,68,68,0.15)"}`,
+                          background: enemyOccupied ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.03)",
+                          boxShadow: enemyOccupied ? "inset 0 0 8px rgba(239,68,68,0.1)" : "none",
+                          zIndex: 5,
+                        }}
+                      />
+                    );
+                  })
+                )}
+              </>
+            );
+          })()}
+
           <div
             ref={playerSpriteRef}
             className="absolute"
