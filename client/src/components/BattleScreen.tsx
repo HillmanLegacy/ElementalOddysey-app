@@ -68,6 +68,8 @@ import dragonLordWalk from "@/assets/images/dragonlord-walk.png";
 import dragonLordAttack from "@/assets/images/dragonlord-attack.png";
 import dragonLordHurt from "@/assets/images/dragonlord-hurt.png";
 import dragonLordDeath from "@/assets/images/dragonlord-death.png";
+import infernoBallSheet from "@assets/dragon_lord_magic_1_1771826439516.png";
+import infernoBallExplodeSheet from "@assets/dragon_lord_magic_1_part_2_1771826450239.png";
 
 import vfxWindSlash1 from "@/assets/images/vfx-wind-slash1.png";
 import vfxWindSlash2 from "@/assets/images/vfx-wind-slash2.png";
@@ -254,7 +256,7 @@ export default function BattleScreen({
   const [enemyHitIdx, setEnemyHitIdx] = useState<number | null>(null);
   const [playerFlash, setPlayerFlash] = useState(false);
   const [fireHitSfx, setFireHitSfx] = useState(false);
-  const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash">>({});
+  const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash" | "castInferno">>({});
   const [fireballAnim, setFireballAnim] = useState<{ fromX: number; fromY: number; toX: number; toY: number; active: boolean } | null>(null);
   const [potionVfx, setPotionVfx] = useState<{ x: number; y: number; color: string; active: boolean } | null>(null);
   const [bossOffset, setBossOffset] = useState<{ x: number; y: number } | null>(null);
@@ -300,6 +302,14 @@ export default function BattleScreen({
   const [xpBarLevel, setXpBarLevel] = useState(player.level);
   const [xpBarLevelUp, setXpBarLevelUp] = useState(false);
   const [dragonFireVfx, setDragonFireVfx] = useState<{ type: "burst" | "pillar"; x: number; y: number } | null>(null);
+  const [infernoBallAnim, setInfernoBallAnim] = useState<{
+    phase: "spawn" | "travel" | "explode";
+    fromX: number; fromY: number;
+    toX: number; toY: number;
+    enemyIdx: number;
+    preTarget: { type: "player" | "party"; index: number };
+    onDone: (() => void) | null;
+  } | null>(null);
   const [fireImpactVfx, setFireImpactVfx] = useState<{ targetIdx: number; id: number }[]>([]);
   const [incinerationSlashActive, setIncinerationSlashActive] = useState(false);
   const [incinerationFrozenEnemy, setIncinerationFrozenEnemy] = useState<number | null>(null);
@@ -1386,12 +1396,59 @@ export default function BattleScreen({
     });
   }, [enemyAnimStates, battle.enemies]);
 
+  useEffect(() => {
+    if (infernoBallAnim && infernoBallAnim.phase === "spawn") {
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setInfernoBallAnim(prev => prev ? { ...prev, phase: "travel" } : null);
+        });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [infernoBallAnim?.phase]);
+
+  const handleInfernoBallArrival = useCallback(() => {
+    if (!infernoBallAnim || infernoBallAnim.phase !== "travel") return;
+    const { enemyIdx, preTarget, onDone } = infernoBallAnim;
+
+    setInfernoBallAnim(prev => prev ? { ...prev, phase: "explode" } : null);
+    setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+    playSfx("stabRing");
+
+    const result = onEnemyAttack(enemyIdx, preTarget);
+    if (!result.dodged) {
+      if (result.target.type === "party") {
+        setPartyHurtIndex(result.target.index);
+        scheduleTimer(() => setPartyHurtIndex(-1), 700);
+      } else {
+        setAnimPhase("hurt");
+      }
+      setShakeScreen(true);
+      scheduleTimer(() => setShakeScreen(false), 600);
+    } else {
+      setDodgeBlur(result.target);
+      scheduleTimer(() => setDodgeBlur(null), 600);
+      const dodgeSlot = result.target.type === "party"
+        ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+        : ALLY_SLOTS[0];
+      spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+    }
+  }, [infernoBallAnim, onEnemyAttack, playSfx, scheduleTimer, spawnDamageNumber]);
+
+  const handleInfernoBallExplodeComplete = useCallback(() => {
+    if (!infernoBallAnim) return;
+    const { onDone } = infernoBallAnim;
+    setInfernoBallAnim(null);
+    setAnimPhase("idle");
+    if (onDone) scheduleTimer(onDone, 300);
+  }, [infernoBallAnim, scheduleTimer]);
+
   const animateEnemyAttack = useCallback((enemyIdx: number, enemy: typeof battle.enemies[0], onDone: () => void) => {
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
 
     if (isDragonLord(enemy)) {
       const attackRoll = Math.random();
-      const attackType = attackRoll < 0.30 ? "fireBurst" : attackRoll < 0.55 ? "firePillar" : attackRoll < 0.75 ? "darkMagic" : "melee";
+      const attackType = attackRoll < 0.55 ? "infernoBall" : attackRoll < 0.75 ? "darkMagic" : "melee";
 
       const playerCenterY = getSpriteCenterOffset(player.spriteId || "samurai");
       const getTargetPos = (result: { dodged: boolean; target: { type: "player" | "party"; index: number } }) => {
@@ -1404,76 +1461,42 @@ export default function BattleScreen({
         return { x: PLAYER_POS.x, y: PLAYER_POS.y + playerCenterY };
       };
 
-      if (attackType === "fireBurst") {
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-        playSfx("fireballLaunch", 0.8);
+      if (attackType === "infernoBall") {
+        const aliveParty = battle.party.filter(p => p.currentHp > 0);
+        const totalTargets = 1 + aliveParty.length;
+        const targetRoll = Math.floor(Math.random() * totalTargets);
+        let preTarget: { type: "player" | "party"; index: number };
+        if (targetRoll === 0 || aliveParty.length === 0) {
+          preTarget = { type: "player", index: -1 };
+        } else {
+          const pt = aliveParty[targetRoll - 1];
+          preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+        }
 
-        scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx);
-          const tp = getTargetPos(result);
-          if (!result.dodged) {
-            setDragonFireVfx({ type: "burst", x: tp.x, y: tp.y });
-            playSfx("stabRing");
-            if (result.target.type === "party") {
-              setPartyHurtIndex(result.target.index);
-              scheduleTimer(() => setPartyHurtIndex(-1), 600);
-            } else {
-              setAnimPhase("hurt");
-            }
-            setShakeScreen(true);
-            scheduleTimer(() => setShakeScreen(false), 500);
-            scheduleTimer(() => setDragonFireVfx(null), 900);
-          } else {
-            setDodgeBlur(result.target);
-            scheduleTimer(() => setDodgeBlur(null), 600);
-            const dodgeSlot = result.target.type === "party"
-              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
-              : ALLY_SLOTS[0];
-            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
-          }
-        }, 700);
-
-        scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-          setAnimPhase("idle");
-          scheduleTimer(onDone, 300);
-        }, 1400);
-
-      } else if (attackType === "firePillar") {
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "castInferno" }));
         playSfx("magicRing", 0.8);
 
-        scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx);
-          const tp = getTargetPos(result);
-          if (!result.dodged) {
-            setDragonFireVfx({ type: "pillar", x: tp.x, y: tp.y });
-            playSfx("hitCombo");
-            scheduleTimer(() => playSfx("stabRing"), 200);
-            if (result.target.type === "party") {
-              setPartyHurtIndex(result.target.index);
-              scheduleTimer(() => setPartyHurtIndex(-1), 700);
-            } else {
-              setAnimPhase("hurt");
-            }
-            setShakeScreen(true);
-            scheduleTimer(() => setShakeScreen(false), 600);
-            scheduleTimer(() => setDragonFireVfx(null), 1200);
-          } else {
-            setDodgeBlur(result.target);
-            scheduleTimer(() => setDodgeBlur(null), 600);
-            const dodgeSlot = result.target.type === "party"
-              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
-              : ALLY_SLOTS[0];
-            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
-          }
-        }, 800);
+        const dragonPos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
+        const targetPos = preTarget.type === "party" && preTarget.index >= 0
+          ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length]
+          : PLAYER_POS;
+        const targetCenterY = preTarget.type === "party" && preTarget.index >= 0
+          ? getSpriteCenterOffset(battle.party[preTarget.index]?.spriteId || "samurai")
+          : playerCenterY;
 
         scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-          setAnimPhase("idle");
-          scheduleTimer(onDone, 300);
-        }, 1600);
+          playSfx("fireballLaunch", 0.9);
+          setInfernoBallAnim({
+            phase: "spawn",
+            fromX: dragonPos.x - 12,
+            fromY: dragonPos.y + 15,
+            toX: targetPos.x,
+            toY: targetPos.y + targetCenterY,
+            enemyIdx,
+            preTarget,
+            onDone,
+          });
+        }, 400);
 
       } else if (attackType === "darkMagic") {
         const aliveParty = battle.party.filter(p => p.currentHp > 0);
@@ -3214,44 +3237,45 @@ export default function BattleScreen({
                       <SpriteAnimator
                         spriteSheet={
                           enemyAnimStates[idx] === "death" ? dragonLordDeath
-                          : enemyAnimStates[idx] === "attack" ? dragonLordAttack
+                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? dragonLordAttack
                           : enemyAnimStates[idx] === "hurt" ? dragonLordHurt
                           : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? dragonLordWalk
                           : dragonLordIdle
                         }
                         frameWidth={
                           enemyAnimStates[idx] === "death" ? 160
-                          : enemyAnimStates[idx] === "attack" ? 90
+                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 90
                           : enemyAnimStates[idx] === "hurt" ? 130
                           : 74
                         }
                         frameHeight={
                           enemyAnimStates[idx] === "death" ? 160
-                          : enemyAnimStates[idx] === "attack" ? 70
+                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 70
                           : enemyAnimStates[idx] === "hurt" ? 130
                           : 74
                         }
                         totalFrames={
                           enemyAnimStates[idx] === "death" ? 36
-                          : enemyAnimStates[idx] === "attack" ? 16
+                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 16
                           : enemyAnimStates[idx] === "hurt" ? 5
                           : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
                           : 4
                         }
                         fps={
-                          enemyAnimStates[idx] === "attack" ? 16
+                          (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 16
                           : enemyAnimStates[idx] === "death" ? 10
                           : enemyAnimStates[idx] === "hurt" ? 10
                           : 8
                         }
                         scale={
                           enemyAnimStates[idx] === "death" ? 2.6
-                          : enemyAnimStates[idx] === "attack" ? 4.4
+                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 4.4
                           : enemyAnimStates[idx] === "hurt" ? 3.2
                           : 4.2
                         }
-                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "castInferno" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
+                        pauseAtFrame={enemyAnimStates[idx] === "castInferno" ? 3 : undefined}
                         onComplete={
                           enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
@@ -3496,6 +3520,58 @@ export default function BattleScreen({
                 scale={dragonFireVfx.type === "burst" ? 2 : 2.5}
                 loop={false}
                 onComplete={() => setDragonFireVfx(null)}
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+          )}
+
+          {infernoBallAnim && (infernoBallAnim.phase === "spawn" || infernoBallAnim.phase === "travel") && (
+            <div
+              className="absolute z-50 pointer-events-none"
+              style={{
+                left: `${infernoBallAnim.phase === "travel" ? infernoBallAnim.toX : infernoBallAnim.fromX}%`,
+                bottom: `${infernoBallAnim.phase === "travel" ? infernoBallAnim.toY : infernoBallAnim.fromY}%`,
+                transform: "translate(-50%, 50%)",
+                filter: "drop-shadow(0 0 20px rgba(255,120,0,0.9)) drop-shadow(0 0 40px rgba(255,60,0,0.6))",
+                transition: infernoBallAnim.phase === "travel" ? "left 1.5s ease-in, bottom 1.5s ease-in" : "none",
+              }}
+              onTransitionEnd={(e) => {
+                if (e.propertyName === "left") {
+                  handleInfernoBallArrival();
+                }
+              }}
+            >
+              <SpriteAnimator
+                spriteSheet={infernoBallSheet}
+                frameWidth={250}
+                frameHeight={300}
+                totalFrames={30}
+                fps={20}
+                scale={0.5}
+                loop={true}
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+          )}
+          {infernoBallAnim && infernoBallAnim.phase === "explode" && (
+            <div
+              className="absolute z-50 pointer-events-none"
+              style={{
+                left: `${infernoBallAnim.toX}%`,
+                bottom: `${infernoBallAnim.toY}%`,
+                transform: "translate(-50%, 50%)",
+                filter: "drop-shadow(0 0 24px rgba(255,120,0,0.9)) drop-shadow(0 0 48px rgba(255,60,0,0.7))",
+              }}
+            >
+              <SpriteAnimator
+                spriteSheet={infernoBallExplodeSheet}
+                frameWidth={64}
+                frameHeight={64}
+                totalFrames={10}
+                fps={14}
+                scale={3}
+                loop={false}
+                onComplete={handleInfernoBallExplodeComplete}
                 style={{ imageRendering: "pixelated" }}
               />
             </div>
