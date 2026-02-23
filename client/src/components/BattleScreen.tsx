@@ -2305,52 +2305,82 @@ export default function BattleScreen({
           {(() => {
             const gp = battle.gridPositions;
             const occupiedAlly = getOccupiedAllyCells();
+            const cellW = 7;
+            const cellH = 6;
+            const gapH = 1;
+            const gapV = 1;
+            const allyGridW = cellW * 3 + gapH * 2;
+            const allyGridH = cellH * 3 + gapV * 2;
+            const allyLeft = ALLY_GRID[0][0].x;
+            const enemyLeft = ENEMY_GRID[0][0].x;
             return (
               <>
-                {ALLY_GRID.map((row, ri) =>
-                  row.map((cell, ci) => {
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: `${allyLeft - 1}%`,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: `${allyGridW}%`,
+                    height: `${allyGridH}%`,
+                    display: "grid",
+                    gridTemplateColumns: `repeat(3, ${cellW}%)`,
+                    gridTemplateRows: `repeat(3, ${cellH}%)`,
+                    gap: `${gapV}% ${gapH}%`,
+                    zIndex: 5,
+                  }}
+                  data-testid="grid-ally-container"
+                >
+                  {Array.from({ length: 9 }).map((_, cellIdx) => {
+                    const ri = Math.floor(cellIdx / 3);
+                    const ci = cellIdx % 3;
                     const isOccupied = occupiedAlly.some(o => o.row === ri && o.col === ci);
                     return (
                       <div
                         key={`ally-grid-${ri}-${ci}`}
-                        className="absolute pointer-events-none"
                         data-testid={`grid-ally-${ri}-${ci}`}
                         style={{
-                          left: `${cell.x - 3.5}%`,
-                          bottom: `${cell.y - 2}%`,
-                          width: "7%",
-                          height: "6%",
                           border: `1px solid ${isOccupied ? "rgba(168,85,247,0.35)" : "rgba(168,85,247,0.15)"}`,
                           background: isOccupied ? "rgba(168,85,247,0.08)" : "rgba(168,85,247,0.03)",
                           boxShadow: isOccupied ? "inset 0 0 8px rgba(168,85,247,0.1)" : "none",
-                          zIndex: 5,
                         }}
                       />
                     );
-                  })
-                )}
-                {ENEMY_GRID.map((row, ri) =>
-                  row.map((cell, ci) => {
+                  })}
+                </div>
+                <div
+                  className="absolute pointer-events-none"
+                  style={{
+                    left: `${enemyLeft - 1}%`,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    width: `${allyGridW}%`,
+                    height: `${allyGridH}%`,
+                    display: "grid",
+                    gridTemplateColumns: `repeat(3, ${cellW}%)`,
+                    gridTemplateRows: `repeat(3, ${cellH}%)`,
+                    gap: `${gapV}% ${gapH}%`,
+                    zIndex: 5,
+                  }}
+                  data-testid="grid-enemy-container"
+                >
+                  {Array.from({ length: 9 }).map((_, cellIdx) => {
+                    const ri = Math.floor(cellIdx / 3);
+                    const ci = cellIdx % 3;
                     const enemyOccupied = gp ? gp.enemies.some((e, idx) => e.row === ri && e.col === ci && battle.enemies[idx]?.currentHp > 0) : false;
                     return (
                       <div
                         key={`enemy-grid-${ri}-${ci}`}
-                        className="absolute pointer-events-none"
                         data-testid={`grid-enemy-${ri}-${ci}`}
                         style={{
-                          left: `${cell.x - 3.5}%`,
-                          bottom: `${cell.y - 2}%`,
-                          width: "7%",
-                          height: "6%",
                           border: `1px solid ${enemyOccupied ? "rgba(239,68,68,0.35)" : "rgba(239,68,68,0.15)"}`,
                           background: enemyOccupied ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.03)",
                           boxShadow: enemyOccupied ? "inset 0 0 8px rgba(239,68,68,0.1)" : "none",
-                          zIndex: 5,
                         }}
                       />
                     );
-                  })
-                )}
+                  })}
+                </div>
               </>
             );
           })()}
