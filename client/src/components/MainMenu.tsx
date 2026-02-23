@@ -302,7 +302,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
 
   if (showLoadScreen) {
     return (
-      <div className="relative w-full h-screen overflow-hidden" style={{ fontFamily: PIXEL_FONT, imageRendering: "pixelated" }}>
+      <div className="relative w-full h-full overflow-hidden" style={{ fontFamily: PIXEL_FONT, imageRendering: "pixelated" }}>
         <div className="absolute inset-0">
           <img src={mainMenuBg} alt="" className="w-full h-full object-cover" style={{ imageRendering: "pixelated" }} />
         </div>
@@ -409,7 +409,7 @@ export default function MainMenu({ onNewGame, onContinue, onLoadGame, hasSave, s
   }
 
   return (
-    <div className="relative w-full h-screen overflow-hidden" style={{ fontFamily: PIXEL_FONT }}>
+    <div className="relative w-full h-full overflow-hidden" style={{ fontFamily: PIXEL_FONT }}>
       <div
         className="absolute inset-0 transition-opacity duration-[2000ms]"
         style={{ opacity: bgReady ? 1 : 0 }}

@@ -38,7 +38,7 @@ export default function CharacterUnlockScreen({ character, playerLevel, onConfir
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden" style={{ background: "linear-gradient(to bottom, #0a0a1a, #1a0a2e, #0a0a1a)" }}>
+    <div className="relative w-full h-full overflow-hidden" style={{ background: "linear-gradient(to bottom, #0a0a1a, #1a0a2e, #0a0a1a)" }}>
       <ParticleCanvas
         colors={[elementColor, "#ffffff"]}
         count={60}

@@ -2112,7 +2112,7 @@ export default function BattleScreen({
     : battle.phase === "defeat" ? "Defeat" : player.name;
 
   return (
-    <div className={`relative w-full h-screen overflow-hidden ${shakeScreen ? "animate-[shake_0.3s_ease-out]" : ""}`}>
+    <div className={`relative w-full h-full overflow-hidden ${shakeScreen ? "animate-[shake_0.3s_ease-out]" : ""}`}>
       {fujinSliceActive && (
         <div className="absolute inset-0 z-[60] pointer-events-none">
           <div

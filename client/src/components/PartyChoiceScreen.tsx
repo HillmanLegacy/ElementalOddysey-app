@@ -18,7 +18,7 @@ export default function PartyChoiceScreen({ choices, playerLevel, ownedIds, onSe
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
 
   return (
-    <div className="relative w-full h-screen overflow-hidden" style={{ background: "linear-gradient(to bottom, #0a0a1a, #1a0a2e, #0a0a1a)" }}>
+    <div className="relative w-full h-full overflow-hidden" style={{ background: "linear-gradient(to bottom, #0a0a1a, #1a0a2e, #0a0a1a)" }}>
       <ParticleCanvas
         colors={["#a855f7", "#6366f1"]}
         count={40}

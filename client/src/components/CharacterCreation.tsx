@@ -233,7 +233,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   };
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
+    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
       <ParticleCanvas
         colors={[COLOR_MAP["Purple"], elemColor]}
         count={50}

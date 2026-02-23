@@ -23,7 +23,7 @@ interface CharacterSelectUnlockProps {
 
 export default function CharacterSelectUnlock({ characters, playerLevel, onSelect }: CharacterSelectUnlockProps) {
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
+    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
       <ParticleCanvas
         colors={["#a855f7", "#ffffff"]}
         count={40}

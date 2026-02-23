@@ -65,7 +65,7 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
       style={{
         position: "relative",
         width: "100%",
-        height: "100vh",
+        height: "100%",
         overflow: "hidden",
         background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
         fontFamily: "'Press Start 2P', cursive",

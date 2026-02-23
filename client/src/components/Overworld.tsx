@@ -358,7 +358,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   const elemColor = ELEMENT_COLORS[region.theme];
 
   return (
-    <div className="relative w-full h-screen overflow-hidden" data-testid="overworld-screen">
+    <div className="relative w-full h-full overflow-hidden" data-testid="overworld-screen">
       <div
         className="absolute inset-0"
         style={{

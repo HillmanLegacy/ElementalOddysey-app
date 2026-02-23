@@ -26,7 +26,7 @@ export default function PerkSelectScreen({ player, pendingLevelUp, onSelect }: P
   const elColor = ELEMENT_COLORS[characterElement] || "#c9a44a";
 
   return (
-    <div className="relative w-full h-screen overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
+    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
       <ParticleCanvas
         colors={[ELEMENT_COLORS[characterElement], "#a855f7", "#6366f1"]}
         count={50}
