@@ -2814,12 +2814,13 @@ export default function BattleScreen({
           </div>
 
           <div
-            className="absolute z-20 pointer-events-none"
+            className="absolute z-20"
             style={{
               right: "8px",
               top: "6px",
               width: "auto",
               maxWidth: "420px",
+              pointerEvents: "none",
             }}
           >
             <div className="flex flex-col gap-1 items-end">
@@ -2830,23 +2831,58 @@ export default function BattleScreen({
                 const elColor = ELEMENT_COLORS[enemy.element];
                 const isAnimating = animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn";
                 const eOpacity = isDead ? 0.3 : isAnimating ? 0.35 : 1;
+                const eTargetable = !isDead && (
+                  (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
+                  (battle.phase === "partyTurn" && (partyAction === "selectTarget" || partyAction === "selectMagicTarget"))
+                );
                 return (
                   <div
                     key={`ehp-${idx}`}
-                    className="relative"
+                    className="relative flex items-center"
                     style={{
-                      width: "200px",
                       opacity: eOpacity,
                       transition: "opacity 0.4s ease",
                     }}
                   >
+                    {eTargetable && (
+                      <div
+                        className="flex-shrink-0 mr-1.5"
+                        style={{
+                          width: "12px",
+                          height: "12px",
+                          imageRendering: "pixelated",
+                          filter: "drop-shadow(0 0 4px rgba(250,204,21,0.7))",
+                          animation: "pointerBounce 0.6s ease-in-out infinite alternate",
+                        }}
+                      >
+                        <svg viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ width: "100%", height: "100%" }}>
+                          <rect x="0" y="4" width="4" height="4" fill="#fbbf24" />
+                          <rect x="4" y="2" width="4" height="2" fill="#fbbf24" />
+                          <rect x="4" y="8" width="4" height="2" fill="#fbbf24" />
+                          <rect x="8" y="0" width="4" height="2" fill="#fbbf24" />
+                          <rect x="8" y="4" width="4" height="4" fill="#fbbf24" />
+                          <rect x="8" y="10" width="4" height="2" fill="#fbbf24" />
+                        </svg>
+                      </div>
+                    )}
+                    <button
+                      className={`${eTargetable ? "cursor-pointer hover:brightness-125" : "cursor-default"}`}
+                      style={{
+                        width: "200px",
+                        pointerEvents: eTargetable ? "auto" : "none",
+                        transition: "filter 0.2s ease",
+                      }}
+                      onClick={() => eTargetable && handleEnemyClick(idx)}
+                      data-testid={`button-enemy-target-${idx}`}
+                    >
                     <div
                       className="relative overflow-hidden"
                       style={{
                         background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
-                        border: `2px solid ${elColor}25`,
-                        boxShadow: "inset 0 1px 0 rgba(255,255,255,0.03)",
+                        border: `2px solid ${eTargetable ? "#fbbf2460" : elColor + "25"}`,
+                        boxShadow: eTargetable ? "0 0 8px rgba(251,191,36,0.2)" : "inset 0 1px 0 rgba(255,255,255,0.03)",
                         imageRendering: "pixelated",
+                        transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     >
                       <div className="px-2.5 py-1.5" style={{ borderBottom: `1px solid ${elColor}15` }}>
@@ -2933,6 +2969,7 @@ export default function BattleScreen({
                         </div>
                       </div>
                     </div>
+                    </button>
                   </div>
                 );
               })}
@@ -2941,10 +2978,6 @@ export default function BattleScreen({
 
           {battle.enemies.map((enemy, idx) => {
             const isDead = enemy.currentHp <= 0;
-            const isTargetable = !isDead && (
-              (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
-              (battle.phase === "partyTurn" && (partyAction === "selectTarget" || partyAction === "selectMagicTarget"))
-            );
             const isHit = enemyHitIdx === idx;
             const spriteImg = getEnemySprite(enemy.id);
             const isBoss = enemy.isBoss;
@@ -2966,23 +2999,16 @@ export default function BattleScreen({
                   transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
                 }}
               >
-              <button
-                className={`${isDead ? "pointer-events-none" : ""} ${isTargetable ? "cursor-pointer" : "cursor-default"} ${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
+              <div
+                className={`${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
                 style={{
-                  transform: `scale(${pos.z}) ${isTargetable ? "translateY(-4px)" : ""}`,
+                  transform: `scale(${pos.z})`,
                   transition: "transform 0.5s ease, opacity 0.3s ease, filter 0.2s ease",
                   filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
                 }}
-                onClick={() => handleEnemyClick(idx)}
-                disabled={isDead || !isTargetable}
                 data-testid={`button-enemy-${idx}`}
               >
                 <div className="flex flex-col items-center">
-                {isTargetable && (
-                  <div className="z-30 mb-1">
-                    <Target className="w-5 h-5 text-yellow-400 animate-bounce drop-shadow-[0_0_8px_rgba(250,204,21,0.5)]" />
-                  </div>
-                )}
 
                 <div className="flex items-center justify-center gap-1.5 mb-1 invisible" style={{ fontFamily: "'Press Start 2P', cursive" }}>
                   <span className="text-[10px]">Lv{enemy.level}</span>
@@ -3238,7 +3264,7 @@ export default function BattleScreen({
                   ) : isJotem(enemy) ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
-                      className={`w-32 h-32 md:w-40 md:h-40 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
+                      className={`w-32 h-32 md:w-40 md:h-40 transition-all duration-200`}
                       style={{
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
@@ -3284,7 +3310,7 @@ export default function BattleScreen({
                   ) : enemy.element === "Fire" && !enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
-                      className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
+                      className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} transition-all duration-200`}
                       style={{
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
@@ -3334,7 +3360,7 @@ export default function BattleScreen({
                   ) : isFrostLizard(enemy) ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
-                      className={`w-20 h-20 md:w-28 md:h-28 ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
+                      className={`w-20 h-20 md:w-28 md:h-28 transition-all duration-200`}
                       style={{
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
@@ -3377,7 +3403,7 @@ export default function BattleScreen({
                     <img
                       src={spriteImg}
                       alt={enemy.name}
-                      className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} object-contain ${isTargetable ? "hover:brightness-125 hover:scale-105" : ""} transition-all duration-200`}
+                      className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} object-contain transition-all duration-200`}
                       style={{
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                         imageRendering: "auto",
@@ -3393,7 +3419,6 @@ export default function BattleScreen({
                 </div>
 
                 </div>
-              </button>
               </div>
             );
           })}
@@ -4019,6 +4044,10 @@ export default function BattleScreen({
           15% { opacity: 1; transform: translateY(-10px) scale(1.2); }
           30% { opacity: 1; transform: translateY(-20px) scale(1); }
           100% { opacity: 0; transform: translateY(-55px) scale(0.9); }
+        }
+        @keyframes pointerBounce {
+          0% { transform: translateX(0); }
+          100% { transform: translateX(3px); }
         }
         @keyframes enemyHit {
           0% { filter: brightness(2); transform: scale(1.1) translateX(5px); }
