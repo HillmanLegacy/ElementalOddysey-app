@@ -1,11 +1,36 @@
 import { useEffect, useRef } from "react";
 
+type NodeData = { x: number; y: number; type: string; id: number; connections: number[] };
+
 interface LavaOverworldBgProps {
-  nodes?: { x: number; y: number; type: string; id: number; connections: number[] }[];
+  nodes?: NodeData[];
+}
+
+function buildEdgeList(nodes: NodeData[]) {
+  const edgeList: { fx: number; fy: number; tx: number; ty: number }[] = [];
+  const seen = new Set<string>();
+  for (const n of nodes) {
+    for (const cid of n.connections) {
+      const key = `${Math.min(n.id, cid)}-${Math.max(n.id, cid)}`;
+      if (!seen.has(key)) {
+        seen.add(key);
+        const to = nodes.find(nd => nd.id === cid);
+        if (to) edgeList.push({ fx: n.x / 100, fy: n.y / 100, tx: to.x / 100, ty: to.y / 100 });
+      }
+    }
+  }
+  return edgeList;
 }
 
 export default function LavaOverworldBg({ nodes }: LavaOverworldBgProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const nodesRef = useRef<NodeData[]>(nodes || []);
+  const edgeListRef = useRef(buildEdgeList(nodes || []));
+
+  useEffect(() => {
+    nodesRef.current = nodes || [];
+    edgeListRef.current = buildEdgeList(nodes || []);
+  }, [nodes]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -63,21 +88,6 @@ export default function LavaOverworldBg({ nodes }: LavaOverworldBgProps) {
       const v = Math.sin(x * 12.9898 + y * 78.233) * 43758.5453;
       return Math.abs(v - Math.floor(v));
     };
-
-    const edgeList: { fx: number; fy: number; tx: number; ty: number }[] = [];
-    if (nodes) {
-      const seen = new Set<string>();
-      for (const n of nodes) {
-        for (const cid of n.connections) {
-          const key = `${Math.min(n.id, cid)}-${Math.max(n.id, cid)}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            const to = nodes.find(nd => nd.id === cid);
-            if (to) edgeList.push({ fx: n.x / 100, fy: n.y / 100, tx: to.x / 100, ty: to.y / 100 });
-          }
-        }
-      }
-    }
 
     function drawSky(W: number, H: number) {
       const skyGrad = ctx!.createLinearGradient(0, 0, 0, H * 0.5);
@@ -319,6 +329,8 @@ export default function LavaOverworldBg({ nodes }: LavaOverworldBgProps) {
     }
 
     function drawPathNetwork(W: number, H: number) {
+      const edgeList = edgeListRef.current;
+      const currentNodes = nodesRef.current;
       if (edgeList.length === 0) return;
       for (const edge of edgeList) {
         const fx = edge.fx * W, fy = edge.fy * H;
@@ -369,8 +381,8 @@ export default function LavaOverworldBg({ nodes }: LavaOverworldBgProps) {
         }
       }
 
-      if (nodes) {
-        for (const n of nodes) {
+      if (currentNodes.length > 0) {
+        for (const n of currentNodes) {
           const nx = (n.x / 100) * W, ny = (n.y / 100) * H;
           const r = n.type === "boss" ? 14 : n.type === "hut" ? 12 : 10;
 
@@ -760,7 +772,7 @@ export default function LavaOverworldBg({ nodes }: LavaOverworldBgProps) {
       cancelAnimationFrame(animId);
       window.removeEventListener("resize", resize);
     };
-  }, [nodes]);
+  }, []);
 
   return (
     <canvas

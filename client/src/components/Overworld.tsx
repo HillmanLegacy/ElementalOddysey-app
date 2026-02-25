@@ -369,7 +369,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         }}
       >
       {isFireRegion ? (
-        <LavaOverworldBg nodes={region.nodes.map(n => ({ x: n.x, y: n.y, type: n.type, id: n.id, connections: n.connections }))} />
+        <LavaOverworldBg nodes={region.nodes} />
       ) : (
         <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
           <div className="absolute inset-0" style={{
