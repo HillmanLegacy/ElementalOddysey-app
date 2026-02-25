@@ -369,7 +369,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         }}
       >
       {isFireRegion ? (
-        <LavaOverworldBg />
+        <LavaOverworldBg nodes={region.nodes.map(n => ({ x: n.x, y: n.y, type: n.type, id: n.id, connections: n.connections }))} />
       ) : (
         <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
           <div className="absolute inset-0" style={{
@@ -462,11 +462,12 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
             const pathD = `M ${edge.from.x} ${edge.from.y} Q ${mx} ${my} ${edge.to.x} ${edge.to.y}`;
 
+            const fireStyle = isFireRegion;
             return (
               <g key={`edge-${i}`}>
-                <path d={pathD} fill="none" stroke={theme.pathBorder} strokeWidth="3" strokeLinecap="round" filter="url(#pathShadow)" />
-                <path d={pathD} fill="none" stroke={theme.pathColor} strokeWidth="1.8" strokeLinecap="round" filter="url(#pathGlow)" />
-                <path d={pathD} fill="none" stroke={`${theme.pathColor}50`} strokeWidth="0.5" strokeLinecap="round" strokeDasharray="1.5,3" />
+                <path d={pathD} fill="none" stroke={theme.pathBorder} strokeWidth={fireStyle ? "1.5" : "3"} strokeLinecap="round" filter="url(#pathShadow)" opacity={fireStyle ? 0.3 : 1} />
+                <path d={pathD} fill="none" stroke={theme.pathColor} strokeWidth={fireStyle ? "0.8" : "1.8"} strokeLinecap="round" filter="url(#pathGlow)" opacity={fireStyle ? 0.4 : 1} />
+                {!fireStyle && <path d={pathD} fill="none" stroke={`${theme.pathColor}50`} strokeWidth="0.5" strokeLinecap="round" strokeDasharray="1.5,3" />}
               </g>
             );
           })}
