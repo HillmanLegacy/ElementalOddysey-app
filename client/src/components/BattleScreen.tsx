@@ -3196,17 +3196,36 @@ export default function BattleScreen({
                   )}
                   {thunderBoltActive && thunderFrozenEnemy === idx && (() => {
                     const frame = LIGHTNING_VFX_SEQUENCE[thunderBoltFrame] || LIGHTNING_VFX_SEQUENCE[0];
+                    const frameIdx = thunderBoltFrame;
                     const scale = 4;
+
+                    let clipPath: string | undefined;
+                    let posStyle: Record<string, string | number> = {};
+
+                    if (frame.isSpot) {
+                      posStyle = { left: "50%", bottom: "-10%", transform: "translateX(-50%)" };
+                    } else {
+                      posStyle = { left: "50%", bottom: "10%", transform: "translateX(-50%)" };
+                      if (frameIdx >= 3 && frameIdx <= 7) {
+                        const progress = (frameIdx - 3) / 4;
+                        const clipBottom = Math.max(0, (1 - progress) * 70);
+                        clipPath = `inset(0 0 ${clipBottom}% 0)`;
+                      } else if (frameIdx >= 14 && frameIdx <= 16) {
+                        const progress = (frameIdx - 14) / 2;
+                        const clipTop = progress * 70;
+                        clipPath = `inset(${clipTop}% 0 0 0)`;
+                      }
+                    }
+
                     return (
                       <div
                         className="absolute z-[60] pointer-events-none"
                         style={{
-                          left: "50%",
-                          bottom: frame.isSpot ? "-10%" : "10%",
-                          transform: "translateX(-50%)",
+                          ...posStyle,
                           width: frame.w * scale,
                           height: frame.h * scale,
                           imageRendering: "pixelated" as const,
+                          clipPath,
                         }}
                       >
                         <img
