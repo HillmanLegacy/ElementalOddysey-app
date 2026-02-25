@@ -25,6 +25,9 @@ The application features a **React + Vite + Tailwind CSS** frontend using **shad
 -   **Inventory & Equipment**: Consumables are grouped by name, usable in the overworld with party member targeting.
 -   **Merchant Stock System**: Shop stock persists between visits, replenishes after 5 battles, and resets upon region/tier progression.
 -   **Spell/Magic System**: Level-based spell unlocks unique to each element. Additional spells can be learned from the Shaman's Lair.
+-   **Perk System**: Level-gated perks per element. Perks have a `requiredLevel` field; only perks at or below the character's new level appear on level-up. Effects include percentage-based stat boosts (`percentStat`/`percentAmount`), dodge bonuses, elemental basic attacks (`elemental_basic_attack` adds character element to physical attacks), and physical damage reduction (`phys_damage_reduction`). Dodge perks stack with AGI-based dodge chance via `checkDodge(stats, perks)`.
+    -   **Fire Perks**: Flames Of The Burning Heart (+10% ATK, lv1), Ember Feint (+10% dodge, lv4), Heat Charge (fire element on basic attack, lv6), Blazing Aura (-5% non-magic damage, lv10).
+    -   **Wind Perks**: Calm Of The Storm (+10% AGI, lv1), Fujin's Bravery (+10% ATK, lv4), Clinging Hurricane (wind element on basic attack, lv6), Wind Step (+5% dodge, lv10).
 -   **Weapon Element System**: Weapons have elemental properties influencing physical attack damage based on elemental effectiveness multipliers.
 -   **Damage & Balance System**:
     -   **Damage Formula**: `baseDamage = (offense²) / (offense + defense) * skillMultiplier`.

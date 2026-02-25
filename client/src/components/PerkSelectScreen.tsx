@@ -19,8 +19,10 @@ export default function PerkSelectScreen({ player, pendingLevelUp, onSelect }: P
     ? (player.party[pendingLevelUp.characterIndex]?.perks || [])
     : player.perks;
 
+  const characterLevel = pendingLevelUp.newLevel;
+
   const availablePerks = PERKS.filter(
-    p => p.element === characterElement && !existingPerks.includes(p.id)
+    p => p.element === characterElement && !existingPerks.includes(p.id) && p.requiredLevel <= characterLevel
   ).slice(0, 6);
 
   const elColor = ELEMENT_COLORS[characterElement] || "#c9a44a";
@@ -188,6 +190,20 @@ export default function PerkSelectScreen({ player, pendingLevelUp, onSelect }: P
                           }}
                         >
                           {perk.element}
+                        </span>
+                        <span
+                          style={{
+                            fontFamily: "'Press Start 2P', cursive",
+                            fontSize: "6px",
+                            padding: "2px 6px",
+                            background: "rgba(201,164,74,0.15)",
+                            color: "#c9a44a",
+                            border: "1px solid rgba(201,164,74,0.25)",
+                            textTransform: "uppercase",
+                            letterSpacing: "1px",
+                          }}
+                        >
+                          LV{perk.requiredLevel}
                         </span>
                       </div>
                     </div>

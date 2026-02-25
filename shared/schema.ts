@@ -140,9 +140,12 @@ export interface Perk {
   description: string;
   element: Element;
   tier: number;
+  requiredLevel: number;
   effect: {
     stat?: keyof PlayerStats;
     amount?: number;
+    percentStat?: keyof PlayerStats;
+    percentAmount?: number;
     special?: string;
   };
 }
@@ -207,6 +210,7 @@ export interface BattlePartyMember {
   learnedSpells: string[];
   xp: number;
   xpToNext: number;
+  perks: string[];
 }
 
 export interface TurnQueueEntry {

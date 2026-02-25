@@ -463,24 +463,29 @@ export function getRegionTier(regionId: number, regionBossDefeats: Record<string
 }
 
 export const PERKS: Perk[] = [
-  { id: "fire_burn", name: "Burn Chance", description: "10% chance to burn on attack", element: "Fire", tier: 1, effect: { special: "burn" } },
-  { id: "fire_atk", name: "Flame Power", description: "+5 ATK", element: "Fire", tier: 1, effect: { stat: "atk", amount: 5 } },
-  { id: "fire_aoe", name: "Inferno", description: "Fire spells hit all enemies", element: "Fire", tier: 2, effect: { special: "aoe_fire" } },
-  { id: "water_regen", name: "Tidal Heal", description: "Regen 5 HP per turn", element: "Water", tier: 1, effect: { special: "regen" } },
-  { id: "water_int", name: "Deep Wisdom", description: "+5 INT", element: "Water", tier: 1, effect: { stat: "int", amount: 5 } },
-  { id: "water_debuff", name: "Frost Touch", description: "Spells slow enemies", element: "Water", tier: 2, effect: { special: "slow" } },
-  { id: "wind_agi", name: "Gale Speed", description: "+5 AGI", element: "Wind", tier: 1, effect: { stat: "agi", amount: 5 } },
-  { id: "wind_dodge", name: "Wind Step", description: "+15% dodge", element: "Wind", tier: 1, effect: { special: "dodge" } },
-  { id: "earth_def", name: "Stone Skin", description: "+5 DEF", element: "Earth", tier: 1, effect: { stat: "def", amount: 5 } },
-  { id: "earth_hp", name: "Mountain Heart", description: "+20 HP", element: "Earth", tier: 1, effect: { stat: "maxHp", amount: 20 } },
-  { id: "lightning_crit", name: "Thunder Strike", description: "+10% crit", element: "Lightning", tier: 1, effect: { special: "crit" } },
-  { id: "lightning_chain", name: "Chain Lightning", description: "Attacks chain to nearby", element: "Lightning", tier: 2, effect: { special: "chain" } },
-  { id: "shadow_lifesteal", name: "Soul Drain", description: "Steal 10% damage as HP", element: "Shadow", tier: 1, effect: { special: "lifesteal" } },
-  { id: "shadow_dodge", name: "Fade", description: "+10% dodge", element: "Shadow", tier: 1, effect: { special: "dodge" } },
-  { id: "light_heal", name: "Divine Light", description: "Heal spell +50% power", element: "Light", tier: 1, effect: { special: "heal_boost" } },
-  { id: "light_amp", name: "Radiance", description: "+5 INT, +3 LUCK", element: "Light", tier: 1, effect: { stat: "int", amount: 5 } },
-  { id: "ice_freeze", name: "Deep Freeze", description: "10% chance to freeze", element: "Ice", tier: 1, effect: { special: "freeze" } },
-  { id: "ice_aoe", name: "Blizzard", description: "Ice spells slow all enemies", element: "Ice", tier: 2, effect: { special: "aoe_slow" } },
+  { id: "fire_atk", name: "Flames Of The Burning Heart", description: "Increase ATK by 10%", element: "Fire", tier: 1, requiredLevel: 1, effect: { percentStat: "atk", percentAmount: 10 } },
+  { id: "fire_dodge", name: "Ember Feint", description: "Increase dodge chance by 10%", element: "Fire", tier: 1, requiredLevel: 4, effect: { special: "dodge", percentAmount: 10 } },
+  { id: "fire_elemental_attack", name: "Heat Charge", description: "Adds fire element to basic attack", element: "Fire", tier: 2, requiredLevel: 6, effect: { special: "elemental_basic_attack" } },
+  { id: "fire_damage_reduction", name: "Blazing Aura", description: "Decrease incoming non-magic damage by 5%", element: "Fire", tier: 2, requiredLevel: 10, effect: { special: "phys_damage_reduction", percentAmount: 5 } },
+
+  { id: "wind_agi", name: "Calm Of The Storm", description: "Increase AGI by 10%", element: "Wind", tier: 1, requiredLevel: 1, effect: { percentStat: "agi", percentAmount: 10 } },
+  { id: "wind_atk", name: "Fujin's Bravery", description: "Increase ATK by 10%", element: "Wind", tier: 1, requiredLevel: 4, effect: { percentStat: "atk", percentAmount: 10 } },
+  { id: "wind_elemental_attack", name: "Clinging Hurricane", description: "Adds wind element to basic attack", element: "Wind", tier: 2, requiredLevel: 6, effect: { special: "elemental_basic_attack" } },
+  { id: "wind_dodge", name: "Wind Step", description: "Increase dodge chance by 5%", element: "Wind", tier: 2, requiredLevel: 10, effect: { special: "dodge", percentAmount: 5 } },
+
+  { id: "lightning_crit", name: "Thunder Strike", description: "+10% crit", element: "Lightning", tier: 1, requiredLevel: 1, effect: { special: "crit" } },
+  { id: "lightning_chain", name: "Chain Lightning", description: "Attacks chain to nearby", element: "Lightning", tier: 2, requiredLevel: 4, effect: { special: "chain" } },
+  { id: "water_regen", name: "Tidal Heal", description: "Regen 5 HP per turn", element: "Water", tier: 1, requiredLevel: 1, effect: { special: "regen" } },
+  { id: "water_int", name: "Deep Wisdom", description: "+5 INT", element: "Water", tier: 1, requiredLevel: 1, effect: { stat: "int", amount: 5 } },
+  { id: "water_debuff", name: "Frost Touch", description: "Spells slow enemies", element: "Water", tier: 2, requiredLevel: 4, effect: { special: "slow" } },
+  { id: "earth_def", name: "Stone Skin", description: "+5 DEF", element: "Earth", tier: 1, requiredLevel: 1, effect: { stat: "def", amount: 5 } },
+  { id: "earth_hp", name: "Mountain Heart", description: "+20 HP", element: "Earth", tier: 1, requiredLevel: 1, effect: { stat: "maxHp", amount: 20 } },
+  { id: "shadow_lifesteal", name: "Soul Drain", description: "Steal 10% damage as HP", element: "Shadow", tier: 1, requiredLevel: 1, effect: { special: "lifesteal" } },
+  { id: "shadow_dodge", name: "Fade", description: "+10% dodge", element: "Shadow", tier: 1, requiredLevel: 1, effect: { special: "dodge", percentAmount: 10 } },
+  { id: "light_heal", name: "Divine Light", description: "Heal spell +50% power", element: "Light", tier: 1, requiredLevel: 1, effect: { special: "heal_boost" } },
+  { id: "light_amp", name: "Radiance", description: "+5 INT, +3 LUCK", element: "Light", tier: 1, requiredLevel: 1, effect: { stat: "int", amount: 5 } },
+  { id: "ice_freeze", name: "Deep Freeze", description: "10% chance to freeze", element: "Ice", tier: 1, requiredLevel: 1, effect: { special: "freeze" } },
+  { id: "ice_aoe", name: "Blizzard", description: "Ice spells slow all enemies", element: "Ice", tier: 2, requiredLevel: 4, effect: { special: "aoe_slow" } },
 ];
 
 export const SPELLS: Spell[] = [
@@ -684,8 +689,16 @@ export function calculateDamage(
   return { damage, isCrit, elementLabel };
 }
 
-export function checkDodge(defender: PlayerStats): boolean {
-  const dodgeChance = Math.min(0.25, defender.agi * 0.015);
+export function checkDodge(defender: PlayerStats, perks?: string[]): boolean {
+  let dodgeChance = Math.min(0.25, defender.agi * 0.015);
+  if (perks) {
+    for (const perkId of perks) {
+      const perk = PERKS.find(p => p.id === perkId);
+      if (perk && perk.effect.special === "dodge" && perk.effect.percentAmount) {
+        dodgeChance += perk.effect.percentAmount / 100;
+      }
+    }
+  }
   return Math.random() < dodgeChance;
 }
 

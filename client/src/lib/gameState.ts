@@ -74,6 +74,7 @@ export function useGameState() {
         learnedSpells: pm.learnedSpells || [],
         xp: pm.xp || 0,
         xpToNext: pm.xpToNext || xpForLevel(pm.level),
+        perks: pm.perks || [],
       }));
 
       if (battle.gridPositions) {
@@ -114,7 +115,10 @@ export function useGameState() {
         battle.animation = "dodge";
         battle.lastElementLabel = undefined;
       } else {
-        const weaponElement = s.player.equipment.weapon?.element;
+        let weaponElement = s.player.equipment.weapon?.element;
+        if (!weaponElement && s.player.perks.some(pid => { const pk = PERKS.find(p => p.id === pid); return pk && pk.effect.special === "elemental_basic_attack"; })) {
+          weaponElement = s.player.element;
+        }
         const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
         const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element, 1.0, critMod);
         target.currentHp = Math.max(0, target.currentHp - damage);
@@ -252,7 +256,7 @@ export function useGameState() {
         battle.lastDamageEvent = { id: ++damageEventCounter, amount: spell.effect.amount, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       } else if (spell.type === "damage") {
         const buffedStats = getBuffedStats(s.player.stats, battle.buffs);
-        const hasAoe = spell.targetType === "allEnemies" || (s.player.perks.includes("fire_aoe") && s.player.element === "Fire");
+        const hasAoe = spell.targetType === "allEnemies";
         const targets = hasAoe ? battle.enemies.filter(e => e.currentHp > 0) : (targetIndex !== undefined ? [battle.enemies[targetIndex]] : []);
 
         let lastLabel = "";
@@ -398,7 +402,11 @@ export function useGameState() {
         battle.log = [...battle.log, `${target.name} dodged ${member.name}'s attack!`];
         battle.lastElementLabel = undefined;
       } else {
-        const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, undefined, target.element);
+        let memberWeaponElement: string | undefined = undefined;
+        if (member.perks && member.perks.some(pid => { const pk = PERKS.find(p => p.id === pid); return pk && pk.effect.special === "elemental_basic_attack"; })) {
+          memberWeaponElement = member.element;
+        }
+        const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, memberWeaponElement, target.element);
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.lastElementLabel = elementLabel || undefined;
         battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: targetIndex, isCrit, label: elementLabel || undefined };
@@ -579,15 +587,26 @@ export function useGameState() {
         }
       }
 
+      function applyPhysDamageReduction(damage: number, perks: string[]): number {
+        for (const perkId of perks) {
+          const p = PERKS.find(pk => pk.id === perkId);
+          if (p && p.effect.special === "phys_damage_reduction" && p.effect.percentAmount) {
+            damage = Math.floor(damage * (1 - p.effect.percentAmount / 100));
+          }
+        }
+        return Math.max(1, damage);
+      }
+
       if (chosenTarget.type === "player") {
         lastEnemyTargetRef.current = { type: "player", index: -1 };
-        const dodged = checkDodge(buffedStats);
+        const dodged = checkDodge(buffedStats, s.player.perks);
         if (dodged) {
           battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
           lastEnemyDodgedRef.current = true;
         } else {
           const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
-          const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
+          let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
+          actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
           battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
           battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
           battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -600,26 +619,28 @@ export function useGameState() {
 
         if (!partyTarget || partyTarget.currentHp <= 0) {
           lastEnemyTargetRef.current = { type: "player", index: -1 };
-          const dodged = checkDodge(buffedStats);
+          const dodged = checkDodge(buffedStats, s.player.perks);
           if (dodged) {
             battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
-            const actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
+            let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
+            actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
             battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
             battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
             battle.animation = "enemyAttack";
           }
         } else {
-          const dodged = checkDodge(partyTarget.stats);
+          const dodged = checkDodge(partyTarget.stats, partyTarget.perks);
           if (dodged) {
             battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, Math.random() > 0.5, enemy.element, partyTarget.element);
-            const actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
+            let actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
+            actualDamage = applyPhysDamageReduction(actualDamage, partyTarget.perks || []);
             battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
             battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "party", targetIndex: partyIdx, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: partyTarget.defending };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${isCrit ? " CRIT" : ""} to ${partyTarget.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -976,17 +997,28 @@ export function useGameState() {
       const isParty = s.pendingLevelUp.characterType === "party";
       let updatedPlayer = { ...s.player };
 
+      function applyPerkToStats(stats: any, perkEffect: typeof perk.effect) {
+        if (perkEffect.stat && perkEffect.amount) {
+          stats[perkEffect.stat] += perkEffect.amount;
+          if (perkEffect.stat === "maxHp") stats.hp = stats.maxHp;
+          if (perkEffect.stat === "maxMp") stats.mp = stats.maxMp;
+        }
+        if (perkEffect.percentStat && perkEffect.percentAmount) {
+          const base = stats[perkEffect.percentStat] as number;
+          const bonus = Math.max(1, Math.floor(base * perkEffect.percentAmount / 100));
+          stats[perkEffect.percentStat] = base + bonus;
+          if (perkEffect.percentStat === "maxHp") stats.hp = stats.maxHp;
+          if (perkEffect.percentStat === "maxMp") stats.mp = stats.maxMp;
+        }
+      }
+
       if (isParty) {
         const idx = s.pendingLevelUp.characterIndex;
         const member = updatedPlayer.party[idx];
         if (!member) return s;
         const memberPerks = [...(member.perks || []), perkId];
         const memberStats = { ...member.stats };
-        if (perk.effect.stat && perk.effect.amount) {
-          (memberStats as any)[perk.effect.stat] += perk.effect.amount;
-          if (perk.effect.stat === "maxHp") memberStats.hp = memberStats.maxHp;
-          if (perk.effect.stat === "maxMp") memberStats.mp = memberStats.maxMp;
-        }
+        applyPerkToStats(memberStats, perk.effect);
         const newParty = updatedPlayer.party.map((m, i) =>
           i === idx ? { ...m, perks: memberPerks, stats: memberStats } : m
         );
@@ -994,11 +1026,7 @@ export function useGameState() {
       } else {
         const newPerks = [...updatedPlayer.perks, perkId];
         const newStats = { ...updatedPlayer.stats };
-        if (perk.effect.stat && perk.effect.amount) {
-          (newStats as any)[perk.effect.stat] += perk.effect.amount;
-          if (perk.effect.stat === "maxHp") newStats.hp = newStats.maxHp;
-          if (perk.effect.stat === "maxMp") newStats.mp = newStats.maxMp;
-        }
+        applyPerkToStats(newStats, perk.effect);
         updatedPlayer = { ...updatedPlayer, perks: newPerks, stats: newStats };
       }
 
