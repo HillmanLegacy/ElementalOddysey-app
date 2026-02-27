@@ -1004,6 +1004,7 @@ export default function BattleScreen({
         const hitEnemy = battle.enemies[tidx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
           setEnemyAnimStates(prev => ({ ...prev, [tidx]: "hurt" }));
+          const hurtDuration = hitEnemy.currentHp <= 0 ? 250 : 500;
           scheduleTimer(() => {
             const e = battle.enemies[tidx];
             const isDying = e && e.currentHp <= 0;
@@ -1013,7 +1014,7 @@ export default function BattleScreen({
             setEnemyAnimStates(prev => {
               return { ...prev, [tidx]: isDying ? "death" : "idle" };
             });
-          }, 500);
+          }, hurtDuration);
         }
         if (isCrit) {
           setShakeScreen(true);
@@ -1039,6 +1040,7 @@ export default function BattleScreen({
         const hitEnemy = battle.enemies[targetIdx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+          const hurtDuration = hitEnemy.currentHp <= 0 ? 250 : 500;
           scheduleTimer(() => {
             const e = battle.enemies[targetIdx];
             const isDying = e && e.currentHp <= 0;
@@ -1048,7 +1050,7 @@ export default function BattleScreen({
             setEnemyAnimStates(prev => {
               return { ...prev, [targetIdx]: isDying ? "death" : "idle" };
             });
-          }, 500);
+          }, hurtDuration);
         }
         setShakeScreen(true);
         setTimeout(() => setShakeScreen(false), 500);
@@ -1068,6 +1070,7 @@ export default function BattleScreen({
         const hitEnemy = battle.enemies[targetIdx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+          const hurtDuration = hitEnemy.currentHp <= 0 ? 250 : 500;
           scheduleTimer(() => {
             const e = battle.enemies[targetIdx];
             const isDying = e && e.currentHp <= 0;
@@ -1077,7 +1080,7 @@ export default function BattleScreen({
             setEnemyAnimStates(prev => {
               return { ...prev, [targetIdx]: isDying ? "death" : "idle" };
             });
-          }, 500);
+          }, hurtDuration);
         }
         setShakeScreen(true);
         setTimeout(() => setShakeScreen(false), 500);
@@ -1374,12 +1377,12 @@ export default function BattleScreen({
         timers.push(setTimeout(() => {
           setDeathAnimPending(prev => new Set(prev).add(idx));
           setEnemyAnimStates(prev => ({ ...prev, [idx]: "death" }));
-        }, 600));
+        }, 100));
       }
       if (enemy.currentHp <= 0 && !isAnimatedEnemyCheck(enemy) && !pixelDissolving.has(idx)) {
         timers.push(setTimeout(() => {
           setPixelDissolving(prev => new Set(prev).add(idx));
-        }, 500));
+        }, 200));
       }
     });
     return () => timers.forEach(t => clearTimeout(t));
