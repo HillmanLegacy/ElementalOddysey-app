@@ -210,6 +210,7 @@ const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "kraken", name: "Deep Kraken", element: "Water", level: 5, xpReward: 150, goldReward: 60, isBoss: true, sprite: "droplets" },
   { id: "shadow_lord", name: "Shadow Lord", element: "Shadow", level: 6, xpReward: 200, goldReward: 80, isBoss: true, sprite: "ghost" },
   { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 7, xpReward: 250, goldReward: 100, isBoss: true, sprite: "diamond" },
+  { id: "reaper", name: "Reaper", element: "Shadow", level: 3, xpReward: 60, goldReward: 30, isBoss: false, sprite: "ghost" },
 ];
 
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number, levelBonus: number = 0): Enemy {
@@ -258,13 +259,21 @@ export function getEnemiesForNode(node: OverworldNode, region: Region, tier: num
   const baseScale = 1 + region.id * 0.5;
 
   const bossPool = ENEMY_POOL.filter(e => e.isBoss);
-  const lesserPool = ENEMY_POOL.filter(e => !e.isBoss);
+  const lesserPool = ENEMY_POOL.filter(e => !e.isBoss && e.id !== "reaper");
   const preferredLesser = lesserPool.filter(e => e.element === regionElement);
   const selectedLesser = preferredLesser.length > 0 ? preferredLesser : lesserPool;
   const preferredBoss = bossPool.filter(e => e.element === regionElement);
   const selectedBoss = preferredBoss.length > 0 ? preferredBoss : bossPool;
 
   const enemies: Enemy[] = [];
+
+  if (node.type !== "boss" && Math.random() < 0.05) {
+    const reaperBase = ENEMY_POOL.find(e => e.id === "reaper")!;
+    const reaper = generateEnemyStats(reaperBase, baseScale, tier);
+    reaper.xpReward = Math.floor(reaper.xpReward * (1 + tier * 0.25));
+    reaper.goldReward = Math.floor(reaper.goldReward * (1 + tier * 0.25));
+    return [reaper];
+  }
 
   if (node.type === "boss") {
     const bossBase = selectedBoss[Math.floor(Math.random() * selectedBoss.length)];

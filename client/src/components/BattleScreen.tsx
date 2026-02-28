@@ -63,6 +63,12 @@ import deepKrakenImg from "@/assets/images/boss-deep-kraken.png";
 import shadowLordImg from "@/assets/images/boss-shadow-lord.png";
 import crystalTitanImg from "@/assets/images/boss-crystal-titan.png";
 
+import reaperIdle from "@/assets/images/reaper-idle.png";
+import reaperAttack from "@/assets/images/reaper-attack.png";
+import reaperHurt from "@/assets/images/reaper-hurt.png";
+import reaperDeath from "@/assets/images/reaper-death.png";
+import reaperFireball from "@/assets/images/reaper-fireball.png";
+
 import dragonLordIdle from "@/assets/images/dragonlord-idle.png";
 import dragonLordWalk from "@/assets/images/dragonlord-walk.png";
 import dragonLordAttack from "@/assets/images/dragonlord-attack.png";
@@ -258,6 +264,7 @@ export default function BattleScreen({
   const [fireHitSfx, setFireHitSfx] = useState(false);
   const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash" | "castInferno">>({});
   const [fireballAnim, setFireballAnim] = useState<{ fromX: number; fromY: number; toX: number; toY: number; active: boolean } | null>(null);
+  const [reaperFireballAnim, setReaperFireballAnim] = useState<{ fromX: number; fromY: number; toX: number; toY: number; active: boolean } | null>(null);
   const [potionVfx, setPotionVfx] = useState<{ x: number; y: number; color: string; active: boolean } | null>(null);
   const [bossOffset, setBossOffset] = useState<{ x: number; y: number } | null>(null);
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
@@ -1339,9 +1346,10 @@ export default function BattleScreen({
   const isDragonLord = useCallback((enemy: { id: string; isBoss: boolean }) => enemy.id === "dragon_lord" && enemy.isBoss, []);
   const isFrostLizard = useCallback((enemy: { id: string }) => enemy.id === "frost_lizard", []);
   const isJotem = useCallback((enemy: { id: string }) => enemy.id === "jotem", []);
+  const isReaper = useCallback((enemy: { id: string }) => enemy.id === "reaper", []);
   const isAnimatedEnemyCheck = useCallback((enemy: { id: string; element: string; isBoss: boolean }) => {
-    return (enemy.element === "Fire" && !enemy.isBoss) || isDragonLord(enemy) || isFrostLizard(enemy) || isJotem(enemy);
-  }, [isDragonLord, isFrostLizard, isJotem]);
+    return (enemy.element === "Fire" && !enemy.isBoss) || isDragonLord(enemy) || isFrostLizard(enemy) || isJotem(enemy) || isReaper(enemy);
+  }, [isDragonLord, isFrostLizard, isJotem, isReaper]);
 
   const onEnemyDeathAnimDone = useCallback((idx: number) => {
     setDeathAnimPending(prev => {
@@ -1392,7 +1400,9 @@ export default function BattleScreen({
     battle.enemies.forEach((enemy, idx) => {
       if (enemyAnimStates[idx] === "death" && !deathSfxPlayed.current.has(idx)) {
         deathSfxPlayed.current.add(idx);
-        if (enemy.element === "Fire" && !enemy.isBoss) {
+        if (isReaper(enemy)) {
+          playSfx("stabRing", 1.0);
+        } else if (enemy.element === "Fire" && !enemy.isBoss) {
           playSfx("fireDemonDeath", 1.2);
         }
       }
@@ -1627,6 +1637,103 @@ export default function BattleScreen({
           setAnimPhase("idle");
           scheduleTimer(onDone, 300);
         }, 2100);
+      }
+    } else if (isReaper(enemy)) {
+      const attackRoll = Math.random();
+      const useMagic = attackRoll < 0.4;
+
+      const aliveParty = battle.party.filter(p => p.currentHp > 0);
+      const totalTargets = 1 + aliveParty.length;
+      const targetRoll = Math.floor(Math.random() * totalTargets);
+      let preTarget: { type: "player" | "party"; index: number };
+      if (targetRoll === 0 || aliveParty.length === 0) {
+        preTarget = { type: "player", index: -1 };
+      } else {
+        const pt = aliveParty[targetRoll - 1];
+        preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+      }
+
+      if (useMagic) {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        playSfx("fireballWhoosh", 0.7);
+
+        let targetX: number, targetY: number;
+        if (preTarget.type === "party" && preTarget.index >= 0) {
+          const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
+          const memberSpriteId = battle.party[preTarget.index]?.spriteId || "samurai";
+          targetX = tp.x;
+          targetY = tp.y + getSpriteCenterOffset(memberSpriteId);
+        } else {
+          const pCenterY = getSpriteCenterOffset(player.spriteId || "samurai");
+          targetX = PLAYER_POS.x;
+          targetY = PLAYER_POS.y + pCenterY;
+        }
+
+        scheduleTimer(() => {
+          const enemyCenterOffset = (80 * 2.5 / GAME_CONTAINER_HEIGHT) * 35;
+          setReaperFireballAnim({ fromX: pos.x, fromY: pos.y + enemyCenterOffset, toX: targetX, toY: targetY, active: true });
+        }, 400);
+
+        scheduleTimer(() => {
+          setReaperFireballAnim(null);
+          const result = onEnemyAttack(enemyIdx, preTarget);
+          if (!result.dodged) {
+            playSfx("fireballImpact", 0.7);
+            setShakeScreen(true);
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 500);
+            } else {
+              setFireHitSfx(true);
+              setAnimPhase("hurt");
+            }
+            scheduleTimer(() => setShakeScreen(false), 500);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+          }
+        }, 900);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setAnimPhase("idle");
+          scheduleTimer(onDone, 300);
+        }, 1400);
+      } else {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        playSfx("swordSwing", 0.8);
+
+        scheduleTimer(() => {
+          const result = onEnemyAttack(enemyIdx, preTarget);
+          if (!result.dodged) {
+            setShakeScreen(true);
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 500);
+            } else {
+              setAnimPhase("hurt");
+            }
+            playSfx("hitCombo");
+            scheduleTimer(() => setShakeScreen(false), 500);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+          }
+        }, 500);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setAnimPhase("idle");
+          scheduleTimer(onDone, 300);
+        }, 1200);
       }
     } else if (enemy.element === "Fire" && !enemy.isBoss) {
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
@@ -1892,7 +1999,7 @@ export default function BattleScreen({
         scheduleTimer(onDone, 300);
       }, 600);
     }
-  }, [isDragonLord, isFrostLizard, isJotem, scheduleTimer, onEnemyAttack, spawnDamageNumber]);
+  }, [isDragonLord, isFrostLizard, isJotem, isReaper, scheduleTimer, onEnemyAttack, spawnDamageNumber]);
 
   useEffect(() => {
     if (battle.phase !== "partyTurn") {
@@ -3353,6 +3460,48 @@ export default function BattleScreen({
                       />
                     </div>
                     </PixelDissolve>
+                  ) : isReaper(enemy) ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
+                    <div
+                      className="w-24 h-24 md:w-32 md:h-32 transition-all duration-200"
+                      style={{
+                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
+                      }}
+                      data-testid={`img-enemy-${idx}`}
+                    >
+                      <SpriteAnimator
+                        spriteSheet={
+                          enemyAnimStates[idx] === "death" ? reaperDeath
+                          : enemyAnimStates[idx] === "attack" ? reaperAttack
+                          : enemyAnimStates[idx] === "hurt" ? reaperHurt
+                          : reaperIdle
+                        }
+                        frameWidth={120}
+                        frameHeight={80}
+                        totalFrames={
+                          enemyAnimStates[idx] === "death" ? 7
+                          : enemyAnimStates[idx] === "attack" ? 6
+                          : enemyAnimStates[idx] === "hurt" ? 2
+                          : 6
+                        }
+                        fps={
+                          enemyAnimStates[idx] === "attack" ? 12
+                          : enemyAnimStates[idx] === "death" ? 8
+                          : enemyAnimStates[idx] === "hurt" ? 10
+                          : 8
+                        }
+                        scale={2.5}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        flipX={true}
+                        onComplete={
+                          enemyAnimStates[idx] === "death"
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
+                        preloadSheets={[reaperIdle, reaperAttack, reaperHurt, reaperDeath]}
+                      />
+                    </div>
+                    </PixelDissolve>
                   ) : enemy.element === "Fire" && !enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
@@ -3492,6 +3641,36 @@ export default function BattleScreen({
                 src={demonFireball}
                 alt="fireball"
                 style={{ width: 96, height: 64, imageRendering: "pixelated" }}
+              />
+            </div>
+          )}
+
+          {reaperFireballAnim && reaperFireballAnim.active && (
+            <div
+              className="absolute z-40"
+              style={{
+                left: `${reaperFireballAnim.fromX}%`,
+                bottom: `${reaperFireballAnim.fromY}%`,
+                width: 64,
+                height: 112,
+                ["--fb-start-x" as string]: `${reaperFireballAnim.fromX}%`,
+                ["--fb-start-y" as string]: `${reaperFireballAnim.fromY}%`,
+                ["--fb-end-x" as string]: `${reaperFireballAnim.toX}%`,
+                ["--fb-end-y" as string]: `${reaperFireballAnim.toY}%`,
+                animation: "fireballFly 0.5s ease-in forwards",
+                filter: "drop-shadow(0 0 10px rgba(255,80,20,0.7)) drop-shadow(0 0 20px rgba(200,40,0,0.4))",
+                pointerEvents: "none",
+              }}
+            >
+              <SpriteAnimator
+                spriteSheet={reaperFireball}
+                frameWidth={16}
+                frameHeight={28}
+                totalFrames={3}
+                fps={12}
+                scale={4}
+                loop={true}
+                flipX={false}
               />
             </div>
           )}
