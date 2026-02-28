@@ -210,7 +210,7 @@ const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "kraken", name: "Deep Kraken", element: "Water", level: 5, xpReward: 150, goldReward: 60, isBoss: true, sprite: "droplets" },
   { id: "shadow_lord", name: "Shadow Lord", element: "Shadow", level: 6, xpReward: 200, goldReward: 80, isBoss: true, sprite: "ghost" },
   { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 7, xpReward: 250, goldReward: 100, isBoss: true, sprite: "diamond" },
-  { id: "reaper", name: "Reaper", element: "Shadow", level: 3, xpReward: 60, goldReward: 30, isBoss: false, sprite: "ghost" },
+  { id: "reaper", name: "Reaper", element: "Shadow", level: 4, xpReward: 85, goldReward: 45, isBoss: false, sprite: "ghost" },
 ];
 
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number, levelBonus: number = 0): Enemy {
@@ -232,6 +232,25 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
         luck: Math.floor((3 + lv) * vary()),
         mp: Math.floor((30 + lv * 10) * vary()),
         maxMp: Math.floor((30 + lv * 10) * vary()),
+      },
+    };
+  }
+
+  if (base.id === "reaper") {
+    const hp = Math.floor((40 + lv * 18) * vary());
+    return {
+      ...base,
+      level: Math.floor(lv),
+      stats: {
+        hp,
+        maxHp: hp,
+        atk: Math.floor((7 + lv * 3.2) * vary()),
+        def: Math.floor((3 + lv * 1.2) * vary()),
+        agi: Math.floor((6 + lv * 2.5) * vary()),
+        int: Math.floor((8 + lv * 3) * vary()),
+        luck: Math.floor((4 + lv * 1.5) * vary()),
+        mp: Math.floor((25 + lv * 8) * vary()),
+        maxMp: Math.floor((25 + lv * 8) * vary()),
       },
     };
   }
@@ -267,12 +286,34 @@ export function getEnemiesForNode(node: OverworldNode, region: Region, tier: num
 
   const enemies: Enemy[] = [];
 
-  if (node.type !== "boss" && Math.random() < 0.05) {
-    const reaperBase = ENEMY_POOL.find(e => e.id === "reaper")!;
-    const reaper = generateEnemyStats(reaperBase, baseScale, tier);
-    reaper.xpReward = Math.floor(reaper.xpReward * (1 + tier * 0.25));
-    reaper.goldReward = Math.floor(reaper.goldReward * (1 + tier * 0.25));
-    return [reaper];
+  if (node.type !== "boss" && regionElement === "Fire") {
+    const spawnRoll = Math.random();
+    if (spawnRoll < 0.5) {
+      const reaperBase = ENEMY_POOL.find(e => e.id === "reaper")!;
+      const reaper = generateEnemyStats(reaperBase, baseScale, tier);
+      reaper.xpReward = Math.floor(reaper.xpReward * (1 + tier * 0.25));
+      reaper.goldReward = Math.floor(reaper.goldReward * (1 + tier * 0.25));
+      return [reaper];
+    } else {
+      const fireDemonBase = ENEMY_POOL.find(e => e.id === "slime_fire")!;
+      let count: number;
+      if (tier >= 2) {
+        count = 2 + Math.floor(Math.random() * 2);
+      } else if (tier >= 1) {
+        count = 1 + Math.floor(Math.random() * 3);
+      } else {
+        count = 1 + Math.floor(Math.random() * 2);
+      }
+      const fireDemons: Enemy[] = [];
+      for (let i = 0; i < count; i++) {
+        const enemyLevelBonus = tier * (1 + Math.floor(Math.random() * 2));
+        const demon = generateEnemyStats(fireDemonBase, baseScale, enemyLevelBonus);
+        demon.xpReward = Math.floor(demon.xpReward * (1 + tier * 0.25));
+        demon.goldReward = Math.floor(demon.goldReward * (1 + tier * 0.25));
+        fireDemons.push(demon);
+      }
+      return fireDemons;
+    }
   }
 
   if (node.type === "boss") {
