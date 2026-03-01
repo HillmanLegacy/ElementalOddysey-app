@@ -7,6 +7,7 @@ import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@sh
 import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel, generateDemonKinSpawn } from "@/lib/gameData";
 import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
+import BattleEffectsLayer from "./BattleEffectsLayer";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap, LogOut } from "lucide-react";
 
 import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
@@ -2345,6 +2346,18 @@ export default function BattleScreen({
         <div className="absolute inset-0 pointer-events-none animate-pulse z-5" style={{ boxShadow: "inset 0 0 80px rgba(239, 68, 68, 0.15)" }} />
       )}
 
+      <BattleEffectsLayer
+        regionTheme={regionTheme}
+        playerElement={player.element}
+        playerPos={playerPos}
+        attackTargetPos={pendingTargetIdx !== null ? (() => { const p = getEnemyGridPos(pendingTargetIdx); return { x: p.x, y: p.y }; })() : null}
+        animPhase={animPhase}
+        enemyInfos={battle.enemies.map((e, i) => { const p = getEnemyGridPos(i); return { x: p.x, y: p.y, alive: e.currentHp > 0, element: e.element }; })}
+        partyInfos={battle.party.map((m, i) => { const p = getPartyGridPos(i); return { x: p.x, y: p.y, alive: m.currentHp > 0, element: m.element }; })}
+        playerAlive={battle.playerHp > 0}
+        playerHpPct={hpPercent / 100}
+      />
+
       {damageNumbers.map(d => (
         <div
           key={d.id}
@@ -3456,7 +3469,7 @@ export default function BattleScreen({
                         width: 320,
                         height: 320,
                         overflow: "visible",
-                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px rgba(255,80,0,0.3))`,
+                        filter: `url(#sfx-glow-fire) drop-shadow(0 4px 14px rgba(0,0,0,0.85))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
@@ -3504,7 +3517,7 @@ export default function BattleScreen({
                         width: isBoss ? 324 : 203,
                         height: isBoss ? 284 : 178,
                         overflow: "visible",
-                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
+                        filter: `url(#sfx-glow-${(enemy.element || "fire").toLowerCase()}) drop-shadow(0 4px 14px rgba(0,0,0,0.85))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
@@ -4376,6 +4389,10 @@ export default function BattleScreen({
         @keyframes idleBob {
           0%, 100% { transform: translateY(0); }
           50% { transform: translateY(-6px); }
+        }
+        @keyframes groundFogDrift {
+          0%   { transform: translateX(0%)   scaleX(1);    }
+          100% { transform: translateX(3.5%) scaleX(1.04); }
         }
         @keyframes darkMagicExplosion {
           0% { opacity: 0; transform: scale(0.2); }
