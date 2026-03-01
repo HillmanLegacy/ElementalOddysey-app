@@ -2337,9 +2337,6 @@ export default function BattleScreen({
         style={battle.phase === "victory" ? "burst" : regionTheme === "Fire" ? "rain" : "ambient"}
       />
 
-      {isLowHp && battle.phase !== "victory" && battle.phase !== "defeat" && (
-        <div className="absolute inset-0 pointer-events-none animate-pulse z-5" style={{ boxShadow: "inset 0 0 80px rgba(239, 68, 68, 0.15)" }} />
-      )}
 
       <BattleEffectsLayer
         regionTheme={regionTheme}
