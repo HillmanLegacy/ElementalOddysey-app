@@ -2648,7 +2648,7 @@ export default function BattleScreen({
           })}
 
           <div
-            className="absolute z-20 pointer-events-none"
+            className="absolute z-[80] pointer-events-none"
             style={{
               left: "8px",
               top: "6px",
@@ -2933,7 +2933,7 @@ export default function BattleScreen({
           </div>
 
           <div
-            className="absolute z-20"
+            className="absolute z-[80]"
             style={{
               right: "8px",
               top: "6px",
