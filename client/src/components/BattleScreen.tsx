@@ -226,9 +226,9 @@ const ALLY_SLOTS: { x: number; y: number }[] = [
 ];
 
 const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
-  { x: 58, y: 32, z: 0.85 },
-  { x: 64, y: 40, z: 0.95 },
-  { x: 70, y: 48, z: 1.0 },
+  { x: 58, y: 28, z: 0.85 },
+  { x: 64, y: 36, z: 0.95 },
+  { x: 70, y: 44, z: 1.0 },
 ];
 
 const PLAYER_POS = ALLY_SLOTS[0];
@@ -304,7 +304,7 @@ export default function BattleScreen({
   const deathSfxPlayed = useRef<Set<number>>(new Set());
   const [pixelDissolving, setPixelDissolving] = useState<Set<number>>(new Set());
   const [dissolvedEnemies, setDissolvedEnemies] = useState<Set<number>>(new Set());
-  const [demonKinSpawnAnim, setDemonKinSpawnAnim] = useState<{ slotIndex: number; pos: { x: number; y: number } } | null>(null);
+  const [demonKinSpawnAnim, setDemonKinSpawnAnim] = useState<{ slotIndex: number } | null>(null);
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [victoryReady, setVictoryReady] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
@@ -1368,9 +1368,7 @@ export default function BattleScreen({
       !alreadyHasDemonKin &&
       Math.random() < 0.3
     ) {
-      const gridSlotIdx = battle.gridPositions?.enemies[idx] ?? idx;
-      const slot = ENEMY_SLOTS[gridSlotIdx] ?? ENEMY_SLOTS[idx] ?? ENEMY_SLOTS[0];
-      setDemonKinSpawnAnim({ slotIndex: idx, pos: { x: slot.x, y: slot.y } });
+      setDemonKinSpawnAnim({ slotIndex: idx });
       playSfx("fireDemonDeath", 0.8);
     }
   }, [battle.enemies, battle.gridPositions, regionTier, playSfx]);
@@ -3619,6 +3617,36 @@ export default function BattleScreen({
                     />
                     </PixelDissolve>
                   )}
+                  {demonKinSpawnAnim?.slotIndex === idx && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        bottom: 0,
+                        left: "50%",
+                        transform: "translateX(-50%)",
+                        pointerEvents: "none",
+                        zIndex: 30,
+                        overflow: "visible",
+                        width: 320,
+                        height: 320,
+                        filter: `drop-shadow(0 4px 24px rgba(255,60,0,0.8)) drop-shadow(0 0 20px rgba(255,100,0,0.6))`,
+                      }}
+                    >
+                      <SpriteAnimator
+                        spriteSheet={demonKinDeath}
+                        frameWidth={128}
+                        frameHeight={128}
+                        totalFrames={8}
+                        fps={10}
+                        scale={2.5}
+                        loop={false}
+                        flipX={true}
+                        reverse={true}
+                        onComplete={handleDemonKinSpawnComplete}
+                        anchor="bottom-center"
+                      />
+                    </div>
+                  )}
                   <div
                     className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-2 rounded-full blur-sm opacity-30"
                     style={{ backgroundColor: ELEMENT_COLORS[enemy.element] }}
@@ -3631,43 +3659,6 @@ export default function BattleScreen({
             );
           })}
 
-
-          {demonKinSpawnAnim && (
-            <div
-              style={{
-                position: "absolute",
-                left: `${demonKinSpawnAnim.pos.x}%`,
-                bottom: `${demonKinSpawnAnim.pos.y}%`,
-                transform: "translateX(-50%)",
-                pointerEvents: "none",
-                zIndex: 30,
-              }}
-            >
-              <div
-                style={{
-                  position: "relative",
-                  width: 320,
-                  height: 320,
-                  overflow: "visible",
-                  filter: `drop-shadow(0 4px 24px rgba(255,60,0,0.8)) drop-shadow(0 0 20px rgba(255,100,0,0.6))`,
-                }}
-              >
-                <SpriteAnimator
-                  spriteSheet={demonKinDeath}
-                  frameWidth={128}
-                  frameHeight={128}
-                  totalFrames={8}
-                  fps={10}
-                  scale={2.5}
-                  loop={false}
-                  flipX={true}
-                  reverse={true}
-                  onComplete={handleDemonKinSpawnComplete}
-                  anchor="bottom-center"
-                />
-              </div>
-            </div>
-          )}
 
           {fireballAnim && fireballAnim.active && (
             <div
