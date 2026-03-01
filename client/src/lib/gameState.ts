@@ -1302,7 +1302,16 @@ export function useGameState() {
       if (!s.battle) return s;
       const enemies = s.battle.enemies.map(e => ({ ...e }));
       enemies[slotIndex] = enemy;
-      return { ...s, battle: { ...s.battle, enemies } };
+      const wasVictory = s.battle.phase === "victory";
+      return {
+        ...s,
+        battle: {
+          ...s.battle,
+          enemies,
+          phase: wasVictory ? "enemyTurn" : s.battle.phase,
+          animation: wasVictory ? "idle" : s.battle.animation,
+        },
+      };
     });
   }, []);
 

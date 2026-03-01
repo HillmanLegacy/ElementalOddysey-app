@@ -411,10 +411,10 @@ export default function BattleScreen({
       }
       return !pixelDissolving.has(idx);
     });
-    if (!anyDeathPending && !anyDissolving && !anyNeedDeathStart && !victoryReady) {
+    if (!anyDeathPending && !anyDissolving && !anyNeedDeathStart && !demonKinSpawnAnim && !victoryReady) {
       setVictoryReady(true);
     }
-  }, [battle.phase, battle.enemies, deathAnimPending, pixelDissolving, dissolvedEnemies, enemyAnimStates, victoryReady]);
+  }, [battle.phase, battle.enemies, deathAnimPending, pixelDissolving, dissolvedEnemies, enemyAnimStates, demonKinSpawnAnim, victoryReady]);
 
   useEffect(() => {
     if (!victoryReady || battle.phase !== "victory") return;
@@ -1364,15 +1364,6 @@ export default function BattleScreen({
       return next;
     });
     setPixelDissolving(prev => new Set(prev).add(idx));
-  }, []);
-
-  const onPixelDissolveComplete = useCallback((idx: number) => {
-    setPixelDissolving(prev => {
-      const next = new Set(prev);
-      next.delete(idx);
-      return next;
-    });
-    setDissolvedEnemies(prev => new Set(prev).add(idx));
 
     const dyingEnemy = battle.enemies[idx];
     const alreadyHasDemonKin = battle.enemies.some(e => e.id === "demon_kin" && e.currentHp > 0);
@@ -1383,11 +1374,21 @@ export default function BattleScreen({
       !alreadyHasDemonKin &&
       Math.random() < 0.3
     ) {
-      const slot = ENEMY_SLOTS[idx] ?? ENEMY_SLOTS[0];
+      const gridSlotIdx = battle.gridPositions?.enemies[idx] ?? idx;
+      const slot = ENEMY_SLOTS[gridSlotIdx] ?? ENEMY_SLOTS[idx] ?? ENEMY_SLOTS[0];
       setDemonKinSpawnAnim({ slotIndex: idx, pos: { x: slot.x, y: slot.y } });
       playSfx("fireDemonDeath", 0.8);
     }
-  }, [battle.enemies, regionTier]);
+  }, [battle.enemies, battle.gridPositions, regionTier, playSfx]);
+
+  const onPixelDissolveComplete = useCallback((idx: number) => {
+    setPixelDissolving(prev => {
+      const next = new Set(prev);
+      next.delete(idx);
+      return next;
+    });
+    setDissolvedEnemies(prev => new Set(prev).add(idx));
+  }, []);
 
   const handleDemonKinSpawnComplete = useCallback(() => {
     if (!demonKinSpawnAnim) return;
