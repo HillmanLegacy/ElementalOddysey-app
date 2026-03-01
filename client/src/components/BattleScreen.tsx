@@ -2795,15 +2795,15 @@ export default function BattleScreen({
                               style={{
                                 width: `${charHpPct}%`,
                                 background: charLowHp
-                                  ? "#f87171"
+                                  ? "linear-gradient(90deg, #ef4444, #ff7070)"
                                   : charHpPct > 50
-                                    ? "#4ade80"
-                                    : "#fbbf24",
+                                    ? "linear-gradient(90deg, #22c55e, #6efa9e)"
+                                    : "linear-gradient(90deg, #f59e0b, #fde047)",
                                 boxShadow: charLowHp
-                                  ? "0 0 6px rgba(248,113,113,0.9)"
+                                  ? "0 0 8px 2px rgba(239,68,68,1.0), inset 0 1px 0 rgba(255,255,255,0.25)"
                                   : charHpPct > 50
-                                    ? "0 0 5px rgba(74,222,128,0.85)"
-                                    : "0 0 5px rgba(251,191,36,0.85)",
+                                    ? "0 0 8px 2px rgba(34,197,94,0.95), inset 0 1px 0 rgba(255,255,255,0.25)"
+                                    : "0 0 8px 2px rgba(245,158,11,0.95), inset 0 1px 0 rgba(255,255,255,0.25)",
                                 imageRendering: "pixelated",
                               }}
                             />
@@ -3059,15 +3059,15 @@ export default function BattleScreen({
                               style={{
                                 width: `${eHpPct}%`,
                                 background: eLowHp
-                                  ? "#f87171"
+                                  ? "linear-gradient(90deg, #ef4444, #ff7070)"
                                   : eHpPct > 50
-                                    ? "#4ade80"
-                                    : "#fbbf24",
+                                    ? "linear-gradient(90deg, #22c55e, #6efa9e)"
+                                    : "linear-gradient(90deg, #f59e0b, #fde047)",
                                 boxShadow: eLowHp
-                                  ? "0 0 6px rgba(248,113,113,0.9)"
+                                  ? "0 0 8px 2px rgba(239,68,68,1.0), inset 0 1px 0 rgba(255,255,255,0.25)"
                                   : eHpPct > 50
-                                    ? "0 0 5px rgba(74,222,128,0.85)"
-                                    : "0 0 5px rgba(251,191,36,0.85)",
+                                    ? "0 0 8px 2px rgba(34,197,94,0.95), inset 0 1px 0 rgba(255,255,255,0.25)"
+                                    : "0 0 8px 2px rgba(245,158,11,0.95), inset 0 1px 0 rgba(255,255,255,0.25)",
                                 imageRendering: "pixelated",
                               }}
                             />
