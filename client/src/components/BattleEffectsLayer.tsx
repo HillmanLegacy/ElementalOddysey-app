@@ -127,7 +127,7 @@ export default function BattleEffectsLayer({
 
       const allUnits: (UnitInfo & { isAlly: boolean })[] = [];
       if (playerAliveRef.current) {
-        allUnits.push({ x: animPlayerX, y: animPlayerY, alive: true, element: playerElemRef.current, isAlly: true });
+        allUnits.push({ x: idlePosRef.current.x, y: idlePosRef.current.y, alive: true, element: playerElemRef.current, isAlly: true });
       }
       partyInfosRef.current.forEach(p => { if (p.alive) allUnits.push({ ...p, isAlly: true }); });
       enemyInfosRef.current.forEach(e => { if (e.alive) allUnits.push({ ...e, isAlly: false }); });
