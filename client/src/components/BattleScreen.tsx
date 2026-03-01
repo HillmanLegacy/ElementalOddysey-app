@@ -1670,7 +1670,7 @@ export default function BattleScreen({
         }
 
         scheduleTimer(() => {
-          const enemyCenterOffset = (80 * 2.5 / GAME_CONTAINER_HEIGHT) * 35;
+          const enemyCenterOffset = (80 * 2 / GAME_CONTAINER_HEIGHT) * 35;
           setReaperFireballAnim({ fromX: pos.x, fromY: pos.y + enemyCenterOffset, toX: targetX, toY: targetY, active: true });
         }, 400);
 
@@ -3485,12 +3485,12 @@ export default function BattleScreen({
                           : 6
                         }
                         fps={
-                          enemyAnimStates[idx] === "attack" ? 12
-                          : enemyAnimStates[idx] === "death" ? 8
-                          : enemyAnimStates[idx] === "hurt" ? 10
-                          : 8
+                          enemyAnimStates[idx] === "attack" ? 10
+                          : enemyAnimStates[idx] === "death" ? 6
+                          : enemyAnimStates[idx] === "hurt" ? 8
+                          : 5
                         }
-                        scale={2.5}
+                        scale={2}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
                         onComplete={
@@ -3670,7 +3670,7 @@ export default function BattleScreen({
                 fps={12}
                 scale={4}
                 loop={true}
-                flipX={false}
+                flipX={true}
               />
             </div>
           )}
