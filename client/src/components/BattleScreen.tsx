@@ -1389,6 +1389,9 @@ export default function BattleScreen({
     const refLevel = refEnemy?.level ?? 5;
     const newDemonKin = generateDemonKinSpawn(refLevel);
     onSpawnEnemy?.(slotIndex, newDemonKin);
+    setEnemyAnimStates(prev => ({ ...prev, [slotIndex]: "idle" }));
+    setDeathAnimPending(prev => { const next = new Set(prev); next.delete(slotIndex); return next; });
+    setPixelDissolving(prev => { const next = new Set(prev); next.delete(slotIndex); return next; });
     setDissolvedEnemies(prev => {
       const next = new Set(prev);
       next.delete(slotIndex);
