@@ -2654,7 +2654,7 @@ export default function BattleScreen({
               top: "6px",
               width: "auto",
               maxWidth: "420px",
-              filter: "brightness(1.12) saturate(1.25)",
+              filter: "brightness(1.25) saturate(1.5)",
             }}
           >
             <div className="flex flex-col gap-1">
@@ -2784,7 +2784,7 @@ export default function BattleScreen({
                             imageRendering: "pixelated",
                           }}>HP</span>
                           <div
-                            className="flex-1 h-2.5 overflow-hidden relative"
+                            className="flex-1 h-2.5 overflow-visible relative"
                             style={{
                               background: "rgba(0,0,0,0.45)",
                               border: "1px solid rgba(255,255,255,0.15)",
@@ -2940,6 +2940,7 @@ export default function BattleScreen({
               width: "auto",
               maxWidth: "420px",
               pointerEvents: "none",
+              filter: "brightness(1.25) saturate(1.5)",
             }}
           >
             <div className="flex flex-col gap-1 items-end">
@@ -3048,7 +3049,7 @@ export default function BattleScreen({
                             imageRendering: "pixelated",
                           }}>HP</span>
                           <div
-                            className="flex-1 h-2.5 overflow-hidden relative"
+                            className="flex-1 h-2.5 overflow-visible relative"
                             style={{
                               background: "rgba(0,0,0,0.45)",
                               border: "1px solid rgba(255,255,255,0.15)",
