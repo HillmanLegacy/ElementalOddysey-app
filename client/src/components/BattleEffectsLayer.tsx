@@ -119,7 +119,7 @@ export default function BattleEffectsLayer({
 
       if (lightDiv) {
         const darkR = regionRef.current === "Fire" ? [12, 4, 28] : [6, 4, 18];
-        const darkA = 0.60;
+        const darkA = 0.25;
 
         const stops = allUnits.map((u, i) => {
           const base  = 22 + (i === 0 ? 5 : 0);
