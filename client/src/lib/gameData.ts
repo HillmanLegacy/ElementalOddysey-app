@@ -104,7 +104,7 @@ export interface PartySpriteData {
 export const PARTY_SPRITE_DATA: Record<string, PartySpriteData> = {
   samurai: {
     idle: { sheet: "samurai-idle.png", frameWidth: 96, frameHeight: 96, totalFrames: 10 },
-    attack: { sheet: "samurai-attack.png", frameWidth: 96, frameHeight: 96, totalFrames: 10 },
+    attack: { sheet: "samurai-attack.png", frameWidth: 96, frameHeight: 96, totalFrames: 12 },
     run: { sheet: "samurai-run.png", frameWidth: 96, frameHeight: 96, totalFrames: 8 },
     hurt: { sheet: "samurai-hurt.png", frameWidth: 96, frameHeight: 96, totalFrames: 3 },
   },
