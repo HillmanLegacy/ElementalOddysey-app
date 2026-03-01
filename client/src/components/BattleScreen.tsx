@@ -216,15 +216,15 @@ interface BattleScreenProps {
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
 
 const ALLY_SLOTS: { x: number; y: number }[] = [
-  { x: 4, y: 26 },
-  { x: 10, y: 18 },
-  { x: 16, y: 10 },
+  { x: 8, y: 38 },
+  { x: 14, y: 30 },
+  { x: 20, y: 22 },
 ];
 
 const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
-  { x: 58, y: 32, z: 0.85 },
-  { x: 64, y: 42, z: 0.95 },
-  { x: 70, y: 52, z: 1.0 },
+  { x: 58, y: 38, z: 0.85 },
+  { x: 64, y: 46, z: 0.95 },
+  { x: 70, y: 54, z: 1.0 },
 ];
 
 const PLAYER_POS = ALLY_SLOTS[0];
