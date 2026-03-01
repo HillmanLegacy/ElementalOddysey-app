@@ -17,6 +17,9 @@ import knightIdle from "@/assets/images/knight-idle-4f.png";
 import knightRun from "@/assets/images/knight-run.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 import baskenRun from "@/assets/images/basken-run.png";
+import hutOverworldIcon from "@/assets/hut_overworld_icon.png";
+import battleOverworldIcon from "@/assets/battle_overworld_icon.png";
+import bossBattleOverworldIcon from "@/assets/boss_battle_overworld_icon.png";
 import bgEmberPlains from "@/assets/images/bg-ember-plains.png";
 
 const OVERWORLD_SPRITES: Record<string, {
@@ -555,7 +558,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                       {!allBattlesCleared && !isCleared ? (
                         <Lock className="w-5 h-5" style={{ color: "#6b7280" }} />
                       ) : (
-                        <Crown className="w-6 h-6" style={{ color: accessible ? "#facc15" : "#374151" }} />
+                        <img src={bossBattleOverworldIcon} alt="Boss" style={{ width: 38, height: 38, imageRendering: "pixelated", objectFit: "contain", opacity: accessible ? 1 : 0.4 }} />
                       )}
                     </div>
                     {accessible && !isCleared && (
@@ -581,7 +584,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                         : `0 2px 8px rgba(0,0,0,0.3)`,
                     }}
                   >
-                    <Home className={iconSize} style={{ color: iconColor }} />
+                    <img src={hutOverworldIcon} alt="Hut" style={{ width: 34, height: 34, imageRendering: "pixelated", objectFit: "contain" }} />
                   </div>
                   {isCurrent && (
                     <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(220, 180, 80, 0.9)", boxShadow: "0 0 8px rgba(220, 180, 80, 0.6)" }}>
@@ -606,7 +609,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                         : `0 2px 8px rgba(0,0,0,0.3)`,
                     }}
                   >
-                    <Swords className={iconSize} style={{ color: iconColor }} />
+                    <img src={battleOverworldIcon} alt="Battle" style={{ width: 30, height: 30, imageRendering: "pixelated", objectFit: "contain" }} />
                   </div>
                 </div>
                 {isCleared && (
