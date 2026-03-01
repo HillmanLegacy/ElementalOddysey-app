@@ -3300,9 +3300,9 @@ export default function BattleScreen({
                           : 8
                         }
                         scale={
-                          enemyAnimStates[idx] === "death" ? 1.95
+                          enemyAnimStates[idx] === "death" ? 4.2
                           : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 4.4
-                          : enemyAnimStates[idx] === "hurt" ? 2.4
+                          : enemyAnimStates[idx] === "hurt" ? 4.2
                           : 4.2
                         }
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "castInferno" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
