@@ -1668,9 +1668,6 @@ export default function BattleScreen({
         }, 2100);
       }
     } else if (isDemonKin(enemy)) {
-      setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-      playSfx("stabWhoosh", 0.9);
-
       const aliveParty = battle.party.filter(p => p.currentHp > 0);
       const totalTargets = 1 + aliveParty.length;
       const targetRoll = Math.floor(Math.random() * totalTargets);
@@ -1681,6 +1678,24 @@ export default function BattleScreen({
         const pt = aliveParty[targetRoll - 1];
         preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
       }
+
+      let walkToX: number, walkToY: number;
+      if (preTarget.type === "party" && preTarget.index >= 0) {
+        const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
+        walkToX = tp.x + 8;
+        walkToY = tp.y;
+      } else {
+        walkToX = PLAYER_POS.x + 8;
+        walkToY = PLAYER_POS.y;
+      }
+
+      setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
+      setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        playSfx("stabWhoosh", 0.9);
+      }, 600);
 
       scheduleTimer(() => {
         const result = onEnemyAttack(enemyIdx, preTarget);
@@ -1702,13 +1717,19 @@ export default function BattleScreen({
             : ALLY_SLOTS[0];
           spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
         }
-      }, 600);
+      }, 1200);
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
+        setBossOffset({ x: 0, y: 0 });
+      }, 1500);
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+        setBossOffset(null);
         setAnimPhase("idle");
         scheduleTimer(onDone, 300);
-      }, 1300);
+      }, 2100);
     } else if (enemy.element === "Fire" && !enemy.isBoss) {
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
       playSfx("fireballWhoosh", 0.8);
@@ -3111,7 +3132,7 @@ export default function BattleScreen({
             );
             const isFireDemon = enemy.element === "Fire" && !enemy.isBoss && !isDemonKin(enemy);
 
-            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
+            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy)) && bossOffset !== null;
             const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
             const bossBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
 
@@ -3124,7 +3145,7 @@ export default function BattleScreen({
                   bottom: `${bossBottom}%`,
                   transform: "translateX(-50%)",
                   zIndex: Math.floor(pos.y),
-                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
+                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
                   cursor: isSpriteTargetable ? "pointer" : "default",
                 }}
                 onClick={() => isSpriteTargetable && handleEnemyClick(idx)}
@@ -3145,7 +3166,7 @@ export default function BattleScreen({
                   <span className="text-xs" data-testid={`text-enemy-name-${idx}`}>{enemy.name}</span>
                 </div>
 
-                <div className={`relative ${isDead ? "" : windBladeFrozenEnemy === idx ? "" : isFireDemon ? "animate-[idleBob_2.8s_ease-in-out_infinite]" : ""}`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                <div className={`relative ${isDead ? "" : windBladeFrozenEnemy === idx ? "" : isFireDemon ? "animate-[idleBob_2.8s_ease-in-out_infinite]" : ""}`} style={{ animationDelay: `${idx * 0.5}s`, lineHeight: 0 }}>
                   
                   
 
