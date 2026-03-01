@@ -1392,13 +1392,13 @@ export default function BattleScreen({
     const refEnemy = battle.enemies.find(e => e.currentHp > 0);
     const refLevel = refEnemy?.level ?? 5;
     const newDemonKin = generateDemonKinSpawn(refLevel);
-    setDemonKinSpawnAnim(null);
+    onSpawnEnemy?.(slotIndex, newDemonKin);
     setDissolvedEnemies(prev => {
       const next = new Set(prev);
       next.delete(slotIndex);
       return next;
     });
-    onSpawnEnemy?.(slotIndex, newDemonKin);
+    setTimeout(() => setDemonKinSpawnAnim(null), 60);
   }, [demonKinSpawnAnim, battle.enemies, onSpawnEnemy]);
 
   useEffect(() => {
@@ -3627,8 +3627,8 @@ export default function BattleScreen({
               style={{
                 position: "absolute",
                 left: `${demonKinSpawnAnim.pos.x}%`,
-                top: `${demonKinSpawnAnim.pos.y}%`,
-                transform: "translate(-50%, -100%)",
+                bottom: `${demonKinSpawnAnim.pos.y}%`,
+                transform: "translateX(-50%)",
                 pointerEvents: "none",
                 zIndex: 30,
               }}
