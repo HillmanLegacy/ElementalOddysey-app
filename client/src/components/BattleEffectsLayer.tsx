@@ -57,6 +57,7 @@ export default function BattleEffectsLayer({
 }: BattleEffectsLayerProps) {
   const lightingRef   = useRef<HTMLDivElement>(null);
   const screenGlowRef = useRef<HTMLDivElement>(null);
+  const lavaBloomRef  = useRef<HTMLDivElement>(null);
   const trailRef      = useRef<HTMLCanvasElement>(null);
   const rafRef      = useRef<number>(0);
   const t0          = useRef<number>(performance.now());
@@ -157,6 +158,22 @@ export default function BattleEffectsLayer({
         const rgb    = ELEM_RGB[region ?? ""] ?? ELEM_RGB.Neutral;
         const pulse  = 0.18 + 0.07 * Math.sin(t * 1.8) * flicker;
         screenGlowDiv.style.boxShadow = `inset 0 0 140px 50px rgba(${rgb.join(",")},${pulse.toFixed(3)})`;
+      }
+
+      const lavaBloomDiv = lavaBloomRef.current;
+      if (lavaBloomDiv) {
+        if (regionRef.current === "Fire") {
+          const rgb   = ELEM_RGB.Fire;
+          const pulse = 0.30 + 0.10 * Math.sin(t * 2.2) * flicker;
+          const pulse2 = 0.18 + 0.07 * Math.sin(t * 3.1 + 1.2) * flicker;
+          lavaBloomDiv.style.background = [
+            `radial-gradient(ellipse 100% 70% at 50% 55%, rgba(${rgb.join(",")},${pulse.toFixed(3)}) 0%, rgba(${rgb.join(",")},${(pulse * 0.35).toFixed(3)}) 45%, transparent 75%)`,
+            `radial-gradient(ellipse 60% 40% at 30% 70%, rgba(255,120,20,${pulse2.toFixed(3)}) 0%, transparent 60%)`,
+            `radial-gradient(ellipse 50% 35% at 70% 65%, rgba(255,60,0,${(pulse2 * 0.8).toFixed(3)}) 0%, transparent 55%)`,
+          ].join(", ");
+        } else {
+          lavaBloomDiv.style.background = "transparent";
+        }
       }
 
       const canvas = trailRef.current;
@@ -350,6 +367,16 @@ export default function BattleEffectsLayer({
         }}
       />
 
+
+      <div
+        ref={lavaBloomRef}
+        style={{
+          position: "absolute", inset: 0,
+          zIndex: 23,
+          pointerEvents: "none",
+          mixBlendMode: "screen",
+        }}
+      />
 
       <div
         ref={screenGlowRef}
