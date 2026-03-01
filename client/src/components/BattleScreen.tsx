@@ -220,7 +220,7 @@ interface BattleScreenProps {
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
 
 const ALLY_SLOTS: { x: number; y: number }[] = [
-  { x: 8, y: 28 },
+  { x: 11, y: 28 },
   { x: 14, y: 20 },
   { x: 20, y: 12 },
 ];
