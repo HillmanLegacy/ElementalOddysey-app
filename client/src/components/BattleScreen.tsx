@@ -212,9 +212,9 @@ interface BattleScreenProps {
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
 
 const ALLY_SLOTS: { x: number; y: number }[] = [
-  { x: 8, y: 30 },
-  { x: 14, y: 22 },
-  { x: 20, y: 14 },
+  { x: 8, y: 28 },
+  { x: 14, y: 20 },
+  { x: 20, y: 12 },
 ];
 
 const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
@@ -3012,6 +3012,11 @@ export default function BattleScreen({
             const spriteImg = getEnemySprite(enemy.id);
             const isBoss = enemy.isBoss;
             const pos = getEnemyGridPos(idx);
+            const isSpriteTargetable = !isDead && (
+              (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
+              (battle.phase === "partyTurn" && (partyAction === "selectTarget" || partyAction === "selectMagicTarget"))
+            );
+            const isFireDemon = enemy.element === "Fire" && !enemy.isBoss;
 
             const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
             const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
@@ -3027,14 +3032,16 @@ export default function BattleScreen({
                   transform: "translateX(-50%)",
                   zIndex: Math.floor(pos.y),
                   transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
+                  cursor: isSpriteTargetable ? "pointer" : "default",
                 }}
+                onClick={() => isSpriteTargetable && handleEnemyClick(idx)}
               >
               <div
                 className={`${isHit ? "animate-[enemyHit_0.4s_ease-out]" : ""}`}
                 style={{
                   transform: `scale(${pos.z})`,
                   transition: "transform 0.5s ease, opacity 0.3s ease, filter 0.2s ease",
-                  filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
+                  filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : isSpriteTargetable ? "drop-shadow(0 0 8px rgba(251,191,36,0.5))" : "none",
                 }}
                 data-testid={`button-enemy-${idx}`}
               >
@@ -3045,7 +3052,7 @@ export default function BattleScreen({
                   <span className="text-xs" data-testid={`text-enemy-name-${idx}`}>{enemy.name}</span>
                 </div>
 
-                <div className={`relative ${isDead ? "" : windBladeFrozenEnemy === idx ? "" : "animate-[idleBob_2.8s_ease-in-out_infinite]"}`} style={{ animationDelay: `${idx * 0.5}s` }}>
+                <div className={`relative ${isDead ? "" : windBladeFrozenEnemy === idx ? "" : isFireDemon ? "animate-[idleBob_2.8s_ease-in-out_infinite]" : ""}`} style={{ animationDelay: `${idx * 0.5}s` }}>
                   
                   
 
