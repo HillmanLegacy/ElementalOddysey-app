@@ -672,6 +672,13 @@ export function useGameState() {
     });
   }, [advanceTurnQueue]);
 
+  const fleeBattle = useCallback(() => {
+    setState(s => {
+      if (!s.player || !s.battle) return s;
+      return { ...s, screen: "overworld", battle: null };
+    });
+  }, []);
+
   const endBattle = useCallback((victory: boolean) => {
     setState(s => {
       if (!s.player || !s.battle) return s;
@@ -1329,6 +1336,7 @@ export function useGameState() {
     enemyAttack,
     enemyTurnEnd,
     endBattle,
+    fleeBattle,
     allocateStat,
     selectPerk,
     openShop,

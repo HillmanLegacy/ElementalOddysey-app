@@ -7,7 +7,7 @@ import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@sh
 import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel } from "@/lib/gameData";
 import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
-import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap } from "lucide-react";
+import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap, LogOut } from "lucide-react";
 
 import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
 import { playAmbient, stopAll, fadeMusicTo, fadeOutMusic, playJingle } from "@/lib/music";
@@ -204,6 +204,7 @@ interface BattleScreenProps {
   onSetAnimating: () => void;
   onFinishPlayerTurn: () => void;
   onRepositionUnit: (unitType: "player" | "party", unitIndex: number, newRow: number, newCol: number) => void;
+  onFlee: () => void;
   showDamageNumbers: boolean;
   regionTheme?: string;
 }
@@ -227,7 +228,7 @@ const PARTY_POSITIONS = [ALLY_SLOTS[1], ALLY_SLOTS[2]];
 const ENEMY_POSITIONS = ENEMY_SLOTS;
 
 export default function BattleScreen({
-  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, regionTheme,
+  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme,
 }: BattleScreenProps) {
 
   const getPlayerGridPos = () => {
@@ -298,6 +299,7 @@ export default function BattleScreen({
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [victoryReady, setVictoryReady] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
+  const [fleeFailed, setFleeFailed] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
   const [xpBarLevel, setXpBarLevel] = useState(player.level);
@@ -3697,12 +3699,24 @@ export default function BattleScreen({
           
 
           {battle.phase === "playerTurn" && !showItems && !showSpells && !isInputBlocked && (
-            <div className="grid grid-cols-4 gap-2 mb-1">
+            <div className="grid grid-cols-5 gap-2 mb-1">
               {[
-                { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { playSfx('menuSelect'); setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); setRepositionMode(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
-                { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", activeColor: "#2563eb", onClick: () => { setRepositionMode(null); handleDefend(); }, active: false, testId: "button-action-defend" },
-                { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { playSfx('menuSelect'); setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); setRepositionMode(null); }, active: false, testId: "button-action-magic" },
-                { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => { playSfx('menuSelect'); setShowItems(true); setRepositionMode(null); }, active: false, disabled: consumables.length === 0, testId: "button-action-item" },
+                { key: "attack", label: "ATK", icon: <Swords className="w-4 h-4" />, color: "#ef4444", activeColor: "#dc2626", onClick: () => { playSfx('menuSelect'); setSelectedAction(selectedAction === "attack" ? null : "attack"); setSelectedSpell(null); setRepositionMode(null); }, active: selectedAction === "attack", testId: "button-action-attack" },
+                { key: "defend", label: "DEF", icon: <Shield className="w-4 h-4" />, color: "#3b82f6", activeColor: "#2563eb", onClick: () => { setRepositionMode(null); handleDefend(); }, active: false, testId: "button-action-defend" },
+                { key: "magic", label: "MAG", icon: <Sparkles className="w-4 h-4" />, color: "#a855f7", activeColor: "#9333ea", onClick: () => { playSfx('menuSelect'); setShowSpells(true); setSelectedAction(null); setSelectedSpell(null); setRepositionMode(null); }, active: false, testId: "button-action-magic" },
+                { key: "item", label: "ITEM", icon: <Package className="w-4 h-4" />, color: "#22c55e", activeColor: "#16a34a", onClick: () => { playSfx('menuSelect'); setShowItems(true); setRepositionMode(null); }, active: false, disabled: consumables.length === 0, testId: "button-action-item" },
+                { key: "flee", label: "RUN", icon: <LogOut className="w-4 h-4" />, color: "#f59e0b", activeColor: "#d97706", onClick: () => {
+                  playSfx('menuSelect');
+                  setRepositionMode(null);
+                  setFleeFailed(false);
+                  if (Math.random() < 0.5) {
+                    onFlee();
+                  } else {
+                    setFleeFailed(true);
+                    setTimeout(() => setFleeFailed(false), 2000);
+                    onFinishPlayerTurn();
+                  }
+                }, active: false, testId: "button-action-flee" },
               ].map(btn => (
                 <button
                   key={btn.key}
@@ -3727,6 +3741,11 @@ export default function BattleScreen({
                 </button>
               ))}
             </div>
+          )}
+          {fleeFailed && (
+            <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#f59e0b" }}>
+              Couldn't escape!
+            </p>
           )}
 
           {battle.phase === "playerTurn" && selectedAction === "attack" && !isInputBlocked && (

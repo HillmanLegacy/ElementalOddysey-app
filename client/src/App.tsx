@@ -72,7 +72,7 @@ function Game() {
     state, setState, setScreen, createCharacter, updatePlayer,
     startBattle, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
     partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
-    enemyAttack, enemyTurnEnd, endBattle, allocateStat, selectPerk, openShop,
+    enemyAttack, enemyTurnEnd, endBattle, fleeBattle, allocateStat, selectPerk, openShop,
     buyItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn, repositionUnit,
     confirmUnlock,
     changeRegion,
@@ -140,7 +140,7 @@ function Game() {
     return () => window.removeEventListener('open-options', handleOpenOptions);
   }, []);
   const [battleTransition, setBattleTransition] = useState<{ nodeId: number; elementColor: string } | null>(null);
-  const [battleExitTransition, setBattleExitTransition] = useState<{ victory: boolean } | null>(null);
+  const [battleExitTransition, setBattleExitTransition] = useState<{ victory: boolean; fled?: boolean } | null>(null);
   const [postBattleReveal, setPostBattleReveal] = useState(false);
   const [battleEntryReveal, setBattleEntryReveal] = useState(false);
   const [transitionElementColor, setTransitionElementColor] = useState<string | undefined>(undefined);
@@ -1016,6 +1016,12 @@ function Game() {
                 if (trSfx2) trSfx2.playbackRate = 2.0;
                 setBattleExitTransition({ victory });
               }}
+              onFlee={() => {
+                stopJingle();
+                const trSfx3 = playSfx('battleTransition');
+                if (trSfx3) trSfx3.playbackRate = 2.0;
+                setBattleExitTransition({ victory: false, fled: true });
+              }}
               onSetAnimating={setAnimating}
               onFinishPlayerTurn={finishPlayerTurn}
               onRepositionUnit={repositionUnit}
@@ -1041,9 +1047,14 @@ function Game() {
                 elementColor={transitionElementColor}
                 onComplete={() => {
                   const v = battleExitTransition.victory;
+                  const fled = battleExitTransition.fled;
                   setBattleExitTransition(null);
                   setPostBattleReveal(true);
-                  endBattle(v);
+                  if (fled) {
+                    fleeBattle();
+                  } else {
+                    endBattle(v);
+                  }
                 }}
               />
             )}
