@@ -3266,34 +3266,34 @@ export default function BattleScreen({
                           : dragonLordIdle
                         }
                         frameWidth={
-                          enemyAnimStates[idx] === "death" ? 160
+                          enemyAnimStates[idx] === "death" ? 74
                           : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 90
-                          : enemyAnimStates[idx] === "hurt" ? 130
+                          : enemyAnimStates[idx] === "hurt" ? 74
                           : 74
                         }
                         frameHeight={
-                          enemyAnimStates[idx] === "death" ? 160
+                          enemyAnimStates[idx] === "death" ? 74
                           : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 70
-                          : enemyAnimStates[idx] === "hurt" ? 130
+                          : enemyAnimStates[idx] === "hurt" ? 74
                           : 74
                         }
                         totalFrames={
                           enemyAnimStates[idx] === "death" ? 36
                           : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 16
-                          : enemyAnimStates[idx] === "hurt" ? 5
+                          : enemyAnimStates[idx] === "hurt" ? 4
                           : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
                           : 4
                         }
                         fps={
                           (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 16
                           : enemyAnimStates[idx] === "death" ? 10
-                          : enemyAnimStates[idx] === "hurt" ? 10
+                          : enemyAnimStates[idx] === "hurt" ? 8
                           : 8
                         }
                         scale={
-                          enemyAnimStates[idx] === "death" ? 2.6
+                          enemyAnimStates[idx] === "death" ? 4.2
                           : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 4.4
-                          : enemyAnimStates[idx] === "hurt" ? 3.2
+                          : enemyAnimStates[idx] === "hurt" ? 4.2
                           : 4.2
                         }
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "castInferno" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
