@@ -1418,7 +1418,7 @@ export default function BattleScreen({
 
     setInfernoBallAnim(prev => prev ? { ...prev, phase: "explode" } : null);
     setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-    playSfx("stabRing");
+    playSfx("eruptionCleave", 1.0);
 
     const result = onEnemyAttack(enemyIdx, preTarget);
     if (!result.dodged) {
@@ -1493,8 +1493,8 @@ export default function BattleScreen({
           playSfx("fireballLaunch", 0.9);
           setInfernoBallAnim({
             phase: "spawn",
-            fromX: dragonPos.x - 12,
-            fromY: dragonPos.y + 15,
+            fromX: dragonPos.x - 3,
+            fromY: dragonPos.y + 18,
             toX: targetPos.x,
             toY: targetPos.y + targetCenterY,
             enemyIdx,
@@ -3579,7 +3579,7 @@ export default function BattleScreen({
                 bottom: `${infernoBallAnim.phase === "travel" ? infernoBallAnim.toY : infernoBallAnim.fromY}%`,
                 transform: "translate(-50%, 50%)",
                 filter: "drop-shadow(0 0 20px rgba(255,120,0,0.9)) drop-shadow(0 0 40px rgba(255,60,0,0.6))",
-                transition: infernoBallAnim.phase === "travel" ? "left 1.5s ease-in, bottom 1.5s ease-in" : "none",
+                transition: infernoBallAnim.phase === "travel" ? "left 0.7s ease-in, bottom 0.7s ease-in" : "none",
               }}
               onTransitionEnd={(e) => {
                 if (e.propertyName === "left") {
@@ -3606,7 +3606,7 @@ export default function BattleScreen({
                 left: `${infernoBallAnim.toX}%`,
                 bottom: `${infernoBallAnim.toY}%`,
                 transform: "translate(-50%, 50%)",
-                filter: "drop-shadow(0 0 24px rgba(255,120,0,0.9)) drop-shadow(0 0 48px rgba(255,60,0,0.7))",
+                filter: "drop-shadow(0 0 36px rgba(255,120,0,1)) drop-shadow(0 0 72px rgba(255,60,0,0.8))",
               }}
             >
               <SpriteAnimator
@@ -3615,7 +3615,7 @@ export default function BattleScreen({
                 frameHeight={64}
                 totalFrames={10}
                 fps={14}
-                scale={3}
+                scale={7}
                 loop={false}
                 onComplete={handleInfernoBallExplodeComplete}
                 style={{ imageRendering: "pixelated" }}
