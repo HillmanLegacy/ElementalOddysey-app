@@ -33,6 +33,11 @@ import demonAttack from "@/assets/images/demon-attack.png";
 import demonHurt from "@/assets/images/demon-hurt.png";
 import demonDeath from "@/assets/images/demon-death.png";
 import demonFireball from "@/assets/images/demon-fireball.png";
+import demonKinIdle from "@/assets/images/demonkin-idle.png";
+import demonKinAttack from "@/assets/images/demonkin-attack.png";
+import demonKinHurt from "@/assets/images/demonkin-hurt.png";
+import demonKinDeath from "@/assets/images/demonkin-death.png";
+import demonKinWalk from "@/assets/images/demonkin-walk.png";
 
 import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
 import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
@@ -1341,6 +1346,7 @@ export default function BattleScreen({
   const isDragonLord = useCallback((enemy: { id: string; isBoss: boolean }) => enemy.id === "dragon_lord" && enemy.isBoss, []);
   const isFrostLizard = useCallback((enemy: { id: string }) => enemy.id === "frost_lizard", []);
   const isJotem = useCallback((enemy: { id: string }) => enemy.id === "jotem", []);
+  const isDemonKin = useCallback((enemy: { id: string }) => enemy.id === "demon_kin", []);
   const isAnimatedEnemyCheck = useCallback((enemy: { id: string; element: string; isBoss: boolean }) => {
     return (enemy.element === "Fire" && !enemy.isBoss) || isDragonLord(enemy) || isFrostLizard(enemy) || isJotem(enemy);
   }, [isDragonLord, isFrostLizard, isJotem]);
@@ -1630,6 +1636,48 @@ export default function BattleScreen({
           scheduleTimer(onDone, 300);
         }, 2100);
       }
+    } else if (isDemonKin(enemy)) {
+      setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+      playSfx("stabWhoosh", 0.9);
+
+      const aliveParty = battle.party.filter(p => p.currentHp > 0);
+      const totalTargets = 1 + aliveParty.length;
+      const targetRoll = Math.floor(Math.random() * totalTargets);
+      let preTarget: { type: "player" | "party"; index: number };
+      if (targetRoll === 0 || aliveParty.length === 0) {
+        preTarget = { type: "player", index: -1 };
+      } else {
+        const pt = aliveParty[targetRoll - 1];
+        preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+      }
+
+      scheduleTimer(() => {
+        const result = onEnemyAttack(enemyIdx, preTarget);
+        if (!result.dodged) {
+          setShakeScreen(true);
+          if (result.target.type === "party") {
+            setPartyHurtIndex(result.target.index);
+            scheduleTimer(() => setPartyHurtIndex(-1), 500);
+          } else {
+            setAnimPhase("hurt");
+          }
+          playSfx("hitMetal", 0.7);
+          scheduleTimer(() => setShakeScreen(false), 500);
+        } else {
+          setDodgeBlur(result.target);
+          scheduleTimer(() => setDodgeBlur(null), 600);
+          const dodgeSlot = result.target.type === "party"
+            ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+            : ALLY_SLOTS[0];
+          spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+        }
+      }, 600);
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+        setAnimPhase("idle");
+        scheduleTimer(onDone, 300);
+      }, 1300);
     } else if (enemy.element === "Fire" && !enemy.isBoss) {
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
       playSfx("fireballWhoosh", 0.8);
@@ -1894,7 +1942,7 @@ export default function BattleScreen({
         scheduleTimer(onDone, 300);
       }, 600);
     }
-  }, [isDragonLord, isFrostLizard, isJotem, scheduleTimer, onEnemyAttack, spawnDamageNumber]);
+  }, [isDragonLord, isFrostLizard, isJotem, isDemonKin, scheduleTimer, onEnemyAttack, spawnDamageNumber]);
 
   useEffect(() => {
     if (battle.phase !== "partyTurn") {
@@ -3016,7 +3064,7 @@ export default function BattleScreen({
               (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
               (battle.phase === "partyTurn" && (partyAction === "selectTarget" || partyAction === "selectMagicTarget"))
             );
-            const isFireDemon = enemy.element === "Fire" && !enemy.isBoss;
+            const isFireDemon = enemy.element === "Fire" && !enemy.isBoss && !isDemonKin(enemy);
 
             const isBossMoving = (isDragonLord(enemy) || isJotem(enemy)) && bossOffset !== null;
             const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
@@ -3364,6 +3412,54 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[jotemIdle, jotemWalk, jotemAttack, jotemHurt, jotemDeath, jotemSlash]}
+                        anchor="bottom-center"
+                      />
+                    </div>
+                    </PixelDissolve>
+                  ) : isDemonKin(enemy) ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
+                    <div
+                      style={{
+                        position: "relative",
+                        width: 320,
+                        height: 320,
+                        overflow: "visible",
+                        filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px rgba(255,80,0,0.3))`,
+                      }}
+                      data-testid={`img-enemy-${idx}`}
+                    >
+                      <SpriteAnimator
+                        spriteSheet={
+                          enemyAnimStates[idx] === "death" ? demonKinDeath
+                          : enemyAnimStates[idx] === "attack" ? demonKinAttack
+                          : enemyAnimStates[idx] === "hurt" ? demonKinHurt
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? demonKinWalk
+                          : demonKinIdle
+                        }
+                        frameWidth={128}
+                        frameHeight={128}
+                        totalFrames={
+                          enemyAnimStates[idx] === "death" ? 8
+                          : enemyAnimStates[idx] === "attack" ? 12
+                          : enemyAnimStates[idx] === "hurt" ? 4
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
+                          : 6
+                        }
+                        fps={
+                          enemyAnimStates[idx] === "attack" ? 14
+                          : enemyAnimStates[idx] === "death" ? 10
+                          : enemyAnimStates[idx] === "hurt" ? 12
+                          : 8
+                        }
+                        scale={2.5}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        flipX={true}
+                        onComplete={
+                          enemyAnimStates[idx] === "death"
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
+                        preloadSheets={[demonKinIdle, demonKinWalk, demonKinAttack, demonKinHurt, demonKinDeath]}
                         anchor="bottom-center"
                       />
                     </div>

@@ -198,6 +198,7 @@ export function xpForLevel(level: number): number {
 
 const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "slime_fire", name: "Fire Demon", element: "Fire", level: 1, xpReward: 18, goldReward: 8, isBoss: false, sprite: "flame" },
+  { id: "demon_kin", name: "Demon Kin", element: "Fire", level: 2, xpReward: 24, goldReward: 11, isBoss: false, sprite: "flame" },
   { id: "slime_water", name: "Aqua Slime", element: "Water", level: 1, xpReward: 15, goldReward: 7, isBoss: false, sprite: "droplets" },
   { id: "wolf_wind", name: "Storm Wolf", element: "Wind", level: 1, xpReward: 20, goldReward: 9, isBoss: false, sprite: "wind" },
   { id: "golem_earth", name: "Stone Golem", element: "Earth", level: 2, xpReward: 28, goldReward: 12, isBoss: false, sprite: "mountain" },
@@ -268,6 +269,7 @@ export function getEnemiesForNode(node: OverworldNode, region: Region, tier: num
 
   if (node.type !== "boss" && regionElement === "Fire") {
     const fireDemonBase = ENEMY_POOL.find(e => e.id === "slime_fire")!;
+    const demonKinBase = ENEMY_POOL.find(e => e.id === "demon_kin")!;
     let count: number;
     if (tier >= 2) {
       count = 2 + Math.floor(Math.random() * 2);
@@ -276,15 +278,18 @@ export function getEnemiesForNode(node: OverworldNode, region: Region, tier: num
     } else {
       count = 1 + Math.floor(Math.random() * 2);
     }
-    const fireDemons: Enemy[] = [];
+    const demonKinChance = tier >= 2 ? 0.5 : tier >= 1 ? 0.35 : 0.25;
+    const fireEnemies: Enemy[] = [];
     for (let i = 0; i < count; i++) {
       const enemyLevelBonus = tier * (1 + Math.floor(Math.random() * 2));
-      const demon = generateEnemyStats(fireDemonBase, baseScale, enemyLevelBonus);
-      demon.xpReward = Math.floor(demon.xpReward * (1 + tier * 0.25));
-      demon.goldReward = Math.floor(demon.goldReward * (1 + tier * 0.25));
-      fireDemons.push(demon);
+      const useKin = Math.random() < demonKinChance;
+      const base = useKin ? demonKinBase : fireDemonBase;
+      const enemy = generateEnemyStats(base, baseScale, enemyLevelBonus);
+      enemy.xpReward = Math.floor(enemy.xpReward * (1 + tier * 0.25));
+      enemy.goldReward = Math.floor(enemy.goldReward * (1 + tier * 0.25));
+      fireEnemies.push(enemy);
     }
-    return fireDemons;
+    return fireEnemies;
   }
 
   if (node.type === "boss") {
