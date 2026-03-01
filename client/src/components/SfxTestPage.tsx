@@ -17,7 +17,7 @@ const SOUNDS: { name: SfxName; label: string }[] = [
   { name: "fireballLaunch", label: "Fireball Launch" },
   { name: "explosion", label: "Explosion" },
   { name: "effectiveHit", label: "Super Effective" },
-  { name: "notEffectiveHit", label: "Not Effective" },
+
   { name: "potionHeal", label: "Potion Heal" },
   { name: "potionMana", label: "Potion Mana" },
   { name: "eruptionFirecharge", label: "Eruption Firecharge" },

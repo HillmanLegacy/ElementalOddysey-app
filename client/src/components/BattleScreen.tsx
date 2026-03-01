@@ -1011,8 +1011,6 @@ export default function BattleScreen({
         playSfx("hitMetal");
         if (battle.lastElementLabel === "Super effective!") {
           scheduleTimer(() => playSfx("effectiveHit", 0.6), 200);
-        } else if (battle.lastElementLabel === "Not very effective...") {
-          scheduleTimer(() => playSfx("notEffectiveHit", 0.6), 200);
         }
         const hitEnemy = battle.enemies[tidx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
@@ -1047,8 +1045,6 @@ export default function BattleScreen({
         }
         if (battle.lastElementLabel === "Super effective!") {
           scheduleTimer(() => playSfx("effectiveHit", 0.6), 200);
-        } else if (battle.lastElementLabel === "Not very effective...") {
-          scheduleTimer(() => playSfx("notEffectiveHit", 0.6), 200);
         }
         const hitEnemy = battle.enemies[targetIdx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
@@ -1077,8 +1073,6 @@ export default function BattleScreen({
         playSfx("stabRing");
         if (battle.lastElementLabel === "Super effective!") {
           scheduleTimer(() => playSfx("effectiveHit", 0.6), 200);
-        } else if (battle.lastElementLabel === "Not very effective...") {
-          scheduleTimer(() => playSfx("notEffectiveHit", 0.6), 200);
         }
         const hitEnemy = battle.enemies[targetIdx];
         if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {

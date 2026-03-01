@@ -27,7 +27,7 @@ import stabWhoosh2 from "@/assets/audio/stab-whoosh-2.mp3";
 import fireballLaunch from "@/assets/audio/fire-demon-fireball.wav";
 import explosionMedium from "@/assets/audio/explosion-medium.wav";
 import effectiveChime from "@/assets/audio/effective-chime.wav";
-import notEffective from "@/assets/audio/not-effective.wav";
+
 import potionHeal from "@/assets/audio/potion-heal.wav";
 import potionMana from "@/assets/audio/potion-mana.wav";
 import drinkSlurp from "@/assets/audio/drink-slurp.wav";
@@ -70,7 +70,7 @@ const SFX_GROUPS = {
   fireballLaunch: [fireballLaunch],
   explosion: [explosionMedium],
   effectiveHit: [effectiveChime],
-  notEffectiveHit: [notEffective],
+
   potionHeal: [healthPotionSfx],
   potionMana: [healthPotionSfx],
   eruptionFirecharge: [eruptionFirecharge],
