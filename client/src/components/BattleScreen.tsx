@@ -2268,7 +2268,7 @@ export default function BattleScreen({
           transform: fujinZoom ? "scale(1.45)" : magicZoom ? "scale(1.45)" : tempestVortexActive ? "scale(1.3)" : "scale(1)",
           transformOrigin: fujinZoom ? fujinOrigin : magicZoom ? magicZoomOrigin : tempestVortexActive ? "70% 55%" : "50% 50%",
           transition: (fujinZoom || magicZoom) ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : tempestVortexActive ? "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
-          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : (magicZoom || tempestVortexActive) ? "contrast(1.1) saturate(1.15)" : "none",
+          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : (magicZoom || tempestVortexActive) ? "contrast(1.1) saturate(1.15)" : "saturate(1.25) contrast(1.05)",
         }}
       >
       {regionTheme === "Fire" ? (
@@ -2709,29 +2709,29 @@ export default function BattleScreen({
                     <div
                       className="relative overflow-hidden"
                       style={{
-                        background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
-                        border: `2px solid ${char.isActive ? elColor + "60" : elColor + "25"}`,
+                        background: "linear-gradient(180deg, rgba(22,14,42,0.88) 0%, rgba(14,8,32,0.93) 100%)",
+                        border: `2px solid ${char.isActive ? elColor + "99" : elColor + "50"}`,
                         boxShadow: char.isActive
-                          ? `0 0 12px ${elColor}30, inset 0 1px 0 rgba(255,255,255,0.05)`
-                          : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                          ? `0 0 18px ${elColor}55, inset 0 1px 0 rgba(255,255,255,0.08)`
+                          : `0 0 6px ${elColor}25, inset 0 1px 0 rgba(255,255,255,0.05)`,
                         imageRendering: "pixelated",
                       }}
                     >
-                      <div className="px-2.5 py-1.5" style={{ borderBottom: `1px solid ${elColor}15` }}>
+                      <div className="px-2.5 py-1.5" style={{ borderBottom: `1px solid ${elColor}35` }}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
                             <div
                               className="w-2 h-2 flex-shrink-0"
                               style={{
                                 background: elColor,
-                                boxShadow: char.isActive ? `0 0 4px ${elColor}` : `0 0 2px ${elColor}60`,
+                                boxShadow: char.isActive ? `0 0 7px ${elColor}` : `0 0 4px ${elColor}`,
                               }}
                             />
                             <span
                               style={{
                                 fontFamily: "'Press Start 2P', cursive",
                                 fontSize: "9px",
-                                color: char.isActive ? "#f0eaff" : "#b8b0c8",
+                                color: char.isActive ? "#ffffff" : "#d0c8e8",
                                 textShadow: char.isActive ? `0 0 6px ${elColor}40` : "none",
                                 letterSpacing: "0.05em",
                                 imageRendering: "pixelated",
@@ -2778,15 +2778,15 @@ export default function BattleScreen({
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
                             fontSize: "7px",
-                            color: charLowHp ? "#fca5a5" : "#6b8a6b",
+                            color: charLowHp ? "#fca5a5" : "#86efac",
                             width: "18px",
                             imageRendering: "pixelated",
                           }}>HP</span>
                           <div
                             className="flex-1 h-2.5 overflow-hidden relative"
                             style={{
-                              background: "rgba(0,0,0,0.6)",
-                              border: "1px solid rgba(255,255,255,0.08)",
+                              background: "rgba(0,0,0,0.45)",
+                              border: "1px solid rgba(255,255,255,0.15)",
                             }}
                           >
                             <div
@@ -2794,15 +2794,15 @@ export default function BattleScreen({
                               style={{
                                 width: `${charHpPct}%`,
                                 background: charLowHp
-                                  ? "#ef4444"
+                                  ? "#f87171"
                                   : charHpPct > 50
-                                    ? "#22c55e"
-                                    : "#eab308",
+                                    ? "#4ade80"
+                                    : "#fbbf24",
                                 boxShadow: charLowHp
-                                  ? "0 0 4px rgba(239,68,68,0.6)"
+                                  ? "0 0 6px rgba(248,113,113,0.9)"
                                   : charHpPct > 50
-                                    ? "0 0 2px rgba(34,197,94,0.4)"
-                                    : "0 0 2px rgba(234,179,8,0.4)",
+                                    ? "0 0 5px rgba(74,222,128,0.85)"
+                                    : "0 0 5px rgba(251,191,36,0.85)",
                                 imageRendering: "pixelated",
                               }}
                             />
@@ -2811,7 +2811,7 @@ export default function BattleScreen({
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
                               fontSize: "7px",
-                              color: charLowHp ? "#fca5a5" : "#a8a0b8",
+                              color: charLowHp ? "#fca5a5" : "#c8c0de",
                               minWidth: "50px",
                               textAlign: "right",
                               imageRendering: "pixelated",
@@ -2826,23 +2826,23 @@ export default function BattleScreen({
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
                             fontSize: "7px",
-                            color: "#5b7db5",
+                            color: "#93c5fd",
                             width: "18px",
                             imageRendering: "pixelated",
                           }}>MP</span>
                           <div
                             className="flex-1 h-2 overflow-hidden relative"
                             style={{
-                              background: "rgba(0,0,0,0.5)",
-                              border: "1px solid rgba(255,255,255,0.06)",
+                              background: "rgba(0,0,0,0.4)",
+                              border: "1px solid rgba(255,255,255,0.13)",
                             }}
                           >
                             <div
                               className="h-full transition-all duration-500 ease-out"
                               style={{
                                 width: `${charMpPct}%`,
-                                background: "#3b82f6",
-                                boxShadow: "0 0 2px rgba(59,130,246,0.4)",
+                                background: "#60a5fa",
+                                boxShadow: "0 0 5px rgba(96,165,250,0.85)",
                                 imageRendering: "pixelated",
                               }}
                             />
@@ -2851,7 +2851,7 @@ export default function BattleScreen({
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
                               fontSize: "7px",
-                              color: "#7ca0c4",
+                              color: "#93c5fd",
                               minWidth: "50px",
                               textAlign: "right",
                               imageRendering: "pixelated",
@@ -2866,15 +2866,15 @@ export default function BattleScreen({
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
                             fontSize: "7px",
-                            color: "#8b7530",
+                            color: "#fbbf24",
                             width: "18px",
                             imageRendering: "pixelated",
                           }}>XP</span>
                           <div
                             className="flex-1 h-1.5 overflow-hidden relative"
                             style={{
-                              background: "rgba(0,0,0,0.4)",
-                              border: "1px solid rgba(255,255,255,0.04)",
+                              background: "rgba(0,0,0,0.35)",
+                              border: "1px solid rgba(255,255,255,0.10)",
                             }}
                           >
                             <div
@@ -2883,7 +2883,7 @@ export default function BattleScreen({
                                 width: `${(battle.phase === "victory" && showVictoryUI && char.isPlayer) ? xpBarPercent : charXpPct}%`,
                                 background: (battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp)
                                   ? "#fde047"
-                                  : "#d97706",
+                                  : "#f59e0b",
                                 boxShadow: (battle.phase === "victory" && showVictoryUI && char.isPlayer && xpBarLevelUp)
                                   ? "0 0 6px rgba(250,204,21,0.6)"
                                   : "none",
@@ -2996,21 +2996,21 @@ export default function BattleScreen({
                     <div
                       className="relative overflow-hidden"
                       style={{
-                        background: "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)",
-                        border: `2px solid ${eTargetable ? "#fbbf2460" : elColor + "25"}`,
-                        boxShadow: eTargetable ? "0 0 8px rgba(251,191,36,0.2)" : "inset 0 1px 0 rgba(255,255,255,0.03)",
+                        background: "linear-gradient(180deg, rgba(22,14,42,0.88) 0%, rgba(14,8,32,0.93) 100%)",
+                        border: `2px solid ${eTargetable ? "#fbbf2490" : elColor + "50"}`,
+                        boxShadow: eTargetable ? "0 0 14px rgba(251,191,36,0.45)" : `0 0 6px ${elColor}25, inset 0 1px 0 rgba(255,255,255,0.05)`,
                         imageRendering: "pixelated",
                         transition: "border-color 0.3s ease, box-shadow 0.3s ease",
                       }}
                     >
-                      <div className="px-2.5 py-1.5" style={{ borderBottom: `1px solid ${elColor}15` }}>
+                      <div className="px-2.5 py-1.5" style={{ borderBottom: `1px solid ${elColor}35` }}>
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-1.5">
                             <div
                               className="w-2 h-2 flex-shrink-0"
                               style={{
                                 background: elColor,
-                                boxShadow: `0 0 2px ${elColor}60`,
+                                boxShadow: `0 0 4px ${elColor}`,
                               }}
                             />
                             <span
@@ -3042,15 +3042,15 @@ export default function BattleScreen({
                           <span style={{
                             fontFamily: "'Press Start 2P', cursive",
                             fontSize: "7px",
-                            color: eLowHp ? "#fca5a5" : "#6b8a6b",
+                            color: eLowHp ? "#fca5a5" : "#86efac",
                             width: "18px",
                             imageRendering: "pixelated",
                           }}>HP</span>
                           <div
                             className="flex-1 h-2.5 overflow-hidden relative"
                             style={{
-                              background: "rgba(0,0,0,0.6)",
-                              border: "1px solid rgba(255,255,255,0.08)",
+                              background: "rgba(0,0,0,0.45)",
+                              border: "1px solid rgba(255,255,255,0.15)",
                             }}
                           >
                             <div
@@ -3058,15 +3058,15 @@ export default function BattleScreen({
                               style={{
                                 width: `${eHpPct}%`,
                                 background: eLowHp
-                                  ? "#ef4444"
+                                  ? "#f87171"
                                   : eHpPct > 50
-                                    ? "#22c55e"
-                                    : "#eab308",
+                                    ? "#4ade80"
+                                    : "#fbbf24",
                                 boxShadow: eLowHp
-                                  ? "0 0 4px rgba(239,68,68,0.6)"
+                                  ? "0 0 6px rgba(248,113,113,0.9)"
                                   : eHpPct > 50
-                                    ? "0 0 2px rgba(34,197,94,0.4)"
-                                    : "0 0 2px rgba(234,179,8,0.4)",
+                                    ? "0 0 5px rgba(74,222,128,0.85)"
+                                    : "0 0 5px rgba(251,191,36,0.85)",
                                 imageRendering: "pixelated",
                               }}
                             />
@@ -3075,7 +3075,7 @@ export default function BattleScreen({
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
                               fontSize: "7px",
-                              color: eLowHp ? "#fca5a5" : "#a8a0b8",
+                              color: eLowHp ? "#fca5a5" : "#c8c0de",
                               minWidth: "50px",
                               textAlign: "right",
                               imageRendering: "pixelated",
