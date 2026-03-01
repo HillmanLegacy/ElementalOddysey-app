@@ -102,17 +102,34 @@ export default function BattleEffectsLayer({
       const t  = (now - t0.current) / 1000;
       const flicker = 0.84 + 0.10 * Math.sin(t * 5.1) + 0.06 * Math.sin(t * 13.7);
 
-      const allUnits: UnitInfo[] = [];
-      if (playerAliveRef.current) {
-        allUnits.push({
-          x: playerPosRef.current.x,
-          y: playerPosRef.current.y,
-          alive: true,
-          element: playerElemRef.current,
-        });
+      const phase = animPhaseRef.current;
+      const isMoving = phase === "runToEnemy" || phase === "runBack";
+      const moveDur = 350;
+      const moveRaw = Math.min(1, Math.max(0, (now - phaseStartRef.current) / moveDur));
+      const moveEase = phase === "runToEnemy" ? easeIn(moveRaw) : easeOut(moveRaw);
+
+      let animPlayerX = playerPosRef.current.x;
+      let animPlayerY = playerPosRef.current.y;
+      if (isMoving && attackTargetRef.current) {
+        const idle   = idlePosRef.current;
+        const target = attackTargetRef.current;
+        const sx = phase === "runToEnemy" ? idle.x   : target.x;
+        const sy = phase === "runToEnemy" ? idle.y   : target.y;
+        const ex = phase === "runToEnemy" ? target.x : idle.x;
+        const ey = phase === "runToEnemy" ? target.y : idle.y;
+        animPlayerX = lerp(sx, ex, moveEase);
+        animPlayerY = lerp(sy, ey, moveEase);
       }
-      partyInfosRef.current.forEach(p => { if (p.alive) allUnits.push(p); });
-      enemyInfosRef.current.forEach(e => { if (e.alive) allUnits.push(e); });
+
+      const ALLY_Y_LIFT  = 14;
+      const ENEMY_Y_LIFT = 18;
+
+      const allUnits: (UnitInfo & { isAlly: boolean })[] = [];
+      if (playerAliveRef.current) {
+        allUnits.push({ x: animPlayerX, y: animPlayerY, alive: true, element: playerElemRef.current, isAlly: true });
+      }
+      partyInfosRef.current.forEach(p => { if (p.alive) allUnits.push({ ...p, isAlly: true }); });
+      enemyInfosRef.current.forEach(e => { if (e.alive) allUnits.push({ ...e, isAlly: false }); });
 
       const lightDiv = lightingRef.current;
       const bloomDiv = bloomRef.current;
@@ -122,11 +139,12 @@ export default function BattleEffectsLayer({
         const darkA = 0.25;
 
         const stops = allUnits.map((u, i) => {
+          const lift  = u.isAlly ? ALLY_Y_LIFT : ENEMY_Y_LIFT;
           const base  = 22 + (i === 0 ? 5 : 0);
           const pulse = 1 + 0.055 * Math.sin(t * 3.2 + i * 1.9) * flicker;
           const r     = Math.max(8, base * pulse);
           const cx    = u.x;
-          const cy    = 100 - u.y;
+          const cy    = 100 - (u.y + lift);
           return `radial-gradient(circle ${r}vw at ${cx}% ${cy}%, transparent 0%, transparent 50%, rgba(${darkR.join(",")},${(darkA * 0.18).toFixed(3)}) 72%, rgba(${darkR.join(",")},${darkA.toFixed(3)}) 100%)`;
         });
         stops.push(`rgba(${darkR.join(",")},${darkA.toFixed(3)})`);
@@ -135,11 +153,12 @@ export default function BattleEffectsLayer({
 
       if (bloomDiv) {
         const glows = allUnits.map((u, i) => {
+          const lift  = u.isAlly ? ALLY_Y_LIFT : ENEMY_Y_LIFT;
           const rgb   = ELEM_RGB[u.element] ?? ELEM_RGB.Neutral;
           const pulse = 0.22 + 0.08 * Math.sin(t * 3.9 + i * 1.5) * flicker;
           const r     = 16 + (i === 0 ? 4 : 0);
           const cx    = u.x;
-          const cy    = 100 - u.y;
+          const cy    = 100 - (u.y + lift);
           return `radial-gradient(circle ${r}vw at ${cx}% ${cy}%, ${rgba(...rgb, pulse * 0.65)} 0%, ${rgba(...rgb, pulse * 0.22)} 45%, transparent 75%)`;
         });
         bloomDiv.style.background = glows.length ? glows.join(", ") : "transparent";
@@ -147,9 +166,7 @@ export default function BattleEffectsLayer({
 
       const canvas = trailRef.current;
       if (canvas) {
-        const phase    = animPhaseRef.current;
-        const isMoving = phase === "runToEnemy" || phase === "runBack";
-        const ctx      = canvas.getContext("2d");
+        const ctx = canvas.getContext("2d");
         const dpr      = window.devicePixelRatio || 1;
         const cw       = canvas.offsetWidth;
         const ch       = canvas.offsetHeight;
