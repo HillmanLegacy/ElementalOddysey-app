@@ -310,42 +310,6 @@ export default function BattleEffectsLayer({
         }}
       />
 
-      {isFire && (
-        <div
-          style={{
-            position: "absolute",
-            inset: 0,
-            zIndex: 3,
-            pointerEvents: "none",
-            overflow: "hidden",
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: "-5%",
-              width: "110%",
-              height: "20%",
-              background: "linear-gradient(to top, rgba(180,40,0,0.20) 0%, rgba(100,20,0,0.08) 55%, transparent 100%)",
-              animation: "groundFogDrift 5.5s ease-in-out infinite alternate",
-              filter: "blur(8px)",
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              bottom: 0,
-              left: "-8%",
-              width: "116%",
-              height: "11%",
-              background: "linear-gradient(to top, rgba(220,55,0,0.14) 0%, transparent 100%)",
-              animation: "groundFogDrift 7.5s ease-in-out infinite alternate-reverse",
-              filter: "blur(5px)",
-            }}
-          />
-        </div>
-      )}
 
       <canvas
         ref={trailRef}
