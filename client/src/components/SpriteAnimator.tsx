@@ -30,6 +30,7 @@ interface SpriteAnimatorProps {
   startFrame?: number;
   pauseAtFrame?: number;
   holdFrames?: Record<number, number>;
+  anchor?: "top-left" | "bottom-center";
 }
 
 export default function SpriteAnimator({
@@ -48,6 +49,7 @@ export default function SpriteAnimator({
   startFrame,
   pauseAtFrame,
   holdFrames,
+  anchor,
 }: SpriteAnimatorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -207,7 +209,7 @@ export default function SpriteAnimator({
       stoppedRef.current = true;
       cancelAnimationFrame(animRef.current);
     };
-  }, [spriteSheet, startFrame]);
+  }, [spriteSheet, startFrame, frameWidth, frameHeight, scale]);
 
   useEffect(() => {
     return () => {
@@ -222,6 +224,10 @@ export default function SpriteAnimator({
   const displayW = Math.round(frameWidth * scale);
   const displayH = Math.round(frameHeight * scale);
 
+  const anchorStyle: React.CSSProperties = anchor === "bottom-center"
+    ? { position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }
+    : {};
+
   return (
     <div
       ref={containerRef}
@@ -230,6 +236,7 @@ export default function SpriteAnimator({
         width: displayW,
         height: displayH,
         overflow: "hidden",
+        ...anchorStyle,
         ...(style || {}),
       }}
     />

@@ -2506,7 +2506,7 @@ export default function BattleScreen({
               />
             )}
             
-            <div className="relative">
+            <div style={{ position: "relative", width: Math.round(playerSprites.frameWidth * (playerSprites.scale || 3.5)), height: Math.round(playerSprites.frameHeight * (playerSprites.scale || 3.5)), overflow: "visible" }}>
               <SpriteAnimator
                 spriteSheet={spriteConfig.src}
                 frameWidth={spriteConfig.w}
@@ -2520,6 +2520,7 @@ export default function BattleScreen({
                 startFrame={spriteConfig.startAt}
                 pauseAtFrame={spriteConfig.pauseAt}
                 holdFrames={spriteConfig.holdFrames}
+                anchor="bottom-center"
               />
               {animPhase === "defending" && (
                 <div className="absolute z-30 pointer-events-none" style={{
@@ -2628,7 +2629,7 @@ export default function BattleScreen({
                   }
                 }}
               >
-                <div className="relative">
+                <div style={{ position: "relative", width: Math.round(spriteInfo.frameWidth * (spriteInfo.scale || 3.5)), height: Math.round(spriteInfo.frameHeight * (spriteInfo.scale || 3.5)), overflow: "visible" }}>
                   <SpriteAnimator
                     spriteSheet={spriteSheet}
                     frameWidth={spriteInfo.frameWidth}
@@ -2638,6 +2639,7 @@ export default function BattleScreen({
                     scale={spriteInfo.scale || 3.5}
                     loop={!isAttacking && !isHurt}
                     onComplete={isAttacking || isHurt ? () => {} : undefined}
+                    anchor="bottom-center"
                   />
                   {partyGuardIndex === idx && (
                     <div className="absolute z-30 pointer-events-none" style={{
@@ -3353,11 +3355,10 @@ export default function BattleScreen({
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
-                      className="w-48 h-48 md:w-[420px] md:h-[420px]"
                       style={{
-                        display: "flex",
-                        alignItems: "flex-end",
-                        justifyContent: "center",
+                        position: "relative",
+                        width: 420,
+                        height: 420,
                         overflow: "visible",
                         filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
                       }}
@@ -3411,14 +3412,18 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[dragonLordIdle, dragonLordWalk, dragonLordAttack, dragonLordHurt, dragonLordDeath]}
+                        anchor="bottom-center"
                       />
                     </div>
                     </PixelDissolve>
                   ) : isJotem(enemy) ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
-                      className={`w-32 h-32 md:w-40 md:h-40 transition-all duration-200`}
                       style={{
+                        position: "relative",
+                        width: 320,
+                        height: 320,
+                        overflow: "visible",
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
                       data-testid={`img-enemy-${idx}`}
@@ -3457,14 +3462,18 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[jotemIdle, jotemWalk, jotemAttack, jotemHurt, jotemDeath, jotemSlash]}
+                        anchor="bottom-center"
                       />
                     </div>
                     </PixelDissolve>
                   ) : isReaper(enemy) ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
-                      className="w-24 h-24 md:w-32 md:h-32 transition-all duration-200"
                       style={{
+                        position: "relative",
+                        width: 240,
+                        height: 160,
+                        overflow: "visible",
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
                       data-testid={`img-enemy-${idx}`}
@@ -3499,14 +3508,18 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[reaperIdle, reaperAttack, reaperHurt, reaperDeath]}
+                        anchor="bottom-center"
                       />
                     </div>
                     </PixelDissolve>
                   ) : enemy.element === "Fire" && !enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
-                      className={`${isBoss ? "w-32 h-32 md:w-40 md:h-40" : "w-20 h-20 md:w-28 md:h-28"} transition-all duration-200`}
                       style={{
+                        position: "relative",
+                        width: isBoss ? 324 : 203,
+                        height: isBoss ? 284 : 178,
+                        overflow: "visible",
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
                       data-testid={`img-enemy-${idx}`}
@@ -3549,14 +3562,18 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[demonIdle, demonAttack, demonHurt, demonDeath]}
+                        anchor="bottom-center"
                       />
                     </div>
                     </PixelDissolve>
                   ) : isFrostLizard(enemy) ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
                     <div
-                      className={`w-20 h-20 md:w-28 md:h-28 transition-all duration-200`}
                       style={{
+                        position: "relative",
+                        width: 222,
+                        height: 144,
+                        overflow: "visible",
                         filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.8)) drop-shadow(0 0 15px ${ELEMENT_COLORS[enemy.element]}30)`,
                       }}
                       data-testid={`img-enemy-${idx}`}
@@ -3590,6 +3607,7 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[frostLizardIdle, frostLizardAttack, frostLizardHurt]}
+                        anchor="bottom-center"
                       />
                     </div>
                     </PixelDissolve>
