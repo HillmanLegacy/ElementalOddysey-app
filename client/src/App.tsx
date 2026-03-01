@@ -17,6 +17,7 @@ import InventoryScreen from "@/components/InventoryScreen";
 import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
 import PartyManagementScreen from "@/components/PartyManagementScreen";
+import StatusScreen from "@/components/StatusScreen";
 import ShamanScreen from "@/components/ShamanScreen";
 import SfxTestPage from "@/components/SfxTestPage";
 import BattleTransition from "@/components/BattleTransition";
@@ -25,7 +26,7 @@ import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
 import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume, fadeOutMusic, stopJingle } from "@/lib/music";
 import { playSfx } from "@/lib/sfx";
-import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut, Heart, Droplets } from "lucide-react";
+import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut, Heart, Droplets, BarChart2 } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
@@ -128,6 +129,7 @@ function Game() {
   const [saveConfirmSlot, setSaveConfirmSlot] = useState<number | null>(null);
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [showPartyManagement, setShowPartyManagement] = useState(false);
+  const [showStatus, setShowStatus] = useState(false);
   const [showOptions, setShowOptions] = useState(false);
   const [showHutInventory, setShowHutInventory] = useState(false);
   const [hutInventoryTab, setHutInventoryTab] = useState<"items" | "gear">("items");
@@ -329,6 +331,7 @@ function Game() {
 
           const menuItems = [
             { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { restAtNode(); playSfx('recover'); toast({ title: "Rested", description: "HP and MP fully restored!" }); } },
+            { label: "STATUS", desc: "View party stats & skills", icon: BarChart2, action: () => { setShowStatus(true); } },
             { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setShowHutInventory(true); setHutInventoryTab("items"); setHutTargetingItemId(null); } },
             ...(state.player!.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setShowPartyManagement(true); } }] : []),
             { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setShowSaveScreen(true); } },
@@ -426,6 +429,15 @@ function Game() {
                   <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
                 </div>
               </div>
+
+              {showStatus && state.player && (
+                <div className="absolute inset-0 z-[300]">
+                  <StatusScreen
+                    player={state.player}
+                    onClose={() => setShowStatus(false)}
+                  />
+                </div>
+              )}
 
               {showPartyManagement && state.player && (
                 <div className="absolute inset-0 z-[300]">

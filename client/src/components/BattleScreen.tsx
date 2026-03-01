@@ -221,14 +221,14 @@ type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "
 
 const ALLY_SLOTS: { x: number; y: number }[] = [
   { x: 11, y: 28 },
-  { x: 14, y: 20 },
-  { x: 20, y: 12 },
+  { x: 20, y: 28 },
+  { x: 29, y: 28 },
 ];
 
 const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
-  { x: 58, y: 28, z: 0.85 },
-  { x: 64, y: 36, z: 0.95 },
-  { x: 70, y: 44, z: 1.0 },
+  { x: 57, y: 28, z: 1.0 },
+  { x: 66, y: 28, z: 1.0 },
+  { x: 75, y: 28, z: 1.0 },
 ];
 
 const PLAYER_POS = ALLY_SLOTS[0];
