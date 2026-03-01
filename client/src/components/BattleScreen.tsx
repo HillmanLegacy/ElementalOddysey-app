@@ -3480,9 +3480,9 @@ export default function BattleScreen({
                         frameHeight={80}
                         totalFrames={
                           enemyAnimStates[idx] === "death" ? 7
-                          : enemyAnimStates[idx] === "attack" ? 6
+                          : enemyAnimStates[idx] === "attack" ? 5
                           : enemyAnimStates[idx] === "hurt" ? 2
-                          : 6
+                          : 5
                         }
                         fps={
                           enemyAnimStates[idx] === "attack" ? 10
