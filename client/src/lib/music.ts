@@ -20,6 +20,10 @@ const AMBIENT_VOLUME_SCALE: Record<string, number> = {
   hut: 0.85,
 };
 
+const MUSIC_VOLUME_SCALE: Record<string, number> = {
+  main_menu: 0.7,
+};
+
 const MUSIC_TRACKS: Record<string, string> = {
   lava_region_music: lavaRegionMusic,
   lava_region_battle: lavaRegionBattle,
@@ -45,6 +49,7 @@ const musicLayer: AudioLayer = { element: null, currentTrack: null, fadeInterval
 let jingleElement: HTMLAudioElement | null = null;
 
 let musicVolume = 0.5;
+let currentMusicScale = 1.0;
 
 function clearLayerFade(layer: AudioLayer) {
   if (layer.fadeInterval) {
@@ -201,12 +206,16 @@ export function playMusic(track: MusicTrack) {
   const src = MUSIC_TRACKS[track];
   if (!src) return;
 
+  const scale = MUSIC_VOLUME_SCALE[track] ?? 1.0;
+  currentMusicScale = scale;
+  const vol = musicVolume * scale;
+
   if (musicLayer.currentTrack && musicLayer.element && !musicLayer.element.paused) {
     fadeOutLayer(musicLayer, () => {
-      startLayerTrack(musicLayer, src, track, musicVolume);
+      startLayerTrack(musicLayer, src, track, vol);
     });
   } else {
-    startLayerTrack(musicLayer, src, track, musicVolume);
+    startLayerTrack(musicLayer, src, track, vol);
   }
 }
 
@@ -274,7 +283,7 @@ export function setMusicVolume(percent: number) {
     ambientLayer.element.volume = musicVolume * scale;
   }
   if (musicLayer.element && !musicLayer.element.paused && !musicLayer.fadeInterval) {
-    musicLayer.element.volume = musicVolume;
+    musicLayer.element.volume = musicVolume * currentMusicScale;
   }
   if (jingleElement && !jingleElement.paused) {
     jingleElement.volume = musicVolume;
