@@ -971,7 +971,9 @@ export default function BattleScreen({
       } else {
         setAnimPhase("attacking");
         playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
-        playSfx("gruntAttack", 0.7);
+        if (player.spriteId !== "knight") {
+          playSfx("gruntAttack", 0.7);
+        }
         if (pendingTargetIdx !== null) {
           onAttack(pendingTargetIdx);
         }
