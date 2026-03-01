@@ -56,7 +56,6 @@ export default function BattleEffectsLayer({
   playerHpPct,
 }: BattleEffectsLayerProps) {
   const lightingRef   = useRef<HTMLDivElement>(null);
-  const bloomRef      = useRef<HTMLDivElement>(null);
   const screenGlowRef = useRef<HTMLDivElement>(null);
   const trailRef      = useRef<HTMLCanvasElement>(null);
   const rafRef      = useRef<number>(0);
@@ -133,7 +132,6 @@ export default function BattleEffectsLayer({
       enemyInfosRef.current.forEach(e => { if (e.alive) allUnits.push({ ...e, isAlly: false }); });
 
       const lightDiv = lightingRef.current;
-      const bloomDiv = bloomRef.current;
 
       if (lightDiv) {
         const darkR = regionRef.current === "Fire" ? [12, 4, 28] : [6, 4, 18];
@@ -152,18 +150,6 @@ export default function BattleEffectsLayer({
         lightDiv.style.background = stops.join(", ");
       }
 
-      if (bloomDiv) {
-        const glows = allUnits.map((u, i) => {
-          const lift  = u.isAlly ? ALLY_Y_LIFT : ENEMY_Y_LIFT;
-          const rgb   = ELEM_RGB[u.element] ?? ELEM_RGB.Neutral;
-          const pulse = 0.22 + 0.08 * Math.sin(t * 3.9 + i * 1.5) * flicker;
-          const r     = 16 + (i === 0 ? 4 : 0);
-          const cx    = u.x;
-          const cy    = 100 - (u.y + lift);
-          return `radial-gradient(circle ${r}vw at ${cx}% ${cy}%, ${rgba(...rgb, pulse * 0.65)} 0%, ${rgba(...rgb, pulse * 0.22)} 45%, transparent 75%)`;
-        });
-        bloomDiv.style.background = glows.length ? glows.join(", ") : "transparent";
-      }
 
       const screenGlowDiv = screenGlowRef.current;
       if (screenGlowDiv) {
@@ -364,15 +350,6 @@ export default function BattleEffectsLayer({
         }}
       />
 
-      <div
-        ref={bloomRef}
-        style={{
-          position: "absolute", inset: 0,
-          zIndex: 23,
-          pointerEvents: "none",
-          mixBlendMode: "screen",
-        }}
-      />
 
       <div
         ref={screenGlowRef}
