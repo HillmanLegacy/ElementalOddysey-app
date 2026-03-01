@@ -55,9 +55,10 @@ export default function BattleEffectsLayer({
   playerAlive,
   playerHpPct,
 }: BattleEffectsLayerProps) {
-  const lightingRef = useRef<HTMLDivElement>(null);
-  const bloomRef    = useRef<HTMLDivElement>(null);
-  const trailRef    = useRef<HTMLCanvasElement>(null);
+  const lightingRef   = useRef<HTMLDivElement>(null);
+  const bloomRef      = useRef<HTMLDivElement>(null);
+  const screenGlowRef = useRef<HTMLDivElement>(null);
+  const trailRef      = useRef<HTMLCanvasElement>(null);
   const rafRef      = useRef<number>(0);
   const t0          = useRef<number>(performance.now());
 
@@ -162,6 +163,14 @@ export default function BattleEffectsLayer({
           return `radial-gradient(circle ${r}vw at ${cx}% ${cy}%, ${rgba(...rgb, pulse * 0.65)} 0%, ${rgba(...rgb, pulse * 0.22)} 45%, transparent 75%)`;
         });
         bloomDiv.style.background = glows.length ? glows.join(", ") : "transparent";
+      }
+
+      const screenGlowDiv = screenGlowRef.current;
+      if (screenGlowDiv) {
+        const region = regionRef.current;
+        const rgb    = ELEM_RGB[region ?? ""] ?? ELEM_RGB.Neutral;
+        const pulse  = 0.18 + 0.07 * Math.sin(t * 1.8) * flicker;
+        screenGlowDiv.style.boxShadow = `inset 0 0 140px 50px rgba(${rgb.join(",")},${pulse.toFixed(3)})`;
       }
 
       const canvas = trailRef.current;
@@ -362,6 +371,15 @@ export default function BattleEffectsLayer({
           zIndex: 23,
           pointerEvents: "none",
           mixBlendMode: "screen",
+        }}
+      />
+
+      <div
+        ref={screenGlowRef}
+        style={{
+          position: "absolute", inset: 0,
+          zIndex: 24,
+          pointerEvents: "none",
         }}
       />
     </>

@@ -3466,7 +3466,7 @@ export default function BattleScreen({
                         width: 320,
                         height: 320,
                         overflow: "visible",
-                        filter: `url(#sfx-glow-fire) drop-shadow(0 4px 14px rgba(0,0,0,0.85))`,
+                        filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
@@ -3514,7 +3514,7 @@ export default function BattleScreen({
                         width: isBoss ? 324 : 203,
                         height: isBoss ? 284 : 178,
                         overflow: "visible",
-                        filter: `url(#sfx-glow-${(enemy.element || "fire").toLowerCase()}) drop-shadow(0 4px 14px rgba(0,0,0,0.85))`,
+                        filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
