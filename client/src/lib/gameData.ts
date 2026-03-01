@@ -254,6 +254,31 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   };
 }
 
+export function generateDemonKinSpawn(refLevel: number): Enemy & { currentHp: number } {
+  const base = ENEMY_POOL.find(e => e.id === "demon_kin")!;
+  const lv = Math.max(refLevel + 2, 7);
+  const vary = () => 0.9 + Math.random() * 0.2;
+  const hp = Math.floor((30 + lv * 14) * vary());
+  return {
+    ...base,
+    level: lv,
+    xpReward: Math.floor(base.xpReward * 2.5),
+    goldReward: Math.floor(base.goldReward * 2.5),
+    currentHp: hp,
+    stats: {
+      hp,
+      maxHp: hp,
+      atk: Math.floor((10 + lv * 3.5) * vary()),
+      def: Math.floor((5 + lv * 2) * vary()),
+      agi: Math.floor((10 + lv * 3) * vary()),
+      int: Math.floor((5 + lv * 2) * vary()),
+      luck: Math.floor((5 + lv * 1.5) * vary()),
+      mp: Math.floor((20 + lv * 7) * vary()),
+      maxMp: Math.floor((20 + lv * 7) * vary()),
+    },
+  };
+}
+
 export function getEnemiesForNode(node: OverworldNode, region: Region, tier: number = 0): Enemy[] {
   const regionElement = region.theme;
   const baseScale = 1 + region.id * 0.5;
@@ -269,7 +294,6 @@ export function getEnemiesForNode(node: OverworldNode, region: Region, tier: num
 
   if (node.type !== "boss" && regionElement === "Fire") {
     const fireDemonBase = ENEMY_POOL.find(e => e.id === "slime_fire")!;
-    const demonKinBase = ENEMY_POOL.find(e => e.id === "demon_kin")!;
     let count: number;
     if (tier >= 2) {
       count = 2 + Math.floor(Math.random() * 2);
@@ -278,13 +302,10 @@ export function getEnemiesForNode(node: OverworldNode, region: Region, tier: num
     } else {
       count = 1 + Math.floor(Math.random() * 2);
     }
-    const demonKinChance = tier >= 2 ? 0.5 : tier >= 1 ? 0.35 : 0.25;
     const fireEnemies: Enemy[] = [];
     for (let i = 0; i < count; i++) {
       const enemyLevelBonus = tier * (1 + Math.floor(Math.random() * 2));
-      const useKin = Math.random() < demonKinChance;
-      const base = useKin ? demonKinBase : fireDemonBase;
-      const enemy = generateEnemyStats(base, baseScale, enemyLevelBonus);
+      const enemy = generateEnemyStats(fireDemonBase, baseScale, enemyLevelBonus);
       enemy.xpReward = Math.floor(enemy.xpReward * (1 + tier * 0.25));
       enemy.goldReward = Math.floor(enemy.goldReward * (1 + tier * 0.25));
       fireEnemies.push(enemy);

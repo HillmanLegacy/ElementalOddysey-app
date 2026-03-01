@@ -1,5 +1,5 @@
 import { useState, useCallback, useRef } from "react";
-import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember, PendingLevelUp } from "@shared/schema";
+import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember, PendingLevelUp, Enemy } from "@shared/schema";
 import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, getRegionForTier, buildTurnQueue, getNewSpellsAtLevel } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
@@ -1297,6 +1297,15 @@ export function useGameState() {
     });
   }, []);
 
+  const spawnEnemy = useCallback((slotIndex: number, enemy: Enemy & { currentHp: number }) => {
+    setState(s => {
+      if (!s.battle) return s;
+      const enemies = s.battle.enemies.map(e => ({ ...e }));
+      enemies[slotIndex] = enemy;
+      return { ...s, battle: { ...s.battle, enemies } };
+    });
+  }, []);
+
   const changeRegion = useCallback((regionId: number) => {
     setState(s => {
       if (!s.player) return s;
@@ -1350,6 +1359,7 @@ export function useGameState() {
     repositionUnit,
     confirmUnlock,
     changeRegion,
+    spawnEnemy,
     openShaman,
     learnShamanSpell,
   };

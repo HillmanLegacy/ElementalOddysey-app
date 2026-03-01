@@ -76,6 +76,7 @@ function Game() {
     buyItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn, repositionUnit,
     confirmUnlock,
     changeRegion,
+    spawnEnemy,
     openShaman, learnShamanSpell,
   } = useGameState();
 
@@ -1025,6 +1026,8 @@ function Game() {
               onSetAnimating={setAnimating}
               onFinishPlayerTurn={finishPlayerTurn}
               onRepositionUnit={repositionUnit}
+              onSpawnEnemy={spawnEnemy}
+              regionTier={battleTier}
             />
             {battleEntryReveal && (
               <BattleTransition

@@ -4,7 +4,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import PixelDissolve from "./PixelDissolve";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
-import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel } from "@/lib/gameData";
+import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel, generateDemonKinSpawn } from "@/lib/gameData";
 import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap, LogOut } from "lucide-react";
@@ -210,8 +210,10 @@ interface BattleScreenProps {
   onFinishPlayerTurn: () => void;
   onRepositionUnit: (unitType: "player" | "party", unitIndex: number, newRow: number, newCol: number) => void;
   onFlee: () => void;
+  onSpawnEnemy?: (slotIndex: number, enemy: import("@shared/schema").Enemy & { currentHp: number }) => void;
   showDamageNumbers: boolean;
   regionTheme?: string;
+  regionTier?: number;
 }
 
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
@@ -233,7 +235,7 @@ const PARTY_POSITIONS = [ALLY_SLOTS[1], ALLY_SLOTS[2]];
 const ENEMY_POSITIONS = ENEMY_SLOTS;
 
 export default function BattleScreen({
-  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme,
+  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier,
 }: BattleScreenProps) {
 
   const getPlayerGridPos = () => {
@@ -301,6 +303,7 @@ export default function BattleScreen({
   const deathSfxPlayed = useRef<Set<number>>(new Set());
   const [pixelDissolving, setPixelDissolving] = useState<Set<number>>(new Set());
   const [dissolvedEnemies, setDissolvedEnemies] = useState<Set<number>>(new Set());
+  const [demonKinSpawnAnim, setDemonKinSpawnAnim] = useState<{ slotIndex: number; pos: { x: number; y: number } } | null>(null);
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [victoryReady, setVictoryReady] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
@@ -1367,7 +1370,36 @@ export default function BattleScreen({
       return next;
     });
     setDissolvedEnemies(prev => new Set(prev).add(idx));
-  }, []);
+
+    const dyingEnemy = battle.enemies[idx];
+    const alreadyHasDemonKin = battle.enemies.some(e => e.id === "demon_kin" && e.currentHp > 0);
+    const isFireDemon = dyingEnemy && dyingEnemy.element === "Fire" && !dyingEnemy.isBoss && dyingEnemy.id !== "demon_kin";
+    if (
+      isFireDemon &&
+      (regionTier ?? 0) >= 2 &&
+      !alreadyHasDemonKin &&
+      Math.random() < 0.3
+    ) {
+      const slot = ENEMY_SLOTS[idx] ?? ENEMY_SLOTS[0];
+      setDemonKinSpawnAnim({ slotIndex: idx, pos: { x: slot.x, y: slot.y } });
+      playSfx("fireDemonDeath", 0.8);
+    }
+  }, [battle.enemies, regionTier]);
+
+  const handleDemonKinSpawnComplete = useCallback(() => {
+    if (!demonKinSpawnAnim) return;
+    const { slotIndex } = demonKinSpawnAnim;
+    const refEnemy = battle.enemies.find(e => e.currentHp > 0);
+    const refLevel = refEnemy?.level ?? 5;
+    const newDemonKin = generateDemonKinSpawn(refLevel);
+    setDemonKinSpawnAnim(null);
+    setDissolvedEnemies(prev => {
+      const next = new Set(prev);
+      next.delete(slotIndex);
+      return next;
+    });
+    onSpawnEnemy?.(slotIndex, newDemonKin);
+  }, [demonKinSpawnAnim, battle.enemies, onSpawnEnemy]);
 
   useEffect(() => {
     if (deathAnimPending.size > 0) {
@@ -3589,6 +3621,43 @@ export default function BattleScreen({
             );
           })}
 
+
+          {demonKinSpawnAnim && (
+            <div
+              style={{
+                position: "absolute",
+                left: `${demonKinSpawnAnim.pos.x}%`,
+                top: `${demonKinSpawnAnim.pos.y}%`,
+                transform: "translate(-50%, -100%)",
+                pointerEvents: "none",
+                zIndex: 30,
+              }}
+            >
+              <div
+                style={{
+                  position: "relative",
+                  width: 320,
+                  height: 320,
+                  overflow: "visible",
+                  filter: `drop-shadow(0 4px 24px rgba(255,60,0,0.8)) drop-shadow(0 0 20px rgba(255,100,0,0.6))`,
+                }}
+              >
+                <SpriteAnimator
+                  spriteSheet={demonKinDeath}
+                  frameWidth={128}
+                  frameHeight={128}
+                  totalFrames={8}
+                  fps={10}
+                  scale={2.5}
+                  loop={false}
+                  flipX={true}
+                  reverse={true}
+                  onComplete={handleDemonKinSpawnComplete}
+                  anchor="bottom-center"
+                />
+              </div>
+            </div>
+          )}
 
           {fireballAnim && fireballAnim.active && (
             <div

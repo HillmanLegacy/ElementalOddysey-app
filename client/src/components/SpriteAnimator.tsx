@@ -23,6 +23,7 @@ interface SpriteAnimatorProps {
   scale?: number;
   loop?: boolean;
   flipX?: boolean;
+  reverse?: boolean;
   onComplete?: () => void;
   className?: string;
   style?: React.CSSProperties;
@@ -42,6 +43,7 @@ export default function SpriteAnimator({
   scale = 3,
   loop = true,
   flipX = false,
+  reverse = false,
   onComplete,
   className = "",
   style,
@@ -62,8 +64,8 @@ export default function SpriteAnimator({
   const holdUntilRef = useRef(0);
   const heldFramesRef = useRef<Set<number>>(new Set());
 
-  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale });
-  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale };
+  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, reverse, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale });
+  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, reverse, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale };
 
   useEffect(() => {
     if (preloadSheets) {
@@ -104,7 +106,7 @@ export default function SpriteAnimator({
     mountedSheetRef.current = spriteSheet;
 
     if (sheetChanged || stoppedRef.current) {
-      frameRef.current = startFrame ?? 0;
+      frameRef.current = startFrame ?? (reverse ? totalFrames - 1 : 0);
       lastTimeRef.current = 0;
     }
     stoppedRef.current = false;
@@ -143,7 +145,7 @@ export default function SpriteAnimator({
     const render = (timestamp: number) => {
       if (stoppedRef.current) return;
 
-      const { totalFrames: tf, fps: f, loop: l, onComplete: oc, pauseAtFrame: paf } = propsRef.current;
+      const { totalFrames: tf, fps: f, loop: l, onComplete: oc, pauseAtFrame: paf, reverse: rev } = propsRef.current;
       const interval = 1000 / f;
 
       if (!lastTimeRef.current) lastTimeRef.current = timestamp;
@@ -170,32 +172,48 @@ export default function SpriteAnimator({
         const { holdFrames: hf } = propsRef.current;
 
         lastTimeRef.current = timestamp - (actualDelta % interval);
-        const currentFrame = Math.min(frameRef.current, tf - 1);
+        const currentFrame = rev
+          ? Math.max(0, Math.min(frameRef.current, tf - 1))
+          : Math.min(frameRef.current, tf - 1);
         drawFrame(currentImage, currentFrame);
 
-        if (paf !== undefined && currentFrame >= paf) {
+        if (!rev && paf !== undefined && currentFrame >= paf) {
           stoppedRef.current = true;
           oc?.();
           return;
         }
 
-        if (hf && hf[currentFrame] !== undefined && !heldFramesRef.current.has(currentFrame)) {
+        if (!rev && hf && hf[currentFrame] !== undefined && !heldFramesRef.current.has(currentFrame)) {
           heldFramesRef.current.add(currentFrame);
           holdUntilRef.current = timestamp + hf[currentFrame];
           animRef.current = requestAnimationFrame(render);
           return;
         }
 
-        frameRef.current++;
-        if (frameRef.current >= tf) {
-          if (l) {
-            frameRef.current = 0;
-            heldFramesRef.current.clear();
-          } else {
-            frameRef.current = tf - 1;
-            stoppedRef.current = true;
-            oc?.();
-            return;
+        if (rev) {
+          frameRef.current--;
+          if (frameRef.current < 0) {
+            if (l) {
+              frameRef.current = tf - 1;
+            } else {
+              frameRef.current = 0;
+              stoppedRef.current = true;
+              oc?.();
+              return;
+            }
+          }
+        } else {
+          frameRef.current++;
+          if (frameRef.current >= tf) {
+            if (l) {
+              frameRef.current = 0;
+              heldFramesRef.current.clear();
+            } else {
+              frameRef.current = tf - 1;
+              stoppedRef.current = true;
+              oc?.();
+              return;
+            }
           }
         }
       }
@@ -209,7 +227,7 @@ export default function SpriteAnimator({
       stoppedRef.current = true;
       cancelAnimationFrame(animRef.current);
     };
-  }, [spriteSheet, startFrame, frameWidth, frameHeight, scale]);
+  }, [spriteSheet, startFrame, frameWidth, frameHeight, scale, reverse]);
 
   useEffect(() => {
     return () => {
