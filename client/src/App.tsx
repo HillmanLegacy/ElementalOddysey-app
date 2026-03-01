@@ -18,6 +18,7 @@ import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
 import PartyManagementScreen from "@/components/PartyManagementScreen";
 import ShamanScreen from "@/components/ShamanScreen";
+import SfxTestPage from "@/components/SfxTestPage";
 import BattleTransition from "@/components/BattleTransition";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -1190,6 +1191,9 @@ function Game() {
 }
 
 function App() {
+  if (window.location.pathname === "/sfx-test") {
+    return <SfxTestPage />;
+  }
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
