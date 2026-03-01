@@ -3662,9 +3662,9 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "absolute",
-                        bottom: -40,
+                        bottom: 0,
                         left: "50%",
-                        transform: "translateX(-50%)",
+                        transform: "translateX(-50%) translateY(60px)",
                         pointerEvents: "none",
                         zIndex: 30,
                         overflow: "visible",
