@@ -124,6 +124,8 @@ import lightningSpot1 from "@/assets/images/Lightning_spot1.png";
 import lightningSpot2 from "@/assets/images/Lightning_spot2.png";
 import lightningSpot3 from "@/assets/images/Lightning_spot3.png";
 import lightningSpot4 from "@/assets/images/Lightning_spot4.png";
+import healingIcon from "@/assets/healing_icon.png";
+import victoryIcon from "@/assets/victory_icon.png";
 
 const LIGHTNING_VFX_SEQUENCE = [
   { src: lightningBeginningPart3, w: 64, h: 64, isSpot: true },
@@ -273,7 +275,7 @@ export default function BattleScreen({
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
   const [frostBreathAnim, setFrostBreathAnim] = useState<{ fromX: number; fromY: number; active: boolean } | null>(null);
   const [frostHitSfx, setFrostHitSfx] = useState(false);
-  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string; isBlocked?: boolean }[]>([]);
+  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string; isBlocked?: boolean; isHeal?: boolean }[]>([]);
   const [pendingTargetIdx, setPendingTargetIdx] = useState<number | null>(null);
   const [fujinSliceActive, setFujinSliceActive] = useState(false);
   const [fujinSlashes, setFujinSlashes] = useState<{ id: number; x: number; y: number; rotation: number; delay: number; sheet: string; frames: number; fw: number }[]>([]);
@@ -492,10 +494,10 @@ export default function BattleScreen({
     return () => timers.forEach(t => clearTimeout(t));
   }, [showVictoryUI, battle.phase]);
 
-  const spawnDamageNumber = useCallback((text: string, x: number, y: number, color: string) => {
+  const spawnDamageNumber = useCallback((text: string, x: number, y: number, color: string, isHeal?: boolean) => {
     if (!showDamageNumbers) return;
     const id = damageIdRef.current++;
-    setDamageNumbers(prev => [...prev, { id, text, x, y, color }]);
+    setDamageNumbers(prev => [...prev, { id, text, x, y, color, isHeal }]);
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
   }, [showDamageNumbers]);
 
@@ -540,7 +542,7 @@ export default function BattleScreen({
     }
     const text = evt.isHeal ? `+${evt.amount}` : (evt.isCrit ? "CRIT " : "") + evt.amount;
     const id = damageIdRef.current++;
-    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked }]);
+    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked, isHeal: evt.isHeal }]);
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
   }, [battle.lastDamageEvent, showDamageNumbers]);
 
@@ -579,7 +581,7 @@ export default function BattleScreen({
         if (evt.isHeal) color = "#22c55e";
         const text = evt.isHeal ? `+${evt.amount}` : (evt.isCrit ? "CRIT " : "") + evt.amount;
         const id = damageIdRef.current++;
-        setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color }]);
+        setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isHeal: evt.isHeal }]);
         setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
       }, idx * 50);
     });
@@ -1142,7 +1144,7 @@ export default function BattleScreen({
 
     playSfx(isHp ? "potionHeal" : "potionMana", 0.7);
     setPotionVfx({ x: vfxX, y: vfxY + 8, color, active: true });
-    spawnDamageNumber(`+${item.amount} ${isHp ? "HP" : "MP"}`, vfxX + 2, 100 - vfxY - 10, isHp ? "#ef4444" : "#60a5fa");
+    spawnDamageNumber(`+${item.amount} ${isHp ? "HP" : "MP"}`, vfxX + 2, 100 - vfxY - 10, isHp ? "#4ade80" : "#60a5fa", isHp);
     scheduleTimer(() => setPotionVfx(null), 800);
   }, [battle.lastItemUsed, scheduleTimer, spawnDamageNumber]);
 
@@ -2394,6 +2396,19 @@ export default function BattleScreen({
             letterSpacing: "1px",
           }}
         >
+          {d.isHeal && (
+            <img
+              src={healingIcon}
+              alt=""
+              style={{
+                width: 22,
+                height: 22,
+                imageRendering: "pixelated",
+                flexShrink: 0,
+                filter: `drop-shadow(0 0 4px #22c55e)`,
+              }}
+            />
+          )}
           {d.isBlocked && (
             <Shield className="w-6 h-6 flex-shrink-0" style={{
               color: d.color,
@@ -4203,6 +4218,20 @@ export default function BattleScreen({
           <div className="absolute inset-0 z-[200] flex items-center justify-center">
             <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.75) 70%)` }} />
             <PixelDissolve active={showVictoryUI} reverse={true} duration={600} pixelSize={5}>
+            <div className="flex flex-col items-center">
+            <img
+              src={victoryIcon}
+              alt="Victory"
+              style={{
+                width: 80,
+                height: 80,
+                imageRendering: "pixelated",
+                marginBottom: -8,
+                filter: `drop-shadow(0 0 10px ${ec}90) drop-shadow(0 0 20px ${ec}50)`,
+                zIndex: 1,
+                position: "relative",
+              }}
+            />
             <div
               className="relative w-[320px] h-[220px] overflow-hidden flex flex-col"
               style={{
@@ -4272,6 +4301,7 @@ export default function BattleScreen({
                   </button>
                 )}
               </div>
+            </div>
             </div>
             </PixelDissolve>
           </div>
