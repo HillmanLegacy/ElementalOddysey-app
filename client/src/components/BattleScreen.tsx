@@ -2268,7 +2268,7 @@ export default function BattleScreen({
           transform: fujinZoom ? "scale(1.45)" : magicZoom ? "scale(1.45)" : tempestVortexActive ? "scale(1.3)" : "scale(1)",
           transformOrigin: fujinZoom ? fujinOrigin : magicZoom ? magicZoomOrigin : tempestVortexActive ? "70% 55%" : "50% 50%",
           transition: (fujinZoom || magicZoom) ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : tempestVortexActive ? "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
-          filter: fujinSliceActive ? "contrast(1.12) saturate(1.3) brightness(1.06)" : (magicZoom || tempestVortexActive) ? "contrast(1.12) saturate(1.3) brightness(1.06)" : "saturate(1.4) contrast(1.1) brightness(1.08)",
+          filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : (magicZoom || tempestVortexActive) ? "contrast(1.1) saturate(1.15)" : "saturate(1.25) contrast(1.05)",
         }}
       >
       {regionTheme === "Fire" ? (
@@ -3130,7 +3130,7 @@ export default function BattleScreen({
                 style={{
                   transform: `scale(${pos.z})`,
                   transition: "transform 0.5s ease, opacity 0.3s ease, filter 0.2s ease",
-                  filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : isSpriteTargetable ? "brightness(1.15) saturate(1.35) drop-shadow(0 0 8px rgba(251,191,36,0.5))" : "brightness(1.12) saturate(1.3)",
+                  filter: dodgeBlur && dodgeBlur.type === "enemy" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : isSpriteTargetable ? "drop-shadow(0 0 8px rgba(251,191,36,0.5))" : "none",
                 }}
                 data-testid={`button-enemy-${idx}`}
               >
