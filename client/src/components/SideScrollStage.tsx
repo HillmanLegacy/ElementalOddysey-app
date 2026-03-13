@@ -219,6 +219,7 @@ export default function SideScrollStage({
   const keysRef = useRef({ left: false, right: false, jumpPressed: false, jumpHeld: false });
   const facingRightRef = useRef(true);
   const stageCompleteRef = useRef(false);
+  const battlePendingRef = useRef(false);
   const contactCooldown = useRef<Set<number>>(new Set());
 
   const onEnemyContactRef = useRef(onEnemyContact);
@@ -268,8 +269,12 @@ export default function SideScrollStage({
 
   useEffect(() => {
     if (stageComplete) return;
+    battlePendingRef.current = false;   // reset on every effect run (covers post-battle resume)
+    lastTimeRef.current = null;
 
     const loop = (ts: number) => {
+      if (battlePendingRef.current) return;   // freeze while transition plays
+
       const dt = lastTimeRef.current !== null
         ? Math.min((ts - lastTimeRef.current) / 1000, 0.05)
         : 0.016;
@@ -387,7 +392,10 @@ export default function SideScrollStage({
 
         if (Math.abs(pCx - eCx) < (pHW + eHW) && Math.abs(pCy - eCy) < (pHH + eHH)) {
           contactCooldown.current.add(idx);
+          battlePendingRef.current = true;
+          cancelAnimationFrame(rafRef.current);
           onEnemyContactRef.current(idx, enemy.enemyId, p.x);
+          return;
         }
       });
 
@@ -412,7 +420,7 @@ export default function SideScrollStage({
       cancelAnimationFrame(rafRef.current);
       lastTimeRef.current = null;
     };
-  }, [stageComplete, stageData, playerH, playerW]);
+  }, [stageComplete, stageData, playerH, playerW, defeatedEnemyIndices]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
