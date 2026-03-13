@@ -580,14 +580,14 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
             ) : node.type === "passage" ? (
               <div className="flex flex-col items-center">
                 <div className="relative">
-                  <div
-                    className="w-7 h-7 rounded-full transition-all duration-200"
+                  <div className={`${markerSize} flex items-center justify-center backdrop-blur-sm`}
                     style={{
-                      backgroundColor: accessible ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.25)",
-                      border: `2px solid ${accessible ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)"}`,
+                      borderRadius: "10px",
+                      backgroundColor: "rgba(0,0,0,0.15)",
+                      border: `3px solid ${accessible ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.3)"}`,
                       boxShadow: isHovered && accessible
-                        ? "0 0 12px rgba(255,255,255,0.6)"
-                        : "0 1px 4px rgba(0,0,0,0.4)",
+                        ? "0 0 20px rgba(255,255,255,0.5), inset 0 0 8px rgba(255,255,255,0.1), 0 4px 12px rgba(0,0,0,0.4)"
+                        : "0 2px 8px rgba(0,0,0,0.3)",
                     }}
                   />
                 </div>
