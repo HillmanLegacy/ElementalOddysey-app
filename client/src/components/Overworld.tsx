@@ -145,9 +145,10 @@ interface OverworldProps {
   onEquip: (itemId: string) => void;
   onUnequip: (slot: "weapon" | "armor" | "accessory") => void;
   onUseItem: (itemId: string, targetPartyIndex?: number) => void;
+  onArrowClick?: (fromNodeId: number, toNode: OverworldNode) => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick }: OverworldProps) {
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
   const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
@@ -284,6 +285,10 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
   const handleArrowClick = (targetNode: OverworldNode) => {
     if (isMoving) return;
+    if (onArrowClick) {
+      onArrowClick(player.currentNode, targetNode);
+      return;
+    }
     const targetPos = getNodePosition(targetNode);
     setFacingRight(targetPos.x > charPos.x);
     moveCharacterTo(targetPos, () => {

@@ -196,7 +196,7 @@ export function xpForLevel(level: number): number {
   return Math.floor(100 * Math.pow(1.5, level - 1));
 }
 
-const ENEMY_POOL: Omit<Enemy, "stats">[] = [
+export const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "slime_fire", name: "Fire Demon", element: "Fire", level: 1, xpReward: 18, goldReward: 8, isBoss: false, sprite: "flame" },
   { id: "demon_kin", name: "Demon Kin", element: "Fire", level: 2, xpReward: 24, goldReward: 11, isBoss: false, sprite: "flame" },
   { id: "slime_water", name: "Aqua Slime", element: "Water", level: 1, xpReward: 15, goldReward: 7, isBoss: false, sprite: "droplets" },

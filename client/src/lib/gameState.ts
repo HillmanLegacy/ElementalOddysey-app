@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember, PendingLevelUp, Enemy } from "@shared/schema";
-import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, getRegionForTier, buildTurnQueue, getNewSpellsAtLevel } from "./gameData";
+import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, getRegionForTier, buildTurnQueue, getNewSpellsAtLevel, ENEMY_POOL, generateEnemyStats } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 const INITIAL_STATE: GameState = {
@@ -96,6 +96,64 @@ export function useGameState() {
       }
 
       return { ...s, battle, screen: "battle", player: { ...s.player, currentNode: nodeId } };
+    });
+  }, []);
+
+  const startBattleCustom = useCallback((enemyIds: string[]) => {
+    setState(s => {
+      if (!s.player) return s;
+      const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
+      const baseScale = 1 + s.player.currentRegion * 0.5;
+      const levelBonus = tier * 3;
+
+      const enemies: Enemy[] = enemyIds.map(id => {
+        const base = ENEMY_POOL.find(e => e.id === id);
+        if (!base) return null;
+        return generateEnemyStats(base, baseScale, levelBonus);
+      }).filter(Boolean) as Enemy[];
+
+      if (enemies.length === 0) return s;
+
+      const battle = initBattle(enemies);
+      battle.playerHp = s.player.stats.hp;
+      battle.playerMp = s.player.stats.mp;
+      battle.phase = "playerTurn";
+
+      battle.party = s.player.party.map(pm => ({
+        id: pm.id,
+        name: pm.name,
+        element: pm.element,
+        level: pm.level,
+        stats: { ...pm.stats },
+        currentHp: pm.stats.hp,
+        currentMp: pm.stats.mp,
+        defending: false,
+        spriteId: pm.spriteId,
+        learnedSpells: pm.learnedSpells || [],
+        xp: pm.xp || 0,
+        xpToNext: pm.xpToNext || xpForLevel(pm.level),
+        perks: pm.perks || [],
+      }));
+
+      if (battle.gridPositions) {
+        battle.gridPositions.party = s.player.party.map((_, i) => i + 1);
+      }
+
+      const queue = buildTurnQueue(s.player.stats.agi || 10, battle.party, battle.enemies);
+      battle.turnQueue = queue;
+      battle.turnQueueIndex = 0;
+      if (queue.length > 0) {
+        const first = queue[0];
+        if (first.type === "player") battle.phase = "playerTurn";
+        else if (first.type === "party") {
+          battle.phase = "partyTurn";
+          battle.activePartyIndex = first.index;
+        } else {
+          battle.phase = "enemyTurn";
+        }
+      }
+
+      return { ...s, battle, screen: "battle" };
     });
   }, []);
 
@@ -1340,6 +1398,7 @@ export function useGameState() {
     createCharacter,
     updatePlayer,
     startBattle,
+    startBattleCustom,
     playerAttack,
     castSpell,
     playerDefend,

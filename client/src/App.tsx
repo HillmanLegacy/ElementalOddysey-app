@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -30,6 +30,7 @@ import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut, Heart
 import { groupConsumables } from "@/lib/utils";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
+import SideScrollStage from "@/components/SideScrollStage";
 
 const DESIGN_WIDTH = 1024;
 const DESIGN_HEIGHT = 640;
@@ -72,7 +73,7 @@ function useViewportScale() {
 function Game() {
   const {
     state, setState, setScreen, createCharacter, updatePlayer,
-    startBattle, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
+    startBattle, startBattleCustom, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
     partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, fleeBattle, allocateStat, selectPerk, openShop,
     buyItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn, repositionUnit,
@@ -148,6 +149,20 @@ function Game() {
   const [postBattleReveal, setPostBattleReveal] = useState(false);
   const [battleEntryReveal, setBattleEntryReveal] = useState(false);
   const [transitionElementColor, setTransitionElementColor] = useState<string | undefined>(undefined);
+
+  const [sideScrollCtx, setSideScrollCtx] = useState<{
+    fromNodeId: number;
+    toNodeId: number;
+    toNodeName: string;
+    defeatedEnemyIndices: number[];
+    savedPlayerX: number;
+  } | null>(null);
+  const [sideScrollBattleTransition, setSideScrollBattleTransition] = useState<{
+    enemyIndex: number;
+    enemyId: string;
+  } | null>(null);
+  const sideScrollBattleActiveRef = useRef(false);
+  const lastContactedEnemyIdxRef = useRef<number | null>(null);
   const [menuFadeOut, setMenuFadeOut] = useState<{ save: any } | null>(null);
   const [menuFadeIn, setMenuFadeIn] = useState(false);
   const [menuReveal, setMenuReveal] = useState(false);
@@ -224,6 +239,79 @@ function Game() {
 
       case "overworld":
         if (!state.player) return null;
+        if (sideScrollCtx) {
+          const ssPlayer = state.player;
+          return (
+            <>
+              <SideScrollStage
+                player={ssPlayer}
+                fromNodeId={sideScrollCtx.fromNodeId}
+                toNodeId={sideScrollCtx.toNodeId}
+                stageName={sideScrollCtx.toNodeName}
+                defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
+                initialPlayerX={sideScrollCtx.savedPlayerX}
+                onEnemyContact={(enemyIndex, enemyId, playerX) => {
+                  if (sideScrollBattleActiveRef.current) return;
+                  lastContactedEnemyIdxRef.current = enemyIndex;
+                  sideScrollBattleActiveRef.current = true;
+                  setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
+                  const ec = "#ef4444";
+                  setTransitionElementColor(ec);
+                  fadeOutMusic(600);
+                  const trSfx = playSfx('battleTransition');
+                  if (trSfx) trSfx.playbackRate = 2.0;
+                  setSideScrollBattleTransition({ enemyIndex, enemyId });
+                }}
+                onComplete={() => {
+                  const toNodeId = sideScrollCtx.toNodeId;
+                  setSideScrollCtx(null);
+                  updatePlayer({ currentNode: toNodeId });
+                  const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
+                  if (region.theme === "Fire") {
+                    playAmbient("lava_region");
+                    playMusic("lava_region_music");
+                  }
+                }}
+                onExit={() => {
+                  setSideScrollCtx(null);
+                  const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
+                  if (region.theme === "Fire") {
+                    playAmbient("lava_region");
+                    playMusic("lava_region_music");
+                  }
+                }}
+              />
+              {sideScrollBattleTransition && (
+                <BattleTransition
+                  direction="in"
+                  elementColor="#ef4444"
+                  onComplete={() => {
+                    const { enemyId } = sideScrollBattleTransition;
+                    setSideScrollBattleTransition(null);
+                    setBattleEntryReveal(true);
+                    startBattleCustom([enemyId]);
+                  }}
+                />
+              )}
+              {postBattleReveal && (
+                <BattleTransition
+                  direction="out"
+                  elementColor={transitionElementColor}
+                  onComplete={() => {
+                    setPostBattleReveal(false);
+                    if (ssPlayer) {
+                      const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
+                      if (region.theme === "Fire") {
+                        playAmbient("lava_region");
+                        playMusic("lava_region_music");
+                      }
+                    }
+                  }}
+                />
+              )}
+            </>
+          );
+        }
         return (
           <>
             <Overworld
@@ -257,6 +345,18 @@ function Game() {
               onEquip={equipItem}
               onUnequip={unequipItem}
               onUseItem={useItemOverworld}
+              onArrowClick={(fromNodeId, toNode) => {
+                if (!state.player) return;
+                setSideScrollCtx({
+                  fromNodeId,
+                  toNodeId: toNode.id,
+                  toNodeName: toNode.name,
+                  defeatedEnemyIndices: [],
+                  savedPlayerX: 150,
+                });
+                fadeOutMusic(500);
+                stopAmbient();
+              }}
             />
             {hutTransitionIn && (
               <BattleTransition
@@ -1067,6 +1167,17 @@ function Game() {
                     fleeBattle();
                   } else {
                     endBattle(v);
+                  }
+                  if (sideScrollBattleActiveRef.current) {
+                    const enemyIdx = lastContactedEnemyIdxRef.current;
+                    if (enemyIdx !== null) {
+                      setSideScrollCtx(ctx => ctx ? {
+                        ...ctx,
+                        defeatedEnemyIndices: [...ctx.defeatedEnemyIndices, enemyIdx],
+                      } : null);
+                    }
+                    lastContactedEnemyIdxRef.current = null;
+                    sideScrollBattleActiveRef.current = false;
                   }
                 }}
               />
