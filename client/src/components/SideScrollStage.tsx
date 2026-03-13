@@ -60,8 +60,11 @@ const GRAVITY_HOLD   = 700;
 const JUMP_VELOCITY  = -490;
 const COYOTE_TIME    = 0.10;
 const JUMP_BUFFER    = 0.12;
-const STAGE_END_X    = 4650;
-const CAMERA_LEAD    = 340;
+const STAGE_END_X       = 4650;
+const CAMERA_LEAD       = 340;
+const LEFT_PORTAL_X     = 50;   // world-x of the left retreat portal
+const LEFT_EXIT_TRIGGER = 80;   // player x threshold to fire left exit
+const LEFT_EXIT_UNLOCK  = 500;  // player must travel this far right first
 
 const CHAR_SPRITES: Record<string, {
   idle: string; run: string;
@@ -240,9 +243,12 @@ export default function SideScrollStage({
   const onEnemyContactRef = useRef(onEnemyContact);
   const onFireballContactRef = useRef(onFireballContact);
   const onCompleteRef = useRef(onComplete);
+  const onExitRef = useRef(onExit);
+  const leftExitUnlockedRef = useRef(false);
   useEffect(() => { onEnemyContactRef.current = onEnemyContact; }, [onEnemyContact]);
   useEffect(() => { onFireballContactRef.current = onFireballContact; }, [onFireballContact]);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
+  useEffect(() => { onExitRef.current = onExit; }, [onExit]);
 
   const defeatedRef = useRef(defeatedEnemyIndices);
   useEffect(() => {
@@ -282,8 +288,6 @@ export default function SideScrollStage({
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(stageData.enemies.map(e => e.x));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(stageData.enemies.map(() => true));
   const [battleFreezing, setBattleFreezing] = useState(false);
-  const [stageComplete, setStageComplete] = useState(false);
-  const [showExit, setShowExit] = useState(false);
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   const rocks = useRef(generateRocks(STAGE_WIDTH));
@@ -300,7 +304,7 @@ export default function SideScrollStage({
   const lastTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (stageComplete) return;
+    if (stageCompleteRef.current) return;
     battlePendingRef.current = false;   // reset on every effect run (covers post-battle resume)
     fireballsRef.current = [];          // clear any stale projectiles
     setFireballs([]);
@@ -383,11 +387,22 @@ export default function SideScrollStage({
         p.onGround = false;
       }
 
-      // --- Stage end check ---
+      // --- Left exit portal check ---
+      if (p.x > LEFT_EXIT_UNLOCK) leftExitUnlockedRef.current = true;
+      if (p.x <= LEFT_EXIT_TRIGGER && leftExitUnlockedRef.current && !stageCompleteRef.current) {
+        stageCompleteRef.current = true;
+        setBattleFreezing(true);
+        cancelAnimationFrame(rafRef.current);
+        onExitRef.current();
+        return;
+      }
+
+      // --- Stage end (right portal) ---
       if (p.x + playerW * 0.6 >= STAGE_END_X && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
-        setStageComplete(true);
+        setBattleFreezing(true);
         cancelAnimationFrame(rafRef.current);
+        onCompleteRef.current();
         return;
       }
 
@@ -553,7 +568,7 @@ export default function SideScrollStage({
       cancelAnimationFrame(rafRef.current);
       lastTimeRef.current = null;
     };
-  }, [stageComplete, stageData, playerH, playerW, defeatedEnemyIndices]);
+  }, [stageData, playerH, playerW, defeatedEnemyIndices]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -576,9 +591,6 @@ export default function SideScrollStage({
           keysRef.current.jumpHeld = true;
           e.preventDefault();
           break;
-        case "Escape":
-          setShowExit(prev => !prev);
-          break;
       }
     };
     const onKeyUp = (e: KeyboardEvent) => {
@@ -596,12 +608,6 @@ export default function SideScrollStage({
     };
   }, []);
 
-  useEffect(() => {
-    if (stageComplete) {
-      const t = setTimeout(() => onCompleteRef.current(), 1800);
-      return () => clearTimeout(t);
-    }
-  }, [stageComplete]);
 
   const progressPercent = Math.min(100, Math.round((renderX / STAGE_END_X) * 100));
 
@@ -748,6 +754,39 @@ export default function SideScrollStage({
           );
         })}
 
+        {/* Left retreat portal */}
+        <div
+          style={{
+            position: "absolute",
+            left: LEFT_PORTAL_X - 40,
+            top: GROUND_Y - 160,
+            width: 100,
+            height: 160,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+          }}
+        >
+          <div style={{
+            width: 80,
+            height: 130,
+            background: "radial-gradient(ellipse at center, rgba(80,120,255,0.9) 0%, rgba(60,80,255,0.5) 45%, rgba(30,40,200,0.2) 75%, transparent 100%)",
+            boxShadow: "0 0 50px rgba(80,120,255,1), 0 0 100px rgba(60,80,255,0.5)",
+            borderRadius: "50% 50% 15% 15%",
+            animation: "portalPulse 1.4s ease-in-out infinite",
+            border: "2px solid rgba(100,140,255,0.9)",
+          }} />
+          <div style={{
+            fontFamily: "'Press Start 2P', monospace",
+            fontSize: 7,
+            color: "#6688ff",
+            textShadow: "0 0 10px rgba(80,120,255,0.9)",
+            marginTop: 6,
+            letterSpacing: 1,
+          }}>BACK</div>
+        </div>
+
+        {/* Right goal portal */}
         <div
           style={{
             position: "absolute",
@@ -905,21 +944,6 @@ export default function SideScrollStage({
           <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: "#c9a44a" }}>{progressPercent}%</div>
         </div>
 
-        <button
-          data-testid="button-stage-exit"
-          onClick={() => setShowExit(true)}
-          style={{
-            background: "rgba(0,0,0,0.7)",
-            border: "2px solid #444",
-            borderRadius: 4,
-            padding: "6px 10px",
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 7,
-            color: "#666",
-            cursor: "pointer",
-            pointerEvents: "auto",
-          }}
-        >ESC</button>
       </div>
 
       <div style={{
@@ -977,104 +1001,10 @@ export default function SideScrollStage({
         >▲</button>
       </div>
 
-      {stageComplete && (
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(0,0,0,0.72)",
-          zIndex: 30,
-        }}>
-          <div style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 28,
-            color: "#c9a44a",
-            textShadow: "0 0 30px rgba(201,164,74,0.9), 0 0 60px rgba(255,180,0,0.4)",
-            letterSpacing: 4,
-            animation: "stageClearPulse 0.6s ease-in-out infinite alternate",
-          }}>STAGE CLEAR!</div>
-          <div style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 10,
-            color: "#aaa",
-            marginTop: 20,
-            letterSpacing: 2,
-          }}>Arriving at {stageName}...</div>
-        </div>
-      )}
-
-      {showExit && !stageComplete && (
-        <div style={{
-          position: "absolute",
-          inset: 0,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          background: "rgba(0,0,0,0.82)",
-          zIndex: 40,
-        }}>
-          <div style={{
-            background: "rgba(8,3,12,0.97)",
-            border: "2px solid #c9a44a",
-            borderRadius: 8,
-            padding: "36px 44px",
-            textAlign: "center",
-            display: "flex",
-            flexDirection: "column",
-            gap: 22,
-            boxShadow: "0 0 40px rgba(201,164,74,0.3)",
-          }}>
-            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 13, color: "#c9a44a", letterSpacing: 2 }}>RETREAT?</div>
-            <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 8, color: "#777", lineHeight: "1.9" }}>
-              Return to the overworld?<br />Stage progress will be lost.
-            </div>
-            <div style={{ display: "flex", gap: 16, justifyContent: "center" }}>
-              <button
-                data-testid="button-confirm-retreat"
-                onClick={() => onExit()}
-                style={{
-                  fontFamily: "'Press Start 2P', monospace",
-                  fontSize: 9,
-                  background: "rgba(160,40,20,0.3)",
-                  border: "2px solid #a03020",
-                  color: "#f0a090",
-                  padding: "10px 18px",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  letterSpacing: 1,
-                }}
-              >RETREAT</button>
-              <button
-                data-testid="button-cancel-retreat"
-                onClick={() => setShowExit(false)}
-                style={{
-                  fontFamily: "'Press Start 2P', monospace",
-                  fontSize: 9,
-                  background: "rgba(40,100,40,0.3)",
-                  border: "2px solid #408040",
-                  color: "#90e090",
-                  padding: "10px 18px",
-                  borderRadius: 4,
-                  cursor: "pointer",
-                  letterSpacing: 1,
-                }}
-              >CONTINUE</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       <style>{`
         @keyframes portalPulse {
           0%,100% { opacity: 1; transform: scale(1); }
           50% { opacity: 0.75; transform: scale(0.95); }
-        }
-        @keyframes stageClearPulse {
-          from { opacity: 0.85; }
-          to { opacity: 1; }
         }
       `}</style>
     </div>
