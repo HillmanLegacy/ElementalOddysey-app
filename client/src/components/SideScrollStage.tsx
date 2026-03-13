@@ -22,11 +22,19 @@ import dragonLordIdleSheet from "@/assets/images/dragonlord-idle.png";
 const STAGE_WIDTH = 5000;
 const VIEWPORT_H = 640;
 const GROUND_Y = 510;
-const PLAYER_SPEED = 290;
-const JUMP_VELOCITY = -640;
-const GRAVITY = 1250;
-const STAGE_END_X = 4650;
-const CAMERA_LEAD = 340;
+
+const MAX_SPEED      = 310;
+const GROUND_ACCEL   = 1600;
+const AIR_ACCEL      = 900;
+const GROUND_FRICTION = 1800;
+const AIR_DRAG       = 80;
+const GRAVITY        = 1500;
+const GRAVITY_HOLD   = 620;
+const JUMP_VELOCITY  = -630;
+const COYOTE_TIME    = 0.10;
+const JUMP_BUFFER    = 0.12;
+const STAGE_END_X    = 4650;
+const CAMERA_LEAD    = 340;
 
 const CHAR_SPRITES: Record<string, {
   idle: string; run: string;
@@ -200,8 +208,12 @@ export default function SideScrollStage({
   const startY = GROUND_Y - playerH;
   const clampedStartX = Math.max(0, Math.min(STAGE_WIDTH - playerW, initialPlayerX));
 
-  const physRef = useRef({ x: clampedStartX, y: startY, vx: 0, vy: 0, onGround: true });
-  const keysRef = useRef({ left: false, right: false, jumpPressed: false });
+  const physRef = useRef({
+    x: clampedStartX, y: startY, vx: 0, vy: 0, onGround: true,
+    coyoteTimer: 0,
+    jumpBufferTimer: 0,
+  });
+  const keysRef = useRef({ left: false, right: false, jumpPressed: false, jumpHeld: false });
   const facingRightRef = useRef(true);
   const stageCompleteRef = useRef(false);
   const contactCooldown = useRef<Set<number>>(new Set());
@@ -225,6 +237,7 @@ export default function SideScrollStage({
   const [renderY, setRenderY] = useState(startY);
   const [cameraX, setCameraX] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
+  const [isJumping, setIsJumping] = useState(false);
   const [facingRight, setFacingRight] = useState(true);
   const [stageComplete, setStageComplete] = useState(false);
   const [showExit, setShowExit] = useState(false);
@@ -255,37 +268,71 @@ export default function SideScrollStage({
       const p = physRef.current;
       const keys = keysRef.current;
 
+      // --- Coyote time: count down when just left the ground ---
+      const wasOnGround = p.onGround;
+      if (p.onGround) {
+        p.coyoteTimer = COYOTE_TIME;
+      } else {
+        p.coyoteTimer = Math.max(0, p.coyoteTimer - dt);
+      }
+
+      // --- Jump buffer: count down from when jump was pressed ---
+      if (keys.jumpPressed) {
+        p.jumpBufferTimer = JUMP_BUFFER;
+        keys.jumpPressed = false;
+      } else {
+        p.jumpBufferTimer = Math.max(0, p.jumpBufferTimer - dt);
+      }
+
+      // --- Horizontal movement: smooth acceleration ---
+      const accel = p.onGround ? GROUND_ACCEL : AIR_ACCEL;
+      const friction = p.onGround ? GROUND_FRICTION : AIR_DRAG;
+
       let moving = false;
       if (keys.left && !keys.right) {
-        p.vx = -PLAYER_SPEED;
+        p.vx = Math.max(p.vx - accel * dt, -MAX_SPEED);
         moving = true;
         facingRightRef.current = false;
       } else if (keys.right && !keys.left) {
-        p.vx = PLAYER_SPEED;
+        p.vx = Math.min(p.vx + accel * dt, MAX_SPEED);
         moving = true;
         facingRightRef.current = true;
       } else {
-        p.vx = 0;
+        // Decelerate toward zero
+        if (p.vx > 0) p.vx = Math.max(0, p.vx - friction * dt);
+        else if (p.vx < 0) p.vx = Math.min(0, p.vx + friction * dt);
       }
 
-      if (keys.jumpPressed && p.onGround) {
+      // --- Jump: coyote + buffer ---
+      const canJump = p.coyoteTimer > 0;
+      if (p.jumpBufferTimer > 0 && canJump) {
         p.vy = JUMP_VELOCITY;
         p.onGround = false;
-        keys.jumpPressed = false;
+        p.coyoteTimer = 0;
+        p.jumpBufferTimer = 0;
       }
 
-      p.vy = Math.min(p.vy + GRAVITY * dt, 900);
+      // --- Variable gravity: lower when holding jump and rising ---
+      const grav = (keys.jumpHeld && p.vy < 0) ? GRAVITY_HOLD : GRAVITY;
+      p.vy = Math.min(p.vy + grav * dt, 1100);
+
+      // --- Integrate ---
       p.x += p.vx * dt;
       p.y += p.vy * dt;
 
+      // Horizontal clamp
       p.x = Math.max(0, Math.min(STAGE_WIDTH - playerW, p.x));
 
+      // Ground collision
       if (p.y >= GROUND_Y - playerH) {
         p.y = GROUND_Y - playerH;
         p.vy = 0;
         p.onGround = true;
+      } else {
+        p.onGround = false;
       }
 
+      // --- Stage end check ---
       if (p.x + playerW * 0.6 >= STAGE_END_X && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
         setStageComplete(true);
@@ -293,6 +340,7 @@ export default function SideScrollStage({
         return;
       }
 
+      // --- Enemy collision ---
       const defeated = defeatedRef.current;
       const pCx = p.x + playerW / 2;
       const pCy = p.y + playerH * 0.6;
@@ -311,15 +359,13 @@ export default function SideScrollStage({
         const eHW = eW * 0.28;
         const eHH = eH * 0.38;
 
-        const overlapX = Math.abs(pCx - eCx) < (pHW + eHW);
-        const overlapY = Math.abs(pCy - eCy) < (pHH + eHH);
-
-        if (overlapX && overlapY) {
+        if (Math.abs(pCx - eCx) < (pHW + eHW) && Math.abs(pCy - eCy) < (pHH + eHH)) {
           contactCooldown.current.add(idx);
           onEnemyContactRef.current(idx, enemy.enemyId, p.x);
         }
       });
 
+      // --- Camera ---
       const targetCamX = p.x - CAMERA_LEAD;
       const newCamX = Math.max(0, Math.min(STAGE_WIDTH - 1024, targetCamX));
 
@@ -327,6 +373,7 @@ export default function SideScrollStage({
       setRenderY(p.y);
       setCameraX(newCamX);
       setIsRunning(moving);
+      setIsJumping(!p.onGround);
       setFacingRight(facingRightRef.current);
 
       rafRef.current = requestAnimationFrame(loop);
@@ -357,6 +404,7 @@ export default function SideScrollStage({
         case "ArrowUp":
         case "KeyW":
           keysRef.current.jumpPressed = true;
+          keysRef.current.jumpHeld = true;
           e.preventDefault();
           break;
         case "Escape":
@@ -368,6 +416,7 @@ export default function SideScrollStage({
       switch (e.code) {
         case "ArrowLeft": case "KeyA": keysRef.current.left = false; break;
         case "ArrowRight": case "KeyD": keysRef.current.right = false; break;
+        case "Space": case "ArrowUp": case "KeyW": keysRef.current.jumpHeld = false; break;
       }
     };
     window.addEventListener("keydown", onKeyDown);
@@ -386,9 +435,12 @@ export default function SideScrollStage({
   }, [stageComplete]);
 
   const progressPercent = Math.min(100, Math.round((renderX / STAGE_END_X) * 100));
-  const spriteSrc = isRunning ? charSprite.run : charSprite.idle;
-  const spriteFrames = isRunning ? charSprite.runF : charSprite.idleF;
-  const spriteFps = isRunning ? 14 : 8;
+
+  // Jump: freeze on first frame of run sheet. Ground: run or idle.
+  const spriteSrc    = isJumping ? charSprite.run : (isRunning ? charSprite.run : charSprite.idle);
+  const spriteFrames = isJumping ? charSprite.runF : (isRunning ? charSprite.runF : charSprite.idleF);
+  const spriteFps    = isJumping ? 14 : (isRunning ? 14 : 8);
+  const spritePause  = isJumping ? 0 : undefined;
 
   const touchBtn = useCallback((active: boolean): React.CSSProperties => ({
     width: 56,
@@ -554,9 +606,11 @@ export default function SideScrollStage({
             totalFrames={spriteFrames}
             fps={spriteFps}
             scale={charSprite.scale}
-            loop={true}
+            loop={!isJumping}
             flipX={!facingRight}
             anchor="top-left"
+            pauseAtFrame={spritePause}
+            startFrame={isJumping ? 0 : undefined}
           />
         </div>
       </div>
@@ -670,8 +724,9 @@ export default function SideScrollStage({
         </div>
         <button
           data-testid="button-jump"
-          onPointerDown={() => { keysRef.current.jumpPressed = true; }}
-          onPointerUp={() => {}}
+          onPointerDown={() => { keysRef.current.jumpPressed = true; keysRef.current.jumpHeld = true; }}
+          onPointerUp={() => { keysRef.current.jumpHeld = false; }}
+          onPointerLeave={() => { keysRef.current.jumpHeld = false; }}
           style={{
             ...touchBtn(false),
             background: "rgba(201,164,74,0.25)",
