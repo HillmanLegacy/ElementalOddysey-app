@@ -520,10 +520,10 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               top: `${node.y}%`,
               zIndex: Math.floor(node.y) + 20,
               transform: `translate(-50%, -50%) ${isHovered && isCurrent ? "scale(1.15)" : "scale(1)"}`,
-              pointerEvents: isCurrent ? "auto" : "none",
+              pointerEvents: node.type === "passage" ? "none" : (isCurrent ? "auto" : "none"),
             }}
-            onClick={() => { playSfx('menuSelect'); handleNodeClick(node); }}
-            onMouseEnter={() => setHoveredNode(node.id)}
+            onClick={() => { if (node.type === "passage") return; playSfx('menuSelect'); handleNodeClick(node); }}
+            onMouseEnter={() => { if (node.type === "passage") return; setHoveredNode(node.id); }}
             onMouseLeave={() => setHoveredNode(null)}
             disabled={!isCurrent || isMoving}
             data-testid={`button-node-${node.id}`}
@@ -636,11 +636,13 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               </div>
             )}
 
-            <span className={`block text-[8px] mt-1 font-medium tracking-wide transition-opacity duration-200 whitespace-nowrap ${isHovered && accessible ? "opacity-100" : "opacity-0"}`}
-              style={{ color: iconColor, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
-            >
-              {node.name}
-            </span>
+            {node.type !== "passage" && (
+              <span className={`block text-[8px] mt-1 font-medium tracking-wide transition-opacity duration-200 whitespace-nowrap ${isHovered && accessible ? "opacity-100" : "opacity-0"}`}
+                style={{ color: iconColor, textShadow: "0 1px 3px rgba(0,0,0,0.8)" }}
+              >
+                {node.name}
+              </span>
+            )}
           </button>
         );
       })}

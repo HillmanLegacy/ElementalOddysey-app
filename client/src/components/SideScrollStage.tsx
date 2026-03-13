@@ -85,11 +85,11 @@ interface Fireball { id: number; x: number; y: number; vx: number; enemyIdx: num
 type EnemyType = "fireDemon" | "demonKin" | "dragonLord";
 
 const ENEMY_SPRITES_SS: Record<EnemyType, {
-  sheet: string; iW: number; iH: number; frames: number; scale: number; fps: number;
+  sheet: string; iW: number; iH: number; frames: number; scale: number; fps: number; groundOffset: number;
 }> = {
-  fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4, scale: 2.0, fps: 8 },
-  demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6, scale: 1.3, fps: 8 },
-  dragonLord: { sheet: dragonLordIdleSheet, iW: 74,  iH: 74,  frames: 4, scale: 2.6, fps: 8 },
+  fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4, scale: 2.0, fps: 8, groundOffset: 0  },
+  demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6, scale: 1.3, fps: 8, groundOffset: 24 },
+  dragonLord: { sheet: dragonLordIdleSheet, iW: 74,  iH: 74,  frames: 4, scale: 2.6, fps: 8, groundOffset: 0  },
 };
 
 interface StageEnemy {
@@ -101,16 +101,16 @@ interface StageEnemy {
 const LAVA_STAGES: Record<string, { enemies: StageEnemy[] }> = {
   "0-1":  { enemies: [{ x: 900,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3100, type: "fireDemon", enemyId: "slime_fire" }, { x: 4000, type: "fireDemon", enemyId: "slime_fire" }] },
   "1-2":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
-  "1-3":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
-  "3-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "3-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
-  "5-6":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "5-7":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3400, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "7-8":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "7-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "9-11": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "9-12": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "9-13": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "dragonLord",enemyId: "dragon_lord"}] },
+  "1-3":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
+  "3-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "3-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "5-6":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "fireDemon", enemyId: "slime_fire" }] },
+  "5-7":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3400, type: "fireDemon", enemyId: "slime_fire" }] },
+  "7-8":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
+  "7-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "9-11": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "fireDemon", enemyId: "slime_fire" }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
+  "9-12": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
+  "9-13": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "fireDemon", enemyId: "slime_fire" }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3700, type: "dragonLord", enemyId: "dragon_lord" }] },
 };
 
 function rand(seed: number): () => number {
@@ -194,6 +194,7 @@ interface SideScrollStageProps {
   stageName: string;
   defeatedEnemyIndices: number[];
   initialPlayerX?: number;
+  shopVisited?: boolean;
   onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onFireballContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onComplete: () => void;
@@ -207,6 +208,7 @@ export default function SideScrollStage({
   stageName,
   defeatedEnemyIndices,
   initialPlayerX = 150,
+  shopVisited = false,
   onEnemyContact,
   onFireballContact,
   onComplete,
@@ -214,6 +216,18 @@ export default function SideScrollStage({
 }: SideScrollStageProps) {
   const stageKey = [Math.min(fromNodeId, toNodeId), Math.max(fromNodeId, toNodeId)].join("-");
   const stageData = LAVA_STAGES[stageKey] ?? { enemies: [] };
+
+  // Resolve enemy types once at mount: before shop = 100% fireDemon; after shop = 80/20 split.
+  const resolvedEnemiesRef = useRef(
+    stageData.enemies.map(e => {
+      if (e.type === "dragonLord") return e;
+      if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
+      return Math.random() < 0.2
+        ? { ...e, type: "demonKin" as EnemyType, enemyId: "demon_kin" }
+        : { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
+    })
+  );
+  const resolvedEnemies = resolvedEnemiesRef.current;
 
   const charSprite = CHAR_SPRITES[player.spriteId] ?? CHAR_SPRITES.samurai;
   const playerW = Math.round(charSprite.iW * charSprite.scale);
@@ -244,21 +258,21 @@ export default function SideScrollStage({
   const defeatedRef = useRef(defeatedEnemyIndices);
   useEffect(() => {
     defeatedRef.current = defeatedEnemyIndices;
-    stageData.enemies.forEach((_, idx) => {
+    resolvedEnemies.forEach((_, idx) => {
       if (!defeatedEnemyIndices.includes(idx)) {
         contactCooldown.current.delete(idx);
       }
     });
-  }, [defeatedEnemyIndices, stageData.enemies]);
+  }, [defeatedEnemyIndices, resolvedEnemies]);
 
   // Per-enemy patrol state: live x position + movement direction (-1 = left, 1 = right)
   const enemyPatrolRef = useRef(
-    stageData.enemies.map(e => ({ x: e.x, dir: -1 as 1 | -1, startX: e.x }))
+    resolvedEnemies.map(e => ({ x: e.x, dir: -1 as 1 | -1, startX: e.x }))
   );
 
   // Fire demon AI state machine
   const demonStateRef = useRef<DemonState[]>(
-    stageData.enemies.map(() => ({ mode: "patrol" as DemonMode, timer: 0 }))
+    resolvedEnemies.map(() => ({ mode: "patrol" as DemonMode, timer: 0 }))
   );
 
   // Active fireballs
@@ -276,8 +290,8 @@ export default function SideScrollStage({
   const [isRunning, setIsRunning] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [facingRight, setFacingRight] = useState(true);
-  const [enemyRenderPositions, setEnemyRenderPositions] = useState(stageData.enemies.map(e => e.x));
-  const [enemyFacingLeft, setEnemyFacingLeft] = useState(stageData.enemies.map(() => true));
+  const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
+  const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
   const [battleFreezing, setBattleFreezing] = useState(false);
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -402,7 +416,7 @@ export default function SideScrollStage({
       const newEnemyFL: boolean[] = [];
       const pCxAI = p.x + playerW * 0.5; // player center x for AI checks
 
-      stageData.enemies.forEach((enemy, idx) => {
+      resolvedEnemies.forEach((enemy, idx) => {
         const ep = enemyPatrolRef.current[idx];
         const ds = demonStateRef.current[idx];
 
@@ -469,7 +483,7 @@ export default function SideScrollStage({
       const pHW = playerW * 0.18;
       const pHH = playerH * 0.28;
 
-      stageData.enemies.forEach((enemy, idx) => {
+      resolvedEnemies.forEach((enemy, idx) => {
         if (defeated.includes(idx)) return;
         if (contactCooldown.current.has(idx)) return;
 
@@ -515,7 +529,7 @@ export default function SideScrollStage({
         fireballsRef.current = activeFbs;
 
         if (hitFb) {
-          const hitEnemy = stageData.enemies[hitFb.enemyIdx];
+          const hitEnemy = resolvedEnemies[hitFb.enemyIdx];
           contactCooldown.current.add(hitFb.enemyIdx);
           battlePendingRef.current = true;
           setBattleFreezing(true);
@@ -708,7 +722,7 @@ export default function SideScrollStage({
           }} />
         ))}
 
-        {stageData.enemies.map((enemy, idx) => {
+        {resolvedEnemies.map((enemy, idx) => {
           if (defeatedEnemyIndices.includes(idx)) return null;
           const es = ENEMY_SPRITES_SS[enemy.type];
           const eW = Math.round(es.iW * es.scale);
@@ -722,7 +736,7 @@ export default function SideScrollStage({
               style={{
                 position: "absolute",
                 left: liveX,
-                top: GROUND_Y - eH,
+                top: GROUND_Y - eH + es.groundOffset,
                 width: eW,
                 height: eH,
                 filter: "drop-shadow(0 4px 14px rgba(255,50,0,0.6))",

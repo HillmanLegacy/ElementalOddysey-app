@@ -265,6 +265,7 @@ function Game() {
                 stageName={sideScrollCtx.toNodeName}
                 defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
                 initialPlayerX={sideScrollCtx.savedPlayerX}
+                shopVisited={state.player?.clearedNodes.includes(4) ?? false}
                 onEnemyContact={(enemyIndex, enemyId, playerX) => {
                   if (sideScrollBattleActiveRef.current) return;
                   lastContactedEnemyIdxRef.current = enemyIndex;
