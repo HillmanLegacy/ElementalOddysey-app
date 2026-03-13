@@ -289,6 +289,7 @@ export default function SideScrollStage({
   const [cameraX, setCameraX] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
+  const footstepTimerRef = useRef(0);
   const [facingRight, setFacingRight] = useState(true);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
@@ -392,6 +393,18 @@ export default function SideScrollStage({
         p.onGround = false;
       }
 
+      // --- Footstep sound: trigger on every half run-cycle while on ground ---
+      if (p.onGround && Math.abs(p.vx) > 30) {
+        footstepTimerRef.current -= dt;
+        if (footstepTimerRef.current <= 0) {
+          const speedRatio = Math.min(Math.abs(p.vx) / MAX_SPEED, 1);
+          playSfx("footstep", 0.25 + speedRatio * 0.10);
+          footstepTimerRef.current = 0.21 + (1 - speedRatio) * 0.18;
+        }
+      } else {
+        footstepTimerRef.current = 0.05;
+      }
+
       // --- Left exit portal check ---
       if (p.x <= LEFT_EXIT_TRIGGER && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
@@ -435,6 +448,7 @@ export default function SideScrollStage({
               ds.mode = "aiming";
               ds.timer = FIRE_AIM_DELAY;
               ep.dir = faceDir;
+              playSfx("fireDemonDeath", 0.65);
             } else {
               ep.x += ep.dir * PATROL_SPEED * dt;
               if (ep.x >= ep.startX + PATROL_RANGE) { ep.x = ep.startX + PATROL_RANGE; ep.dir = -1; }
