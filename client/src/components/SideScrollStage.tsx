@@ -342,11 +342,12 @@ export default function SideScrollStage({
       }
 
       // --- Enemy collision ---
+      // Use tight hitboxes: 36% of sprite width, 55% of sprite height, centered on the visible body.
       const defeated = defeatedRef.current;
-      const pCx = p.x + playerW / 2;
-      const pCy = p.y + playerH * 0.6;
-      const pHW = playerW * 0.28;
-      const pHH = playerH * 0.38;
+      const pCx = p.x + playerW * 0.50;
+      const pCy = p.y + playerH * 0.48;
+      const pHW = playerW * 0.18;
+      const pHH = playerH * 0.28;
 
       stageData.enemies.forEach((enemy, idx) => {
         if (defeated.includes(idx)) return;
@@ -355,10 +356,11 @@ export default function SideScrollStage({
         const es = ENEMY_SPRITES_SS[enemy.type];
         const eW = Math.round(es.iW * es.scale);
         const eH = Math.round(es.iH * es.scale);
-        const eCx = enemy.x + eW / 2;
-        const eCy = (GROUND_Y - eH) + eH * 0.6;
-        const eHW = eW * 0.28;
-        const eHH = eH * 0.38;
+        const eCx = enemy.x + eW * 0.50;
+        // Use PHYS_GROUND_Y so the enemy hitbox aligns with the player's physics ground.
+        const eCy = (PHYS_GROUND_Y - eH) + eH * 0.45;
+        const eHW = eW * 0.20;
+        const eHH = eH * 0.26;
 
         if (Math.abs(pCx - eCx) < (pHW + eHW) && Math.abs(pCy - eCy) < (pHH + eHH)) {
           contactCooldown.current.add(idx);
@@ -551,7 +553,7 @@ export default function SideScrollStage({
                 fps={es.fps}
                 scale={es.scale}
                 loop={true}
-                flipX={true}
+                flipX={false}
                 anchor="top-left"
               />
             </div>
