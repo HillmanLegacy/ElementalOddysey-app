@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
+import lavaBgImg from "@assets/Lava_Stage_Side_Scroll_Background_upscayl_3x_digital-art-4x_1773372864153.png";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -140,17 +141,12 @@ function generateRocks(stageWidth: number) {
 }
 
 function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number, groundY: number) {
-  const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-  skyGrad.addColorStop(0, "#060108");
-  skyGrad.addColorStop(0.35, "#130408");
-  skyGrad.addColorStop(0.65, "#2d0808");
-  skyGrad.addColorStop(0.85, "#5a1208");
-  skyGrad.addColorStop(1, "#a83010");
-  ctx.fillStyle = skyGrad;
-  ctx.fillRect(0, 0, width, groundY);
+  // Sky area (above groundY) is intentionally left transparent so the
+  // CSS background image shows through. Only draw mountains + glow on top.
+  ctx.clearRect(0, 0, width, groundY);
 
   const rng1 = rand(7);
-  ctx.fillStyle = "#12060a";
+  ctx.fillStyle = "rgba(8,2,6,0.72)";
   for (let i = 0; i < 18; i++) {
     const mx = (i * (width / 14)) + rng1() * 80 - 40;
     const mh = 55 + rng1() * 50;
@@ -162,7 +158,7 @@ function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number
   }
 
   const rng2 = rand(13);
-  ctx.fillStyle = "#0a0406";
+  ctx.fillStyle = "rgba(4,1,4,0.82)";
   for (let i = 0; i < 13; i++) {
     const mx = (i * (width / 10)) + 60 + rng2() * 60 - 30;
     const mh = 90 + rng2() * 80;
@@ -176,18 +172,14 @@ function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number
     ctx.fill();
   }
 
-  ctx.strokeStyle = "rgba(255, 70, 0, 0.12)";
-  ctx.lineWidth = 1.5;
-  const rng3 = rand(21);
-  for (let i = 0; i < 25; i++) {
-    const cx = rng3() * width;
-    const cy = 40 + rng3() * (groundY - 160);
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.lineTo(cx + rng3() * 80 - 40, cy + 20 + rng3() * 30);
-    ctx.stroke();
-  }
+  // Lava glow bloom just above the ground line
+  const glowGrad = ctx.createLinearGradient(0, groundY - 80, 0, groundY);
+  glowGrad.addColorStop(0, "rgba(255,80,0,0)");
+  glowGrad.addColorStop(1, "rgba(255,110,0,0.22)");
+  ctx.fillStyle = glowGrad;
+  ctx.fillRect(0, groundY - 80, width, 80);
 
+  // Ground fill (below groundY)
   ctx.fillStyle = "#1a0606";
   ctx.fillRect(0, groundY, width, height - groundY);
 
@@ -198,12 +190,6 @@ function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number
   lavaGrad.addColorStop(1, "#ff7a20");
   ctx.fillStyle = lavaGrad;
   ctx.fillRect(0, groundY, width, height - groundY);
-
-  const glowGrad = ctx.createLinearGradient(0, groundY - 60, 0, groundY);
-  glowGrad.addColorStop(0, "rgba(255,80,0,0)");
-  glowGrad.addColorStop(1, "rgba(255,100,0,0.18)");
-  ctx.fillStyle = glowGrad;
-  ctx.fillRect(0, groundY - 60, width, 60);
 }
 
 interface SideScrollStageProps {
@@ -527,7 +513,7 @@ export default function SideScrollStage({
           battlePendingRef.current = true;
           cancelAnimationFrame(rafRef.current);
           // Show explosion at impact point, then trigger battle after animation plays
-          playSfx("fireballImpact", 0.8);
+          playSfx("explosion", 0.85);
           const expId = nextExpId.current++;
           setFireballs([]);
           setExplosions(prev => [...prev, { id: expId, x: hitFb!.x, y: hitFb!.y }]);
@@ -645,6 +631,25 @@ export default function SideScrollStage({
       style={{ width: "100%", height: "100%", background: "#060108" }}
       data-testid="side-scroll-stage"
     >
+      {/* Parallax lava landscape background — covers sky area above ground line */}
+      <div
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: STAGE_WIDTH,
+          height: GROUND_Y,
+          transform: `translateX(${-(cameraX * 0.35)}px)`,
+          backgroundImage: `url(${lavaBgImg})`,
+          backgroundSize: "auto 100%",
+          backgroundRepeat: "repeat-x",
+          backgroundPosition: "left top",
+          imageRendering: "pixelated",
+          willChange: "transform",
+          pointerEvents: "none",
+        }}
+      />
+
       <canvas
         ref={bgCanvasRef}
         width={STAGE_WIDTH}
