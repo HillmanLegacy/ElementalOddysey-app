@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter } from "@shared/schema";
+import { playSfx } from "@/lib/sfx";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -450,6 +451,7 @@ export default function SideScrollStage({
                 vx: faceDir * FIREBALL_SPEED,
                 enemyIdx: idx,
               });
+              playSfx("fireballWhoosh", 0.8);
               ds.mode = "cooldown";
               ds.timer = FIRE_COOLDOWN;
             }
@@ -525,6 +527,7 @@ export default function SideScrollStage({
           battlePendingRef.current = true;
           cancelAnimationFrame(rafRef.current);
           // Show explosion at impact point, then trigger battle after animation plays
+          playSfx("fireballImpact", 0.8);
           const expId = nextExpId.current++;
           setFireballs([]);
           setExplosions(prev => [...prev, { id: expId, x: hitFb!.x, y: hitFb!.y }]);
