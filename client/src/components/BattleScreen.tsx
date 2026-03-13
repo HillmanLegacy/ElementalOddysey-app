@@ -125,7 +125,6 @@ import lightningSpot2 from "@/assets/images/Lightning_spot2.png";
 import lightningSpot3 from "@/assets/images/Lightning_spot3.png";
 import lightningSpot4 from "@/assets/images/Lightning_spot4.png";
 import healingIcon from "@/assets/healing_icon.png";
-import victoryIcon from "@/assets/victory_icon.png";
 
 const LIGHTNING_VFX_SEQUENCE = [
   { src: lightningBeginningPart3, w: 64, h: 64, isSpot: true },
@@ -4252,19 +4251,6 @@ export default function BattleScreen({
             <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.75) 70%)` }} />
             <PixelDissolve active={showVictoryUI} reverse={true} duration={600} pixelSize={5}>
             <div className="flex flex-col items-center">
-            <img
-              src={victoryIcon}
-              alt="Victory"
-              style={{
-                width: 80,
-                height: 80,
-                imageRendering: "pixelated",
-                marginBottom: -8,
-                filter: `drop-shadow(0 0 10px ${ec}90) drop-shadow(0 0 20px ${ec}50)`,
-                zIndex: 1,
-                position: "relative",
-              }}
-            />
             <div
               className="relative w-[320px] h-[220px] overflow-hidden flex flex-col"
               style={{
