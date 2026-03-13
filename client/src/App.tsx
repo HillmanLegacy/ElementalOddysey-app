@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { queryClient } from "./lib/queryClient";
-import { QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
@@ -21,7 +21,7 @@ import StatusScreen from "@/components/StatusScreen";
 import ShamanScreen from "@/components/ShamanScreen";
 import SfxTestPage from "@/components/SfxTestPage";
 import BattleTransition from "@/components/BattleTransition";
-import { apiRequest } from "@/lib/queryClient";
+import { getSaves, upsertSave, type LocalSave } from "@/lib/localSaves";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
 import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume, fadeOutMusic, stopJingle } from "@/lib/music";
@@ -119,11 +119,11 @@ function Game() {
     }
   }, [state.screen, state.player?.currentRegion]);
 
-  const { data: saves } = useQuery<{ id: string; slotName: string; playerData: PlayerCharacter; updatedAt: string }[]>({
-    queryKey: ["/api/saves"],
-  });
+  const [saves, setSaves] = useState<LocalSave[]>(() => getSaves());
 
-  const hasSave = (saves && saves.length > 0) || false;
+  const refreshSaves = useCallback(() => setSaves(getSaves()), []);
+
+  const hasSave = saves.length > 0;
 
   const [showSaveScreen, setShowSaveScreen] = useState(false);
   const [saveConfirmSlot, setSaveConfirmSlot] = useState<number | null>(null);
@@ -152,14 +152,11 @@ function Game() {
   const [menuFadeIn, setMenuFadeIn] = useState(false);
   const [menuReveal, setMenuReveal] = useState(false);
 
-  const handleSaveToSlot = async (slotNumber: number) => {
+  const handleSaveToSlot = (slotNumber: number) => {
     if (!state.player) return;
     try {
-      await apiRequest("POST", "/api/saves", {
-        slotName: `Slot ${slotNumber}`,
-        playerData: state.player,
-      });
-      queryClient.invalidateQueries({ queryKey: ["/api/saves"] });
+      upsertSave(`Slot ${slotNumber}`, state.player);
+      refreshSaves();
       setSaveConfirmSlot(null);
       setSaveSuccessSlot(slotNumber);
       playSfx('saveGame');
