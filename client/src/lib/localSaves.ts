@@ -2,10 +2,18 @@ import type { PlayerCharacter } from "@shared/schema";
 
 const STORAGE_KEY = "elemental_odyssey_saves";
 
+export interface GameOptions {
+  textSpeed: "slow" | "medium" | "fast";
+  musicVolume: number;
+  sfxVolume: number;
+  showDamageNumbers: boolean;
+}
+
 export interface LocalSave {
   id: string;
   slotName: string;
   playerData: PlayerCharacter;
+  options?: GameOptions;
   updatedAt: string;
 }
 
@@ -29,13 +37,14 @@ export function getSaves(): LocalSave[] {
   );
 }
 
-export function upsertSave(slotName: string, playerData: PlayerCharacter): LocalSave {
+export function upsertSave(slotName: string, playerData: PlayerCharacter, options?: GameOptions): LocalSave {
   const saves = loadAll();
   const existing = saves.find((s) => s.slotName === slotName);
   const now = new Date().toISOString();
 
   if (existing) {
     existing.playerData = playerData;
+    existing.options = options;
     existing.updatedAt = now;
     saveAll(saves);
     return existing;
@@ -45,6 +54,7 @@ export function upsertSave(slotName: string, playerData: PlayerCharacter): Local
     id: `${slotName}-${Date.now()}`,
     slotName,
     playerData,
+    options,
     updatedAt: now,
   };
   saves.push(newSave);

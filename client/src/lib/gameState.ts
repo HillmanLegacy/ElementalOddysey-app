@@ -1287,7 +1287,7 @@ export function useGameState() {
     });
   }, []);
 
-  const loadGame = useCallback((playerData: PlayerCharacter) => {
+  const loadGame = useCallback((playerData: PlayerCharacter, options?: { textSpeed?: GameState["textSpeed"]; musicVolume?: number; sfxVolume?: number; showDamageNumbers?: boolean }) => {
     const normalizedPlayer = {
       ...playerData,
       party: (playerData.party || []).map(pm => ({
@@ -1314,7 +1314,15 @@ export function useGameState() {
       merchantLastTier: playerData.merchantLastTier || 0,
       merchantSavedStock: playerData.merchantSavedStock || null,
     };
-    setState(s => ({ ...s, player: normalizedPlayer, screen: "overworld" }));
+    setState(s => ({
+      ...s,
+      player: normalizedPlayer,
+      screen: "overworld",
+      ...(options?.textSpeed !== undefined && { textSpeed: options.textSpeed }),
+      ...(options?.musicVolume !== undefined && { musicVolume: options.musicVolume }),
+      ...(options?.sfxVolume !== undefined && { sfxVolume: options.sfxVolume }),
+      ...(options?.showDamageNumbers !== undefined && { showDamageNumbers: options.showDamageNumbers }),
+    }));
   }, []);
 
   const confirmUnlock = useCallback((customName: string) => {

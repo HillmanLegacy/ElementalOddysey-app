@@ -180,7 +180,12 @@ function Game() {
   const handleSaveToSlot = (slotNumber: number) => {
     if (!state.player) return;
     try {
-      upsertSave(`Slot ${slotNumber}`, state.player);
+      upsertSave(`Slot ${slotNumber}`, state.player, {
+        textSpeed: state.textSpeed,
+        musicVolume: state.musicVolume,
+        sfxVolume: state.sfxVolume,
+        showDamageNumbers: state.showDamageNumbers,
+      });
       refreshSaves();
       setSaveConfirmSlot(null);
       setSaveSuccessSlot(slotNumber);
@@ -226,7 +231,7 @@ function Game() {
                   const save = menuFadeOut.save;
                   setMenuFadeOut(null);
                   setMenuFadeIn(true);
-                  loadGame(save.playerData as PlayerCharacter);
+                  loadGame(save.playerData as PlayerCharacter, save.options);
                 }}
               />
             )}
