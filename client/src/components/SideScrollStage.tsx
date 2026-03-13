@@ -17,14 +17,23 @@ import axewarriorRun from "@/assets/images/axewarrior-run.png";
 
 import demonIdleSheet from "@/assets/images/demon-idle.png";
 import demonFireballSheet from "@/assets/images/demon-fireball.png";
+import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
 import demonKinIdleSheet from "@/assets/images/demonkin-idle.png";
 import dragonLordIdleSheet from "@/assets/images/dragonlord-idle.png";
 
-const FB_FRAME_W  = 48;  // px — full sprite width (single frame)
-const FB_FRAME_H  = 32;  // px — full sprite height
-const FB_FRAMES   = 1;   // single frame (matches battle screen usage)
+// Fireball projectile sprite (single 48×32 frame, scaled 2×)
+const FB_FRAME_W  = 48;
+const FB_FRAME_H  = 32;
+const FB_FRAMES   = 1;
 const FB_FPS      = 8;
-const FB_SCALE    = 2.0; // rendered size: 96 × 64 px (matches battle screen)
+const FB_SCALE    = 2.0; // rendered: 96 × 64 px — matches battle screen
+
+// Fireball explosion VFX (sfx-fire-burst: 9 frames of 96×96, fps=18, scale=3 → 288×288 px)
+const EXP_FRAME   = 96;
+const EXP_FRAMES  = 9;
+const EXP_FPS     = 18;
+const EXP_SCALE   = 3;
+const EXP_DELAY_MS = 580; // ms to show explosion before triggering battle
 
 const STAGE_WIDTH = 5000;
 const VIEWPORT_H = 640;
@@ -36,7 +45,7 @@ const PATROL_RANGE = 170;    // px each way from spawn
 const SIGHT_RANGE    = 440;  // px — player detection radius (horizontal)
 const FIRE_AIM_DELAY = 0.55; // s  — demon freezes and aims before firing
 const FIRE_COOLDOWN  = 1.7;  // s  — pause between shots / before resuming patrol
-const FIREBALL_SPEED = 300;  // px/s
+const FIREBALL_SPEED = 800;  // px/s — matches battle 0.5s ease-in travel over ~400px
 const FIREBALL_R     = 22;   // px — hitbox radius (ball head, not full flame trail)
 
 const MAX_SPEED      = 480;
@@ -273,6 +282,10 @@ export default function SideScrollStage({
   const nextFbId = useRef(0);
   const [fireballs, setFireballs] = useState<Fireball[]>([]);
 
+  // Fireball hit explosions (separate from game loop so they render while loop is frozen)
+  const nextExpId = useRef(0);
+  const [explosions, setExplosions] = useState<{ id: number; x: number; y: number }[]>([]);
+
   const [renderX, setRenderX] = useState(clampedStartX);
   const [renderY, setRenderY] = useState(startY);
   const [cameraX, setCameraX] = useState(0);
@@ -303,6 +316,7 @@ export default function SideScrollStage({
     battlePendingRef.current = false;   // reset on every effect run (covers post-battle resume)
     fireballsRef.current = [];          // clear any stale projectiles
     setFireballs([]);
+    setExplosions([]);
     demonStateRef.current.forEach(ds => { ds.mode = "patrol"; ds.timer = 0; });
     lastTimeRef.current = null;
 
@@ -423,9 +437,12 @@ export default function SideScrollStage({
             ep.dir = faceDir;
             ds.timer -= dt;
             if (ds.timer <= 0) {
-              // Fire!
-              const fireX = ep.x + eW * 0.5;
-              const fireY = GROUND_Y - eH * 0.60;
+              // Spawn from the demon's "hand" side — front edge, ~47% up from feet
+              // (matches battle: enemyCenterOffset = (192/640)*35 ≈ 35% of sprite height)
+              const fireX = faceDir === -1
+                ? ep.x + eW * 0.15          // facing left → left edge
+                : ep.x + eW * 0.85;         // facing right → right edge
+              const fireY = GROUND_Y - eH * 0.47;
               fireballsRef.current.push({
                 id: nextFbId.current++,
                 x: fireX,
@@ -507,8 +524,17 @@ export default function SideScrollStage({
           contactCooldown.current.add(hitFb.enemyIdx);
           battlePendingRef.current = true;
           cancelAnimationFrame(rafRef.current);
+          // Show explosion at impact point, then trigger battle after animation plays
+          const expId = nextExpId.current++;
           setFireballs([]);
-          onFireballContactRef.current(hitFb.enemyIdx, hitEnemy?.enemyId ?? "", p.x);
+          setExplosions(prev => [...prev, { id: expId, x: hitFb!.x, y: hitFb!.y }]);
+          const capturedPlayerX = p.x;
+          const capturedEnemyIdx = hitFb.enemyIdx;
+          const capturedEnemyId = hitEnemy?.enemyId ?? "";
+          setTimeout(() => {
+            setExplosions(prev => prev.filter(e => e.id !== expId));
+            onFireballContactRef.current(capturedEnemyIdx, capturedEnemyId, capturedPlayerX);
+          }, EXP_DELAY_MS);
           return;
         }
       }
@@ -762,6 +788,31 @@ export default function SideScrollStage({
               scale={FB_SCALE}
               loop={true}
               flipX={fb.vx > 0}
+              anchor="top-left"
+            />
+          </div>
+        ))}
+
+        {explosions.map(exp => (
+          <div
+            key={exp.id}
+            style={{
+              position: "absolute",
+              left: exp.x - (EXP_FRAME * EXP_SCALE) / 2,
+              top: exp.y - (EXP_FRAME * EXP_SCALE) / 2,
+              pointerEvents: "none",
+              zIndex: 8,
+              filter: "drop-shadow(0 0 12px rgba(255,120,20,0.8)) drop-shadow(0 0 24px rgba(255,60,0,0.5))",
+            }}
+          >
+            <SpriteAnimator
+              spriteSheet={sfxFireBurst}
+              frameWidth={EXP_FRAME}
+              frameHeight={EXP_FRAME}
+              totalFrames={EXP_FRAMES}
+              fps={EXP_FPS}
+              scale={EXP_SCALE}
+              loop={false}
               anchor="top-left"
             />
           </div>
