@@ -16,8 +16,15 @@ import axewarriorIdle from "@/assets/images/axewarrior-idle.png";
 import axewarriorRun from "@/assets/images/axewarrior-run.png";
 
 import demonIdleSheet from "@/assets/images/demon-idle.png";
+import demonFireballSheet from "@/assets/images/demon-fireball.png";
 import demonKinIdleSheet from "@/assets/images/demonkin-idle.png";
 import dragonLordIdleSheet from "@/assets/images/dragonlord-idle.png";
+
+const FB_FRAME_W  = 48;  // px — full sprite width (single frame)
+const FB_FRAME_H  = 32;  // px — full sprite height
+const FB_FRAMES   = 1;   // single frame (matches battle screen usage)
+const FB_FPS      = 8;
+const FB_SCALE    = 2.0; // rendered size: 96 × 64 px (matches battle screen)
 
 const STAGE_WIDTH = 5000;
 const VIEWPORT_H = 640;
@@ -30,7 +37,7 @@ const SIGHT_RANGE    = 440;  // px — player detection radius (horizontal)
 const FIRE_AIM_DELAY = 0.55; // s  — demon freezes and aims before firing
 const FIRE_COOLDOWN  = 1.7;  // s  — pause between shots / before resuming patrol
 const FIREBALL_SPEED = 300;  // px/s
-const FIREBALL_R     = 14;   // px — visual + hitbox radius
+const FIREBALL_R     = 22;   // px — hitbox radius (ball head, not full flame trail)
 
 const MAX_SPEED      = 480;
 const GROUND_ACCEL   = 2200;
@@ -739,17 +746,25 @@ export default function SideScrollStage({
             key={fb.id}
             style={{
               position: "absolute",
-              left: fb.x - FIREBALL_R,
-              top: fb.y - FIREBALL_R,
-              width: FIREBALL_R * 2,
-              height: FIREBALL_R * 2,
-              borderRadius: "50%",
-              background: "radial-gradient(circle, #fff8e0 0%, #ffcc00 28%, #ff6600 62%, #cc1100 100%)",
-              boxShadow: "0 0 10px 5px rgba(255,110,0,0.75), 0 0 3px 2px rgba(255,220,60,0.9)",
+              left: fb.x - (FB_FRAME_W * FB_SCALE) / 2,
+              top: fb.y - (FB_FRAME_H * FB_SCALE) / 2,
               pointerEvents: "none",
               zIndex: 6,
+              filter: "drop-shadow(0 0 6px rgba(255,120,0,0.9))",
             }}
-          />
+          >
+            <SpriteAnimator
+              spriteSheet={demonFireballSheet}
+              frameWidth={FB_FRAME_W}
+              frameHeight={FB_FRAME_H}
+              totalFrames={FB_FRAMES}
+              fps={FB_FPS}
+              scale={FB_SCALE}
+              loop={true}
+              flipX={fb.vx > 0}
+              anchor="top-left"
+            />
+          </div>
         ))}
 
         <div
