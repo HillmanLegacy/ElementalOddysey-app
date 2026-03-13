@@ -21,7 +21,8 @@ import dragonLordIdleSheet from "@/assets/images/dragonlord-idle.png";
 
 const STAGE_WIDTH = 5000;
 const VIEWPORT_H = 640;
-const GROUND_Y = 510;
+const GROUND_Y = 510;        // visual: orange line, rocks, enemies
+const PHYS_GROUND_Y = 534;   // physics: player stands 24px lower so feet appear at orange line
 
 const MAX_SPEED      = 480;
 const GROUND_ACCEL   = 2200;
@@ -205,7 +206,7 @@ export default function SideScrollStage({
   const charSprite = CHAR_SPRITES[player.spriteId] ?? CHAR_SPRITES.samurai;
   const playerW = Math.round(charSprite.iW * charSprite.scale);
   const playerH = Math.round(charSprite.iH * charSprite.scale);
-  const startY = GROUND_Y - playerH;
+  const startY = PHYS_GROUND_Y - playerH;
   const clampedStartX = Math.max(0, Math.min(STAGE_WIDTH - playerW, initialPlayerX));
 
   const physRef = useRef({
@@ -324,8 +325,8 @@ export default function SideScrollStage({
       p.x = Math.max(0, Math.min(STAGE_WIDTH - playerW, p.x));
 
       // Ground collision
-      if (p.y >= GROUND_Y - playerH) {
-        p.y = GROUND_Y - playerH;
+      if (p.y >= PHYS_GROUND_Y - playerH) {
+        p.y = PHYS_GROUND_Y - playerH;
         p.vy = 0;
         p.onGround = true;
       } else {
