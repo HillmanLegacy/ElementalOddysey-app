@@ -342,6 +342,15 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
   return (
     <div className="relative w-full h-full overflow-hidden" data-testid="overworld-screen">
+      {isFireRegion && (
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url(${lavaRegionBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center bottom",
+          imageRendering: "pixelated",
+          zIndex: 0,
+        }} />
+      )}
       <div
         className="absolute inset-0"
         style={{
@@ -351,14 +360,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           willChange: "transform",
         }}
       >
-      {isFireRegion ? (
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url(${lavaRegionBg})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          imageRendering: "pixelated",
-        }} />
-      ) : (
+      {!isFireRegion && (
         <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
           <div className="absolute inset-0" style={{
             background: `linear-gradient(180deg, ${theme.sky[0]} 0%, ${theme.sky[1]} 15%, ${theme.sky[2]} 30%, ${theme.sky[3]} 55%, ${theme.sky[4]} 80%)`,
