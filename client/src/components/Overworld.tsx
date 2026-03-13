@@ -558,12 +558,13 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
             ) : node.type === "hut" ? (
               <div className="flex flex-col items-center">
                 <div className="relative">
-                  <div className={`${markerSize} rounded-lg flex items-center justify-center backdrop-blur-sm`}
+                  <div className={`${markerSize} flex items-center justify-center backdrop-blur-sm`}
                     style={{
-                      backgroundColor: bgColor,
-                      border: `2.5px solid ${borderColor}`,
+                      borderRadius: "10px",
+                      backgroundColor: "rgba(0,0,0,0.15)",
+                      border: `3px solid rgba(220,180,80,0.95)`,
                       boxShadow: isHovered || isCurrent
-                        ? `0 0 20px rgba(220, 180, 80, 0.5), 0 4px 12px rgba(0,0,0,0.4)`
+                        ? `0 0 20px rgba(220, 180, 80, 0.6), inset 0 0 8px rgba(220,180,80,0.1), 0 4px 12px rgba(0,0,0,0.4)`
                         : `0 2px 8px rgba(0,0,0,0.3)`,
                     }}
                   >
@@ -582,10 +583,10 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                   <div
                     className="w-7 h-7 rounded-full transition-all duration-200"
                     style={{
-                      backgroundColor: accessible ? `${elemColor}30` : "rgba(55,65,81,0.3)",
-                      border: `2px solid ${accessible ? `${elemColor}80` : "rgba(55,65,81,0.5)"}`,
+                      backgroundColor: accessible ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.25)",
+                      border: `2px solid ${accessible ? "rgba(255,255,255,0.75)" : "rgba(255,255,255,0.3)"}`,
                       boxShadow: isHovered && accessible
-                        ? `0 0 12px ${elemColor}80`
+                        ? "0 0 12px rgba(255,255,255,0.6)"
                         : "0 1px 4px rgba(0,0,0,0.4)",
                     }}
                   />
