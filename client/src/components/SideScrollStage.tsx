@@ -513,7 +513,7 @@ export default function SideScrollStage({
           battlePendingRef.current = true;
           cancelAnimationFrame(rafRef.current);
           // Show explosion at impact point, then trigger battle after animation plays
-          playSfx("explosion", 0.85);
+          playSfx("fireballImpact", 0.8);
           const expId = nextExpId.current++;
           setFireballs([]);
           setExplosions(prev => [...prev, { id: expId, x: hitFb!.x, y: hitFb!.y }]);
@@ -641,8 +641,8 @@ export default function SideScrollStage({
           height: GROUND_Y,
           transform: `translateX(${-(cameraX * 0.35)}px)`,
           backgroundImage: `url(${lavaBgImg})`,
-          backgroundSize: "auto 100%",
-          backgroundRepeat: "repeat-x",
+          backgroundSize: "100% 100%",
+          backgroundRepeat: "no-repeat",
           backgroundPosition: "left top",
           imageRendering: "pixelated",
           willChange: "transform",
