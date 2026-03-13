@@ -62,7 +62,6 @@ const COYOTE_TIME    = 0.10;
 const JUMP_BUFFER    = 0.12;
 const STAGE_END_X       = 4650;
 const CAMERA_LEAD       = 340;
-const LEFT_PORTAL_X     = 50;   // world-x of the left retreat portal
 const LEFT_EXIT_TRIGGER = 80;   // player x threshold to fire left exit
 
 const CHAR_SPRITES: Record<string, {
@@ -745,70 +744,6 @@ export default function SideScrollStage({
           );
         })}
 
-        {/* Left retreat portal */}
-        <div
-          style={{
-            position: "absolute",
-            left: LEFT_PORTAL_X - 40,
-            top: GROUND_Y - 160,
-            width: 100,
-            height: 160,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div style={{
-            width: 80,
-            height: 130,
-            background: "radial-gradient(ellipse at center, rgba(80,120,255,0.9) 0%, rgba(60,80,255,0.5) 45%, rgba(30,40,200,0.2) 75%, transparent 100%)",
-            boxShadow: "0 0 50px rgba(80,120,255,1), 0 0 100px rgba(60,80,255,0.5)",
-            borderRadius: "50% 50% 15% 15%",
-            animation: "portalPulse 1.4s ease-in-out infinite",
-            border: "2px solid rgba(100,140,255,0.9)",
-          }} />
-          <div style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 7,
-            color: "#6688ff",
-            textShadow: "0 0 10px rgba(80,120,255,0.9)",
-            marginTop: 6,
-            letterSpacing: 1,
-          }}>BACK</div>
-        </div>
-
-        {/* Right goal portal */}
-        <div
-          style={{
-            position: "absolute",
-            left: STAGE_END_X - 50,
-            top: GROUND_Y - 160,
-            width: 100,
-            height: 160,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <div style={{
-            width: 80,
-            height: 130,
-            background: "radial-gradient(ellipse at center, rgba(201,164,74,0.9) 0%, rgba(255,200,50,0.5) 45%, rgba(255,140,0,0.2) 75%, transparent 100%)",
-            boxShadow: "0 0 50px rgba(201,164,74,1), 0 0 100px rgba(255,180,0,0.5)",
-            borderRadius: "50% 50% 15% 15%",
-            animation: "portalPulse 1.4s ease-in-out infinite",
-            border: "2px solid rgba(201,164,74,0.9)",
-          }} />
-          <div style={{
-            fontFamily: "'Press Start 2P', monospace",
-            fontSize: 7,
-            color: "#c9a44a",
-            textShadow: "0 0 10px rgba(201,164,74,0.9)",
-            marginTop: 6,
-            letterSpacing: 1,
-          }}>GOAL</div>
-        </div>
-
         {fireballs.map(fb => (
           <div
             key={fb.id}
@@ -992,12 +927,6 @@ export default function SideScrollStage({
         >▲</button>
       </div>
 
-      <style>{`
-        @keyframes portalPulse {
-          0%,100% { opacity: 1; transform: scale(1); }
-          50% { opacity: 0.75; transform: scale(0.95); }
-        }
-      `}</style>
     </div>
   );
 }
