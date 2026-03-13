@@ -294,6 +294,7 @@ export default function SideScrollStage({
   const footstepTimerRef = useRef(0);
   const playerFrameIdxRef = useRef(0);
   const playerFrameAccRef = useRef(0);
+  const jumpActiveRef = useRef(false);
   const [facingRight, setFacingRight] = useState(true);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
@@ -375,6 +376,7 @@ export default function SideScrollStage({
         p.onGround = false;
         p.coyoteTimer = 0;
         p.jumpBufferTimer = 0;
+        jumpActiveRef.current = true;
       }
 
       // --- Variable gravity: lower when holding jump and rising ---
@@ -393,6 +395,7 @@ export default function SideScrollStage({
         p.y = PHYS_GROUND_Y - playerH;
         p.vy = 0;
         p.onGround = true;
+        jumpActiveRef.current = false;
       } else {
         p.onGround = false;
       }
@@ -594,7 +597,7 @@ export default function SideScrollStage({
       setRenderY(p.y);
       setCameraX(newCamX);
       setIsRunning(p.onGround && Math.abs(p.vx) > 20);
-      setIsJumping(!p.onGround);
+      setIsJumping(jumpActiveRef.current);
       setFacingRight(facingRightRef.current);
       setEnemyRenderPositions(newEnemyX);
       setEnemyFacingLeft(newEnemyFL);
