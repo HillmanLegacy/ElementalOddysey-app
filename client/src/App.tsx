@@ -302,8 +302,12 @@ function Game() {
                     if (ssPlayer) {
                       const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
                       if (region.theme === "Fire") {
-                        playAmbient("lava_region");
-                        playMusic("lava_region_music");
+                        if (sideScrollCtx) {
+                          playMusic("lava_region_battle");
+                        } else {
+                          playAmbient("lava_region");
+                          playMusic("lava_region_music");
+                        }
                       }
                     }
                   }}
@@ -354,8 +358,13 @@ function Game() {
                   defeatedEnemyIndices: [],
                   savedPlayerX: 150,
                 });
-                fadeOutMusic(500);
                 stopAmbient();
+                const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
+                if (region.theme === "Fire") {
+                  playMusic("lava_region_battle");
+                } else {
+                  fadeOutMusic(500);
+                }
               }}
             />
             {hutTransitionIn && (
