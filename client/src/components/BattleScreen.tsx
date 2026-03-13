@@ -265,6 +265,8 @@ export default function BattleScreen({
   const [selectedSpell, setSelectedSpell] = useState<Spell | null>(null);
   const [shakeScreen, setShakeScreen] = useState(false);
   const [animPhase, setAnimPhase] = useState<AnimPhase>("idle");
+  const [startReady, setStartReady] = useState(false);
+  const [resultLabel, setResultLabel] = useState<string | null>(null);
   const [enemyHitIdx, setEnemyHitIdx] = useState<number | null>(null);
   const [playerFlash, setPlayerFlash] = useState(false);
   const [fireHitSfx, setFireHitSfx] = useState(false);
@@ -365,6 +367,11 @@ export default function BattleScreen({
     const id = window.setTimeout(fn, ms);
     enemyTurnTimers.current.push(id);
     return id;
+  }, []);
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setStartReady(true), 2000);
+    return () => clearTimeout(t);
   }, []);
 
   useEffect(() => {
@@ -544,6 +551,16 @@ export default function BattleScreen({
     const id = damageIdRef.current++;
     setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked, isHeal: evt.isHeal }]);
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
+    if (evt.label && !evt.isHeal) {
+      const labelColor = evt.label === "Super effective!" ? "#fbbf24" : "#94a3b8";
+      const labelId = damageIdRef.current++;
+      setDamageNumbers(prev => [...prev, { id: labelId, text: evt.label!, x: posX, y: posY - 10, color: labelColor }]);
+      setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== labelId)), 2500);
+      setResultLabel(evt.label);
+      setTimeout(() => setResultLabel(null), 2200);
+    } else {
+      setResultLabel(null);
+    }
   }, [battle.lastDamageEvent, showDamageNumbers]);
 
   const lastDmgEventsIdRef = useRef(0);
@@ -796,7 +813,7 @@ export default function BattleScreen({
           scheduleTimer(() => {
             setWindBladeFrozenEnemy(null);
             if (battle.phase !== "victory" && battle.phase !== "defeat") {
-              setTimeout(() => onFinishPlayerTurn(), 600);
+              setTimeout(() => onFinishPlayerTurn(), 1600);
             }
           }, 2200);
         }, attackDuration);
@@ -878,7 +895,7 @@ export default function BattleScreen({
         scheduleTimer(() => {
           setIncinerationFrozenEnemy(null);
           if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 600);
+            setTimeout(() => onFinishPlayerTurn(), 1600);
           }
         }, totalAnimTime + 1000);
       } else if (pendingEruptionCleave.current) {
@@ -967,7 +984,7 @@ export default function BattleScreen({
         scheduleTimer(() => {
           setEruptionFrozenEnemy(null);
           if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 600);
+            setTimeout(() => onFinishPlayerTurn(), 1600);
           }
         }, totalAnimTime + 800);
       } else {
@@ -988,7 +1005,7 @@ export default function BattleScreen({
       setMagicZoomTarget(null);
       if (windSparkleTarget !== null || windBladeFrozenEnemy !== null || incinerationFrozenEnemy !== null || eruptionFrozenEnemy !== null || thunderFrozenEnemy !== null) {
       } else if (battle.phase !== "victory" && battle.phase !== "defeat") {
-        setTimeout(() => onFinishPlayerTurn(), 1000);
+        setTimeout(() => onFinishPlayerTurn(), 2400);
       }
     }
   }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, eruptionFrozenEnemy, battle.enemies]);
@@ -1158,7 +1175,7 @@ export default function BattleScreen({
           setAnimPhase("idle");
           setPendingTargetIdx(null);
           if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 1000);
+            setTimeout(() => onFinishPlayerTurn(), 2400);
           }
         }
       }, 500);
@@ -1208,7 +1225,7 @@ export default function BattleScreen({
           setAnimPhase("idle");
           setPendingTargetIdx(null);
           if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 600);
+            setTimeout(() => onFinishPlayerTurn(), 1600);
           }
         }, endTime);
         return;
@@ -1225,7 +1242,7 @@ export default function BattleScreen({
             setAnimPhase("idle");
             setPendingTargetIdx(null);
             if (battle.phase !== "victory" && battle.phase !== "defeat") {
-              setTimeout(() => onFinishPlayerTurn(), 1000);
+              setTimeout(() => onFinishPlayerTurn(), 2400);
             }
           }
         }, 500);
@@ -1233,7 +1250,7 @@ export default function BattleScreen({
         setAnimPhase("idle");
         setPendingTargetIdx(null);
         if (battle.phase !== "victory" && battle.phase !== "defeat") {
-          setTimeout(() => onFinishPlayerTurn(), 1000);
+          setTimeout(() => onFinishPlayerTurn(), 2400);
         }
       }
     } else if (animPhase === "defending") {
@@ -2016,7 +2033,7 @@ export default function BattleScreen({
   const prevQueueIdxRef = useRef(-1);
 
   useEffect(() => {
-    const isNewEnemyTurn = battle.phase === "enemyTurn" && (
+    const isNewEnemyTurn = startReady && battle.phase === "enemyTurn" && (
       prevPhaseRef.current !== "enemyTurn" || prevQueueIdxRef.current !== battle.turnQueueIndex
     );
     if (isNewEnemyTurn) {
@@ -2044,7 +2061,7 @@ export default function BattleScreen({
       return;
     }
     prevPhaseRef.current = battle.phase;
-  }, [battle.phase, battle.turnQueueIndex, onEnemyTurnEnd, battle.enemies, scheduleTimer, animateEnemyAttack]);
+  }, [startReady, battle.phase, battle.turnQueueIndex, onEnemyTurnEnd, battle.enemies, scheduleTimer, animateEnemyAttack]);
 
   useEffect(() => {
     return () => clearEnemyTurnTimers();
@@ -2139,7 +2156,7 @@ export default function BattleScreen({
 
   const playerPos = getPlayerPosition();
 
-  const isInputBlocked = animPhase !== "idle" || battle.phase !== "playerTurn";
+  const isInputBlocked = !startReady || animPhase !== "idle" || battle.phase !== "playerTurn";
 
   const partyRunBackHandled = useRef(false);
 
@@ -3959,6 +3976,21 @@ export default function BattleScreen({
           {fleeFailed && (
             <p className="text-center mb-1 animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#f59e0b" }}>
               Couldn't escape!
+            </p>
+          )}
+
+          {!fleeFailed && resultLabel && animPhase === "idle" && battle.phase === "playerTurn" && (
+            <p
+              className="text-center mb-1"
+              style={{
+                fontFamily: "'Press Start 2P', cursive",
+                fontSize: "9px",
+                color: resultLabel === "Super effective!" ? "#fbbf24" : "#94a3b8",
+                textShadow: resultLabel === "Super effective!" ? "0 0 8px rgba(251,191,36,0.7)" : "none",
+                animation: "fadeIn 0.2s ease-out",
+              }}
+            >
+              {resultLabel}
             </p>
           )}
 
