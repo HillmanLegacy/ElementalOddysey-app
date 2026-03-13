@@ -41,6 +41,18 @@ export function useGameState() {
     });
   }, []);
 
+  const applyFireballDamage = useCallback((damage: number) => {
+    setState(s => {
+      if (!s.player) return s;
+      const newHp = Math.max(1, s.player.stats.hp - damage);
+      const newParty = s.player.party.map(m => ({
+        ...m,
+        stats: { ...m.stats, hp: Math.max(1, m.stats.hp - damage) },
+      }));
+      return { ...s, player: { ...s.player, stats: { ...s.player.stats, hp: newHp }, party: newParty } };
+    });
+  }, []);
+
   const startBattle = useCallback((nodeId: number) => {
     setState(s => {
       if (!s.player) return s;
@@ -1399,6 +1411,7 @@ export function useGameState() {
     updatePlayer,
     startBattle,
     startBattleCustom,
+    applyFireballDamage,
     playerAttack,
     castSpell,
     playerDefend,

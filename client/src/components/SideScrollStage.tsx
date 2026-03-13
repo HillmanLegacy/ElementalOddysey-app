@@ -26,6 +26,12 @@ const PHYS_GROUND_Y = 534;   // physics: player stands 24px lower so feet appear
 const PATROL_SPEED = 85;     // px/s for fire demon patrol
 const PATROL_RANGE = 170;    // px each way from spawn
 
+const SIGHT_RANGE    = 440;  // px — player detection radius (horizontal)
+const FIRE_AIM_DELAY = 0.55; // s  — demon freezes and aims before firing
+const FIRE_COOLDOWN  = 1.7;  // s  — pause between shots / before resuming patrol
+const FIREBALL_SPEED = 300;  // px/s
+const FIREBALL_R     = 14;   // px — visual + hitbox radius
+
 const MAX_SPEED      = 480;
 const GROUND_ACCEL   = 2200;
 const AIR_ACCEL      = 1100;
@@ -52,6 +58,10 @@ const CHAR_SPRITES: Record<string, {
   knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8, scale: 2   },
   axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6, scale: 2   },
 };
+
+type DemonMode = "patrol" | "aiming" | "cooldown";
+interface DemonState { mode: DemonMode; timer: number; }
+interface Fireball { id: number; x: number; y: number; vx: number; enemyIdx: number; }
 
 type EnemyType = "fireDemon" | "demonKin" | "dragonLord";
 
@@ -187,6 +197,7 @@ interface SideScrollStageProps {
   defeatedEnemyIndices: number[];
   initialPlayerX?: number;
   onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
+  onFireballContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onComplete: () => void;
   onExit: () => void;
 }
@@ -199,6 +210,7 @@ export default function SideScrollStage({
   defeatedEnemyIndices,
   initialPlayerX = 150,
   onEnemyContact,
+  onFireballContact,
   onComplete,
   onExit,
 }: SideScrollStageProps) {
@@ -223,8 +235,10 @@ export default function SideScrollStage({
   const contactCooldown = useRef<Set<number>>(new Set());
 
   const onEnemyContactRef = useRef(onEnemyContact);
+  const onFireballContactRef = useRef(onFireballContact);
   const onCompleteRef = useRef(onComplete);
   useEffect(() => { onEnemyContactRef.current = onEnemyContact; }, [onEnemyContact]);
+  useEffect(() => { onFireballContactRef.current = onFireballContact; }, [onFireballContact]);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
 
   const defeatedRef = useRef(defeatedEnemyIndices);
@@ -241,6 +255,16 @@ export default function SideScrollStage({
   const enemyPatrolRef = useRef(
     stageData.enemies.map(e => ({ x: e.x, dir: -1 as 1 | -1, startX: e.x }))
   );
+
+  // Fire demon AI state machine
+  const demonStateRef = useRef<DemonState[]>(
+    stageData.enemies.map(() => ({ mode: "patrol" as DemonMode, timer: 0 }))
+  );
+
+  // Active fireballs
+  const fireballsRef = useRef<Fireball[]>([]);
+  const nextFbId = useRef(0);
+  const [fireballs, setFireballs] = useState<Fireball[]>([]);
 
   const [renderX, setRenderX] = useState(clampedStartX);
   const [renderY, setRenderY] = useState(startY);
@@ -270,6 +294,9 @@ export default function SideScrollStage({
   useEffect(() => {
     if (stageComplete) return;
     battlePendingRef.current = false;   // reset on every effect run (covers post-battle resume)
+    fireballsRef.current = [];          // clear any stale projectiles
+    setFireballs([]);
+    demonStateRef.current.forEach(ds => { ds.mode = "patrol"; ds.timer = 0; });
     lastTimeRef.current = null;
 
     const loop = (ts: number) => {
@@ -355,17 +382,64 @@ export default function SideScrollStage({
         return;
       }
 
-      // --- Enemy patrol update ---
+      // --- Enemy patrol + AI update ---
       const defeated = defeatedRef.current;
       const newEnemyX: number[] = [];
       const newEnemyFL: boolean[] = [];
+      const pCxAI = p.x + playerW * 0.5; // player center x for AI checks
+
       stageData.enemies.forEach((enemy, idx) => {
         const ep = enemyPatrolRef.current[idx];
+        const ds = demonStateRef.current[idx];
+
         if (enemy.type === "fireDemon" && !defeated.includes(idx)) {
-          ep.x += ep.dir * PATROL_SPEED * dt;
-          if (ep.x >= ep.startX + PATROL_RANGE) { ep.x = ep.startX + PATROL_RANGE; ep.dir = -1; }
-          else if (ep.x <= ep.startX - PATROL_RANGE) { ep.x = ep.startX - PATROL_RANGE; ep.dir = 1; }
+          const es = ENEMY_SPRITES_SS.fireDemon;
+          const eW = Math.round(es.iW * es.scale);
+          const eH = Math.round(es.iH * es.scale);
+          const eCx = ep.x + eW * 0.5;
+          const dist = Math.abs(pCxAI - eCx);
+          const inSight = dist < SIGHT_RANGE;
+          // face toward player
+          const faceDir: 1 | -1 = pCxAI < eCx ? -1 : 1;
+
+          if (ds.mode === "patrol") {
+            if (inSight) {
+              ds.mode = "aiming";
+              ds.timer = FIRE_AIM_DELAY;
+              ep.dir = faceDir;
+            } else {
+              ep.x += ep.dir * PATROL_SPEED * dt;
+              if (ep.x >= ep.startX + PATROL_RANGE) { ep.x = ep.startX + PATROL_RANGE; ep.dir = -1; }
+              else if (ep.x <= ep.startX - PATROL_RANGE) { ep.x = ep.startX - PATROL_RANGE; ep.dir = 1; }
+            }
+          } else if (ds.mode === "aiming") {
+            ep.dir = faceDir;
+            ds.timer -= dt;
+            if (ds.timer <= 0) {
+              // Fire!
+              const fireX = ep.x + eW * 0.5;
+              const fireY = GROUND_Y - eH * 0.60;
+              fireballsRef.current.push({
+                id: nextFbId.current++,
+                x: fireX,
+                y: fireY,
+                vx: faceDir * FIREBALL_SPEED,
+                enemyIdx: idx,
+              });
+              ds.mode = "cooldown";
+              ds.timer = FIRE_COOLDOWN;
+            }
+          } else {
+            // cooldown — stand still, face player, count down
+            ep.dir = faceDir;
+            ds.timer -= dt;
+            if (ds.timer <= 0) {
+              ds.mode = inSight ? "aiming" : "patrol";
+              ds.timer = inSight ? FIRE_AIM_DELAY : 0;
+            }
+          }
         }
+
         newEnemyX.push(ep.x);
         newEnemyFL.push(ep.dir === -1);
       });
@@ -399,6 +473,39 @@ export default function SideScrollStage({
         }
       });
 
+      // Guard: melee contact may have set battlePendingRef inside the forEach
+      if (battlePendingRef.current) return;
+
+      // --- Fireball physics + player collision ---
+      {
+        const activeFbs: Fireball[] = [];
+        let hitFb: Fireball | null = null;
+        for (const fb of fireballsRef.current) {
+          fb.x += fb.vx * dt;
+          if (fb.x < -300 || fb.x > STAGE_WIDTH + 300) continue; // off-stage, discard
+          if (!hitFb) {
+            const dx = Math.abs(fb.x - pCx);
+            const dy = Math.abs(fb.y - pCy);
+            if (dx < FIREBALL_R + pHW && dy < FIREBALL_R + pHH) {
+              hitFb = fb;
+              continue; // remove from active list
+            }
+          }
+          activeFbs.push(fb);
+        }
+        fireballsRef.current = activeFbs;
+
+        if (hitFb) {
+          const hitEnemy = stageData.enemies[hitFb.enemyIdx];
+          contactCooldown.current.add(hitFb.enemyIdx);
+          battlePendingRef.current = true;
+          cancelAnimationFrame(rafRef.current);
+          setFireballs([]);
+          onFireballContactRef.current(hitFb.enemyIdx, hitEnemy?.enemyId ?? "", p.x);
+          return;
+        }
+      }
+
       // --- Camera ---
       const targetCamX = p.x - CAMERA_LEAD;
       const newCamX = Math.max(0, Math.min(STAGE_WIDTH - 1024, targetCamX));
@@ -411,6 +518,7 @@ export default function SideScrollStage({
       setFacingRight(facingRightRef.current);
       setEnemyRenderPositions(newEnemyX);
       setEnemyFacingLeft(newEnemyFL);
+      setFireballs([...fireballsRef.current]);
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -625,6 +733,24 @@ export default function SideScrollStage({
             letterSpacing: 1,
           }}>GOAL</div>
         </div>
+
+        {fireballs.map(fb => (
+          <div
+            key={fb.id}
+            style={{
+              position: "absolute",
+              left: fb.x - FIREBALL_R,
+              top: fb.y - FIREBALL_R,
+              width: FIREBALL_R * 2,
+              height: FIREBALL_R * 2,
+              borderRadius: "50%",
+              background: "radial-gradient(circle, #fff8e0 0%, #ffcc00 28%, #ff6600 62%, #cc1100 100%)",
+              boxShadow: "0 0 10px 5px rgba(255,110,0,0.75), 0 0 3px 2px rgba(255,220,60,0.9)",
+              pointerEvents: "none",
+              zIndex: 6,
+            }}
+          />
+        ))}
 
         <div
           data-testid="side-scroll-player"

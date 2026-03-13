@@ -81,6 +81,7 @@ function Game() {
     changeRegion,
     spawnEnemy,
     openShaman, learnShamanSpell,
+    applyFireballDamage,
   } = useGameState();
 
   const { toast } = useToast();
@@ -257,6 +258,18 @@ function Game() {
                   setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
                   const ec = "#ef4444";
                   setTransitionElementColor(ec);
+                  fadeOutMusic(600);
+                  const trSfx = playSfx('battleTransition');
+                  if (trSfx) trSfx.playbackRate = 2.0;
+                  setSideScrollBattleTransition({ enemyIndex, enemyId });
+                }}
+                onFireballContact={(enemyIndex, enemyId, playerX) => {
+                  if (sideScrollBattleActiveRef.current) return;
+                  applyFireballDamage(10);
+                  lastContactedEnemyIdxRef.current = enemyIndex;
+                  sideScrollBattleActiveRef.current = true;
+                  setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
+                  setTransitionElementColor("#ef4444");
                   fadeOutMusic(600);
                   const trSfx = playSfx('battleTransition');
                   if (trSfx) trSfx.playbackRate = 2.0;
