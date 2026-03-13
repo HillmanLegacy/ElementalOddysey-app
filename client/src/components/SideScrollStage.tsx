@@ -23,6 +23,8 @@ const STAGE_WIDTH = 5000;
 const VIEWPORT_H = 640;
 const GROUND_Y = 510;        // visual: orange line, rocks, enemies
 const PHYS_GROUND_Y = 534;   // physics: player stands 24px lower so feet appear at orange line
+const PATROL_SPEED = 85;     // px/s for fire demon patrol
+const PATROL_RANGE = 170;    // px each way from spawn
 
 const MAX_SPEED      = 480;
 const GROUND_ACCEL   = 2200;
@@ -68,24 +70,24 @@ interface StageEnemy {
 }
 
 const LAVA_STAGES: Record<string, { enemies: StageEnemy[] }> = {
-  "0-1":  { enemies: [{ x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3100, type: "fireDemon", enemyId: "slime_fire" }] },
-  "0-2":  { enemies: [{ x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "fireDemon", enemyId: "slime_fire" }] },
-  "1-3":  { enemies: [{ x: 1000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "1-4":  { enemies: [{ x: 1300, type: "fireDemon", enemyId: "slime_fire" }, { x: 3100, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "2-5":  { enemies: [{ x: 1000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
-  "3-6":  { enemies: [{ x: 900,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 2300, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "4-5":  { enemies: [{ x: 1200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "4-7":  { enemies: [{ x: 900,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "5-8":  { enemies: [{ x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3300, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "6-9":  { enemies: [{ x: 900,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "7-9":  { enemies: [{ x: 1000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
-  "7-10": { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1900, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "8-10": { enemies: [{ x: 1200, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3800, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "9-11": { enemies: [{ x: 700,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 1700, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "10-12":{ enemies: [{ x: 700,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 1800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2900, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3800, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "11-12":{ enemies: [{ x: 700,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 1600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "11-13":{ enemies: [{ x: 700,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 1700, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2700, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3600, type: "dragonLord",enemyId: "dragon_lord"}] },
-  "12-13":{ enemies: [{ x: 800,  type: "demonKin",  enemyId: "demon_kin"  }, { x: 1900, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "dragonLord",enemyId: "dragon_lord"}] },
+  "0-1":  { enemies: [{ x: 900,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3100, type: "fireDemon", enemyId: "slime_fire" }, { x: 4000, type: "fireDemon", enemyId: "slime_fire" }] },
+  "0-2":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
+  "1-3":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
+  "1-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "2-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "3-6":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3400, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "4-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "4-7":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "5-8":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "6-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "7-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "7-10": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2200, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3100, type: "demonKin",  enemyId: "demon_kin"  }, { x: 4000, type: "fireDemon", enemyId: "slime_fire" }] },
+  "8-10": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "9-11": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
+  "10-12":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
+  "11-12":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
+  "11-13":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "dragonLord",enemyId: "dragon_lord"}] },
+  "12-13":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "dragonLord",enemyId: "dragon_lord"}] },
 };
 
 function rand(seed: number): () => number {
@@ -234,12 +236,19 @@ export default function SideScrollStage({
     });
   }, [defeatedEnemyIndices, stageData.enemies]);
 
+  // Per-enemy patrol state: live x position + movement direction (-1 = left, 1 = right)
+  const enemyPatrolRef = useRef(
+    stageData.enemies.map(e => ({ x: e.x, dir: -1 as 1 | -1, startX: e.x }))
+  );
+
   const [renderX, setRenderX] = useState(clampedStartX);
   const [renderY, setRenderY] = useState(startY);
   const [cameraX, setCameraX] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [facingRight, setFacingRight] = useState(true);
+  const [enemyRenderPositions, setEnemyRenderPositions] = useState(stageData.enemies.map(e => e.x));
+  const [enemyFacingLeft, setEnemyFacingLeft] = useState(stageData.enemies.map(() => true));
   const [stageComplete, setStageComplete] = useState(false);
   const [showExit, setShowExit] = useState(false);
 
@@ -341,9 +350,23 @@ export default function SideScrollStage({
         return;
       }
 
+      // --- Enemy patrol update ---
+      const defeated = defeatedRef.current;
+      const newEnemyX: number[] = [];
+      const newEnemyFL: boolean[] = [];
+      stageData.enemies.forEach((enemy, idx) => {
+        const ep = enemyPatrolRef.current[idx];
+        if (enemy.type === "fireDemon" && !defeated.includes(idx)) {
+          ep.x += ep.dir * PATROL_SPEED * dt;
+          if (ep.x >= ep.startX + PATROL_RANGE) { ep.x = ep.startX + PATROL_RANGE; ep.dir = -1; }
+          else if (ep.x <= ep.startX - PATROL_RANGE) { ep.x = ep.startX - PATROL_RANGE; ep.dir = 1; }
+        }
+        newEnemyX.push(ep.x);
+        newEnemyFL.push(ep.dir === -1);
+      });
+
       // --- Enemy collision ---
       // Use tight hitboxes: 36% of sprite width, 55% of sprite height, centered on the visible body.
-      const defeated = defeatedRef.current;
       const pCx = p.x + playerW * 0.50;
       const pCy = p.y + playerH * 0.48;
       const pHW = playerW * 0.18;
@@ -356,7 +379,7 @@ export default function SideScrollStage({
         const es = ENEMY_SPRITES_SS[enemy.type];
         const eW = Math.round(es.iW * es.scale);
         const eH = Math.round(es.iH * es.scale);
-        const eCx = enemy.x + eW * 0.50;
+        const eCx = enemyPatrolRef.current[idx].x + eW * 0.50;
         // Use PHYS_GROUND_Y so the enemy hitbox aligns with the player's physics ground.
         const eCy = (PHYS_GROUND_Y - eH) + eH * 0.45;
         const eHW = eW * 0.20;
@@ -378,6 +401,8 @@ export default function SideScrollStage({
       setIsRunning(p.onGround && Math.abs(p.vx) > 20);
       setIsJumping(!p.onGround);
       setFacingRight(facingRightRef.current);
+      setEnemyRenderPositions(newEnemyX);
+      setEnemyFacingLeft(newEnemyFL);
 
       rafRef.current = requestAnimationFrame(loop);
     };
@@ -532,13 +557,15 @@ export default function SideScrollStage({
           const es = ENEMY_SPRITES_SS[enemy.type];
           const eW = Math.round(es.iW * es.scale);
           const eH = Math.round(es.iH * es.scale);
+          const liveX = enemyRenderPositions[idx] ?? enemy.x;
+          const facingLeft = enemyFacingLeft[idx] ?? true;
           return (
             <div
               key={idx}
               data-testid={`side-scroll-enemy-${idx}`}
               style={{
                 position: "absolute",
-                left: enemy.x,
+                left: liveX,
                 top: GROUND_Y - eH,
                 width: eW,
                 height: eH,
@@ -553,7 +580,7 @@ export default function SideScrollStage({
                 fps={es.fps}
                 scale={es.scale}
                 loop={true}
-                flipX={false}
+                flipX={!facingLeft}
                 anchor="top-left"
               />
             </div>
