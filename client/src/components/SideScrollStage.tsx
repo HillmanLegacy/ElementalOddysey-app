@@ -69,13 +69,14 @@ const CHAR_SPRITES: Record<string, {
   iW: number; iH: number;
   idleF: number; runF: number;
   scale: number;
+  stepFrames?: number[];
 }> = {
-  samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 8, scale: 2   },
-  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6, scale: 2.8 },
-  basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6, scale: 2.8 },
-  ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6, scale: 2.8 },
-  knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8, scale: 2   },
-  axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6, scale: 2   },
+  samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   stepFrames: [3, 6, 15] },
+  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6,  scale: 2.8 },
+  basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8 },
+  ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6,  scale: 2.8 },
+  knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8,  scale: 2   },
+  axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6,  scale: 2   },
 };
 
 type DemonMode = "patrol" | "aiming" | "cooldown";
@@ -290,6 +291,8 @@ export default function SideScrollStage({
   const [isRunning, setIsRunning] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const footstepTimerRef = useRef(0);
+  const playerFrameIdxRef = useRef(0);
+  const playerFrameAccRef = useRef(0);
   const [facingRight, setFacingRight] = useState(true);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
@@ -393,15 +396,33 @@ export default function SideScrollStage({
         p.onGround = false;
       }
 
-      // --- Footstep sound: trigger on every half run-cycle while on ground ---
+      // --- Footstep sound ---
       if (p.onGround && Math.abs(p.vx) > 30) {
-        footstepTimerRef.current -= dt;
-        if (footstepTimerRef.current <= 0) {
-          const speedRatio = Math.min(Math.abs(p.vx) / MAX_SPEED, 1);
-          playSfx("footstep", 0.25 + speedRatio * 0.10);
-          footstepTimerRef.current = 0.21 + (1 - speedRatio) * 0.18;
+        if (charSprite.stepFrames) {
+          // Frame-synced mode: advance a shadow frame counter at 14fps and fire on exact frames
+          playerFrameAccRef.current += dt;
+          const frameDur = 1 / 14;
+          while (playerFrameAccRef.current >= frameDur) {
+            playerFrameAccRef.current -= frameDur;
+            const prev = playerFrameIdxRef.current;
+            playerFrameIdxRef.current = (prev + 1) % charSprite.runF;
+            if (charSprite.stepFrames.includes(playerFrameIdxRef.current)) {
+              playSfx("footstep", 0.35);
+            }
+          }
+        } else {
+          // Timer-based fallback for characters without frame data
+          footstepTimerRef.current -= dt;
+          if (footstepTimerRef.current <= 0) {
+            const speedRatio = Math.min(Math.abs(p.vx) / MAX_SPEED, 1);
+            playSfx("footstep", 0.25 + speedRatio * 0.10);
+            footstepTimerRef.current = 0.21 + (1 - speedRatio) * 0.18;
+          }
         }
       } else {
+        // Reset both counters so animation re-sync is clean on next run
+        playerFrameIdxRef.current = 0;
+        playerFrameAccRef.current = 0;
         footstepTimerRef.current = 0.05;
       }
 
