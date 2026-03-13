@@ -8,7 +8,7 @@ import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { playSfx } from "@/lib/sfx";
-import { Swords, ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flag, Flame, X, Sparkles, Home, Shield, Package, Lock, Menu, Zap } from "lucide-react";
+import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -18,7 +18,6 @@ import knightRun from "@/assets/images/knight-run.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 import baskenRun from "@/assets/images/basken-run.png";
 import hutOverworldIcon from "@/assets/hut_overworld_icon.png";
-import battleOverworldIcon from "@/assets/battle_overworld_icon.png";
 import bossBattleOverworldIcon from "@/assets/boss_battle_overworld_icon.png";
 
 const OVERWORLD_SPRITES: Record<string, {
@@ -44,7 +43,7 @@ const OVERWORLD_SPRITES: Record<string, {
 };
 
 const NODE_ICONS: Record<string, any> = {
-  battle: Swords,
+  passage: null,
   shop: ShoppingBag,
   rest: Tent,
   event: Star,
@@ -259,11 +258,11 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
     }
     if (!isAdjacentToCurrentNode(node)) return false;
     if (
-      (currentNodeData.type === "battle" || currentNodeData.type === "boss") &&
+      currentNodeData.type === "boss" &&
       !player.clearedNodes.includes(currentNodeData.id)
     ) {
       const targetCleared = player.clearedNodes.includes(node.id);
-      const targetIsSafe = node.type === "hut" || node.type === "shop" || node.type === "rest" || node.type === "shaman";
+      const targetIsSafe = node.type === "hut" || node.type === "shop" || node.type === "rest" || node.type === "shaman" || node.type === "passage";
       if (!targetCleared && !targetIsSafe) return false;
     }
     return true;
@@ -286,22 +285,13 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
     setFacingRight(targetPos.x > charPos.x);
     moveCharacterTo(targetPos, () => {
       onMoveToNode(targetNode.id);
-      if (
-        targetNode.type === "battle" &&
-        player.clearedNodes.includes(targetNode.id) &&
-        Math.random() < 0.3
-      ) {
-        setTimeout(() => {
-          onNodeSelect(targetNode.id, targetPos);
-        }, 150);
-      }
     });
   };
 
   const triggerNodeAction = (node: OverworldNode) => {
     if (node.type === "hut") {
       onHutEnter();
-    } else if (node.type === "battle" || node.type === "boss") {
+    } else if (node.type === "boss") {
       onNodeSelect(node.id, charPos);
     } else if (node.type === "shop") {
       onShopOpen(node.id);
@@ -584,30 +574,20 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                   )}
                 </div>
               </div>
-            ) : node.type === "battle" ? (
+            ) : node.type === "passage" ? (
               <div className="flex flex-col items-center">
                 <div className="relative">
-                  <div className="w-1.5 h-7 mx-auto rounded-sm" style={{ backgroundColor: "#5a3a20" }} />
-                  <div className="absolute -top-0.5 left-1/2 -translate-x-1/2">
-                    <Flag className="w-5 h-5" style={{ color: isCleared ? "#22c55e" : accessible ? elemColor : "#374151" }} />
-                  </div>
-                  <div className={`${markerSize} rounded-lg flex items-center justify-center backdrop-blur-sm mt-0.5 transition-all duration-200`}
+                  <div
+                    className="w-7 h-7 rounded-full transition-all duration-200"
                     style={{
-                      backgroundColor: bgColor,
-                      border: `2px solid ${borderColor}`,
+                      backgroundColor: accessible ? `${elemColor}30` : "rgba(55,65,81,0.3)",
+                      border: `2px solid ${accessible ? `${elemColor}80` : "rgba(55,65,81,0.5)"}`,
                       boxShadow: isHovered && accessible
-                        ? `0 0 20px ${borderColor}, 0 4px 12px rgba(0,0,0,0.4)`
-                        : `0 2px 8px rgba(0,0,0,0.3)`,
+                        ? `0 0 12px ${elemColor}80`
+                        : "0 1px 4px rgba(0,0,0,0.4)",
                     }}
-                  >
-                    <img src={battleOverworldIcon} alt="Battle" style={{ width: 30, height: 30, imageRendering: "pixelated", objectFit: "contain" }} />
-                  </div>
+                  />
                 </div>
-                {isCleared && (
-                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center" style={{ boxShadow: "0 0 6px rgba(34, 197, 94, 0.5)" }}>
-                    <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
-                  </div>
-                )}
               </div>
             ) : node.type === "shop" ? (
               <div className="flex flex-col items-center">
@@ -1100,7 +1080,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
             <Card className="px-2.5 py-1.5 bg-black/80 border-white/10 backdrop-blur-sm" style={{ boxShadow: "0 4px 15px rgba(0,0,0,0.5)" }}>
               <p className="text-[11px] font-semibold text-white whitespace-nowrap">{node.name}</p>
               <p className="text-[9px] capitalize whitespace-nowrap" style={{ color: ELEMENT_COLORS[region.theme] + "aa" }}>
-                {node.type === "hut" ? "Base Camp" : node.type}{player.clearedNodes.includes(node.id) ? " - Cleared" : ""}
+                {node.type === "hut" ? "Base Camp" : node.type === "passage" ? "Area" : node.type}{player.clearedNodes.includes(node.id) ? " - Cleared" : ""}
               </p>
             </Card>
           </div>

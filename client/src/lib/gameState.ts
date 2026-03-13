@@ -59,13 +59,7 @@ export function useGameState() {
       const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
       const region = getRegionForTier(s.player.currentRegion, tier);
       const node = region.nodes.find(n => n.id === nodeId);
-      if (!node || (node.type !== "battle" && node.type !== "boss")) return s;
-
-      if (node.type === "boss") {
-        const battleNodes = region.nodes.filter(n => n.type === "battle");
-        const allCleared = battleNodes.every(n => s.player!.clearedNodes.includes(n.id));
-        if (!allCleared) return s;
-      }
+      if (!node || node.type !== "boss") return s;
 
       const enemies = getEnemiesForNode(node, region, tier);
       const battle = initBattle(enemies);
