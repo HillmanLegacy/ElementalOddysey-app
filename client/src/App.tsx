@@ -164,6 +164,13 @@ function Game() {
   } | null>(null);
   const [sideScrollCompleteTransition, setSideScrollCompleteTransition] = useState(false);
   const [sideScrollExitTransition, setSideScrollExitTransition] = useState(false);
+  const [sideScrollEnterPending, setSideScrollEnterPending] = useState<{
+    fromNodeId: number;
+    toNodeId: number;
+    toNodeName: string;
+    defeatedEnemyIndices: number[];
+    savedPlayerX: number;
+  } | null>(null);
   const sideScrollBattleActiveRef = useRef(false);
   const lastContactedEnemyIdxRef = useRef<number | null>(null);
   const [menuFadeOut, setMenuFadeOut] = useState<{ save: any } | null>(null);
@@ -388,20 +395,15 @@ function Game() {
               onUseItem={useItemOverworld}
               onArrowClick={(fromNodeId, toNode) => {
                 if (!state.player) return;
-                setSideScrollCtx({
+                stopAmbient();
+                fadeOutMusic(400);
+                setSideScrollEnterPending({
                   fromNodeId,
                   toNodeId: toNode.id,
                   toNodeName: toNode.name,
                   defeatedEnemyIndices: [],
                   savedPlayerX: 150,
                 });
-                stopAmbient();
-                const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
-                if (region.theme === "Fire") {
-                  playMusic("lava_region_battle");
-                } else {
-                  fadeOutMusic(500);
-                }
               }}
             />
             {hutTransitionIn && (
@@ -411,6 +413,21 @@ function Game() {
                   setHutTransitionIn(false);
                   setHutTransitionOut(true);
                   setScreen("hut");
+                }}
+              />
+            )}
+            {sideScrollEnterPending && (
+              <BattleTransition
+                direction="in"
+                elementColor="#c9a44a"
+                onComplete={() => {
+                  const pending = sideScrollEnterPending;
+                  setSideScrollEnterPending(null);
+                  setSideScrollCtx(pending);
+                  const region = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {}));
+                  if (region.theme === "Fire") {
+                    playMusic("lava_region_battle");
+                  }
                 }}
               />
             )}

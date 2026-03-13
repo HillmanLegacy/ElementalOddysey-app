@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ParticleCanvas from "./ParticleCanvas";
-import LavaOverworldBg from "./LavaOverworldBg";
+import lavaRegionBg from "@assets/lava_stage_region_background_1773416952733.jpg";
 import SpriteAnimator from "./SpriteAnimator";
 import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
@@ -20,7 +20,6 @@ import baskenRun from "@/assets/images/basken-run.png";
 import hutOverworldIcon from "@/assets/hut_overworld_icon.png";
 import battleOverworldIcon from "@/assets/battle_overworld_icon.png";
 import bossBattleOverworldIcon from "@/assets/boss_battle_overworld_icon.png";
-import bgEmberPlains from "@/assets/images/bg-ember-plains.png";
 
 const OVERWORLD_SPRITES: Record<string, {
   idle: { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number; fps: number };
@@ -252,18 +251,12 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
     return currentNodeData.connections.includes(node.id);
   };
 
-  const allBattlesCleared = useMemo(() => {
-    const battleNodes = region.nodes.filter(n => n.type === "battle");
-    return battleNodes.every(n => player.clearedNodes.includes(n.id));
-  }, [region.nodes, player.clearedNodes]);
-
   const canAccessNode = (node: OverworldNode): boolean => {
     if (node.id === player.currentNode) return true;
     const currentNodeData = region.nodes.find(n => n.id === player.currentNode);
     if (!currentNodeData) {
       return node.id === region.nodes[0].id;
     }
-    if (node.type === "boss" && !allBattlesCleared) return false;
     if (!isAdjacentToCurrentNode(node)) return false;
     if (
       (currentNodeData.type === "battle" || currentNodeData.type === "boss") &&
@@ -354,14 +347,6 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
     return `translate(${tx}%, ${ty}%) scale(${z})`;
   }, [charPos.x, charPos.y]);
 
-  const REGION_BACKGROUNDS: Record<string, string | null> = {
-    Fire: bgEmberPlains,
-    Ice: null,
-    Shadow: null,
-    Earth: null,
-  };
-
-  const bgImage = REGION_BACKGROUNDS[region.theme];
   const isFireRegion = region.theme === "Fire";
   const elemColor = ELEMENT_COLORS[region.theme];
 
@@ -377,7 +362,12 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         }}
       >
       {isFireRegion ? (
-        <LavaOverworldBg nodes={region.nodes} />
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url(${lavaRegionBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          imageRendering: "pixelated",
+        }} />
       ) : (
         <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
           <div className="absolute inset-0" style={{
@@ -560,11 +550,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                           : "0 2px 8px rgba(0,0,0,0.3)",
                       }}
                     >
-                      {!allBattlesCleared && !isCleared ? (
-                        <Lock className="w-5 h-5" style={{ color: "#6b7280" }} />
-                      ) : (
-                        <img src={bossBattleOverworldIcon} alt="Boss" style={{ width: 38, height: 38, imageRendering: "pixelated", objectFit: "contain", opacity: accessible ? 1 : 0.4 }} />
-                      )}
+                      <img src={bossBattleOverworldIcon} alt="Boss" style={{ width: 38, height: 38, imageRendering: "pixelated", objectFit: "contain", opacity: accessible ? 1 : 0.4 }} />
                     </div>
                     {accessible && !isCleared && (
                       <Flame className="absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 text-yellow-400 animate-pulse" />

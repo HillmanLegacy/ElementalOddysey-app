@@ -64,7 +64,6 @@ const STAGE_END_X       = 4650;
 const CAMERA_LEAD       = 340;
 const LEFT_PORTAL_X     = 50;   // world-x of the left retreat portal
 const LEFT_EXIT_TRIGGER = 80;   // player x threshold to fire left exit
-const LEFT_EXIT_UNLOCK  = 500;  // player must travel this far right first
 
 const CHAR_SPRITES: Record<string, {
   idle: string; run: string;
@@ -102,23 +101,17 @@ interface StageEnemy {
 
 const LAVA_STAGES: Record<string, { enemies: StageEnemy[] }> = {
   "0-1":  { enemies: [{ x: 900,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3100, type: "fireDemon", enemyId: "slime_fire" }, { x: 4000, type: "fireDemon", enemyId: "slime_fire" }] },
-  "0-2":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
+  "1-2":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
   "1-3":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
-  "1-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "2-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
-  "3-6":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3400, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "4-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "4-7":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "5-8":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "6-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "3-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "3-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "5-6":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "5-7":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3400, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "7-8":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
   "7-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "demonKin",  enemyId: "demon_kin"  }] },
-  "7-10": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2200, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3100, type: "demonKin",  enemyId: "demon_kin"  }, { x: 4000, type: "fireDemon", enemyId: "slime_fire" }] },
-  "8-10": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
   "9-11": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "10-12":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "11-12":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "11-13":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "dragonLord",enemyId: "dragon_lord"}] },
-  "12-13":{ enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3900, type: "dragonLord",enemyId: "dragon_lord"}] },
+  "9-12": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "9-13": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "demonKin",  enemyId: "demon_kin"  }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "dragonLord",enemyId: "dragon_lord"}] },
 };
 
 function rand(seed: number): () => number {
@@ -244,7 +237,6 @@ export default function SideScrollStage({
   const onFireballContactRef = useRef(onFireballContact);
   const onCompleteRef = useRef(onComplete);
   const onExitRef = useRef(onExit);
-  const leftExitUnlockedRef = useRef(false);
   useEffect(() => { onEnemyContactRef.current = onEnemyContact; }, [onEnemyContact]);
   useEffect(() => { onFireballContactRef.current = onFireballContact; }, [onFireballContact]);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
@@ -388,8 +380,7 @@ export default function SideScrollStage({
       }
 
       // --- Left exit portal check ---
-      if (p.x > LEFT_EXIT_UNLOCK) leftExitUnlockedRef.current = true;
-      if (p.x <= LEFT_EXIT_TRIGGER && leftExitUnlockedRef.current && !stageCompleteRef.current) {
+      if (p.x <= LEFT_EXIT_TRIGGER && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
         setBattleFreezing(true);
         cancelAnimationFrame(rafRef.current);
