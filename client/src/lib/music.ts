@@ -21,7 +21,7 @@ const AMBIENT_VOLUME_SCALE: Record<string, number> = {
 };
 
 const MUSIC_VOLUME_SCALE: Record<string, number> = {
-  main_menu: 0.7,
+  main_menu: 0.35,
 };
 
 const MUSIC_TRACKS: Record<string, string> = {
