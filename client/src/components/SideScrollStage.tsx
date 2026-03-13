@@ -23,14 +23,14 @@ const STAGE_WIDTH = 5000;
 const VIEWPORT_H = 640;
 const GROUND_Y = 510;
 
-const MAX_SPEED      = 310;
-const GROUND_ACCEL   = 1600;
-const AIR_ACCEL      = 900;
-const GROUND_FRICTION = 1800;
+const MAX_SPEED      = 480;
+const GROUND_ACCEL   = 2200;
+const AIR_ACCEL      = 1100;
+const GROUND_FRICTION = 2400;
 const AIR_DRAG       = 80;
 const GRAVITY        = 1500;
-const GRAVITY_HOLD   = 620;
-const JUMP_VELOCITY  = -630;
+const GRAVITY_HOLD   = 700;
+const JUMP_VELOCITY  = -490;
 const COYOTE_TIME    = 0.10;
 const JUMP_BUFFER    = 0.12;
 const STAGE_END_X    = 4650;
@@ -372,7 +372,7 @@ export default function SideScrollStage({
       setRenderX(p.x);
       setRenderY(p.y);
       setCameraX(newCamX);
-      setIsRunning(moving);
+      setIsRunning(p.onGround && Math.abs(p.vx) > 20);
       setIsJumping(!p.onGround);
       setFacingRight(facingRightRef.current);
 
@@ -436,11 +436,11 @@ export default function SideScrollStage({
 
   const progressPercent = Math.min(100, Math.round((renderX / STAGE_END_X) * 100));
 
-  // Jump: freeze on first frame of run sheet. Ground: run or idle.
-  const spriteSrc    = isJumping ? charSprite.run : (isRunning ? charSprite.run : charSprite.idle);
-  const spriteFrames = isJumping ? charSprite.runF : (isRunning ? charSprite.runF : charSprite.idleF);
-  const spriteFps    = isJumping ? 14 : (isRunning ? 14 : 8);
-  const spritePause  = isJumping ? 0 : undefined;
+  // Jump: freeze on first frame of run sheet (totalFrames=1 = naturally frozen).
+  // Ground: run or idle based on velocity.
+  const spriteSrc    = (isJumping || isRunning) ? charSprite.run : charSprite.idle;
+  const spriteFrames = isJumping ? 1 : (isRunning ? charSprite.runF : charSprite.idleF);
+  const spriteFps    = isRunning ? 14 : 8;
 
   const touchBtn = useCallback((active: boolean): React.CSSProperties => ({
     width: 56,
@@ -606,11 +606,9 @@ export default function SideScrollStage({
             totalFrames={spriteFrames}
             fps={spriteFps}
             scale={charSprite.scale}
-            loop={!isJumping}
+            loop={true}
             flipX={!facingRight}
             anchor="top-left"
-            pauseAtFrame={spritePause}
-            startFrame={isJumping ? 0 : undefined}
           />
         </div>
       </div>
