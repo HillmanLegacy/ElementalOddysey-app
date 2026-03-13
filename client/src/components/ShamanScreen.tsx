@@ -68,6 +68,8 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
         height: "100%",
         overflow: "hidden",
         background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+        border: `3px solid ${ACCENT}`,
+        boxShadow: `0 0 20px ${ACCENT}40, 0 0 60px ${ACCENT}15, inset 0 0 30px rgba(0,0,0,0.5)`,
         fontFamily: "'Press Start 2P', cursive",
         imageRendering: "pixelated" as any,
       }}
@@ -88,7 +90,9 @@ export default function ShamanScreen({ player, onLearnSpell, onBack }: ShamanScr
             display: "flex",
             alignItems: "center",
             justifyContent: "space-between",
-            padding: "10px 0",
+            padding: "10px 16px",
+            margin: "0 -16px",
+            background: "#0d0b0bf0",
             borderBottom: `3px solid ${ACCENT}`,
           }}
         >

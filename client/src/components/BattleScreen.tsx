@@ -2766,11 +2766,11 @@ export default function BattleScreen({
                     <div
                       className="relative overflow-hidden"
                       style={{
-                        background: "linear-gradient(180deg, rgba(22,14,42,0.88) 0%, rgba(14,8,32,0.93) 100%)",
-                        border: `2px solid ${char.isActive ? elColor + "99" : elColor + "50"}`,
+                        background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+                        border: `2px solid ${char.isActive ? elColor + "99" : "#c9a44a50"}`,
                         boxShadow: char.isActive
-                          ? `0 0 18px ${elColor}55, inset 0 1px 0 rgba(255,255,255,0.08)`
-                          : `0 0 6px ${elColor}25, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                          ? `0 0 18px ${elColor}55, 0 0 8px #c9a44a20, inset 0 1px 0 rgba(255,255,255,0.08)`
+                          : `0 0 6px #c9a44a20, inset 0 1px 0 rgba(255,255,255,0.05)`,
                         imageRendering: "pixelated",
                       }}
                     >
@@ -3909,20 +3909,21 @@ export default function BattleScreen({
           }}
         >
           <div
-            className="mx-2 mb-2 overflow-hidden"
+            className="mx-2 mb-2 overflow-hidden relative"
             style={{
-              background: "linear-gradient(180deg, rgba(15,10,30,0.85) 0%, rgba(10,5,25,0.95) 100%)",
-              border: `2px solid ${tc}50`,
-              boxShadow: `0 0 20px ${tc}20, inset 0 1px 0 rgba(255,255,255,0.05)`,
+              background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+              border: "3px solid #c9a44a",
+              boxShadow: "0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)",
               imageRendering: "pixelated",
             }}
           >
-            <div className="px-3 py-0.5 flex items-center gap-2" style={{ borderBottom: `1px solid ${tc}25`, background: `${tc}10` }}>
-              <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${tc}40, transparent)` }} />
-              <span className="text-[9px] tracking-[0.2em] uppercase" style={{ fontFamily: "'Press Start 2P', cursive", color: `${tc}90` }}>
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)", pointerEvents: "none" }} />
+            <div className="px-3 py-1 flex items-center gap-2 relative" style={{ borderBottom: "3px solid #c9a44a", background: "#0d0b0bf0" }}>
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, #c9a44a40, transparent)" }} />
+              <span className="text-[9px] tracking-[0.2em] uppercase" style={{ fontFamily: "'Press Start 2P', cursive", color: "#c9a44a" }}>
                 {turnLabel}
               </span>
-              <div className="flex-1 h-px" style={{ background: `linear-gradient(90deg, transparent, ${tc}40, transparent)` }} />
+              <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, #c9a44a40, transparent)" }} />
             </div>
 
             <div className="px-3 py-2">
@@ -4009,15 +4010,15 @@ export default function BattleScreen({
           {battle.phase === "playerTurn" && showSpells && !isInputBlocked && (
             <div className="space-y-1 mb-1">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c084fc" }}>
+                <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c9a44a" }}>
                   <Sparkles className="w-3.5 h-3.5" /> Spells
                 </span>
-                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setShowSpells(false); }} data-testid="button-close-spells">
+                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#c9a44a", background: "rgba(201,164,74,0.1)", border: "1px solid rgba(201,164,74,0.3)" }} onClick={() => { playSfx('menuSelect'); setShowSpells(false); }} data-testid="button-close-spells">
                   <ArrowLeft className="w-3 h-3" /> Back
                 </button>
               </div>
               {spells.length === 0 ? (
-                <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No spells learned</p>
+                <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(201,164,74,0.4)" }}>No spells learned</p>
               ) : (
                 <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto">
                   {spells.map(spell => {
@@ -4027,9 +4028,9 @@ export default function BattleScreen({
                         key={spell.id}
                         className="w-full text-left py-1.5 px-2 transition-all hover:brightness-125 disabled:opacity-30"
                         style={{
-                          background: canCast ? "rgba(139,92,246,0.08)" : "rgba(30,20,50,0.3)",
-                          border: `1px solid ${canCast ? "rgba(139,92,246,0.2)" : "rgba(60,40,80,0.2)"}`,
-                          color: canCast ? "#e9d5ff" : "rgba(120,80,160,0.4)",
+                          background: canCast ? "rgba(201,164,74,0.08)" : "rgba(10,8,8,0.5)",
+                          border: `1px solid ${canCast ? "rgba(201,164,74,0.3)" : "rgba(201,164,74,0.1)"}`,
+                          color: canCast ? "#e8e0d0" : "rgba(201,164,74,0.3)",
                         }}
                         onClick={() => { playSfx('menuSelect'); handleSpellSelect(spell); }}
                         disabled={!canCast}
@@ -4054,13 +4055,13 @@ export default function BattleScreen({
           {battle.phase === "playerTurn" && showItems && !isInputBlocked && (
             <div className="space-y-1 mb-1">
               <div className="flex items-center justify-between gap-2 mb-1">
-                <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#86efac" }}>Items</span>
-                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setShowItems(false); }} data-testid="button-close-items">
+                <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c9a44a" }}>Items</span>
+                <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#c9a44a", background: "rgba(201,164,74,0.1)", border: "1px solid rgba(201,164,74,0.3)" }} onClick={() => { playSfx('menuSelect'); setShowItems(false); }} data-testid="button-close-items">
                   <ArrowLeft className="w-3 h-3" /> Back
                 </button>
               </div>
               {consumables.length === 0 ? (
-                <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No items</p>
+                <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(201,164,74,0.4)" }}>No items</p>
               ) : (
                 groupConsumables(consumables).map(({ item, count, ids }) => (
                   <button
@@ -4125,12 +4126,12 @@ export default function BattleScreen({
                       <span className="flex items-center gap-1" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c084fc" }}>
                         <Sparkles className="w-3.5 h-3.5" /> Spells
                       </span>
-                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); }}>
+                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#c9a44a", background: "rgba(201,164,74,0.1)", border: "1px solid rgba(201,164,74,0.3)" }} onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); }}>
                         <ArrowLeft className="w-3 h-3" /> Back
                       </button>
                     </div>
                     {partySpells.length === 0 ? (
-                      <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No spells learned</p>
+                      <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(201,164,74,0.4)" }}>No spells learned</p>
                     ) : (
                       <div className="grid grid-cols-2 gap-1.5 max-h-28 overflow-y-auto">
                         {partySpells.map(spell => {
@@ -4140,9 +4141,9 @@ export default function BattleScreen({
                               key={spell.id}
                               className="w-full text-left py-1.5 px-2 transition-all hover:brightness-125 disabled:opacity-30"
                               style={{
-                                background: canCast ? "rgba(139,92,246,0.08)" : "rgba(30,20,50,0.3)",
-                                border: `1px solid ${canCast ? "rgba(139,92,246,0.2)" : "rgba(60,40,80,0.2)"}`,
-                                color: canCast ? "#e9d5ff" : "rgba(120,80,160,0.4)",
+                                background: canCast ? "rgba(201,164,74,0.08)" : "rgba(10,8,8,0.5)",
+                                border: `1px solid ${canCast ? "rgba(201,164,74,0.3)" : "rgba(201,164,74,0.1)"}`,
+                                color: canCast ? "#e8e0d0" : "rgba(201,164,74,0.3)",
                               }}
                               disabled={!canCast}
                               onClick={() => {
@@ -4181,13 +4182,13 @@ export default function BattleScreen({
                 {partyAction === "showItems" && (
                   <div className="space-y-1 mb-1">
                     <div className="flex items-center justify-between gap-2 mb-1">
-                      <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#86efac" }}>Items</span>
-                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }} onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); }}>
+                      <span style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: "#c9a44a" }}>Items</span>
+                      <button className="flex items-center gap-1 px-2 py-1 transition-all hover:brightness-125" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#c9a44a", background: "rgba(201,164,74,0.1)", border: "1px solid rgba(201,164,74,0.3)" }} onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); }}>
                         <ArrowLeft className="w-3 h-3" /> Back
                       </button>
                     </div>
                     {consumables.length === 0 ? (
-                      <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(168,85,247,0.4)" }}>No items</p>
+                      <p className="text-center py-2" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "rgba(201,164,74,0.4)" }}>No items</p>
                     ) : (
                       groupConsumables(consumables).map(({ item, count, ids }) => (
                         <button
@@ -4220,7 +4221,7 @@ export default function BattleScreen({
                     </p>
                     <button
                       className="flex items-center gap-1 px-2 py-1 mx-auto mt-1 transition-all hover:brightness-125"
-                      style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#a78bfa", background: "rgba(139,92,246,0.1)", border: "1px solid rgba(139,92,246,0.2)" }}
+                      style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "8px", color: "#c9a44a", background: "rgba(201,164,74,0.1)", border: "1px solid rgba(201,164,74,0.3)" }}
                       onClick={() => { playSfx('menuSelect'); setPartyAction("menu"); setPartySelectedSpell(null); }}
                     >
                       <ArrowLeft className="w-3 h-3" /> Back
