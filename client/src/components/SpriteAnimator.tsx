@@ -24,6 +24,7 @@ interface SpriteAnimatorProps {
   loop?: boolean;
   flipX?: boolean;
   reverse?: boolean;
+  paused?: boolean;
   onComplete?: () => void;
   className?: string;
   style?: React.CSSProperties;
@@ -44,6 +45,7 @@ export default function SpriteAnimator({
   loop = true,
   flipX = false,
   reverse = false,
+  paused = false,
   onComplete,
   className = "",
   style,
@@ -64,8 +66,8 @@ export default function SpriteAnimator({
   const holdUntilRef = useRef(0);
   const heldFramesRef = useRef<Set<number>>(new Set());
 
-  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, reverse, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale });
-  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, reverse, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale };
+  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale });
+  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale };
 
   useEffect(() => {
     if (preloadSheets) {
@@ -144,6 +146,10 @@ export default function SpriteAnimator({
 
     const render = (timestamp: number) => {
       if (stoppedRef.current) return;
+      if (propsRef.current.paused) {
+        animRef.current = requestAnimationFrame(render);
+        return;
+      }
 
       const { totalFrames: tf, fps: f, loop: l, onComplete: oc, pauseAtFrame: paf, reverse: rev } = propsRef.current;
       const interval = 1000 / f;

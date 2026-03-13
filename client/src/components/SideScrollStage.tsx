@@ -281,6 +281,7 @@ export default function SideScrollStage({
   const [facingRight, setFacingRight] = useState(true);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(stageData.enemies.map(e => e.x));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(stageData.enemies.map(() => true));
+  const [battleFreezing, setBattleFreezing] = useState(false);
   const [stageComplete, setStageComplete] = useState(false);
   const [showExit, setShowExit] = useState(false);
 
@@ -479,6 +480,7 @@ export default function SideScrollStage({
         if (Math.abs(pCx - eCx) < (pHW + eHW) && Math.abs(pCy - eCy) < (pHH + eHH)) {
           contactCooldown.current.add(idx);
           battlePendingRef.current = true;
+          setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
           onEnemyContactRef.current(idx, enemy.enemyId, p.x);
           return;
@@ -511,6 +513,7 @@ export default function SideScrollStage({
           const hitEnemy = stageData.enemies[hitFb.enemyIdx];
           contactCooldown.current.add(hitFb.enemyIdx);
           battlePendingRef.current = true;
+          setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
           // Show explosion at impact point, then trigger battle after animation plays
           playSfx("fireballImpact", 0.8);
@@ -738,6 +741,7 @@ export default function SideScrollStage({
                 scale={es.scale}
                 loop={true}
                 flipX={!facingLeft}
+                paused={battleFreezing}
                 anchor="top-left"
               />
             </div>
@@ -796,6 +800,7 @@ export default function SideScrollStage({
               scale={FB_SCALE}
               loop={true}
               flipX={fb.vx > 0}
+              paused={battleFreezing}
               anchor="top-left"
             />
           </div>
@@ -846,6 +851,7 @@ export default function SideScrollStage({
             scale={charSprite.scale}
             loop={true}
             flipX={!facingRight}
+            paused={battleFreezing}
             anchor="top-left"
           />
         </div>
