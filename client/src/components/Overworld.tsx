@@ -6,7 +6,8 @@ import lavaRegionBg from "@assets/lava_stage_region_background_1773416952733.jpg
 import SpriteAnimator from "./SpriteAnimator";
 import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
-import { REGIONS, ELEMENT_COLORS, COLOR_MAP, COLOR_VARIANTS } from "@/lib/gameData";
+import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
+import { useColorMap } from "@/hooks/useColorMap";
 import { playSfx } from "@/lib/sfx";
 import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
@@ -147,6 +148,8 @@ interface OverworldProps {
 }
 
 export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick }: OverworldProps) {
+  const _owSpriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;
+  const playerColorMap = useColorMap(_owSpriteConfig.idle.sheet, _owSpriteConfig.idle.frameWidth, _owSpriteConfig.idle.frameHeight, player.colorGroups);
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
   const region = getRegionForTier(player.currentRegion, tier);
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
@@ -758,7 +761,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
             }}
             data-testid="img-overworld-character"
           >
-            <div className="relative" style={{ filter: COLOR_VARIANTS.find(v => v.id === player.colorVariant)?.filter || undefined }}>
+            <div className="relative">
               <SpriteAnimator
                 spriteSheet={activeSprite.sheet}
                 frameWidth={activeSprite.frameWidth}
@@ -769,6 +772,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                 loop={true}
                 flipX={!facingRight}
                 preloadSheets={[spriteConfig.idle.sheet, spriteConfig.run.sheet]}
+                colorMap={playerColorMap}
               />
               <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-2 rounded-full blur-sm"
                 style={{ backgroundColor: COLOR_MAP[player.energyColor] + "40" }}

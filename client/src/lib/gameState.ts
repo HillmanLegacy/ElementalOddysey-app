@@ -27,10 +27,10 @@ export function useGameState() {
     setState(s => ({ ...s, screen }));
   }, []);
 
-  const createCharacter = useCallback((starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape, colorVariant: string = "default") => {
+  const createCharacter = useCallback((starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape, colorVariant: string = "default", colorGroups: Record<string, string> = {}) => {
     const starterDef = STARTER_CHARACTERS.find(c => c.id === starterCharId);
     if (!starterDef) return;
-    const player = createNewPlayer(starterDef, name, color, shape, colorVariant);
+    const player = createNewPlayer(starterDef, name, color, shape, colorVariant, colorGroups);
     setState(s => ({ ...s, player, screen: "overworld" }));
   }, []);
 

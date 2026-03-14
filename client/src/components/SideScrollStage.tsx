@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
-import { COLOR_VARIANTS } from "@/lib/gameData";
+import { useColorMap } from "@/hooks/useColorMap";
 import lavaBgImg from "@assets/Lava_Stage_Side_Scroll_Background_upscayl_3x_digital-art-4x_1773372864153.png";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -244,6 +244,7 @@ export default function SideScrollStage({
   const resolvedEnemies = resolvedEnemiesRef.current;
 
   const charSprite = CHAR_SPRITES[player.spriteId] ?? CHAR_SPRITES.samurai;
+  const playerColorMap = useColorMap(charSprite.idle, charSprite.iW, charSprite.iH, player.colorGroups);
   const playerW = Math.round(charSprite.iW * charSprite.scale);
   const playerH = Math.round(charSprite.iH * charSprite.scale);
   const startY = PHYS_GROUND_Y - playerH;
@@ -991,7 +992,7 @@ export default function SideScrollStage({
             top: renderY,
             width: playerW,
             height: playerH,
-            filter: `drop-shadow(0 4px 10px rgba(0,0,0,0.8))${COLOR_VARIANTS.find(v => v.id === player.colorVariant)?.filter ? ` ${COLOR_VARIANTS.find(v => v.id === player.colorVariant)!.filter}` : ""}`,
+            filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.8))",
             transition: exitAnim ? `transform ${exitAnim.dur.toFixed(3)}s linear` : undefined,
             transform: (exitAnim && exitTransformActive)
               ? `translateX(${exitAnim.dist}px)`
@@ -1015,6 +1016,7 @@ export default function SideScrollStage({
             paused={battleFreezing}
             anchor="top-left"
             startFrame={isJumping ? (charSprite.jumpFrame ?? 0) : undefined}
+            colorMap={playerColorMap}
           />
         </div>
       </div>

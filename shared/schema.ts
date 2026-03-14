@@ -71,6 +71,7 @@ export interface PlayerCharacter {
   spriteId: string;
   starterCharacterId: string;
   colorVariant?: string;
+  colorGroups?: Record<string, string>;
   regionBossDefeats: Record<string, number>;
   learnedSpells?: string[];
   merchantBattlesSinceRestock: number;

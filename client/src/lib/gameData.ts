@@ -170,7 +170,7 @@ export const COLOR_VARIANTS: { id: string; name: string; swatch: string; filter:
   { id: "obsidian", name: "Obsidian", swatch: "#6b7280", filter: "grayscale(1) brightness(0.65) contrast(1.1)" },
 ];
 
-export function createNewPlayer(starterDef: PartyMemberDef, name: string, color: EnergyColor, shape: EnergyShape, colorVariant: string = "default"): PlayerCharacter {
+export function createNewPlayer(starterDef: PartyMemberDef, name: string, color: EnergyColor, shape: EnergyShape, colorVariant: string = "default", colorGroups: Record<string, string> = {}): PlayerCharacter {
   return {
     name,
     level: 1,
@@ -196,6 +196,7 @@ export function createNewPlayer(starterDef: PartyMemberDef, name: string, color:
     spriteId: starterDef.spriteId,
     starterCharacterId: starterDef.id,
     colorVariant,
+    colorGroups,
     regionBossDefeats: {},
     merchantBattlesSinceRestock: 0,
     merchantLastRegion: 0,

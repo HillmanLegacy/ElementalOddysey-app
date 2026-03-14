@@ -4,7 +4,8 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import PixelDissolve from "./PixelDissolve";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
-import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel, generateDemonKinSpawn, COLOR_VARIANTS } from "@/lib/gameData";
+import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel, generateDemonKinSpawn } from "@/lib/gameData";
+import { useColorMap } from "@/hooks/useColorMap";
 import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
 import BattleEffectsLayer from "./BattleEffectsLayer";
@@ -239,6 +240,8 @@ const ENEMY_POSITIONS = ENEMY_SLOTS;
 export default function BattleScreen({
   player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier,
 }: BattleScreenProps) {
+  const _bsPlayerSprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
+  const playerColorMap = useColorMap(_bsPlayerSprites.idle, _bsPlayerSprites.frameWidth, _bsPlayerSprites.frameHeight, player.colorGroups);
 
   const getPlayerGridPos = () => {
     const gp = battle.gridPositions;
@@ -2544,7 +2547,7 @@ export default function BattleScreen({
               />
             )}
             
-            <div style={{ position: "relative", width: Math.round(playerSprites.frameWidth * (playerSprites.scale || 3.5)), height: Math.round(playerSprites.frameHeight * (playerSprites.scale || 3.5)), overflow: "visible", filter: `brightness(1.15) saturate(1.35)${COLOR_VARIANTS.find(v => v.id === player.colorVariant)?.filter ? ` ${COLOR_VARIANTS.find(v => v.id === player.colorVariant)!.filter}` : ""}` }}>
+            <div style={{ position: "relative", width: Math.round(playerSprites.frameWidth * (playerSprites.scale || 3.5)), height: Math.round(playerSprites.frameHeight * (playerSprites.scale || 3.5)), overflow: "visible", filter: "brightness(1.15) saturate(1.35)" }}>
               <SpriteAnimator
                 spriteSheet={spriteConfig.src}
                 frameWidth={spriteConfig.w}
@@ -2559,6 +2562,7 @@ export default function BattleScreen({
                 pauseAtFrame={spriteConfig.pauseAt}
                 holdFrames={spriteConfig.holdFrames}
                 anchor="bottom-center"
+                colorMap={playerColorMap}
               />
               {animPhase === "defending" && (
                 <div className="absolute z-30 pointer-events-none" style={{

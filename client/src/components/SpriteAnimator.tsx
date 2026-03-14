@@ -6,6 +6,7 @@ function preloadImage(src: string): Promise<HTMLImageElement> {
   if (imageCache.has(src)) return Promise.resolve(imageCache.get(src)!);
   return new Promise((resolve) => {
     const img = new Image();
+    img.crossOrigin = "anonymous";
     img.src = src;
     img.onload = () => {
       imageCache.set(src, img);
@@ -33,6 +34,7 @@ interface SpriteAnimatorProps {
   pauseAtFrame?: number;
   holdFrames?: Record<number, number>;
   anchor?: "top-left" | "bottom-center";
+  colorMap?: Record<string, string>;
 }
 
 export default function SpriteAnimator({
@@ -54,9 +56,11 @@ export default function SpriteAnimator({
   pauseAtFrame,
   holdFrames,
   anchor,
+  colorMap,
 }: SpriteAnimatorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const offscreenRef = useRef<HTMLCanvasElement | null>(null);
   const ctxRef = useRef<CanvasRenderingContext2D | null>(null);
   const animRef = useRef<number>(0);
   const frameRef = useRef(0);
@@ -66,8 +70,8 @@ export default function SpriteAnimator({
   const holdUntilRef = useRef(0);
   const heldFramesRef = useRef<Set<number>>(new Set());
 
-  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale });
-  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale };
+  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale, colorMap });
+  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale, colorMap };
 
   useEffect(() => {
     if (preloadSheets) {
@@ -99,7 +103,13 @@ export default function SpriteAnimator({
     canvas.style.width = displayW + "px";
     canvas.style.height = displayH + "px";
 
-    const ctx = canvas.getContext("2d", { alpha: true });
+    if (!offscreenRef.current) {
+      offscreenRef.current = document.createElement("canvas");
+    }
+    offscreenRef.current.width = frameWidth;
+    offscreenRef.current.height = frameHeight;
+
+    const ctx = canvas.getContext("2d", { alpha: true, willReadFrequently: false });
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
     ctxRef.current = ctx;
@@ -117,20 +127,56 @@ export default function SpriteAnimator({
     let currentImage: HTMLImageElement | null = imageCache.get(spriteSheet) || null;
 
     const drawFrame = (img: HTMLImageElement, frame: number) => {
-      const { frameWidth: cfw, frameHeight: cfh, flipX: cfx, scale: csc } = propsRef.current;
+      const { frameWidth: cfw, frameHeight: cfh, flipX: cfx, scale: csc, colorMap: cm } = propsRef.current;
       const dw = Math.round(cfw * csc);
       const dh = Math.round(cfh * csc);
       const cols = Math.floor(img.naturalWidth / cfw);
       const col = cols > 0 ? frame % cols : frame;
       const row = cols > 0 ? Math.floor(frame / cols) : 0;
+
       ctx.clearRect(0, 0, dw, dh);
-      ctx.save();
-      if (cfx) {
-        ctx.scale(-1, 1);
-        ctx.translate(-dw, 0);
+
+      if (cm && Object.keys(cm).length > 0) {
+        const oc = offscreenRef.current!;
+        oc.width = cfw;
+        oc.height = cfh;
+        const octx = oc.getContext("2d", { willReadFrequently: true })!;
+        octx.imageSmoothingEnabled = false;
+        octx.clearRect(0, 0, cfw, cfh);
+        if (cfx) {
+          octx.save();
+          octx.scale(-1, 1);
+          octx.translate(-cfw, 0);
+        }
+        octx.drawImage(img, col * cfw, row * cfh, cfw, cfh, 0, 0, cfw, cfh);
+        if (cfx) octx.restore();
+
+        const id = octx.getImageData(0, 0, cfw, cfh);
+        const d = id.data;
+        for (let i = 0; i < d.length; i += 4) {
+          if (d[i + 3] < 20) continue;
+          const hex = `#${d[i].toString(16).padStart(2,"0")}${d[i+1].toString(16).padStart(2,"0")}${d[i+2].toString(16).padStart(2,"0")}`;
+          const rep = cm[hex];
+          if (rep) {
+            d[i]   = parseInt(rep.slice(1, 3), 16);
+            d[i+1] = parseInt(rep.slice(3, 5), 16);
+            d[i+2] = parseInt(rep.slice(5, 7), 16);
+          }
+        }
+        octx.putImageData(id, 0, 0);
+
+        ctx.save();
+        ctx.drawImage(oc, 0, 0, cfw, cfh, 0, 0, dw, dh);
+        ctx.restore();
+      } else {
+        ctx.save();
+        if (cfx) {
+          ctx.scale(-1, 1);
+          ctx.translate(-dw, 0);
+        }
+        ctx.drawImage(img, col * cfw, row * cfh, cfw, cfh, 0, 0, dw, dh);
+        ctx.restore();
       }
-      ctx.drawImage(img, col * cfw, row * cfh, cfw, cfh, 0, 0, dw, dh);
-      ctx.restore();
     };
 
     if (currentImage) {
