@@ -6,7 +6,7 @@ import lavaRegionBg from "@assets/lava_stage_region_background_1773416952733.jpg
 import SpriteAnimator from "./SpriteAnimator";
 import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
-import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
+import { REGIONS, ELEMENT_COLORS, COLOR_MAP, COLOR_VARIANTS } from "@/lib/gameData";
 import { playSfx } from "@/lib/sfx";
 import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
@@ -758,7 +758,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
             }}
             data-testid="img-overworld-character"
           >
-            <div className="relative">
+            <div className="relative" style={{ filter: COLOR_VARIANTS.find(v => v.id === player.colorVariant)?.filter || undefined }}>
               <SpriteAnimator
                 spriteSheet={activeSprite.sheet}
                 frameWidth={activeSprite.frameWidth}
