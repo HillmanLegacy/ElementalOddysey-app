@@ -8,10 +8,10 @@ import knightIdle from "@/assets/images/knight-idle-4f.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 
-const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number }> = {
-  knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4 },
-  samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10 },
-  basken: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5 },
+const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number; displayScale: number }> = {
+  knight:  { sheet: knightIdle,  frameWidth: 86, frameHeight: 49, totalFrames: 4,  displayScale: 1.5 },
+  samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10, displayScale: 0.9 },
+  basken:  { sheet: baskenIdle,  frameWidth: 56, frameHeight: 56, totalFrames: 5,  displayScale: 1.5 },
 };
 
 const STARTER_ICONS: Record<string, any> = {
@@ -72,7 +72,6 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
             <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Choose Your Character</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {STARTER_CHARACTERS.map(starter => {
-                const Icon = STARTER_ICONS[starter.id] || Sword;
                 const sColor = ELEMENT_COLORS[starter.element];
                 const sprite = STARTER_SPRITES[starter.spriteId];
                 const isSelected = selectedStarter === starter.id;
@@ -98,23 +97,21 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                       boxShadow: isSelected ? `0 0 12px ${sColor}30, inset 0 0 20px ${sColor}10` : "none",
                     }}
                   >
-                    <div style={{ width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", imageRendering: "pixelated" as any }}>
-                      <SpriteAnimator
-                        spriteSheet={sprite.sheet}
-                        frameWidth={sprite.frameWidth}
-                        frameHeight={sprite.frameHeight}
-                        totalFrames={sprite.totalFrames}
-                        fps={8}
-                        scale={sprite.frameHeight > 80 ? 1.2 : 1.8}
-                        loop={true}
-                      />
+                    <div style={{ width: 90, height: 90, position: "relative", imageRendering: "pixelated" as any, flexShrink: 0 }}>
+                      <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }}>
+                        <SpriteAnimator
+                          spriteSheet={sprite.sheet}
+                          frameWidth={sprite.frameWidth}
+                          frameHeight={sprite.frameHeight}
+                          totalFrames={sprite.totalFrames}
+                          fps={8}
+                          scale={sprite.displayScale}
+                          loop={true}
+                        />
+                      </div>
                     </div>
                     <div style={{ textAlign: "center" }}>
                       <span style={{ fontFamily, fontSize: 8, fontWeight: "bold", color: "white", display: "block" }}>{starter.className}</span>
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4, marginTop: 2 }}>
-                        <Icon style={{ width: 10, height: 10, color: sColor }} />
-                        <span style={{ fontFamily, fontSize: 7, color: sColor }}>{starter.element}</span>
-                      </div>
                     </div>
                     {isSelected && (
                       <Check style={{ position: "absolute", top: 4, right: 4, width: 12, height: 12, color: "rgba(255,255,255,0.8)" }} />
@@ -143,16 +140,18 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
           <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
             <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Name Your {starterDef.className}</h3>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
-              <div style={{ width: 64, height: 64, display: "flex", alignItems: "center", justifyContent: "center", imageRendering: "pixelated" as any }}>
-                <SpriteAnimator
-                  spriteSheet={spriteData.sheet}
-                  frameWidth={spriteData.frameWidth}
-                  frameHeight={spriteData.frameHeight}
-                  totalFrames={spriteData.totalFrames}
-                  fps={8}
-                  scale={spriteData.frameHeight > 80 ? 1.2 : 1.8}
-                  loop={true}
-                />
+              <div style={{ width: 90, height: 90, position: "relative", imageRendering: "pixelated" as any }}>
+                <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }}>
+                  <SpriteAnimator
+                    spriteSheet={spriteData.sheet}
+                    frameWidth={spriteData.frameWidth}
+                    frameHeight={spriteData.frameHeight}
+                    totalFrames={spriteData.totalFrames}
+                    fps={8}
+                    scale={spriteData.displayScale}
+                    loop={true}
+                  />
+                </div>
               </div>
             </div>
             <input
@@ -180,7 +179,6 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
 
       case 2:
         const displayName = name.trim() || starterDef.name;
-        const StarterIcon = STARTER_ICONS[selectedStarter] || Sword;
         return (
           <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
             <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Confirm Your Hero</h3>
@@ -188,34 +186,31 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               <div style={{ position: "relative" }}>
                 <div
                   style={{
-                    width: 96,
-                    height: 96,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
+                    width: 110,
+                    height: 110,
+                    position: "relative",
                     backgroundColor: elemColor + "20",
                     boxShadow: `0 0 40px ${elemColor}40, 0 0 80px ${elemColor}20`,
                     border: `3px solid ${elemColor}60`,
                     imageRendering: "pixelated" as any,
                   }}
                 >
-                  <SpriteAnimator
-                    spriteSheet={spriteData.sheet}
-                    frameWidth={spriteData.frameWidth}
-                    frameHeight={spriteData.frameHeight}
-                    totalFrames={spriteData.totalFrames}
-                    fps={8}
-                    scale={spriteData.frameHeight > 80 ? 1.2 : 1.8}
-                    loop={true}
-                  />
+                  <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }}>
+                    <SpriteAnimator
+                      spriteSheet={spriteData.sheet}
+                      frameWidth={spriteData.frameWidth}
+                      frameHeight={spriteData.frameHeight}
+                      totalFrames={spriteData.totalFrames}
+                      fps={8}
+                      scale={spriteData.displayScale}
+                      loop={true}
+                    />
+                  </div>
                 </div>
               </div>
               <div style={{ textAlign: "center" }}>
                 <p style={{ fontFamily, fontSize: 12, fontWeight: "bold", color: "white" }} data-testid="text-confirm-name">{displayName}</p>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 4 }}>
-                  <StarterIcon style={{ width: 12, height: 12, color: elemColor }} />
-                  <span style={{ fontFamily, fontSize: 8, color: elemColor }}>{starterDef.element} {starterDef.className}</span>
-                </div>
+                <p style={{ fontFamily, fontSize: 8, color: elemColor, marginTop: 4 }}>{starterDef.className}</p>
               </div>
               <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
                 {statBar("HP", starterDef.baseStats.maxHp, 150, "#ef4444")}

@@ -115,20 +115,16 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
                   style={{
                     width: "100%",
                     height: PREVIEW_H,
-                    display: "flex",
-                    alignItems: "flex-end",
-                    justifyContent: "center",
                     background: `linear-gradient(180deg, #0a080890 0%, ${ac}0c 100%)`,
                     borderBottom: `1px solid ${ac}20`,
                     overflow: "hidden",
                     position: "relative",
-                    paddingBottom: 10,
                   }}
                 >
                   <div
                     style={{
                       position: "absolute",
-                      bottom: 0,
+                      bottom: 6,
                       left: "50%",
                       transform: "translateX(-50%)",
                       width: 90,
@@ -138,15 +134,17 @@ export default function CharacterSelectUnlock({ characters, playerLevel, onSelec
                     }}
                   />
                   {spriteData && (
-                    <SpriteAnimator
-                      spriteSheet={spriteData.sheet}
-                      frameWidth={spriteData.frameWidth}
-                      frameHeight={spriteData.frameHeight}
-                      totalFrames={spriteData.totalFrames}
-                      fps={8}
-                      scale={spriteData.displayScale}
-                      loop
-                    />
+                    <div style={{ position: "absolute", bottom: 6, left: "50%", transform: "translateX(-50%)" }}>
+                      <SpriteAnimator
+                        spriteSheet={spriteData.sheet}
+                        frameWidth={spriteData.frameWidth}
+                        frameHeight={spriteData.frameHeight}
+                        totalFrames={spriteData.totalFrames}
+                        fps={8}
+                        scale={spriteData.displayScale}
+                        loop
+                      />
+                    </div>
                   )}
                 </div>
 
