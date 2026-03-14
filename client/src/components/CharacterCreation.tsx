@@ -1,7 +1,7 @@
 import { useState } from "react";
 import ParticleCanvas from "./ParticleCanvas";
-import { COLOR_MAP, ELEMENT_COLORS, STARTER_CHARACTERS } from "@/lib/gameData";
-import { ArrowLeft, ArrowRight, Sparkles, Diamond, CloudLightning, Check, Sword, Wind, Zap, Flame } from "lucide-react";
+import { ELEMENT_COLORS, STARTER_CHARACTERS } from "@/lib/gameData";
+import { ArrowLeft, ArrowRight, Sparkles, Check } from "lucide-react";
 import SpriteAnimator from "./SpriteAnimator";
 
 import knightIdle from "@/assets/images/knight-idle-4f.png";
@@ -12,12 +12,6 @@ const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frame
   knight:  { sheet: knightIdle,  frameWidth: 86, frameHeight: 49, totalFrames: 4,  displayScale: 1.5 },
   samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10, displayScale: 0.9 },
   basken:  { sheet: baskenIdle,  frameWidth: 56, frameHeight: 56, totalFrames: 5,  displayScale: 1.5 },
-};
-
-const STARTER_ICONS: Record<string, any> = {
-  knight_fire: Flame,
-  samurai_wind: Wind,
-  basken_lightning: Zap,
 };
 
 const STARTER_DESCRIPTIONS: Record<string, string> = {
@@ -34,11 +28,12 @@ interface CharacterCreationProps {
   onBack: () => void;
 }
 
-const ACCENT = "#c9a44a";
+const ac = "#c9a44a";
+const ACCENT = ac;
 
-const panelBg = "linear-gradient(180deg, rgba(15,10,30,0.9) 0%, rgba(10,5,25,0.95) 100%)";
+const panelBg = "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)";
 
-const scanlineOverlay = "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.15) 2px, rgba(0,0,0,0.15) 4px)";
+const scanlineOverlay = `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`;
 
 const fontFamily = "'Press Start 2P', cursive";
 
@@ -50,17 +45,16 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
 
   const starterDef = STARTER_CHARACTERS.find(c => c.id === selectedStarter)!;
   const spriteData = STARTER_SPRITES[starterDef.spriteId];
-  const elemColor = ELEMENT_COLORS[starterDef.element];
 
   const statBar = (label: string, value: number, max: number, color: string) => (
     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-      <span style={{ fontFamily, fontSize: 7, color: "rgba(192,168,255,0.7)", width: 40, textAlign: "right" }}>{label}</span>
-      <div style={{ flex: 1, height: 6, background: "rgba(0,0,0,0.4)", overflow: "hidden", border: `1px solid ${color}40` }}>
+      <span style={{ fontFamily, fontSize: 7, color: `${ac}99`, width: 40, textAlign: "right" }}>{label}</span>
+      <div style={{ flex: 1, height: 6, background: "rgba(0,0,0,0.5)", overflow: "hidden", border: `1px solid ${color}40` }}>
         <div
           style={{ height: "100%", width: `${(value / max) * 100}%`, backgroundColor: color, transition: "all 0.5s" }}
         />
       </div>
-      <span style={{ fontFamily, fontSize: 7, color: "rgba(210,190,255,1)", width: 24 }}>{value}</span>
+      <span style={{ fontFamily, fontSize: 7, color: `${ac}cc`, width: 24 }}>{value}</span>
     </div>
   );
 
@@ -86,15 +80,15 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                       alignItems: "center",
                       gap: 8,
                       padding: 10,
-                      border: isSelected ? `2px solid ${sColor}` : "2px solid rgba(255,255,255,0.1)",
-                      background: isSelected ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.03)",
+                      border: isSelected ? `2px solid ${ac}` : `2px solid ${ac}28`,
+                      background: isSelected ? "#0d0b0bf0" : "#0a080890",
                       cursor: "pointer",
                       transition: "all 0.2s",
-                      transform: isSelected ? "scale(1.05)" : "scale(1)",
+                      transform: isSelected ? "scale(1.04)" : "scale(1)",
                       fontFamily,
                       borderRadius: 0,
                       imageRendering: "pixelated" as any,
-                      boxShadow: isSelected ? `0 0 12px ${sColor}30, inset 0 0 20px ${sColor}10` : "none",
+                      boxShadow: isSelected ? `0 0 14px ${ac}40, inset 0 0 16px ${ac}0c` : "none",
                     }}
                   >
                     <div style={{ width: 90, height: 90, position: "relative", imageRendering: "pixelated" as any, flexShrink: 0 }}>
@@ -120,7 +114,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 );
               })}
             </div>
-            <p style={{ fontFamily, fontSize: 7, textAlign: "center", color: "rgba(168,132,255,0.7)", marginTop: 8, lineHeight: "1.6" }}>
+            <p style={{ fontFamily, fontSize: 7, textAlign: "center", color: `${ac}99`, marginTop: 8, lineHeight: "1.6" }}>
               {STARTER_DESCRIPTIONS[selectedStarter]}
             </p>
             <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
@@ -165,8 +159,8 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 fontSize: 9,
                 textAlign: "center",
                 background: "rgba(0,0,0,0.4)",
-                border: `2px solid ${elemColor}60`,
-                color: "rgba(210,190,255,1)",
+                border: `2px solid ${ac}60`,
+                color: `${ac}cc`,
                 padding: "12px 16px",
                 outline: "none",
                 borderRadius: 0,
@@ -189,9 +183,9 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                     width: 110,
                     height: 110,
                     position: "relative",
-                    backgroundColor: elemColor + "20",
-                    boxShadow: `0 0 40px ${elemColor}40, 0 0 80px ${elemColor}20`,
-                    border: `3px solid ${elemColor}60`,
+                    backgroundColor: `${ac}10`,
+                    boxShadow: `0 0 30px ${ac}40, 0 0 60px ${ac}18`,
+                    border: `3px solid ${ac}`,
                     imageRendering: "pixelated" as any,
                   }}
                 >
@@ -210,7 +204,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
               </div>
               <div style={{ textAlign: "center" }}>
                 <p style={{ fontFamily, fontSize: 12, fontWeight: "bold", color: "white" }} data-testid="text-confirm-name">{displayName}</p>
-                <p style={{ fontFamily, fontSize: 8, color: elemColor, marginTop: 4 }}>{starterDef.className}</p>
+                <p style={{ fontFamily, fontSize: 8, color: ac, marginTop: 4 }}>{starterDef.className}</p>
               </div>
               <div style={{ width: "100%", display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
                 {statBar("HP", starterDef.baseStats.maxHp, 150, "#ef4444")}
@@ -228,15 +222,15 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   };
 
   return (
-    <div className="relative w-full h-full overflow-hidden bg-gradient-to-b from-[#0a0a1a] via-[#1a0a2e] to-[#0a0a1a]">
+    <div className="relative w-full h-full overflow-hidden" style={{ background: "#0a0808" }}>
       <ParticleCanvas
-        colors={[COLOR_MAP["Purple"], elemColor]}
-        count={50}
-        speed={0.6}
+        colors={[ac, "#d4882a"]}
+        count={30}
+        speed={0.4}
         style="swirl"
       />
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/20" />
+      <div className="absolute inset-0" style={{ background: "radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.7) 100%)" }} />
 
       <div style={{ position: "relative", zIndex: 10, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "0 16px" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
@@ -247,13 +241,13 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                   width: 8,
                   height: 8,
                   transition: "all 0.3s",
-                  backgroundColor: i <= step ? ACCENT : "rgba(88,40,128,0.4)",
-                  border: i <= step ? `1px solid ${ACCENT}` : "1px solid rgba(88,40,128,0.3)",
+                  backgroundColor: i <= step ? ACCENT : `${ac}20`,
+                  border: i <= step ? `1px solid ${ACCENT}` : `1px solid ${ac}30`,
                   transform: i <= step ? "scale(1.1)" : "scale(1)",
                 }}
               />
               {i < steps.length - 1 && (
-                <div style={{ width: 24, height: 1, backgroundColor: i < step ? `${ACCENT}80` : "rgba(88,40,128,0.3)" }} />
+                <div style={{ width: 24, height: 1, backgroundColor: i < step ? `${ac}80` : `${ac}20` }} />
               )}
             </div>
           ))}
@@ -265,11 +259,11 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
             maxWidth: 448,
             padding: 24,
             background: panelBg,
-            border: `3px solid ${elemColor}50`,
+            border: `3px solid ${ac}`,
             maxHeight: "80vh",
             overflowY: "auto",
             position: "relative",
-            boxShadow: `0 0 30px rgba(0,0,0,0.5), inset 0 0 60px rgba(0,0,0,0.3)`,
+            boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15, inset 0 0 30px rgba(0,0,0,0.5)`,
           }}
         >
           <div
@@ -316,9 +310,9 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                   style={{
                     fontFamily,
                     fontSize: 8,
-                    color: "white",
-                    background: `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`,
-                    border: `2px solid ${elemColor}`,
+                    color: "#0a0808",
+                    background: `linear-gradient(180deg, ${ac}e0, ${ac}a0)`,
+                    border: `2px solid ${ac}`,
                     padding: "8px 20px",
                     cursor: "pointer",
                     display: "flex",
@@ -327,8 +321,8 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                     transition: "all 0.2s",
                     borderRadius: 0,
                   }}
-                  onMouseEnter={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}, ${elemColor}90)`; }}
-                  onMouseLeave={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`; }}
+                  onMouseEnter={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${ac}, ${ac}d0)`; }}
+                  onMouseLeave={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${ac}e0, ${ac}a0)`; }}
                 >
                   Next
                   <ArrowRight style={{ width: 12, height: 12 }} />
@@ -340,9 +334,9 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                   style={{
                     fontFamily,
                     fontSize: 8,
-                    color: "white",
-                    background: `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`,
-                    border: `2px solid ${elemColor}`,
+                    color: "#0a0808",
+                    background: `linear-gradient(180deg, ${ac}e0, ${ac}a0)`,
+                    border: `2px solid ${ac}`,
                     padding: "8px 20px",
                     cursor: "pointer",
                     display: "flex",
@@ -350,10 +344,10 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                     gap: 4,
                     transition: "all 0.2s",
                     borderRadius: 0,
-                    boxShadow: `0 0 20px ${elemColor}30`,
+                    boxShadow: `0 0 20px ${ac}50`,
                   }}
-                  onMouseEnter={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}, ${elemColor}90)`; }}
-                  onMouseLeave={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${elemColor}90, ${elemColor}60)`; }}
+                  onMouseEnter={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${ac}, ${ac}d0)`; }}
+                  onMouseLeave={e => { (e.target as HTMLElement).style.background = `linear-gradient(180deg, ${ac}e0, ${ac}a0)`; }}
                 >
                   <Sparkles style={{ width: 12, height: 12 }} />
                   Begin Adventure
