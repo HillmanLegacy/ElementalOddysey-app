@@ -237,6 +237,137 @@ const PLAYER_POS = ALLY_SLOTS[0];
 const PARTY_POSITIONS = [ALLY_SLOTS[1], ALLY_SLOTS[2]];
 const ENEMY_POSITIONS = ENEMY_SLOTS;
 
+const EL_PIX: Record<string, { grid: string[]; pal: Record<string, string> }> = {
+  Fire: {
+    grid: [
+      '...F...',
+      '..FOF..',
+      '.FOOFO.',
+      'FOOYYOF',
+      'FOYYYYF',
+      '.FFOOFF',
+      '..FFFF.',
+      '...FF..',
+    ],
+    pal: { F: '#ef4444', O: '#f97316', Y: '#fbbf24' },
+  },
+  Ice: {
+    grid: [
+      '..W.W..',
+      '...B...',
+      'W.BBB.W',
+      '.BBBBB.',
+      'W.BBB.W',
+      '...B...',
+      '..W.W..',
+    ],
+    pal: { B: '#22d3ee', W: '#e0f7fa' },
+  },
+  Lightning: {
+    grid: [
+      '.YYYY..',
+      '.YYY...',
+      'YYYY...',
+      '.YYYYY.',
+      '...YYY.',
+      '...YY..',
+      '....Y..',
+    ],
+    pal: { Y: '#fbbf24', W: '#fef08a' },
+  },
+  Water: {
+    grid: [
+      '...L...',
+      '..LBL..',
+      '.LBBBL.',
+      'LBBBBBL',
+      '.LBBBL.',
+      '..LBL..',
+      '...L...',
+    ],
+    pal: { B: '#3b82f6', L: '#93c5fd' },
+  },
+  Wind: {
+    grid: [
+      '.GGG...',
+      'G...G..',
+      'GL.....',
+      '.GGGG..',
+      '.....GL',
+      '....G..',
+      '...GGG.',
+    ],
+    pal: { G: '#84cc16', L: '#d9f99d' },
+  },
+  Earth: {
+    grid: [
+      '...B...',
+      '..BBB..',
+      '.BDDBB.',
+      'BDDDGDB',
+      '.BDDBB.',
+      '..BBB..',
+      '...B...',
+    ],
+    pal: { B: '#92400e', D: '#b45309', G: '#d97706' },
+  },
+  Shadow: {
+    grid: [
+      '..PPP..',
+      '.P...P.',
+      'PP.....',
+      'PP.DD..',
+      'PP.....',
+      '.P...P.',
+      '..PPP..',
+    ],
+    pal: { P: '#7c3aed', D: '#c4b5fd' },
+  },
+  Light: {
+    grid: [
+      'W..Y..W',
+      '.W.Y.W.',
+      '..WYW..',
+      'YYYWYYY',
+      '..WYW..',
+      '.W.Y.W.',
+      'W..Y..W',
+    ],
+    pal: { Y: '#fbbf24', W: '#fef9c3' },
+  },
+};
+
+function ElementPixelIcon({ element, pixelSize = 3 }: { element: string; pixelSize?: number }) {
+  const spec = EL_PIX[element];
+  if (!spec) return null;
+  const { grid, pal } = spec;
+  const cols = grid[0].length;
+  const rows = grid.length;
+  return (
+    <svg
+      width={cols * pixelSize}
+      height={rows * pixelSize}
+      style={{ imageRendering: 'pixelated', flexShrink: 0 }}
+      shapeRendering="crispEdges"
+    >
+      {grid.map((row, y) =>
+        row.split('').map((ch, x) =>
+          ch !== '.' && pal[ch] ? (
+            <rect
+              key={`${x}-${y}`}
+              x={x * pixelSize}
+              y={y * pixelSize}
+              width={pixelSize}
+              height={pixelSize}
+              fill={pal[ch]}
+            />
+          ) : null
+        )
+      )}
+    </svg>
+  );
+}
+
 export default function BattleScreen({
   player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier,
 }: BattleScreenProps) {
@@ -279,7 +410,7 @@ export default function BattleScreen({
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
   const [frostBreathAnim, setFrostBreathAnim] = useState<{ fromX: number; fromY: number; active: boolean } | null>(null);
   const [frostHitSfx, setFrostHitSfx] = useState(false);
-  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string; isBlocked?: boolean; isHeal?: boolean }[]>([]);
+  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string; isBlocked?: boolean; isHeal?: boolean; element?: string; isCrit?: boolean; label?: string }[]>([]);
   const [pendingTargetIdx, setPendingTargetIdx] = useState<number | null>(null);
   const [fujinSliceActive, setFujinSliceActive] = useState(false);
   const [fujinSlashes, setFujinSlashes] = useState<{ id: number; x: number; y: number; rotation: number; delay: number; sheet: string; frames: number; fw: number }[]>([]);
@@ -549,15 +680,12 @@ export default function BattleScreen({
     if (evt.isBlocked) {
       color = "#60a5fa";
     }
-    const text = evt.isHeal ? `+${evt.amount}` : (evt.isCrit ? "CRIT " : "") + evt.amount;
+    const text = evt.isHeal ? `+${evt.amount}` : String(evt.amount);
+    const label = evt.isHeal ? undefined : evt.isBlocked ? "BLOCKED!" : evt.label || undefined;
     const id = damageIdRef.current++;
-    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked, isHeal: evt.isHeal }]);
-    setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
+    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked, isHeal: evt.isHeal, element: evt.element, isCrit: evt.isCrit, label }]);
+    setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1800);
     if (evt.label && !evt.isHeal) {
-      const labelColor = evt.label === "Super effective!" ? "#fbbf24" : "#94a3b8";
-      const labelId = damageIdRef.current++;
-      setDamageNumbers(prev => [...prev, { id: labelId, text: evt.label!, x: posX, y: posY - 10, color: labelColor }]);
-      setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== labelId)), 2500);
       setResultLabel(evt.label);
       setTimeout(() => setResultLabel(null), 2200);
     } else {
@@ -598,10 +726,12 @@ export default function BattleScreen({
         }
 
         if (evt.isHeal) color = "#22c55e";
-        const text = evt.isHeal ? `+${evt.amount}` : (evt.isCrit ? "CRIT " : "") + evt.amount;
+        if (evt.isBlocked) color = "#60a5fa";
+        const text = evt.isHeal ? `+${evt.amount}` : String(evt.amount);
+        const label = evt.isHeal ? undefined : evt.isBlocked ? "BLOCKED!" : evt.label || undefined;
         const id = damageIdRef.current++;
-        setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isHeal: evt.isHeal }]);
-        setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1200);
+        setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isHeal: evt.isHeal, isBlocked: evt.isBlocked, element: evt.element, isCrit: evt.isCrit, label }]);
+        setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1800);
       }, idx * 50);
     });
   }, [battle.lastDamageEvents, showDamageNumbers]);
@@ -2398,48 +2528,57 @@ export default function BattleScreen({
         playerHpPct={hpPercent / 100}
       />
 
-      {damageNumbers.map(d => (
-        <div
-          key={d.id}
-          className="absolute pointer-events-none z-50 animate-[dmgFloat_1.2s_ease-out_forwards] flex items-center gap-1"
-          style={{
-            left: `${d.x}%`,
-            top: `${d.y}%`,
-            fontSize: d.text.includes("CRIT") || d.text.includes("DODGE") ? "28px" : "24px",
-            fontWeight: 900,
-            fontFamily: "'Arial Black', 'Impact', sans-serif",
-            color: d.color,
-            WebkitTextStroke: "2px rgba(0,0,0,0.9)",
-            paintOrder: "stroke fill",
-            textShadow: `0 0 8px ${d.color}, 0 0 16px ${d.color}80, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000`,
-            letterSpacing: "1px",
-          }}
-        >
-          {d.isHeal && (
-            <img
-              src={healingIcon}
-              alt=""
-              style={{
-                width: 22,
-                height: 22,
-                imageRendering: "pixelated",
-                flexShrink: 0,
-                filter: `drop-shadow(0 0 4px #22c55e)`,
-              }}
-            />
-          )}
-          {d.isBlocked && (
-            <Shield className="w-6 h-6 flex-shrink-0" style={{
-              color: d.color,
-              filter: `drop-shadow(0 0 6px ${d.color}) drop-shadow(0 0 12px ${d.color}80)`,
-              WebkitTextStroke: "0",
-              stroke: d.color,
-              strokeWidth: 2.5,
-            }} />
-          )}
-          {d.text}
-        </div>
-      ))}
+      {damageNumbers.map(d => {
+        const numColor = d.isCrit ? "#fbbf24" : d.color;
+        const numSize = d.text === "DODGE" ? "26px" : d.isCrit ? "30px" : "24px";
+        const labelColor = d.label === "Super effective!" ? "#fbbf24" : d.label === "BLOCKED!" ? "#60a5fa" : "#b0bec5";
+        return (
+          <div
+            key={d.id}
+            className="absolute pointer-events-none z-50 animate-[dmgFloat_1.2s_ease-out_forwards] flex flex-col items-center"
+            style={{ left: `${d.x}%`, top: `${d.y}%` }}
+          >
+            <div className="flex items-center gap-1" style={{
+              fontSize: numSize,
+              fontWeight: 900,
+              fontFamily: "'Arial Black', 'Impact', sans-serif",
+              color: numColor,
+              WebkitTextStroke: "2px rgba(0,0,0,0.9)",
+              paintOrder: "stroke fill",
+              textShadow: `0 0 8px ${numColor}, 0 0 16px ${numColor}80, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000`,
+              letterSpacing: "1px",
+            }}>
+              {d.isHeal && (
+                <img src={healingIcon} alt="" style={{ width: 22, height: 22, imageRendering: "pixelated", flexShrink: 0, filter: "drop-shadow(0 0 4px #22c55e)" }} />
+              )}
+              {!d.isHeal && d.element && (
+                <ElementPixelIcon element={d.element} pixelSize={d.isCrit ? 4 : 3} />
+              )}
+              {d.isBlocked && (
+                <Shield className="w-6 h-6 flex-shrink-0" style={{ color: d.color, filter: `drop-shadow(0 0 6px ${d.color}) drop-shadow(0 0 12px ${d.color}80)`, WebkitTextStroke: "0", stroke: d.color, strokeWidth: 2.5 }} />
+              )}
+              {d.isCrit && !d.isHeal && (
+                <span style={{ fontSize: "13px", fontFamily: "'Press Start 2P', cursive", color: "#fbbf24", WebkitTextStroke: "1.5px #000", paintOrder: "stroke fill", textShadow: "0 0 8px #fbbf24" }}>CRIT!</span>
+              )}
+              {d.text}
+            </div>
+            {d.label && (
+              <div style={{
+                fontSize: "8px",
+                fontFamily: "'Press Start 2P', cursive",
+                color: labelColor,
+                WebkitTextStroke: "1px rgba(0,0,0,0.9)",
+                paintOrder: "stroke fill",
+                textShadow: d.label === "Super effective!" ? "0 0 6px #fbbf24" : d.label === "BLOCKED!" ? "0 0 6px #60a5fa" : "none",
+                whiteSpace: "nowrap",
+                marginTop: "2px",
+              }}>
+                {d.label}
+              </div>
+            )}
+          </div>
+        );
+      })}
 
       <div className="relative z-10 h-full">
         <div className="absolute inset-0 overflow-hidden">
