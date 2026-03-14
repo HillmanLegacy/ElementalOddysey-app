@@ -17,7 +17,7 @@ const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frame
 const STARTER_DESCRIPTIONS: Record<string, string> = {
   knight_fire: "A stalwart fire knight with high HP and ATK. Excels at close combat with devastating fire magic.",
   samurai_wind: "A swift wind samurai with high AGI and balanced stats. Masters wind techniques and blade arts.",
-  basken_lightning: "A versatile lightning warrior with good luck and speed. Wields thunder magic in battle.",
+  basken_lightning: "A versatile lightning rogue with good luck and speed. Wields thunder magic in battle.",
 };
 
 import { playSfx } from "@/lib/sfx";
