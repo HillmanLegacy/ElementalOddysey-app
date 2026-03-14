@@ -342,6 +342,24 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
 
   return (
     <div className="relative w-full h-full overflow-hidden" data-testid="overworld-screen">
+      <style>{`
+        @keyframes bgCloudDrift {
+          0%   { transform: translateX(115%); }
+          100% { transform: translateX(-115%); }
+        }
+        @keyframes bgMtnDrift {
+          0%, 100% { transform: translateX(0px); }
+          50%       { transform: translateX(-6px); }
+        }
+        @keyframes bgAmbientPulse {
+          0%, 100% { opacity: 0.7; }
+          50%       { opacity: 1.3; }
+        }
+        @keyframes bgFirePulse {
+          0%, 100% { opacity: 0.08; }
+          50%       { opacity: 0.18; }
+        }
+      `}</style>
       {isFireRegion && (
         <div className="absolute inset-0" style={{
           backgroundImage: `url(${lavaRegionBg})`,
@@ -349,7 +367,13 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           backgroundPosition: "center bottom",
           imageRendering: "pixelated",
           zIndex: 0,
-        }} />
+        }}>
+          <div className="absolute inset-0" style={{
+            background: "radial-gradient(ellipse at 50% 90%, rgba(255,80,0,0.35) 0%, transparent 70%)",
+            animation: "bgFirePulse 3s ease-in-out infinite",
+            pointerEvents: "none",
+          }} />
+        </div>
       )}
       <div
         className="absolute inset-0"
@@ -365,7 +389,30 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           <div className="absolute inset-0" style={{
             background: `linear-gradient(180deg, ${theme.sky[0]} 0%, ${theme.sky[1]} 15%, ${theme.sky[2]} 30%, ${theme.sky[3]} 55%, ${theme.sky[4]} 80%)`,
           }} />
-          <div className="absolute inset-0" style={{ top: "15%" }}>
+          {[
+            { top: "6%",  w: 120, h: 28, delay: "0s",    dur: "80s",  opacity: 0.07 },
+            { top: "11%", w: 90,  h: 20, delay: "-28s",  dur: "65s",  opacity: 0.05 },
+            { top: "4%",  w: 160, h: 32, delay: "-50s",  dur: "100s", opacity: 0.06 },
+            { top: "9%",  w: 70,  h: 16, delay: "-15s",  dur: "55s",  opacity: 0.04 },
+          ].map((c, i) => (
+            <div key={`cloud-${i}`} className="absolute pointer-events-none" style={{
+              top: c.top, left: 0, right: 0,
+              overflow: "hidden",
+              height: c.h,
+            }}>
+              <div style={{
+                position: "absolute",
+                width: c.w,
+                height: c.h,
+                background: "white",
+                borderRadius: "50%",
+                opacity: c.opacity,
+                filter: "blur(8px)",
+                animation: `bgCloudDrift ${c.dur} linear ${c.delay} infinite`,
+              }} />
+            </div>
+          ))}
+          <div className="absolute inset-0" style={{ top: "15%", animation: "bgMtnDrift 28s ease-in-out infinite" }}>
             <svg className="w-full h-full" viewBox="0 0 100 60" preserveAspectRatio="none" style={{ shapeRendering: "crispEdges" }}>
               <path d={`M0 20 Q10 12 25 16 Q40 8 55 14 Q70 6 85 12 Q95 9 100 15 L100 60 L0 60 Z`}
                 fill={theme.mountainColor} opacity="0.6" />
@@ -402,6 +449,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           }} />
           <div className="absolute inset-0 pointer-events-none" style={{
             background: `radial-gradient(ellipse at 80% 20%, ${theme.ambientLight} 0%, transparent 60%)`,
+            animation: "bgAmbientPulse 6s ease-in-out infinite",
           }} />
         </div>
       )}
