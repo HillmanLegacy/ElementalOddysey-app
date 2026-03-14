@@ -260,6 +260,8 @@ export default function SideScrollStage({
   const contactCooldown = useRef<Set<number>>(new Set());
   // Walk-off exit animation: CSS transition slides the player off screen while camera stays frozen
   const pendingExitCbRef = useRef<(() => void) | null>(null);
+  // When exit is triggered mid-air we wait for landing; 'left'/'right' = waiting, null = idle
+  const pendingExitDirRef = useRef<'left' | 'right' | null>(null);
   const cameraXRef = useRef(0);
   // exitAnim.dist = px to translateX (negative = left, positive = right); activates on next rAF
   const [exitAnim, setExitAnim] = useState<{ dist: number; dur: number } | null>(null);
@@ -395,7 +397,11 @@ export default function SideScrollStage({
       const friction = p.onGround ? GROUND_FRICTION : AIR_DRAG;
 
       let moving = false;
-      if (keys.left && !keys.right) {
+      if (pendingExitDirRef.current !== null) {
+        // Exit is deferred (player mid-air at trigger): keep running toward exit at full speed
+        p.vx = (pendingExitDirRef.current === 'left' ? -1 : 1) * MAX_SPEED;
+        moving = true;
+      } else if (keys.left && !keys.right) {
         p.vx = Math.max(p.vx - accel * dt, -MAX_SPEED);
         moving = true;
         facingRightRef.current = false;
@@ -409,8 +415,8 @@ export default function SideScrollStage({
         else if (p.vx < 0) p.vx = Math.min(0, p.vx + friction * dt);
       }
 
-      // --- Jump: coyote + buffer ---
-      const canJump = p.coyoteTimer > 0;
+      // --- Jump: coyote + buffer (blocked during pending exit) ---
+      const canJump = p.coyoteTimer > 0 && pendingExitDirRef.current === null;
       if (p.jumpBufferTimer > 0 && canJump) {
         p.vy = JUMP_VELOCITY;
         p.onGround = false;
@@ -438,6 +444,23 @@ export default function SideScrollStage({
         jumpActiveRef.current = false;
       } else {
         p.onGround = false;
+      }
+
+      // --- Pending exit: fire walk-off now that the player has landed ---
+      if (pendingExitDirRef.current !== null && p.onGround) {
+        const dir = pendingExitDirRef.current;
+        pendingExitDirRef.current = null;
+        cancelAnimationFrame(rafRef.current);
+        const screenX = p.x - cameraXRef.current;
+        const dist = dir === 'left'
+          ? -(screenX + playerW + 80)
+          : viewportWRef.current - screenX + 80;
+        const dur = Math.abs(dist) / MAX_SPEED;
+        setFacingRight(dir === 'right');
+        setIsRunning(true);
+        setIsJumping(false);
+        setExitAnim({ dist, dur });
+        return;
       }
 
       // --- Footstep sound ---
@@ -473,33 +496,43 @@ export default function SideScrollStage({
       // --- Left exit portal check ---
       if (p.x <= LEFT_EXIT_TRIGGER && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
-        cancelAnimationFrame(rafRef.current);
-        const screenX = p.x - cameraXRef.current;
-        const dist = -(screenX + playerW + 80); // negative = translate left off screen
-        const dur = Math.abs(dist) / MAX_SPEED;
         pendingExitCbRef.current = reversed ? onCompleteRef.current : onExitRef.current;
         facingRightRef.current = false;
         setFacingRight(false);
-        setIsRunning(true);
-        setIsJumping(false);
-        setExitAnim({ dist, dur });
-        return;
+        if (!p.onGround) {
+          // Mid-air: keep RAF running, fire walk-off on landing
+          pendingExitDirRef.current = 'left';
+        } else {
+          cancelAnimationFrame(rafRef.current);
+          const screenX = p.x - cameraXRef.current;
+          const dist = -(screenX + playerW + 80);
+          const dur = Math.abs(dist) / MAX_SPEED;
+          setIsRunning(true);
+          setIsJumping(false);
+          setExitAnim({ dist, dur });
+          return;
+        }
       }
 
       // --- Stage end (right portal) ---
       if (p.x + playerW * 0.6 >= STAGE_END_X && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
-        cancelAnimationFrame(rafRef.current);
-        const screenX = p.x - cameraXRef.current;
-        const dist = viewportWRef.current - screenX + 80; // positive = translate right off screen
-        const dur = Math.abs(dist) / MAX_SPEED;
         pendingExitCbRef.current = reversed ? onExitRef.current : onCompleteRef.current;
         facingRightRef.current = true;
         setFacingRight(true);
-        setIsRunning(true);
-        setIsJumping(false);
-        setExitAnim({ dist, dur });
-        return;
+        if (!p.onGround) {
+          // Mid-air: keep RAF running, fire walk-off on landing
+          pendingExitDirRef.current = 'right';
+        } else {
+          cancelAnimationFrame(rafRef.current);
+          const screenX = p.x - cameraXRef.current;
+          const dist = viewportWRef.current - screenX + 80;
+          const dur = Math.abs(dist) / MAX_SPEED;
+          setIsRunning(true);
+          setIsJumping(false);
+          setExitAnim({ dist, dur });
+          return;
+        }
       }
 
       // --- Enemy patrol + AI update ---
