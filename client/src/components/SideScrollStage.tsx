@@ -61,7 +61,8 @@ const JUMP_VELOCITY  = -490;
 const COYOTE_TIME    = 0.10;
 const JUMP_BUFFER    = 0.12;
 const STAGE_END_X       = 4650;
-const CAMERA_LEAD       = 340;
+const VIEWPORT_W        = 1024; // logical viewport width (matches CSS layout)
+const STAGE_PAD         = 1200; // ground extension on each side for endless look
 const LEFT_EXIT_TRIGGER = 80;   // player x threshold to fire left exit
 
 const CHAR_SPRITES: Record<string, {
@@ -255,6 +256,11 @@ export default function SideScrollStage({
   const stageCompleteRef = useRef(false);
   const battlePendingRef = useRef(false);
   const contactCooldown = useRef<Set<number>>(new Set());
+  // Walk-off exit animation: camera freezes, player walks off screen, then callback fires
+  const walkOffRef = useRef<'none' | 'left' | 'right'>('none');
+  const exitCallbackRef = useRef<() => void>(() => {});
+  const frozenCamXRef = useRef(0);
+  const cameraXRef = useRef(0);
 
   const onEnemyContactRef = useRef(onEnemyContact);
   const onFireballContactRef = useRef(onFireballContact);
@@ -338,6 +344,32 @@ export default function SideScrollStage({
         ? Math.min((ts - lastTimeRef.current) / 1000, 0.05)
         : 0.016;
       lastTimeRef.current = ts;
+
+      // --- Walk-off exit animation: camera frozen, player walks off screen ---
+      if (walkOffRef.current !== 'none') {
+        const p = physRef.current;
+        const walkDir = walkOffRef.current === 'left' ? -1 : 1;
+        p.x += walkDir * MAX_SPEED * dt;
+        facingRightRef.current = walkDir === 1;
+        const camX = frozenCamXRef.current;
+        const pW = Math.round((CHAR_SPRITES[player.spriteId] ?? CHAR_SPRITES.samurai).iW
+          * (CHAR_SPRITES[player.spriteId] ?? CHAR_SPRITES.samurai).scale);
+        const offScreen = walkOffRef.current === 'left'
+          ? p.x + pW < camX          // player right edge past left of viewport
+          : p.x > camX + VIEWPORT_W; // player left edge past right of viewport
+        setRenderX(p.x);
+        setIsRunning(true);
+        setFacingRight(facingRightRef.current);
+        if (offScreen) {
+          walkOffRef.current = 'none';
+          setBattleFreezing(true);
+          cancelAnimationFrame(rafRef.current);
+          exitCallbackRef.current();
+          return;
+        }
+        rafRef.current = requestAnimationFrame(loop);
+        return;
+      }
 
       const p = physRef.current;
       const keys = keysRef.current;
@@ -441,20 +473,20 @@ export default function SideScrollStage({
       // --- Left exit portal check ---
       if (p.x <= LEFT_EXIT_TRIGGER && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
-        setBattleFreezing(true);
-        cancelAnimationFrame(rafRef.current);
-        if (reversed) onCompleteRef.current();
-        else onExitRef.current();
+        frozenCamXRef.current = cameraXRef.current;
+        exitCallbackRef.current = reversed ? onCompleteRef.current : onExitRef.current;
+        walkOffRef.current = 'left';
+        rafRef.current = requestAnimationFrame(loop); // keep loop alive for walk-off
         return;
       }
 
       // --- Stage end (right portal) ---
       if (p.x + playerW * 0.6 >= STAGE_END_X && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
-        setBattleFreezing(true);
-        cancelAnimationFrame(rafRef.current);
-        if (reversed) onExitRef.current();
-        else onCompleteRef.current();
+        frozenCamXRef.current = cameraXRef.current;
+        exitCallbackRef.current = reversed ? onExitRef.current : onCompleteRef.current;
+        walkOffRef.current = 'right';
+        rafRef.current = requestAnimationFrame(loop); // keep loop alive for walk-off
         return;
       }
 
@@ -599,9 +631,10 @@ export default function SideScrollStage({
         }
       }
 
-      // --- Camera ---
-      const targetCamX = p.x - CAMERA_LEAD;
-      const newCamX = Math.max(0, Math.min(STAGE_WIDTH - 1024, targetCamX));
+      // --- Camera: centered on player, padded edges for endless look ---
+      const targetCamX = p.x + playerW / 2 - VIEWPORT_W / 2;
+      const newCamX = Math.max(-STAGE_PAD, Math.min(STAGE_WIDTH - VIEWPORT_W + STAGE_PAD, targetCamX));
+      cameraXRef.current = newCamX;
 
       setRenderX(p.x);
       setRenderY(p.y);
@@ -740,6 +773,7 @@ export default function SideScrollStage({
           willChange: "transform",
         }}
       >
+        {/* Ground fill — main stage */}
         <div style={{
           position: "absolute",
           left: 0,
@@ -748,7 +782,26 @@ export default function SideScrollStage({
           height: VIEWPORT_H - GROUND_Y,
           background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
         }} />
+        {/* Ground fill — left extension for endless look */}
+        <div style={{
+          position: "absolute",
+          left: -STAGE_PAD,
+          top: GROUND_Y,
+          width: STAGE_PAD,
+          height: VIEWPORT_H - GROUND_Y,
+          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+        }} />
+        {/* Ground fill — right extension for endless look */}
+        <div style={{
+          position: "absolute",
+          left: STAGE_WIDTH,
+          top: GROUND_Y,
+          width: STAGE_PAD,
+          height: VIEWPORT_H - GROUND_Y,
+          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+        }} />
 
+        {/* Orange ground line — main stage */}
         <div style={{
           position: "absolute",
           left: 0,
@@ -756,6 +809,26 @@ export default function SideScrollStage({
           width: STAGE_WIDTH,
           height: 3,
           background: "linear-gradient(90deg, #ff5500, #ffaa00, #ff5500, #ff8800, #ff4400)",
+          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+        }} />
+        {/* Orange ground line — left extension */}
+        <div style={{
+          position: "absolute",
+          left: -STAGE_PAD,
+          top: GROUND_Y - 3,
+          width: STAGE_PAD,
+          height: 3,
+          background: "#ff5500",
+          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+        }} />
+        {/* Orange ground line — right extension */}
+        <div style={{
+          position: "absolute",
+          left: STAGE_WIDTH,
+          top: GROUND_Y - 3,
+          width: STAGE_PAD,
+          height: 3,
+          background: "#ff5500",
           boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
         }} />
 
