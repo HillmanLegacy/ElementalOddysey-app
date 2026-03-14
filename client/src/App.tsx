@@ -165,6 +165,9 @@ function Game() {
   } | null>(null);
   const [sideScrollCompleteTransition, setSideScrollCompleteTransition] = useState(false);
   const [sideScrollExitTransition, setSideScrollExitTransition] = useState(false);
+  const [sideScrollEnterReveal, setSideScrollEnterReveal] = useState(false);
+  const [sideScrollCompleteReveal, setSideScrollCompleteReveal] = useState(false);
+  const [sideScrollExitReveal, setSideScrollExitReveal] = useState(false);
   const [sideScrollEnterPending, setSideScrollEnterPending] = useState<{
     fromNodeId: number;
     toNodeId: number;
@@ -342,6 +345,7 @@ function Game() {
                     setSideScrollCompleteTransition(false);
                     const toNodeId = sideScrollCtx?.toNodeId;
                     setSideScrollCtx(null);
+                    setSideScrollCompleteReveal(true);
                     if (toNodeId !== undefined) updatePlayer({ currentNode: toNodeId });
                     const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
                     if (region.theme === "Fire") {
@@ -358,12 +362,20 @@ function Game() {
                   onComplete={() => {
                     setSideScrollExitTransition(false);
                     setSideScrollCtx(null);
+                    setSideScrollExitReveal(true);
                     const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
                       playMusic("lava_region_music");
                     }
                   }}
+                />
+              )}
+              {sideScrollEnterReveal && (
+                <BattleTransition
+                  direction="out"
+                  elementColor="#c9a44a"
+                  onComplete={() => setSideScrollEnterReveal(false)}
                 />
               )}
             </>
@@ -438,6 +450,7 @@ function Game() {
                   const pending = sideScrollEnterPending;
                   setSideScrollEnterPending(null);
                   setSideScrollCtx(pending);
+                  setSideScrollEnterReveal(true);
                   const region = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {}));
                   if (region.theme === "Fire") {
                     playMusic("lava_region_battle");
@@ -477,6 +490,20 @@ function Game() {
                     }
                   }
                 }}
+              />
+            )}
+            {sideScrollCompleteReveal && (
+              <BattleTransition
+                direction="out"
+                elementColor="#c9a44a"
+                onComplete={() => setSideScrollCompleteReveal(false)}
+              />
+            )}
+            {sideScrollExitReveal && (
+              <BattleTransition
+                direction="out"
+                elementColor="#6688ff"
+                onComplete={() => setSideScrollExitReveal(false)}
               />
             )}
             {hutTransitionOut && (
