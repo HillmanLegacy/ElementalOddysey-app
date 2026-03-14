@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
+import { COLOR_VARIANTS } from "@/lib/gameData";
 import lavaBgImg from "@assets/Lava_Stage_Side_Scroll_Background_upscayl_3x_digital-art-4x_1773372864153.png";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -990,7 +991,7 @@ export default function SideScrollStage({
             top: renderY,
             width: playerW,
             height: playerH,
-            filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.8))",
+            filter: `drop-shadow(0 4px 10px rgba(0,0,0,0.8))${COLOR_VARIANTS.find(v => v.id === player.colorVariant)?.filter ? ` ${COLOR_VARIANTS.find(v => v.id === player.colorVariant)!.filter}` : ""}`,
             transition: exitAnim ? `transform ${exitAnim.dur.toFixed(3)}s linear` : undefined,
             transform: (exitAnim && exitTransformActive)
               ? `translateX(${exitAnim.dist}px)`

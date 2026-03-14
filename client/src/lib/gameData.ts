@@ -159,7 +159,18 @@ export function getPartyMemberForLevel(def: PartyMemberDef, level: number): Part
   };
 }
 
-export function createNewPlayer(starterDef: PartyMemberDef, name: string, color: EnergyColor, shape: EnergyShape): PlayerCharacter {
+export const COLOR_VARIANTS: { id: string; name: string; swatch: string; filter: string }[] = [
+  { id: "default",  name: "Default",  swatch: "#9ca3af", filter: "" },
+  { id: "crimson",  name: "Crimson",  swatch: "#dc2626", filter: "hue-rotate(140deg) saturate(1.2)" },
+  { id: "azure",    name: "Azure",    swatch: "#3b82f6", filter: "hue-rotate(200deg) saturate(1.3)" },
+  { id: "emerald",  name: "Emerald",  swatch: "#22c55e", filter: "hue-rotate(95deg) saturate(1.2)" },
+  { id: "violet",   name: "Violet",   swatch: "#a855f7", filter: "hue-rotate(260deg) saturate(1.1)" },
+  { id: "amber",    name: "Amber",    swatch: "#f59e0b", filter: "hue-rotate(30deg) saturate(2.0) brightness(1.1)" },
+  { id: "rose",     name: "Rose",     swatch: "#f43f5e", filter: "hue-rotate(165deg) saturate(1.4)" },
+  { id: "obsidian", name: "Obsidian", swatch: "#6b7280", filter: "grayscale(0.7) brightness(0.7)" },
+];
+
+export function createNewPlayer(starterDef: PartyMemberDef, name: string, color: EnergyColor, shape: EnergyShape, colorVariant: string = "default"): PlayerCharacter {
   return {
     name,
     level: 1,
@@ -184,6 +195,7 @@ export function createNewPlayer(starterDef: PartyMemberDef, name: string, color:
     defeatedBosses: [],
     spriteId: starterDef.spriteId,
     starterCharacterId: starterDef.id,
+    colorVariant,
     regionBossDefeats: {},
     merchantBattlesSinceRestock: 0,
     merchantLastRegion: 0,

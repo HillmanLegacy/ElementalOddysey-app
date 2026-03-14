@@ -4,7 +4,7 @@ import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import PixelDissolve from "./PixelDissolve";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
-import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel, generateDemonKinSpawn } from "@/lib/gameData";
+import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel, generateDemonKinSpawn, COLOR_VARIANTS } from "@/lib/gameData";
 import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
 import BattleEffectsLayer from "./BattleEffectsLayer";
@@ -2544,7 +2544,7 @@ export default function BattleScreen({
               />
             )}
             
-            <div style={{ position: "relative", width: Math.round(playerSprites.frameWidth * (playerSprites.scale || 3.5)), height: Math.round(playerSprites.frameHeight * (playerSprites.scale || 3.5)), overflow: "visible", filter: "brightness(1.15) saturate(1.35)" }}>
+            <div style={{ position: "relative", width: Math.round(playerSprites.frameWidth * (playerSprites.scale || 3.5)), height: Math.round(playerSprites.frameHeight * (playerSprites.scale || 3.5)), overflow: "visible", filter: `brightness(1.15) saturate(1.35)${COLOR_VARIANTS.find(v => v.id === player.colorVariant)?.filter ? ` ${COLOR_VARIANTS.find(v => v.id === player.colorVariant)!.filter}` : ""}` }}>
               <SpriteAnimator
                 spriteSheet={spriteConfig.src}
                 frameWidth={spriteConfig.w}

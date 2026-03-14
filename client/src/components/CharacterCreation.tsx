@@ -1,6 +1,6 @@
 import { useState } from "react";
 import ParticleCanvas from "./ParticleCanvas";
-import { ELEMENT_COLORS, STARTER_CHARACTERS } from "@/lib/gameData";
+import { ELEMENT_COLORS, STARTER_CHARACTERS, COLOR_VARIANTS } from "@/lib/gameData";
 import { ArrowLeft, ArrowRight, Sparkles, Check } from "lucide-react";
 import SpriteAnimator from "./SpriteAnimator";
 
@@ -24,7 +24,7 @@ import { playSfx } from "@/lib/sfx";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 interface CharacterCreationProps {
-  onComplete: (starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape) => void;
+  onComplete: (starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape, colorVariant: string) => void;
   onBack: () => void;
 }
 
@@ -41,7 +41,10 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
   const [step, setStep] = useState(0);
   const [selectedStarter, setSelectedStarter] = useState<string>("samurai_wind");
   const [name, setName] = useState("");
-  const steps = ["Character", "Name", "Confirm"];
+  const [colorVariant, setColorVariant] = useState("default");
+  const steps = ["Character", "Color", "Name", "Confirm"];
+
+  const selectedFilter = COLOR_VARIANTS.find(v => v.id === colorVariant)?.filter ?? "";
 
   const starterDef = STARTER_CHARACTERS.find(c => c.id === selectedStarter)!;
   const spriteData = STARTER_SPRITES[starterDef.spriteId];
@@ -66,7 +69,6 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
             <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Choose Your Character</h3>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
               {STARTER_CHARACTERS.map(starter => {
-                const sColor = ELEMENT_COLORS[starter.element];
                 const sprite = STARTER_SPRITES[starter.spriteId];
                 const isSelected = selectedStarter === starter.id;
                 return (
@@ -92,7 +94,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                     }}
                   >
                     <div style={{ width: 90, height: 90, position: "relative", imageRendering: "pixelated" as any, flexShrink: 0 }}>
-                      <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }}>
+                      <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)", filter: selectedFilter || undefined }}>
                         <SpriteAnimator
                           spriteSheet={sprite.sheet}
                           frameWidth={sprite.frameWidth}
@@ -131,11 +133,65 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
 
       case 1:
         return (
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, animation: "fadeIn 0.3s ease-out" }}>
+            <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Choose Color</h3>
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              <div style={{ width: 120, height: 120, position: "relative", imageRendering: "pixelated" as any, border: `2px solid ${ac}40`, background: "#0a080890" }}>
+                <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)", filter: selectedFilter || undefined }}>
+                  <SpriteAnimator
+                    spriteSheet={spriteData.sheet}
+                    frameWidth={spriteData.frameWidth}
+                    frameHeight={spriteData.frameHeight}
+                    totalFrames={spriteData.totalFrames}
+                    fps={8}
+                    scale={spriteData.displayScale * 1.3}
+                    loop={true}
+                  />
+                </div>
+              </div>
+            </div>
+            <p style={{ fontFamily, fontSize: 8, color: ac, textAlign: "center" }}>
+              {COLOR_VARIANTS.find(v => v.id === colorVariant)?.name ?? "Default"}
+            </p>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+              {COLOR_VARIANTS.map(variant => {
+                const isSelected = colorVariant === variant.id;
+                return (
+                  <button
+                    key={variant.id}
+                    title={variant.name}
+                    onClick={() => { playSfx('menuSelect'); setColorVariant(variant.id); }}
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: "50%",
+                      background: variant.swatch,
+                      border: isSelected ? `3px solid ${ac}` : `2px solid rgba(255,255,255,0.15)`,
+                      cursor: "pointer",
+                      transition: "all 0.15s",
+                      boxShadow: isSelected ? `0 0 10px ${variant.swatch}80, 0 0 0 2px ${ac}` : `0 0 6px ${variant.swatch}40`,
+                      transform: isSelected ? "scale(1.2)" : "scale(1)",
+                      position: "relative",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {variant.id === "default" && (
+                      <span style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 10, color: "#fff", fontWeight: "bold" }}>✦</span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        );
+
+      case 2:
+        return (
           <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
             <h3 style={{ fontFamily, fontSize: 11, color: ACCENT, textAlign: "center", textTransform: "uppercase", letterSpacing: 1 }}>Name Your {starterDef.className}</h3>
             <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}>
               <div style={{ width: 90, height: 90, position: "relative", imageRendering: "pixelated" as any }}>
-                <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }}>
+                <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)", filter: selectedFilter || undefined }}>
                   <SpriteAnimator
                     spriteSheet={spriteData.sheet}
                     frameWidth={spriteData.frameWidth}
@@ -171,7 +227,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
           </div>
         );
 
-      case 2:
+      case 3:
         const displayName = name.trim() || starterDef.name;
         return (
           <div style={{ display: "flex", flexDirection: "column", gap: 16, animation: "fadeIn 0.3s ease-out" }}>
@@ -189,7 +245,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                     imageRendering: "pixelated" as any,
                   }}
                 >
-                  <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)" }}>
+                  <div style={{ position: "absolute", left: "50%", bottom: 0, transform: "translateX(-50%)", filter: selectedFilter || undefined }}>
                     <SpriteAnimator
                       spriteSheet={spriteData.sheet}
                       frameWidth={spriteData.frameWidth}
@@ -303,7 +359,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 {step === 0 ? "Menu" : "Back"}
               </button>
 
-              {step < 2 ? (
+              {step < 3 ? (
                 <button
                   onClick={() => { playSfx('menuSelect'); setStep(step + 1); }}
                   data-testid="button-creation-next"
@@ -329,7 +385,7 @@ export default function CharacterCreation({ onComplete, onBack }: CharacterCreat
                 </button>
               ) : (
                 <button
-                  onClick={() => { playSfx('menuSelect'); onComplete(selectedStarter, name.trim() || starterDef.name, "Purple", "Orb"); }}
+                  onClick={() => { playSfx('menuSelect'); onComplete(selectedStarter, name.trim() || starterDef.name, "Purple", "Orb", colorVariant); }}
                   data-testid="button-begin-adventure"
                   style={{
                     fontFamily,
