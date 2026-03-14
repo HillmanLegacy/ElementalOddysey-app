@@ -256,11 +256,12 @@ export default function SideScrollStage({
   const stageCompleteRef = useRef(false);
   const battlePendingRef = useRef(false);
   const contactCooldown = useRef<Set<number>>(new Set());
-  // Walk-off exit animation: camera freezes, player walks off screen, then callback fires
-  const walkOffRef = useRef<'none' | 'left' | 'right'>('none');
-  const exitCallbackRef = useRef<() => void>(() => {});
-  const frozenCamXRef = useRef(0);
+  // Walk-off exit animation: CSS transition slides the player off screen while camera stays frozen
+  const pendingExitCbRef = useRef<(() => void) | null>(null);
   const cameraXRef = useRef(0);
+  // exitAnim.dist = px to translateX (negative = left, positive = right); activates on next rAF
+  const [exitAnim, setExitAnim] = useState<{ dist: number; dur: number } | null>(null);
+  const [exitTransformActive, setExitTransformActive] = useState(false);
 
   const onEnemyContactRef = useRef(onEnemyContact);
   const onFireballContactRef = useRef(onFireballContact);
@@ -270,6 +271,14 @@ export default function SideScrollStage({
   useEffect(() => { onFireballContactRef.current = onFireballContact; }, [onFireballContact]);
   useEffect(() => { onCompleteRef.current = onComplete; }, [onComplete]);
   useEffect(() => { onExitRef.current = onExit; }, [onExit]);
+
+  // Two-phase CSS walk-off: set exitAnim first (applies transition style), then on next rAF
+  // activate the transform so the browser sees an initial state to transition FROM.
+  useEffect(() => {
+    if (!exitAnim) { setExitTransformActive(false); return; }
+    const raf = requestAnimationFrame(() => setExitTransformActive(true));
+    return () => cancelAnimationFrame(raf);
+  }, [exitAnim]);
 
   const defeatedRef = useRef(defeatedEnemyIndices);
   useEffect(() => {
@@ -344,32 +353,6 @@ export default function SideScrollStage({
         ? Math.min((ts - lastTimeRef.current) / 1000, 0.05)
         : 0.016;
       lastTimeRef.current = ts;
-
-      // --- Walk-off exit animation: camera frozen, player walks off screen ---
-      if (walkOffRef.current !== 'none') {
-        const p = physRef.current;
-        const walkDir = walkOffRef.current === 'left' ? -1 : 1;
-        p.x += walkDir * MAX_SPEED * dt;
-        facingRightRef.current = walkDir === 1;
-        const camX = frozenCamXRef.current;
-        const pW = Math.round((CHAR_SPRITES[player.spriteId] ?? CHAR_SPRITES.samurai).iW
-          * (CHAR_SPRITES[player.spriteId] ?? CHAR_SPRITES.samurai).scale);
-        const offScreen = walkOffRef.current === 'left'
-          ? p.x + pW < camX          // player right edge past left of viewport
-          : p.x > camX + VIEWPORT_W; // player left edge past right of viewport
-        setRenderX(p.x);
-        setIsRunning(true);
-        setFacingRight(facingRightRef.current);
-        if (offScreen) {
-          walkOffRef.current = 'none';
-          setBattleFreezing(true);
-          cancelAnimationFrame(rafRef.current);
-          exitCallbackRef.current();
-          return;
-        }
-        rafRef.current = requestAnimationFrame(loop);
-        return;
-      }
 
       const p = physRef.current;
       const keys = keysRef.current;
@@ -473,20 +456,32 @@ export default function SideScrollStage({
       // --- Left exit portal check ---
       if (p.x <= LEFT_EXIT_TRIGGER && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
-        frozenCamXRef.current = cameraXRef.current;
-        exitCallbackRef.current = reversed ? onCompleteRef.current : onExitRef.current;
-        walkOffRef.current = 'left';
-        rafRef.current = requestAnimationFrame(loop); // keep loop alive for walk-off
+        cancelAnimationFrame(rafRef.current);
+        const screenX = p.x - cameraXRef.current;
+        const dist = -(screenX + playerW + 80); // negative = translate left off screen
+        const dur = Math.abs(dist) / MAX_SPEED;
+        pendingExitCbRef.current = reversed ? onCompleteRef.current : onExitRef.current;
+        facingRightRef.current = false;
+        setFacingRight(false);
+        setIsRunning(true);
+        setIsJumping(false);
+        setExitAnim({ dist, dur });
         return;
       }
 
       // --- Stage end (right portal) ---
       if (p.x + playerW * 0.6 >= STAGE_END_X && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
-        frozenCamXRef.current = cameraXRef.current;
-        exitCallbackRef.current = reversed ? onExitRef.current : onCompleteRef.current;
-        walkOffRef.current = 'right';
-        rafRef.current = requestAnimationFrame(loop); // keep loop alive for walk-off
+        cancelAnimationFrame(rafRef.current);
+        const screenX = p.x - cameraXRef.current;
+        const dist = VIEWPORT_W - screenX + 80; // positive = translate right off screen
+        const dur = Math.abs(dist) / MAX_SPEED;
+        pendingExitCbRef.current = reversed ? onExitRef.current : onCompleteRef.current;
+        facingRightRef.current = true;
+        setFacingRight(true);
+        setIsRunning(true);
+        setIsJumping(false);
+        setExitAnim({ dist, dur });
         return;
       }
 
@@ -943,7 +938,16 @@ export default function SideScrollStage({
             width: playerW,
             height: playerH,
             filter: "drop-shadow(0 4px 10px rgba(0,0,0,0.8))",
+            transition: exitAnim ? `transform ${exitAnim.dur.toFixed(3)}s linear` : undefined,
+            transform: (exitAnim && exitTransformActive)
+              ? `translateX(${exitAnim.dist}px)`
+              : undefined,
           }}
+          onTransitionEnd={exitAnim ? () => {
+            setBattleFreezing(true);
+            pendingExitCbRef.current?.();
+            pendingExitCbRef.current = null;
+          } : undefined}
         >
           <SpriteAnimator
             spriteSheet={spriteSrc}
