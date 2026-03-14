@@ -61,8 +61,9 @@ const JUMP_VELOCITY  = -490;
 const COYOTE_TIME    = 0.10;
 const JUMP_BUFFER    = 0.12;
 const STAGE_END_X       = 4650;
-const VIEWPORT_W        = 1024; // logical viewport width (matches CSS layout)
+const VIEWPORT_W        = 1024; // fallback logical viewport width
 const STAGE_PAD         = 1200; // ground extension on each side for endless look
+const BG_EXT            = 450;  // px the parallax bg extends left/right of stage content
 const LEFT_EXIT_TRIGGER = 80;   // player x threshold to fire left exit
 
 const CHAR_SPRITES: Record<string, {
@@ -138,15 +139,16 @@ function generateRocks(stageWidth: number) {
   return rocks;
 }
 
-function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number, groundY: number) {
+function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number, groundY: number, offsetX = 0) {
+  const totalW = width + 2 * offsetX;
   // Sky area (above groundY) is intentionally left transparent so the
   // CSS background image shows through. Only draw mountains + glow on top.
-  ctx.clearRect(0, 0, width, groundY);
+  ctx.clearRect(0, 0, totalW, groundY);
 
   const rng1 = rand(7);
   ctx.fillStyle = "rgba(8,2,6,0.72)";
   for (let i = 0; i < 18; i++) {
-    const mx = (i * (width / 14)) + rng1() * 80 - 40;
+    const mx = (i * (width / 14)) + rng1() * 80 - 40 + offsetX;
     const mh = 55 + rng1() * 50;
     ctx.beginPath();
     ctx.moveTo(mx - 110, groundY - 8);
@@ -158,7 +160,7 @@ function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number
   const rng2 = rand(13);
   ctx.fillStyle = "rgba(4,1,4,0.82)";
   for (let i = 0; i < 13; i++) {
-    const mx = (i * (width / 10)) + 60 + rng2() * 60 - 30;
+    const mx = (i * (width / 10)) + 60 + rng2() * 60 - 30 + offsetX;
     const mh = 90 + rng2() * 80;
     const wb = 130 + rng2() * 60;
     ctx.beginPath();
@@ -170,16 +172,16 @@ function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number
     ctx.fill();
   }
 
-  // Lava glow bloom just above the ground line
+  // Lava glow bloom just above the ground line — covers full width for seamless look
   const glowGrad = ctx.createLinearGradient(0, groundY - 80, 0, groundY);
   glowGrad.addColorStop(0, "rgba(255,80,0,0)");
   glowGrad.addColorStop(1, "rgba(255,110,0,0.22)");
   ctx.fillStyle = glowGrad;
-  ctx.fillRect(0, groundY - 80, width, 80);
+  ctx.fillRect(0, groundY - 80, totalW, 80);
 
-  // Ground fill (below groundY)
+  // Ground fill (below groundY) — covers full canvas width including extensions
   ctx.fillStyle = "#1a0606";
-  ctx.fillRect(0, groundY, width, height - groundY);
+  ctx.fillRect(0, groundY, totalW, height - groundY);
 
   const lavaGrad = ctx.createLinearGradient(0, groundY, 0, height);
   lavaGrad.addColorStop(0, "#6b1c04");
@@ -187,7 +189,7 @@ function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number
   lavaGrad.addColorStop(0.7, "#c04a10");
   lavaGrad.addColorStop(1, "#ff7a20");
   ctx.fillStyle = lavaGrad;
-  ctx.fillRect(0, groundY, width, height - groundY);
+  ctx.fillRect(0, groundY, totalW, height - groundY);
 }
 
 interface SideScrollStageProps {
@@ -325,13 +327,28 @@ export default function SideScrollStage({
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   const rocks = useRef(generateRocks(STAGE_WIDTH));
+  const containerRef = useRef<HTMLDivElement>(null);
+  const viewportWRef = useRef<number>(VIEWPORT_W);
 
   useEffect(() => {
     const canvas = bgCanvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y);
+    drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
+  }, []);
+
+  // Keep viewportWRef in sync with the container's actual pixel width
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(entries => {
+      const w = entries[0]?.contentRect.width;
+      if (w) viewportWRef.current = w;
+    });
+    ro.observe(el);
+    viewportWRef.current = el.offsetWidth || VIEWPORT_W;
+    return () => ro.disconnect();
   }, []);
 
   const rafRef = useRef<number>(0);
@@ -474,7 +491,7 @@ export default function SideScrollStage({
         stageCompleteRef.current = true;
         cancelAnimationFrame(rafRef.current);
         const screenX = p.x - cameraXRef.current;
-        const dist = VIEWPORT_W - screenX + 80; // positive = translate right off screen
+        const dist = viewportWRef.current - screenX + 80; // positive = translate right off screen
         const dur = Math.abs(dist) / MAX_SPEED;
         pendingExitCbRef.current = reversed ? onExitRef.current : onCompleteRef.current;
         facingRightRef.current = true;
@@ -627,8 +644,9 @@ export default function SideScrollStage({
       }
 
       // --- Camera: centered on player, padded edges for endless look ---
-      const targetCamX = p.x + playerW / 2 - VIEWPORT_W / 2;
-      const newCamX = Math.max(-STAGE_PAD, Math.min(STAGE_WIDTH - VIEWPORT_W + STAGE_PAD, targetCamX));
+      const vw = viewportWRef.current;
+      const targetCamX = p.x + playerW / 2 - vw / 2;
+      const newCamX = Math.max(-STAGE_PAD, Math.min(STAGE_WIDTH - vw + STAGE_PAD, targetCamX));
       cameraXRef.current = newCamX;
 
       setRenderX(p.x);
@@ -719,23 +737,26 @@ export default function SideScrollStage({
 
   return (
     <div
+      ref={containerRef}
       className="relative overflow-hidden select-none"
       style={{ width: "100%", height: "100%", background: "#060108" }}
       data-testid="side-scroll-stage"
     >
-      {/* Parallax lava landscape background — covers sky area above ground line */}
+      {/* Parallax lava landscape background — extended by BG_EXT on each side so the
+          parallax shift never exposes the container background at the stage edges */}
       <div
         style={{
           position: "absolute",
           top: 0,
-          left: 0,
-          width: STAGE_WIDTH,
+          left: -BG_EXT,
+          width: STAGE_WIDTH + 2 * BG_EXT,
           height: GROUND_Y,
           transform: `translateX(${-(cameraX * 0.35)}px)`,
           backgroundImage: `url(${lavaBgImg})`,
-          backgroundSize: "100% 100%",
+          backgroundSize: `${STAGE_WIDTH}px 100%`,
           backgroundRepeat: "no-repeat",
-          backgroundPosition: "left top",
+          backgroundPosition: `${BG_EXT}px 0`,
+          backgroundColor: "#060108",
           imageRendering: "pixelated",
           willChange: "transform",
           pointerEvents: "none",
@@ -744,12 +765,12 @@ export default function SideScrollStage({
 
       <canvas
         ref={bgCanvasRef}
-        width={STAGE_WIDTH}
+        width={STAGE_WIDTH + 2 * BG_EXT}
         height={VIEWPORT_H}
         style={{
           position: "absolute",
           top: 0,
-          left: 0,
+          left: -BG_EXT,
           transform: `translateX(${-(cameraX * 0.35)}px)`,
           imageRendering: "pixelated",
           willChange: "transform",
