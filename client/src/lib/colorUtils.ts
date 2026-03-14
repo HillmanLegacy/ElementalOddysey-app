@@ -137,9 +137,7 @@ export async function analyzeSpriteGroups(
 
       clusters.sort((a, b) => b.totalCount - a.totalCount);
 
-      const top = clusters.slice(0, 5).filter(c => c.colors.length >= 1);
-
-      const GROUP_NAMES_BY_Y = ["Hair", "Clothing", "Shoes", "Detail", "Accent"];
+      const top = clusters.filter(c => c.colors.length >= 1);
 
       const labeled = top.map((cluster) => {
         const avgY = cluster.totalY / cluster.totalCount;
@@ -159,7 +157,7 @@ export async function analyzeSpriteGroups(
         const baseColor = entry.sorted[0];
         return {
           id: `group${idx}`,
-          label: GROUP_NAMES_BY_Y[idx] ?? `Group ${idx + 1}`,
+          label: `Color Group ${idx + 1}`,
           colors: entry.sorted,
           baseColor,
           avgY: entry.avgY,
