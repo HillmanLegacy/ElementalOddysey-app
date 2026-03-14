@@ -43,7 +43,7 @@ export const STARTER_CHARACTERS: PartyMemberDef[] = [
   },
   {
     id: "basken_lightning",
-    name: "Basken",
+    name: "Rogue",
     className: "Warrior",
     element: "Lightning",
     baseStats: { hp: 75, maxHp: 75, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
@@ -70,7 +70,7 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
   },
   {
     id: "basken_lightning",
-    name: "Basken",
+    name: "Rogue",
     className: "Warrior",
     element: "Lightning",
     baseStats: { hp: 75, maxHp: 75, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
