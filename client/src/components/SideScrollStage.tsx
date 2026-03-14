@@ -222,14 +222,20 @@ export default function SideScrollStage({
   const stageData = LAVA_STAGES[stageKey] ?? { enemies: [] };
 
   // Resolve enemy types once at mount: before shop = 100% fireDemon; after shop = 80/20 split.
+  // Also filter enemies too close to the player's spawn so they can't attack on load-in.
+  const spawnSafeZone = SIGHT_RANGE + PATROL_RANGE + 100;
   const resolvedEnemiesRef = useRef(
-    stageData.enemies.map(e => {
-      if (e.type === "dragonLord") return e;
-      if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
-      return Math.random() < 0.2
-        ? { ...e, type: "demonKin" as EnemyType, enemyId: "demon_kin" }
-        : { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
-    })
+    stageData.enemies
+      .filter(e => reversed
+        ? e.x < initialPlayerX - spawnSafeZone   // reversed: cull enemies near right spawn
+        : e.x > initialPlayerX + spawnSafeZone)  // forward:  cull enemies near left spawn
+      .map(e => {
+        if (e.type === "dragonLord") return e;
+        if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
+        return Math.random() < 0.2
+          ? { ...e, type: "demonKin" as EnemyType, enemyId: "demon_kin" }
+          : { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
+      })
   );
   const resolvedEnemies = resolvedEnemiesRef.current;
 
@@ -245,7 +251,7 @@ export default function SideScrollStage({
     jumpBufferTimer: 0,
   });
   const keysRef = useRef({ left: false, right: false, jumpPressed: false, jumpHeld: false });
-  const facingRightRef = useRef(true);
+  const facingRightRef = useRef(!reversed);
   const stageCompleteRef = useRef(false);
   const battlePendingRef = useRef(false);
   const contactCooldown = useRef<Set<number>>(new Set());
@@ -297,7 +303,7 @@ export default function SideScrollStage({
   const playerFrameIdxRef = useRef(0);
   const playerFrameAccRef = useRef(0);
   const jumpActiveRef = useRef(false);
-  const [facingRight, setFacingRight] = useState(true);
+  const [facingRight, setFacingRight] = useState(!reversed);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
   const [battleFreezing, setBattleFreezing] = useState(false);
