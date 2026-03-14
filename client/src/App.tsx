@@ -157,6 +157,7 @@ function Game() {
     toNodeName: string;
     defeatedEnemyIndices: number[];
     savedPlayerX: number;
+    reversed: boolean;
   } | null>(null);
   const [sideScrollBattleTransition, setSideScrollBattleTransition] = useState<{
     enemyIndex: number;
@@ -170,6 +171,7 @@ function Game() {
     toNodeName: string;
     defeatedEnemyIndices: number[];
     savedPlayerX: number;
+    reversed: boolean;
   } | null>(null);
   const sideScrollBattleActiveRef = useRef(false);
   const lastContactedEnemyIdxRef = useRef<number | null>(null);
@@ -266,6 +268,7 @@ function Game() {
                 defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
                 initialPlayerX={sideScrollCtx.savedPlayerX}
                 shopVisited={state.player?.clearedNodes.includes(4) ?? false}
+                reversed={sideScrollCtx.reversed}
                 onEnemyContact={(enemyIndex, enemyId, playerX) => {
                   if (sideScrollBattleActiveRef.current) return;
                   lastContactedEnemyIdxRef.current = enemyIndex;
@@ -401,6 +404,10 @@ function Game() {
               onUseItem={useItemOverworld}
               onArrowClick={(fromNodeId, toNode) => {
                 if (!state.player) return;
+                const t = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
+                const r = getRegionForTier(state.player.currentRegion, t);
+                const fromNode = r.nodes.find(n => n.id === fromNodeId);
+                const reversed = fromNode ? fromNode.x > toNode.x : false;
                 stopAmbient();
                 fadeOutMusic(400);
                 setSideScrollEnterPending({
@@ -408,7 +415,8 @@ function Game() {
                   toNodeId: toNode.id,
                   toNodeName: toNode.name,
                   defeatedEnemyIndices: [],
-                  savedPlayerX: 150,
+                  savedPlayerX: reversed ? 4300 : 150,
+                  reversed,
                 });
               }}
             />

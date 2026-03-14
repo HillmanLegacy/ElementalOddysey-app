@@ -197,6 +197,7 @@ interface SideScrollStageProps {
   defeatedEnemyIndices: number[];
   initialPlayerX?: number;
   shopVisited?: boolean;
+  reversed?: boolean;
   onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onFireballContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onComplete: () => void;
@@ -211,6 +212,7 @@ export default function SideScrollStage({
   defeatedEnemyIndices,
   initialPlayerX = 150,
   shopVisited = false,
+  reversed = false,
   onEnemyContact,
   onFireballContact,
   onComplete,
@@ -435,7 +437,8 @@ export default function SideScrollStage({
         stageCompleteRef.current = true;
         setBattleFreezing(true);
         cancelAnimationFrame(rafRef.current);
-        onExitRef.current();
+        if (reversed) onCompleteRef.current();
+        else onExitRef.current();
         return;
       }
 
@@ -444,7 +447,8 @@ export default function SideScrollStage({
         stageCompleteRef.current = true;
         setBattleFreezing(true);
         cancelAnimationFrame(rafRef.current);
-        onCompleteRef.current();
+        if (reversed) onExitRef.current();
+        else onCompleteRef.current();
         return;
       }
 
@@ -652,7 +656,9 @@ export default function SideScrollStage({
   }, []);
 
 
-  const progressPercent = Math.min(100, Math.round((renderX / STAGE_END_X) * 100));
+  const progressPercent = reversed
+    ? Math.min(100, Math.round(((STAGE_END_X - renderX) / STAGE_END_X) * 100))
+    : Math.min(100, Math.round((renderX / STAGE_END_X) * 100));
 
   // Jump: freeze on first frame of run sheet (totalFrames=1 = naturally frozen).
   // Ground: run or idle based on velocity.
