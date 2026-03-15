@@ -441,7 +441,7 @@ export default function BattleScreen({
   const [enemyHitIdx, setEnemyHitIdx] = useState<number | null>(null);
   const [playerFlash, setPlayerFlash] = useState(false);
   const [fireHitSfx, setFireHitSfx] = useState(false);
-  const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash" | "castInferno">>({});
+  const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "flying" | "transition" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash" | "castInferno">>({});
   const [fireballAnim, setFireballAnim] = useState<{ fromX: number; fromY: number; toX: number; toY: number; active: boolean } | null>(null);
   const [potionVfx, setPotionVfx] = useState<{ x: number; y: number; color: string; active: boolean } | null>(null);
   const [bossOffset, setBossOffset] = useState<{ x: number; y: number } | null>(null);
@@ -524,6 +524,7 @@ export default function BattleScreen({
   const eruptionFlamelashAudio = useRef<HTMLAudioElement | null>(null);
   const fireImpactId = useRef(0);
   const fujinSlashId = useRef(0);
+  const ytrielHasFlown = useRef(false);
   const damageIdRef = useRef(0);
   const prevPhaseRef = useRef(battle.phase);
   const prevLogLenRef = useRef(battle.log.length);
@@ -957,7 +958,7 @@ export default function BattleScreen({
                 scheduleTimer(() => {
                   setEnemyAnimStates(prev => {
                     if (prev[targetIdx] === "death") return prev;
-                    return { ...prev, [targetIdx]: "idle" };
+                    return { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) };
                   });
                 }, 100);
               }
@@ -1028,7 +1029,7 @@ export default function BattleScreen({
           scheduleTimer(() => setEnemyHitIdx(null), 180);
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
           scheduleTimer(() => {
-            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
           }, 333);
         }, frame3Time);
 
@@ -1042,7 +1043,7 @@ export default function BattleScreen({
           scheduleTimer(() => setEnemyHitIdx(null), 180);
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
           scheduleTimer(() => {
-            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
           }, 333);
         }, frame6Time);
 
@@ -1129,7 +1130,7 @@ export default function BattleScreen({
           scheduleTimer(() => setEnemyHitIdx(null), 300);
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
           scheduleTimer(() => {
-            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
           }, 500);
         }, nukeStartTime);
 
@@ -1254,7 +1255,7 @@ export default function BattleScreen({
               setDeathAnimPending(prev => new Set(prev).add(targetIdx));
             }
             setEnemyAnimStates(prev => {
-              return { ...prev, [targetIdx]: isDying ? "death" : "idle" };
+              return { ...prev, [targetIdx]: isDying ? "death" : ytrielRestAnim(targetIdx) };
             });
           }, hurtDuration);
         }
@@ -1282,7 +1283,7 @@ export default function BattleScreen({
               setDeathAnimPending(prev => new Set(prev).add(targetIdx));
             }
             setEnemyAnimStates(prev => {
-              return { ...prev, [targetIdx]: isDying ? "death" : "idle" };
+              return { ...prev, [targetIdx]: isDying ? "death" : ytrielRestAnim(targetIdx) };
             });
           }, hurtDuration);
         }
@@ -1389,7 +1390,7 @@ export default function BattleScreen({
           scheduleTimer(() => setEnemyHitIdx(null), 180);
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
           scheduleTimer(() => {
-            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: "idle" });
+            setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
           }, 333);
         }, damageTime);
 
@@ -1548,6 +1549,11 @@ export default function BattleScreen({
     return (enemy.element === "Fire" && !enemy.isBoss) || isDragonLord(enemy) || isFrostLizard(enemy) || isJotem(enemy);
   }, [isDragonLord, isFrostLizard, isJotem]);
 
+  const ytrielRestAnim = useCallback((idx: number): "flying" | "idle" => {
+    const e = battle.enemies[idx];
+    return (e && isDragonLord(e) && ytrielHasFlown.current) ? "flying" : "idle";
+  }, [battle.enemies, isDragonLord]);
+
   const onEnemyDeathAnimDone = useCallback((idx: number) => {
     setDeathAnimPending(prev => {
       const next = new Set(prev);
@@ -1651,7 +1657,7 @@ export default function BattleScreen({
     const { enemyIdx, preTarget, onDone } = infernoBallAnim;
 
     setInfernoBallAnim(prev => prev ? { ...prev, phase: "explode" } : null);
-    setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+    setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: ytrielRestAnim(enemyIdx) }));
     playSfx("eruptionCleave", 1.0);
 
     const result = onEnemyAttack(enemyIdx, preTarget);
@@ -1758,7 +1764,7 @@ export default function BattleScreen({
           setYtrielSlashAnim({ phase: "spawn", fromX, fromY, toX, toY, enemyIdx, preTarget, onDone });
         }, 333);
         scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: ytrielRestAnim(enemyIdx) }));
         }, 700);
       } else {
         // ── Flyby slash attack (70%) ─────────────────────────────────────────
@@ -1775,6 +1781,7 @@ export default function BattleScreen({
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "transition" }));
 
         scheduleTimer(() => {
+          ytrielHasFlown.current = true;
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
           setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
         }, 400);
@@ -1812,7 +1819,7 @@ export default function BattleScreen({
         }, 1500);
 
         scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: ytrielRestAnim(enemyIdx) }));
           setBossOffset(null);
           setAnimPhase("idle");
           scheduleTimer(onDone, 300);
