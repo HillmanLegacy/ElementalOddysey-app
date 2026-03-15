@@ -3473,7 +3473,7 @@ export default function BattleScreen({
                           enemyAnimStates[idx] === "flying" ||
                           (!["attack","hurt","death","transition"].includes(enemyAnimStates[idx] ?? "idle"))
                         }
-                        flipX={true}
+                        flipX={false}
                         onComplete={
                           enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)

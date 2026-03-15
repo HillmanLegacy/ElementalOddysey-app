@@ -22,7 +22,6 @@ import demonIdleSheet from "@/assets/images/demon-idle.png";
 import demonFireballSheet from "@/assets/images/demon-fireball.png";
 import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
 import demonKinIdleSheet from "@/assets/images/demonkin-idle.png";
-import dragonLordIdleSheet from "@/assets/images/dragonlord-idle.png";
 
 // Fireball projectile sprite (single 48×32 frame, scaled 2×)
 const FB_FRAME_W  = 48;
@@ -87,14 +86,13 @@ type DemonMode = "patrol" | "aiming" | "cooldown";
 interface DemonState { mode: DemonMode; timer: number; }
 interface Fireball { id: number; x: number; y: number; vx: number; enemyIdx: number; }
 
-type EnemyType = "fireDemon" | "demonKin" | "dragonLord";
+type EnemyType = "fireDemon" | "demonKin";
 
 const ENEMY_SPRITES_SS: Record<EnemyType, {
   sheet: string; iW: number; iH: number; frames: number; scale: number; fps: number; groundOffset: number;
 }> = {
   fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4, scale: 2.0, fps: 8, groundOffset: 0  },
   demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6, scale: 1.3, fps: 8, groundOffset: 24 },
-  dragonLord: { sheet: dragonLordIdleSheet, iW: 74,  iH: 74,  frames: 4, scale: 2.6, fps: 8, groundOffset: 0  },
 };
 
 interface StageEnemy {
@@ -115,7 +113,7 @@ const LAVA_STAGES: Record<string, { enemies: StageEnemy[] }> = {
   "7-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
   "9-11": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "fireDemon", enemyId: "slime_fire" }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
   "9-12": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
-  "9-13": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "fireDemon", enemyId: "slime_fire" }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3700, type: "dragonLord", enemyId: "dragon_lord" }] },
+  "9-13": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "fireDemon", enemyId: "slime_fire" }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "demonKin",  enemyId: "demon_kin"  }] },
 };
 
 function rand(seed: number): () => number {
@@ -234,7 +232,6 @@ export default function SideScrollStage({
         ? e.x < initialPlayerX - spawnSafeZone   // reversed: cull enemies near right spawn
         : e.x > initialPlayerX + spawnSafeZone)  // forward:  cull enemies near left spawn
       .map(e => {
-        if (e.type === "dragonLord") return e;
         if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
         return Math.random() < 0.2
           ? { ...e, type: "demonKin" as EnemyType, enemyId: "demon_kin" }
