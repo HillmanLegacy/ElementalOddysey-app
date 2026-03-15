@@ -474,7 +474,6 @@ export default function SideScrollStage({
       l.x = leafRng() * vw;
       return l;
     });
-    let t = 0;
     const draw = () => {
       if (!isForestRef.current) { windRafRef.current = requestAnimationFrame(draw); return; }
       const ctx = canvas.getContext("2d");
@@ -482,7 +481,7 @@ export default function SideScrollStage({
       const vw = viewportWRef.current;
       if (canvas.width !== vw) canvas.width = vw;
       ctx.clearRect(0, 0, vw, VIEWPORT_H);
-      t += 0.016;
+      const t = performance.now() / 1000;
       const camX = cameraXRef.current;
 
       // Grass blades — rooted at PHYS_GROUND_Y so they align with the knight's feet
@@ -1023,21 +1022,6 @@ export default function SideScrollStage({
         }}
       />
 
-      {/* Wind / grass canvas — forest only, screen-space, sits above bg but below sprites */}
-      {isForest && (
-        <canvas
-          ref={windCanvasRef}
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: VIEWPORT_H,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-
       <div
         style={{
           position: "absolute",
@@ -1230,6 +1214,21 @@ export default function SideScrollStage({
           />
         </div>
       </div>
+
+      {/* Wind / grass canvas — forest only, screen-space, ABOVE sprites so grass is in the forefront */}
+      {isForest && (
+        <canvas
+          ref={windCanvasRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: VIEWPORT_H,
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       <div style={{
         position: "absolute",
