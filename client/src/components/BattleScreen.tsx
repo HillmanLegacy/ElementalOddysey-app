@@ -71,11 +71,12 @@ import shadowLordImg from "@/assets/images/boss-shadow-lord.png";
 import crystalTitanImg from "@/assets/images/boss-crystal-titan.png";
 
 
-import dragonLordIdle from "@/assets/images/dragonlord-idle.png";
-import dragonLordWalk from "@/assets/images/dragonlord-walk.png";
-import dragonLordAttack from "@/assets/images/dragonlord-attack.png";
-import dragonLordHurt from "@/assets/images/dragonlord-hurt.png";
-import dragonLordDeath from "@/assets/images/dragonlord-death.png";
+import ytrielIdle from "@assets/IDLE_1773544582793.png";
+import ytrielAttack from "@assets/ATTACK_1773544582792.png";
+import ytrielFlying from "@assets/FLYING_1773544582793.png";
+import ytrielHurt from "@assets/HURT_1773544582793.png";
+import ytrielDeath from "@assets/DEATH_1773544582793.png";
+import ytrielTransition from "@assets/TRANSITION_1773544582794.png";
 import infernoBallSheet from "@assets/dragon_lord_magic_1_1771826439516.png";
 import infernoBallExplodeSheet from "@assets/dragon_lord_magic_1_part_2_1771826450239.png";
 
@@ -1640,184 +1641,72 @@ export default function BattleScreen({
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
 
     if (isDragonLord(enemy)) {
-      const attackRoll = Math.random();
-      const attackType = attackRoll < 0.55 ? "infernoBall" : attackRoll < 0.75 ? "darkMagic" : "melee";
-
-      const playerCenterY = getSpriteCenterOffset(player.spriteId || "samurai");
-      const getTargetPos = (result: { dodged: boolean; target: { type: "player" | "party"; index: number } }) => {
-        if (result.target.type === "party" && result.target.index >= 0) {
-          const tp = PARTY_POSITIONS[result.target.index % PARTY_POSITIONS.length];
-          const memberSpriteId = battle.party[result.target.index]?.spriteId || "samurai";
-          const memberCenterY = getSpriteCenterOffset(memberSpriteId);
-          return { x: tp.x, y: tp.y + memberCenterY };
-        }
-        return { x: PLAYER_POS.x, y: PLAYER_POS.y + playerCenterY };
-      };
-
-      if (attackType === "infernoBall") {
-        const aliveParty = battle.party.filter(p => p.currentHp > 0);
-        const totalTargets = 1 + aliveParty.length;
-        const targetRoll = Math.floor(Math.random() * totalTargets);
-        let preTarget: { type: "player" | "party"; index: number };
-        if (targetRoll === 0 || aliveParty.length === 0) {
-          preTarget = { type: "player", index: -1 };
-        } else {
-          const pt = aliveParty[targetRoll - 1];
-          preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
-        }
-
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "castInferno" }));
-        playSfx("magicRing", 0.8);
-
-        const dragonPos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
-        const targetPos = preTarget.type === "party" && preTarget.index >= 0
-          ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length]
-          : PLAYER_POS;
-        const targetCenterY = preTarget.type === "party" && preTarget.index >= 0
-          ? getSpriteCenterOffset(battle.party[preTarget.index]?.spriteId || "samurai")
-          : playerCenterY;
-
-        scheduleTimer(() => {
-          playSfx("fireballLaunch", 0.9);
-          setInfernoBallAnim({
-            phase: "spawn",
-            fromX: dragonPos.x - 3,
-            fromY: dragonPos.y + 18,
-            toX: targetPos.x,
-            toY: targetPos.y + targetCenterY,
-            enemyIdx,
-            preTarget,
-            onDone,
-          });
-        }, 400);
-
-      } else if (attackType === "darkMagic") {
-        const aliveParty = battle.party.filter(p => p.currentHp > 0);
-        const totalTargets = 1 + aliveParty.length;
-        const targetRoll = Math.floor(Math.random() * totalTargets);
-        let preTarget: { type: "player" | "party"; index: number };
-        if (targetRoll === 0 || aliveParty.length === 0) {
-          preTarget = { type: "player", index: -1 };
-        } else {
-          const pt = aliveParty[targetRoll - 1];
-          preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
-        }
-
-        let walkToX: number, walkToY: number;
-        {
-          const tp = preTarget.type === "party" && preTarget.index >= 0
-            ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length]
-            : PLAYER_POS;
-          walkToX = tp.x + 8;
-          walkToY = tp.y;
-        }
-
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
-
-        scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-          playSfx("magicRing", 0.7);
-        }, 600);
-
-        scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx, preTarget);
-          if (!result.dodged) {
-            if (result.target.type === "party") {
-              setPartyHurtIndex(result.target.index);
-              scheduleTimer(() => setPartyHurtIndex(-1), 600);
-            } else {
-              setDarkMagicSfx(true);
-              setAnimPhase("hurt");
-            }
-            setShakeScreen(true);
-            playSfx("stabRing");
-            scheduleTimer(() => setShakeScreen(false), 600);
-          } else {
-            setDodgeBlur(result.target);
-            scheduleTimer(() => setDodgeBlur(null), 600);
-            const dodgeSlot = result.target.type === "party"
-              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
-              : ALLY_SLOTS[0];
-            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
-          }
-        }, 1200);
-
-        scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-          setBossOffset({ x: 0, y: 0 });
-        }, 1500);
-
-        scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-          setBossOffset(null);
-          setAnimPhase("idle");
-          scheduleTimer(onDone, 300);
-        }, 2100);
+      const aliveParty = battle.party.filter(p => p.currentHp > 0);
+      const totalTargets = 1 + aliveParty.length;
+      const targetRoll = Math.floor(Math.random() * totalTargets);
+      let preTarget: { type: "player" | "party"; index: number };
+      if (targetRoll === 0 || aliveParty.length === 0) {
+        preTarget = { type: "player", index: -1 };
       } else {
-        const aliveParty = battle.party.filter(p => p.currentHp > 0);
-        const totalTargets = 1 + aliveParty.length;
-        const targetRoll = Math.floor(Math.random() * totalTargets);
-        let preTarget: { type: "player" | "party"; index: number };
-        if (targetRoll === 0 || aliveParty.length === 0) {
-          preTarget = { type: "player", index: -1 };
-        } else {
-          const pt = aliveParty[targetRoll - 1];
-          preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
-        }
-
-        let walkToX: number, walkToY: number;
-        if (preTarget.type === "party" && preTarget.index >= 0) {
-          const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
-          walkToX = tp.x + 8;
-          walkToY = tp.y;
-        } else {
-          walkToX = PLAYER_POS.x + 8;
-          walkToY = PLAYER_POS.y;
-        }
-
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
-
-        scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-          playSfx("swordSwing");
-        }, 600);
-
-        scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx, preTarget);
-          if (!result.dodged) {
-            setShakeScreen(true);
-            if (result.target.type === "party") {
-              setPartyHurtIndex(result.target.index);
-              scheduleTimer(() => setPartyHurtIndex(-1), 500);
-            } else {
-              setAnimPhase("hurt");
-            }
-            playSfx("hitCombo");
-            scheduleTimer(() => setShakeScreen(false), 500);
-          } else {
-            setDodgeBlur(result.target);
-            scheduleTimer(() => setDodgeBlur(null), 600);
-            const dodgeSlot = result.target.type === "party"
-              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
-              : ALLY_SLOTS[0];
-            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
-          }
-        }, 1200);
-
-        scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-          setBossOffset({ x: 0, y: 0 });
-        }, 1500);
-
-        scheduleTimer(() => {
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-          setBossOffset(null);
-          setAnimPhase("idle");
-          scheduleTimer(onDone, 300);
-        }, 2100);
+        const pt = aliveParty[targetRoll - 1];
+        preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
       }
+
+      let walkToX: number, walkToY: number;
+      if (preTarget.type === "party" && preTarget.index >= 0) {
+        const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
+        walkToX = tp.x + 8;
+        walkToY = tp.y;
+      } else {
+        walkToX = PLAYER_POS.x + 8;
+        walkToY = PLAYER_POS.y;
+      }
+
+      setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "transition" }));
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
+        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+      }, 400);
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        playSfx("swordSwing");
+      }, 950);
+
+      scheduleTimer(() => {
+        const result = onEnemyAttack(enemyIdx, preTarget);
+        if (!result.dodged) {
+          setShakeScreen(true);
+          if (result.target.type === "party") {
+            setPartyHurtIndex(result.target.index);
+            scheduleTimer(() => setPartyHurtIndex(-1), 500);
+          } else {
+            setAnimPhase("hurt");
+          }
+          playSfx("hitCombo");
+          scheduleTimer(() => setShakeScreen(false), 500);
+        } else {
+          setDodgeBlur(result.target);
+          scheduleTimer(() => setDodgeBlur(null), 600);
+          const dodgeSlot = result.target.type === "party"
+            ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+            : ALLY_SLOTS[0];
+          spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+        }
+      }, 1150);
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
+        setBossOffset({ x: 0, y: 0 });
+      }, 1500);
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+        setBossOffset(null);
+        setAnimPhase("idle");
+        scheduleTimer(onDone, 300);
+      }, 2100);
     } else if (isDemonKin(enemy)) {
       const aliveParty = battle.party.filter(p => p.currentHp > 0);
       const totalTargets = 1 + aliveParty.length;
@@ -3547,61 +3436,50 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "relative",
-                        width: 420,
+                        width: 450,
                         height: 420,
                         overflow: "visible",
-                        filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 20px rgba(255,60,0,0.4))`,
+                        filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 24px rgba(255,50,0,0.5))`,
                       }}
                       data-testid={`img-enemy-${idx}`}
                     >
                       <SpriteAnimator
                         spriteSheet={
-                          enemyAnimStates[idx] === "death" ? dragonLordDeath
-                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? dragonLordAttack
-                          : enemyAnimStates[idx] === "hurt" ? dragonLordHurt
-                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? dragonLordWalk
-                          : dragonLordIdle
+                          enemyAnimStates[idx] === "death" ? ytrielDeath
+                          : enemyAnimStates[idx] === "attack" ? ytrielAttack
+                          : enemyAnimStates[idx] === "flying" ? ytrielFlying
+                          : enemyAnimStates[idx] === "hurt" ? ytrielHurt
+                          : enemyAnimStates[idx] === "transition" ? ytrielTransition
+                          : ytrielIdle
                         }
-                        frameWidth={
-                          enemyAnimStates[idx] === "death" ? 160
-                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 90
-                          : enemyAnimStates[idx] === "hurt" ? 130
-                          : 74
-                        }
-                        frameHeight={
-                          enemyAnimStates[idx] === "death" ? 160
-                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 70
-                          : enemyAnimStates[idx] === "hurt" ? 130
-                          : 74
-                        }
+                        frameWidth={162}
+                        frameHeight={148}
                         totalFrames={
-                          enemyAnimStates[idx] === "death" ? 36
-                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 16
-                          : enemyAnimStates[idx] === "hurt" ? 5
-                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
+                          enemyAnimStates[idx] === "death" ? 10
+                          : enemyAnimStates[idx] === "attack" ? 6
+                          : enemyAnimStates[idx] === "transition" ? 3
+                          : enemyAnimStates[idx] === "hurt" ? 3
                           : 4
                         }
                         fps={
-                          (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 16
-                          : enemyAnimStates[idx] === "death" ? 10
-                          : enemyAnimStates[idx] === "hurt" ? 8
+                          enemyAnimStates[idx] === "attack" ? 12
+                          : enemyAnimStates[idx] === "death" ? 8
+                          : enemyAnimStates[idx] === "hurt" ? 10
                           : 8
                         }
-                        scale={
-                          enemyAnimStates[idx] === "death" ? 4.2
-                          : (enemyAnimStates[idx] === "attack" || enemyAnimStates[idx] === "castInferno") ? 4.4
-                          : enemyAnimStates[idx] === "hurt" ? 4.2
-                          : 4.2
+                        scale={2.6}
+                        loop={
+                          enemyAnimStates[idx] === "idle" ||
+                          enemyAnimStates[idx] === "flying" ||
+                          (!["attack","hurt","death","transition"].includes(enemyAnimStates[idx] ?? "idle"))
                         }
-                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "castInferno" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
-                        pauseAtFrame={enemyAnimStates[idx] === "castInferno" ? 3 : undefined}
                         onComplete={
                           enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
                             : undefined
                         }
-                        preloadSheets={[dragonLordIdle, dragonLordWalk, dragonLordAttack, dragonLordHurt, dragonLordDeath]}
+                        preloadSheets={[ytrielIdle, ytrielFlying, ytrielAttack, ytrielHurt, ytrielDeath, ytrielTransition]}
                         anchor="bottom-center"
                       />
                     </div>
