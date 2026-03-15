@@ -223,20 +223,25 @@ export default function SideScrollStage({
   const stageKey = [Math.min(fromNodeId, toNodeId), Math.max(fromNodeId, toNodeId)].join("-");
   const stageData = LAVA_STAGES[stageKey] ?? { enemies: [] };
 
-  // Resolve enemy types once at mount: before shop = 100% fireDemon; after shop = 80/20 split.
+  // Resolve enemy types once at mount: before shop = 100% fireDemon; after shop = 60% fireDemon / 40% demonKin.
+  // Enemy count is randomly 2-4 per stage regardless of shop visit.
   // Also filter enemies too close to the player's spawn so they can't attack on load-in.
   const spawnSafeZone = SIGHT_RANGE + PATROL_RANGE + 100;
   const resolvedEnemiesRef = useRef(
-    stageData.enemies
-      .filter(e => reversed
-        ? e.x < initialPlayerX - spawnSafeZone   // reversed: cull enemies near right spawn
-        : e.x > initialPlayerX + spawnSafeZone)  // forward:  cull enemies near left spawn
-      .map(e => {
+    (() => {
+      const filtered = stageData.enemies.filter(e => reversed
+        ? e.x < initialPlayerX - spawnSafeZone
+        : e.x > initialPlayerX + spawnSafeZone);
+      const targetCount = 2 + Math.floor(Math.random() * 3);
+      const pool = [...filtered].sort(() => Math.random() - 0.5).slice(0, Math.min(targetCount, filtered.length));
+      pool.sort((a, b) => reversed ? b.x - a.x : a.x - b.x);
+      return pool.map(e => {
         if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
-        return Math.random() < 0.2
+        return Math.random() < 0.4
           ? { ...e, type: "demonKin" as EnemyType, enemyId: "demon_kin" }
           : { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
-      })
+      });
+    })()
   );
   const resolvedEnemies = resolvedEnemiesRef.current;
 
