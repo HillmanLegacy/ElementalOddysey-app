@@ -2693,7 +2693,7 @@ export default function BattleScreen({
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               transform: `translateX(-50%)`,
-              animation: eruptionShakeIntensity > 0 ? `eruptionChargeShake ${Math.max(0.03, 0.12 - eruptionShakeIntensity * 0.01)}s infinite` : playerFlash ? `enemyHit 0.4s ease-out` : "none",
+              animation: eruptionShakeIntensity > 0 ? `eruptionChargeShake ${Math.max(0.03, 0.12 - eruptionShakeIntensity * 0.01)}s infinite` : playerFlash ? `playerHit 0.4s ease-out` : "none",
               ["--shake-px" as string]: `${eruptionShakeIntensity * 0.6}px`,
               opacity: fujinDashPhase === "fadeout" ? 0 : 1,
               filter: dodgeBlur && dodgeBlur.type === "player" ? "blur(3px) opacity(0.6)" : "none",
@@ -4847,6 +4847,11 @@ export default function BattleScreen({
           100% { transform: translateX(3px); }
         }
         @keyframes enemyHit {
+          0% { filter: brightness(2); transform: scale(1.1) translateX(5px); }
+          50% { filter: brightness(1.5); transform: scale(0.95) translateX(-3px); }
+          100% { filter: brightness(1); transform: scale(1) translateX(0); }
+        }
+        @keyframes playerHit {
           0% { filter: brightness(2); transform: translateX(calc(-50% + 5px)) scale(1.1); }
           50% { filter: brightness(1.5); transform: translateX(calc(-50% - 3px)) scale(0.95); }
           100% { filter: brightness(1); transform: translateX(-50%) scale(1); }
