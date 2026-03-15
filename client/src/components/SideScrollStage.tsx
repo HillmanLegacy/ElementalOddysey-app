@@ -24,8 +24,11 @@ import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
 import demonKinIdleSheet from "@/assets/images/demonkin-idle.png";
 
 import minotaurIdleSheet from "@assets/iDLE_1773579538178.png";
+import minotaurWalkSheet from "@assets/WALK_1773579538178.png";
 import cyclopsIdleSheet from "@assets/IDLE_1773579566925.png";
+import cyclopsWalkSheet from "@assets/WALK_1773579566925.png";
 import harpyIdleSheet from "@assets/IDLE_1773579631532.png";
+import harpyMoveSheet from "@assets/MOVE_1773579631533.png";
 
 // Fireball projectile sprite (single 48×32 frame, scaled 2×)
 const FB_FRAME_W  = 48;
@@ -86,7 +89,7 @@ const CHAR_SPRITES: Record<string, {
   axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6,  scale: 2   },
 };
 
-type DemonMode = "patrol" | "aiming" | "cooldown";
+type DemonMode = "patrol" | "aiming" | "cooldown" | "chase";
 interface DemonState { mode: DemonMode; timer: number; }
 interface Fireball { id: number; x: number; y: number; vx: number; enemyIdx: number; }
 
@@ -94,12 +97,14 @@ type EnemyType = "fireDemon" | "demonKin" | "minotaur" | "cyclops" | "harpy";
 
 const ENEMY_SPRITES_SS: Record<EnemyType, {
   sheet: string; iW: number; iH: number; frames: number; scale: number; fps: number; groundOffset: number;
+  walkSheet?: string; walkFrames?: number; walkFps?: number;
+  patrolSpeed?: number; patrolRange?: number; chaseSpeed?: number; sightRange?: number;
 }> = {
   fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0  },
   demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24 },
-  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 28 },
-  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 0.9, fps: 8,  groundOffset: 18 },
-  harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36 },
+  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 28, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
+  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 0.9, fps: 8,  groundOffset: 18, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
+  harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36, walkSheet: harpyMoveSheet,  walkFrames: 6,  walkFps: 10, patrolSpeed: 120, patrolRange: 300, chaseSpeed: 220, sightRange: 440 },
 };
 
 interface StageEnemy {
@@ -441,6 +446,7 @@ export default function SideScrollStage({
   const [facingRight, setFacingRight] = useState(!reversed);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
+  const [enemyIsChasing, setEnemyIsChasing] = useState(resolvedEnemies.map(() => false));
   const [battleFreezing, setBattleFreezing] = useState(false);
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -659,6 +665,7 @@ export default function SideScrollStage({
       const defeated = defeatedRef.current;
       const newEnemyX: number[] = [];
       const newEnemyFL: boolean[] = [];
+      const newEnemyChasing: boolean[] = [];
       const pCxAI = p.x + playerW * 0.5; // player center x for AI checks
 
       resolvedEnemies.forEach((enemy, idx) => {
@@ -716,22 +723,32 @@ export default function SideScrollStage({
               ds.timer = inSight ? FIRE_AIM_DELAY : 0;
             }
           }
-        } else if (enemy.type === "minotaur" && !defeated.includes(idx)) {
-          ep.x += ep.dir * 70 * dt;
-          if (ep.x >= ep.startX + 200) { ep.x = ep.startX + 200; ep.dir = -1; }
-          else if (ep.x <= ep.startX - 200) { ep.x = ep.startX - 200; ep.dir = 1; }
-        } else if (enemy.type === "cyclops" && !defeated.includes(idx)) {
-          ep.x += ep.dir * 50 * dt;
-          if (ep.x >= ep.startX + 160) { ep.x = ep.startX + 160; ep.dir = -1; }
-          else if (ep.x <= ep.startX - 160) { ep.x = ep.startX - 160; ep.dir = 1; }
-        } else if (enemy.type === "harpy" && !defeated.includes(idx)) {
-          ep.x += ep.dir * 120 * dt;
-          if (ep.x >= ep.startX + 300) { ep.x = ep.startX + 300; ep.dir = -1; }
-          else if (ep.x <= ep.startX - 300) { ep.x = ep.startX - 300; ep.dir = 1; }
+        } else if ((enemy.type === "minotaur" || enemy.type === "cyclops" || enemy.type === "harpy") && !defeated.includes(idx)) {
+          const es = ENEMY_SPRITES_SS[enemy.type];
+          const eW = Math.round(es.iW * es.scale);
+          const eCx = ep.x + eW * 0.5;
+          const dist = Math.abs(pCxAI - eCx);
+          const inSight = dist < (es.sightRange ?? 380);
+          const faceDir: 1 | -1 = pCxAI < eCx ? -1 : 1;
+
+          if (ds.mode === "chase") {
+            ep.dir = faceDir;
+            ep.x += ep.dir * (es.chaseSpeed ?? 160) * dt;
+            if (!inSight) ds.mode = "patrol";
+          } else {
+            if (inSight) {
+              ds.mode = "chase";
+            } else {
+              ep.x += ep.dir * (es.patrolSpeed ?? 70) * dt;
+              if (ep.x >= ep.startX + (es.patrolRange ?? 200)) { ep.x = ep.startX + (es.patrolRange ?? 200); ep.dir = -1; }
+              else if (ep.x <= ep.startX - (es.patrolRange ?? 200)) { ep.x = ep.startX - (es.patrolRange ?? 200); ep.dir = 1; }
+            }
+          }
         }
 
         newEnemyX.push(ep.x);
         newEnemyFL.push(ep.dir === -1);
+        newEnemyChasing.push(demonStateRef.current[idx].mode === "chase");
       });
 
       // --- Enemy collision ---
@@ -822,6 +839,7 @@ export default function SideScrollStage({
       setFacingRight(facingRightRef.current);
       setEnemyRenderPositions(newEnemyX);
       setEnemyFacingLeft(newEnemyFL);
+      setEnemyIsChasing(newEnemyChasing);
       setFireballs([...fireballsRef.current]);
 
       rafRef.current = requestAnimationFrame(loop);
@@ -1051,6 +1069,12 @@ export default function SideScrollStage({
           const eH = Math.round(es.iH * es.scale);
           const liveX = enemyRenderPositions[idx] ?? enemy.x;
           const facingLeft = enemyFacingLeft[idx] ?? true;
+          const isChasing = enemyIsChasing[idx] ?? false;
+          const isForestEnemy = enemy.type === "minotaur" || enemy.type === "cyclops" || enemy.type === "harpy";
+          const useWalk = isForestEnemy && !!es.walkSheet;
+          const activeSheet = useWalk ? es.walkSheet! : es.sheet;
+          const activeFrames = useWalk ? (es.walkFrames ?? es.frames) : es.frames;
+          const activeFps = useWalk ? (es.walkFps ?? es.fps) : es.fps;
           return (
             <div
               key={idx}
@@ -1061,15 +1085,17 @@ export default function SideScrollStage({
                 top: GROUND_Y - eH + es.groundOffset,
                 width: eW,
                 height: eH,
-                filter: "drop-shadow(0 4px 14px rgba(255,50,0,0.6))",
+                filter: isChasing
+                  ? "drop-shadow(0 4px 18px rgba(255,80,0,0.9))"
+                  : "drop-shadow(0 4px 14px rgba(255,50,0,0.6))",
               }}
             >
               <SpriteAnimator
-                spriteSheet={es.sheet}
+                spriteSheet={activeSheet}
                 frameWidth={es.iW}
                 frameHeight={es.iH}
-                totalFrames={es.frames}
-                fps={es.fps}
+                totalFrames={activeFrames}
+                fps={activeFps}
                 scale={es.scale}
                 loop={true}
                 flipX={enemy.type === "minotaur" ? facingLeft : !facingLeft}
