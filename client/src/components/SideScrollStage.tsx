@@ -4,6 +4,7 @@ import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
 import { useColorMap } from "@/hooks/useColorMap";
 import lavaBgImg from "@assets/Lava_Stage_Side_Scroll_Background_upscayl_3x_digital-art-4x_1773372864153.png";
+import forestBgImg from "@assets/Forest_Region_Side_Scroll_Background_w_Ground_1773582435504.jpg";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -460,7 +461,7 @@ export default function SideScrollStage({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     if (isForest) {
-      drawForestBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
+      ctx.clearRect(0, 0, STAGE_WIDTH + 2 * BG_EXT, VIEWPORT_H);
     } else {
       drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
     }
@@ -925,17 +926,17 @@ export default function SideScrollStage({
       style={{ width: "100%", height: "100%", background: "#060108" }}
       data-testid="side-scroll-stage"
     >
-      {/* Parallax lava landscape background — extended by BG_EXT on each side so the
-          parallax shift never exposes the container background at the stage edges */}
+      {/* Parallax background — forest uses full-height image with ground included;
+          lava uses sky-only height (ground drawn separately) */}
       <div
         style={{
           position: "absolute",
           top: 0,
           left: -BG_EXT,
           width: STAGE_WIDTH + 2 * BG_EXT,
-          height: GROUND_Y,
-          transform: `translateX(${-(cameraX * 0.35)}px)`,
-          backgroundImage: `url(${lavaBgImg})`,
+          height: isForest ? VIEWPORT_H : GROUND_Y,
+          transform: `translateX(${-(cameraX * (isForest ? 0.3 : 0.35))}px)`,
+          backgroundImage: isForest ? `url(${forestBgImg})` : `url(${lavaBgImg})`,
           backgroundSize: "100% 100%",
           backgroundRepeat: "no-repeat",
           backgroundPosition: "left top",
@@ -971,78 +972,62 @@ export default function SideScrollStage({
           willChange: "transform",
         }}
       >
-        {/* Ground fill — main stage */}
-        <div style={{
+        {/* Ground fill — main stage (hidden for forest; image ground covers it) */}
+        {!isForest && <div style={{
           position: "absolute",
           left: 0,
           top: GROUND_Y,
           width: STAGE_WIDTH,
           height: VIEWPORT_H - GROUND_Y,
-          background: isForest
-            ? "linear-gradient(180deg, #3d6826 0%, #2d5018 40%, #1e3a10 100%)"
-            : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
-        }} />
-        {/* Ground fill — left extension for endless look */}
-        <div style={{
+          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+        }} />}
+        {/* Ground fill — left extension */}
+        {!isForest && <div style={{
           position: "absolute",
           left: -STAGE_PAD,
           top: GROUND_Y,
           width: STAGE_PAD,
           height: VIEWPORT_H - GROUND_Y,
-          background: isForest
-            ? "linear-gradient(180deg, #3d6826 0%, #2d5018 40%, #1e3a10 100%)"
-            : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
-        }} />
-        {/* Ground fill — right extension for endless look */}
-        <div style={{
+          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+        }} />}
+        {/* Ground fill — right extension */}
+        {!isForest && <div style={{
           position: "absolute",
           left: STAGE_WIDTH,
           top: GROUND_Y,
           width: STAGE_PAD,
           height: VIEWPORT_H - GROUND_Y,
-          background: isForest
-            ? "linear-gradient(180deg, #3d6826 0%, #2d5018 40%, #1e3a10 100%)"
-            : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
-        }} />
+          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+        }} />}
 
-        {/* Ground line — main stage */}
-        <div style={{
+        {/* Ground line — hidden for forest (image provides its own ground edge) */}
+        {!isForest && <div style={{
           position: "absolute",
           left: 0,
           top: GROUND_Y - 3,
           width: STAGE_WIDTH,
           height: 3,
-          background: isForest
-            ? "linear-gradient(90deg, #5aaa20, #aadd50, #5aaa20, #88cc30, #4a9918)"
-            : "linear-gradient(90deg, #ff5500, #ffaa00, #ff5500, #ff8800, #ff4400)",
-          boxShadow: isForest
-            ? "0 0 18px rgba(80,200,30,0.9), 0 0 40px rgba(60,150,20,0.5)"
-            : "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
-        }} />
-        {/* Ground line — left extension */}
-        <div style={{
+          background: "linear-gradient(90deg, #ff5500, #ffaa00, #ff5500, #ff8800, #ff4400)",
+          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+        }} />}
+        {!isForest && <div style={{
           position: "absolute",
           left: -STAGE_PAD,
           top: GROUND_Y - 3,
           width: STAGE_PAD,
           height: 3,
-          background: isForest ? "#5aaa20" : "#ff5500",
-          boxShadow: isForest
-            ? "0 0 18px rgba(80,200,30,0.9), 0 0 40px rgba(60,150,20,0.5)"
-            : "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
-        }} />
-        {/* Ground line — right extension */}
-        <div style={{
+          background: "#ff5500",
+          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+        }} />}
+        {!isForest && <div style={{
           position: "absolute",
           left: STAGE_WIDTH,
           top: GROUND_Y - 3,
           width: STAGE_PAD,
           height: 3,
-          background: isForest ? "#5aaa20" : "#ff5500",
-          boxShadow: isForest
-            ? "0 0 18px rgba(80,200,30,0.9), 0 0 40px rgba(60,150,20,0.5)"
-            : "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
-        }} />
+          background: "#ff5500",
+          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+        }} />}
 
         {rocks.current.map((rock, i) => (
           <div key={i} style={{
