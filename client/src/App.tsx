@@ -328,13 +328,16 @@ function Game() {
                   onComplete={() => {
                     setPostBattleReveal(false);
                     if (ssPlayer) {
-                      const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
-                      if (region.theme === "Fire") {
-                        if (sideScrollCtx) {
-                          playMusic("lava_region_battle");
-                        } else {
+                      if (sideScrollCtx) {
+                        playMusic("lava_region_battle");
+                      } else {
+                        const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
+                        if (region.theme === "Fire") {
                           playAmbient("lava_region");
                           playMusic("lava_region_music");
+                        } else {
+                          stopAmbient();
+                          stopMusic();
                         }
                       }
                     }
@@ -355,6 +358,9 @@ function Game() {
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
                       playMusic("lava_region_music");
+                    } else {
+                      stopAmbient();
+                      stopMusic();
                     }
                   }}
                 />
@@ -371,6 +377,9 @@ function Game() {
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
                       playMusic("lava_region_music");
+                    } else {
+                      stopAmbient();
+                      stopMusic();
                     }
                   }}
                 />
@@ -455,10 +464,7 @@ function Game() {
                   setSideScrollEnterPending(null);
                   setSideScrollCtx(pending);
                   setSideScrollEnterReveal(true);
-                  const region = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {}));
-                  if (region.theme === "Fire") {
-                    playMusic("lava_region_battle");
-                  }
+                  playMusic("lava_region_battle");
                 }}
               />
             )}
@@ -491,6 +497,9 @@ function Game() {
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
                       playMusic("lava_region_music");
+                    } else {
+                      stopAmbient();
+                      stopMusic();
                     }
                   }
                 }}
@@ -1253,12 +1262,7 @@ function Game() {
                 elementColor={transitionElementColor}
                 onComplete={() => {
                   setBattleEntryReveal(false);
-                  if (state.player) {
-                    const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
-                    if (region.theme === "Fire") {
-                      playMusic("lava_region_battle");
-                    }
-                  }
+                  playMusic("lava_region_battle");
                 }}
               />
             )}
