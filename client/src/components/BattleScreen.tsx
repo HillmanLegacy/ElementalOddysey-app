@@ -77,8 +77,21 @@ import ytrielFlying from "@assets/FLYING_1773544582793.png";
 import ytrielHurt from "@assets/HURT_1773544582793.png";
 import ytrielDeath from "@assets/DEATH_1773544582793.png";
 import ytrielTransition from "@assets/TRANSITION_1773544582794.png";
+import ytrielSlashSheet from "@assets/Fire_1773545741081.png";
 import infernoBallSheet from "@assets/dragon_lord_magic_1_1771826439516.png";
 import infernoBallExplodeSheet from "@assets/dragon_lord_magic_1_part_2_1771826450239.png";
+import ytrielExpD1  from "@assets/explosion-d1_1773546117139.png";
+import ytrielExpD2  from "@assets/explosion-d2_1773546117139.png";
+import ytrielExpD3  from "@assets/explosion-d3_1773546117139.png";
+import ytrielExpD4  from "@assets/explosion-d4_1773546117139.png";
+import ytrielExpD5  from "@assets/explosion-d5_1773546117140.png";
+import ytrielExpD6  from "@assets/explosion-d6_1773546117140.png";
+import ytrielExpD7  from "@assets/explosion-d7_1773546117140.png";
+import ytrielExpD8  from "@assets/explosion-d8_1773546117141.png";
+import ytrielExpD9  from "@assets/explosion-d9_1773546117141.png";
+import ytrielExpD10 from "@assets/explosion-d10_1773546117141.png";
+import ytrielExpD11 from "@assets/explosion-d11_1773546117142.png";
+import ytrielExpD12 from "@assets/explosion-d12_1773546117142.png";
 
 import vfxWindSlash1 from "@/assets/images/vfx-wind-slash1.png";
 import vfxWindSlash2 from "@/assets/images/vfx-wind-slash2.png";
@@ -369,6 +382,30 @@ function ElementPixelIcon({ element, pixelSize = 3 }: { element: string; pixelSi
   );
 }
 
+const YTRIEL_EXPLOSION_FRAMES = [
+  ytrielExpD1, ytrielExpD2, ytrielExpD3, ytrielExpD4,
+  ytrielExpD5, ytrielExpD6, ytrielExpD7, ytrielExpD8,
+  ytrielExpD9, ytrielExpD10, ytrielExpD11, ytrielExpD12,
+];
+
+function YtrielExplosion({ onComplete }: { onComplete: () => void }) {
+  const [frame, setFrame] = useState(0);
+  const onCompleteRef = useRef(onComplete);
+  onCompleteRef.current = onComplete;
+  useEffect(() => {
+    if (frame >= YTRIEL_EXPLOSION_FRAMES.length - 1) { onCompleteRef.current(); return; }
+    const t = setTimeout(() => setFrame(f => f + 1), Math.round(1000 / 12));
+    return () => clearTimeout(t);
+  }, [frame]);
+  return (
+    <img
+      src={YTRIEL_EXPLOSION_FRAMES[frame]}
+      style={{ width: 256, height: 256, imageRendering: "pixelated" as const }}
+      alt=""
+    />
+  );
+}
+
 export default function BattleScreen({
   player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier,
 }: BattleScreenProps) {
@@ -453,6 +490,14 @@ export default function BattleScreen({
   const [xpBarLevelUp, setXpBarLevelUp] = useState(false);
   const [dragonFireVfx, setDragonFireVfx] = useState<{ type: "burst" | "pillar"; x: number; y: number } | null>(null);
   const [infernoBallAnim, setInfernoBallAnim] = useState<{
+    phase: "spawn" | "travel" | "explode";
+    fromX: number; fromY: number;
+    toX: number; toY: number;
+    enemyIdx: number;
+    preTarget: { type: "player" | "party"; index: number };
+    onDone: (() => void) | null;
+  } | null>(null);
+  const [ytrielSlashAnim, setYtrielSlashAnim] = useState<{
     phase: "spawn" | "travel" | "explode";
     fromX: number; fromY: number;
     toX: number; toY: number;
@@ -1637,6 +1682,50 @@ export default function BattleScreen({
     if (onDone) scheduleTimer(onDone, 300);
   }, [infernoBallAnim, scheduleTimer]);
 
+  useEffect(() => {
+    if (ytrielSlashAnim && ytrielSlashAnim.phase === "spawn") {
+      const raf = requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          setYtrielSlashAnim(prev => prev ? { ...prev, phase: "travel" } : null);
+        });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+  }, [ytrielSlashAnim?.phase]);
+
+  const handleYtrielSlashArrival = useCallback(() => {
+    if (!ytrielSlashAnim || ytrielSlashAnim.phase !== "travel") return;
+    const { enemyIdx, preTarget } = ytrielSlashAnim;
+    setYtrielSlashAnim(prev => prev ? { ...prev, phase: "explode" } : null);
+    playSfx("eruptionCleave", 1.0);
+    const result = onEnemyAttack(enemyIdx, preTarget);
+    if (!result.dodged) {
+      if (result.target.type === "party") {
+        setPartyHurtIndex(result.target.index);
+        scheduleTimer(() => setPartyHurtIndex(-1), 700);
+      } else {
+        setAnimPhase("hurt");
+      }
+      setShakeScreen(true);
+      scheduleTimer(() => setShakeScreen(false), 600);
+    } else {
+      setDodgeBlur(result.target);
+      scheduleTimer(() => setDodgeBlur(null), 600);
+      const dodgeSlot = result.target.type === "party"
+        ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+        : ALLY_SLOTS[0];
+      spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+    }
+  }, [ytrielSlashAnim, onEnemyAttack, playSfx, scheduleTimer, spawnDamageNumber]);
+
+  const handleYtrielExplosionComplete = useCallback(() => {
+    if (!ytrielSlashAnim) return;
+    const { onDone } = ytrielSlashAnim;
+    setYtrielSlashAnim(null);
+    setAnimPhase("idle");
+    if (onDone) scheduleTimer(onDone, 300);
+  }, [ytrielSlashAnim, scheduleTimer]);
+
   const animateEnemyAttack = useCallback((enemyIdx: number, enemy: typeof battle.enemies[0], onDone: () => void) => {
     const pos = ENEMY_POSITIONS[enemyIdx % ENEMY_POSITIONS.length];
 
@@ -1652,61 +1741,83 @@ export default function BattleScreen({
         preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
       }
 
-      let walkToX: number, walkToY: number;
-      if (preTarget.type === "party" && preTarget.index >= 0) {
-        const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
-        walkToX = tp.x + 8;
-        walkToY = tp.y;
-      } else {
-        walkToX = PLAYER_POS.x + 8;
-        walkToY = PLAYER_POS.y;
-      }
-
-      setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "transition" }));
-
-      scheduleTimer(() => {
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
-        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
-      }, 400);
-
-      scheduleTimer(() => {
+      if (Math.random() < 0.3) {
+        // ── Stationary projectile attack (30%) ──────────────────────────────
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-        playSfx("swordSwing");
-      }, 950);
-
-      scheduleTimer(() => {
-        const result = onEnemyAttack(enemyIdx, preTarget);
-        if (!result.dodged) {
-          setShakeScreen(true);
-          if (result.target.type === "party") {
-            setPartyHurtIndex(result.target.index);
-            scheduleTimer(() => setPartyHurtIndex(-1), 500);
-          } else {
-            setAnimPhase("hurt");
-          }
-          playSfx("hitCombo");
-          scheduleTimer(() => setShakeScreen(false), 500);
+        // launch on frame 4 of the 6-frame attack anim at 12 fps ≈ 333 ms
+        scheduleTimer(() => {
+          playSfx("ytrielFireLaunch");
+          const fromX = pos.x - 6;
+          const fromY = pos.y + 22;
+          const toX = preTarget.type === "party" && preTarget.index >= 0
+            ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length].x + 8
+            : PLAYER_POS.x + 8;
+          const toY = preTarget.type === "party" && preTarget.index >= 0
+            ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length].y + 12
+            : PLAYER_POS.y + 12;
+          setYtrielSlashAnim({ phase: "spawn", fromX, fromY, toX, toY, enemyIdx, preTarget, onDone });
+        }, 333);
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+        }, 700);
+      } else {
+        // ── Flyby slash attack (70%) ─────────────────────────────────────────
+        let walkToX: number, walkToY: number;
+        if (preTarget.type === "party" && preTarget.index >= 0) {
+          const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
+          walkToX = tp.x + 8;
+          walkToY = tp.y;
         } else {
-          setDodgeBlur(result.target);
-          scheduleTimer(() => setDodgeBlur(null), 600);
-          const dodgeSlot = result.target.type === "party"
-            ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
-            : ALLY_SLOTS[0];
-          spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+          walkToX = PLAYER_POS.x + 8;
+          walkToY = PLAYER_POS.y;
         }
-      }, 1150);
 
-      scheduleTimer(() => {
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
-        setBossOffset({ x: 0, y: 0 });
-      }, 1500);
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "transition" }));
 
-      scheduleTimer(() => {
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-        setBossOffset(null);
-        setAnimPhase("idle");
-        scheduleTimer(onDone, 300);
-      }, 2100);
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
+          setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+        }, 400);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+          playSfx("swordSwing");
+        }, 950);
+
+        scheduleTimer(() => {
+          const result = onEnemyAttack(enemyIdx, preTarget);
+          if (!result.dodged) {
+            setShakeScreen(true);
+            if (result.target.type === "party") {
+              setPartyHurtIndex(result.target.index);
+              scheduleTimer(() => setPartyHurtIndex(-1), 500);
+            } else {
+              setAnimPhase("hurt");
+            }
+            playSfx("hitCombo");
+            scheduleTimer(() => setShakeScreen(false), 500);
+          } else {
+            setDodgeBlur(result.target);
+            scheduleTimer(() => setDodgeBlur(null), 600);
+            const dodgeSlot = result.target.type === "party"
+              ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+              : ALLY_SLOTS[0];
+            spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+          }
+        }, 1150);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
+          setBossOffset({ x: 0, y: 0 });
+        }, 1500);
+
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+          setBossOffset(null);
+          setAnimPhase("idle");
+          scheduleTimer(onDone, 300);
+        }, 2100);
+      }
     } else if (isDemonKin(enemy)) {
       const aliveParty = battle.party.filter(p => p.currentHp > 0);
       const totalTargets = 1 + aliveParty.length;
@@ -3864,6 +3975,46 @@ export default function BattleScreen({
                 onComplete={handleInfernoBallExplodeComplete}
                 style={{ imageRendering: "pixelated" }}
               />
+            </div>
+          )}
+
+          {ytrielSlashAnim && (ytrielSlashAnim.phase === "spawn" || ytrielSlashAnim.phase === "travel") && (
+            <div
+              className="absolute z-50 pointer-events-none"
+              style={{
+                left: `${ytrielSlashAnim.phase === "travel" ? ytrielSlashAnim.toX : ytrielSlashAnim.fromX}%`,
+                bottom: `${ytrielSlashAnim.phase === "travel" ? ytrielSlashAnim.toY : ytrielSlashAnim.fromY}%`,
+                transform: "translate(-50%, 50%) scaleX(-1)",
+                filter: "drop-shadow(0 0 12px rgba(255,100,0,0.9)) drop-shadow(0 0 24px rgba(255,50,0,0.6))",
+                transition: ytrielSlashAnim.phase === "travel" ? "left 0.55s ease-in, bottom 0.55s ease-in" : "none",
+              }}
+              onTransitionEnd={(e) => {
+                if (e.propertyName === "left") handleYtrielSlashArrival();
+              }}
+            >
+              <SpriteAnimator
+                spriteSheet={ytrielSlashSheet}
+                frameWidth={16}
+                frameHeight={28}
+                totalFrames={3}
+                fps={10}
+                scale={4.5}
+                loop={true}
+                style={{ imageRendering: "pixelated" }}
+              />
+            </div>
+          )}
+          {ytrielSlashAnim && ytrielSlashAnim.phase === "explode" && (
+            <div
+              className="absolute z-50 pointer-events-none"
+              style={{
+                left: `${ytrielSlashAnim.toX}%`,
+                bottom: `${ytrielSlashAnim.toY}%`,
+                transform: "translate(-50%, 50%)",
+                filter: "drop-shadow(0 0 32px rgba(255,100,0,1)) drop-shadow(0 0 64px rgba(200,60,0,0.8))",
+              }}
+            >
+              <YtrielExplosion onComplete={handleYtrielExplosionComplete} />
             </div>
           )}
 
