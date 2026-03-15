@@ -140,8 +140,8 @@ const ENEMY_SPRITES_SS: Record<EnemyType, {
 }> = {
   fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0  },
   demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24 },
-  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 28, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
-  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 18, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
+  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 24, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
+  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 24, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
   harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36, walkSheet: harpyMoveSheet,  walkFrames: 6,  walkFps: 10, patrolSpeed: 120, patrolRange: 300, chaseSpeed: 220, sightRange: 440 },
 };
 
