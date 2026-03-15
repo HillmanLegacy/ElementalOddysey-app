@@ -4847,9 +4847,9 @@ export default function BattleScreen({
           100% { transform: translateX(3px); }
         }
         @keyframes enemyHit {
-          0% { filter: brightness(2); transform: scale(1.1) translateX(5px); }
-          50% { filter: brightness(1.5); transform: scale(0.95) translateX(-3px); }
-          100% { filter: brightness(1); transform: scale(1) translateX(0); }
+          0% { filter: brightness(2); transform: translateX(calc(-50% + 5px)) scale(1.1); }
+          50% { filter: brightness(1.5); transform: translateX(calc(-50% - 3px)) scale(0.95); }
+          100% { filter: brightness(1); transform: translateX(-50%) scale(1); }
         }
         @keyframes flashDamage {
           0% { opacity: 1; }
