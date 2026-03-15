@@ -1750,8 +1750,8 @@ export default function BattleScreen({
           const fromX = pos.x - 6;
           const fromY = pos.y + 22;
           const toX = preTarget.type === "party" && preTarget.index >= 0
-            ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length].x + 8
-            : PLAYER_POS.x + 8;
+            ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length].x
+            : PLAYER_POS.x;
           const toY = preTarget.type === "party" && preTarget.index >= 0
             ? PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length].y + 12
             : PLAYER_POS.y + 12;
@@ -3591,7 +3591,7 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[ytrielIdle, ytrielFlying, ytrielAttack, ytrielHurt, ytrielDeath, ytrielTransition]}
-                        style={{ position: "absolute", left: "14px", top: enemyAnimStates[idx] === "hurt" ? "56px" : "35px" }}
+                        style={{ position: "absolute", left: "14px", top: enemyAnimStates[idx] === "hurt" ? "86px" : "35px" }}
                       />
                     </div>
                     </PixelDissolve>
