@@ -4,7 +4,7 @@ import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
 import { useColorMap } from "@/hooks/useColorMap";
 import lavaBgImg from "@assets/Lava_Stage_Side_Scroll_Background_upscayl_3x_digital-art-4x_1773372864153.png";
-import forestBgImg from "@assets/Forest_Region_Side_Scroll_Background_1773583742461.jpg";
+import forestBgImg from "@assets/Forest_Region_Tree_Background_1773584096783.jpg";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -886,8 +886,8 @@ export default function SideScrollStage({
           height: isForest ? VIEWPORT_H : GROUND_Y,
           transform: `translateX(${-(cameraX * (isForest ? 0.18 : 0.35))}px)`,
           backgroundImage: isForest ? `url(${forestBgImg})` : `url(${lavaBgImg})`,
-          backgroundSize: "100% 100%",
-          backgroundRepeat: "no-repeat",
+          backgroundSize: isForest ? "auto 100%" : "100% 100%",
+          backgroundRepeat: isForest ? "repeat-x" : "no-repeat",
           backgroundPosition: "left top",
           imageRendering: "pixelated",
           willChange: "transform",
