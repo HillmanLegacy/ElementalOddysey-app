@@ -413,9 +413,15 @@ export default function SideScrollStage({
     });
   }, [defeatedEnemyIndices, resolvedEnemies]);
 
-  // Per-enemy patrol state: live x position + movement direction (-1 = left, 1 = right)
+  // Per-enemy patrol state: live x/y position + movement direction
   const enemyPatrolRef = useRef(
-    resolvedEnemies.map(e => ({ x: e.x, dir: -1 as 1 | -1, startX: e.x }))
+    resolvedEnemies.map(e => {
+      const es = ENEMY_SPRITES_SS[e.type];
+      const eH = Math.round(es.iH * es.scale);
+      const isForest = e.type === "minotaur" || e.type === "cyclops" || e.type === "harpy";
+      const initY = (isForest ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset;
+      return { x: e.x, dir: -1 as 1 | -1, startX: e.x, y: initY, startY: initY };
+    })
   );
 
   // Fire demon AI state machine
@@ -443,6 +449,12 @@ export default function SideScrollStage({
   const jumpActiveRef = useRef(false);
   const [facingRight, setFacingRight] = useState(!reversed);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
+  const [enemyRenderY, setEnemyRenderY] = useState<number[]>(resolvedEnemies.map(e => {
+    const es = ENEMY_SPRITES_SS[e.type];
+    const eH = Math.round(es.iH * es.scale);
+    const isForest = e.type === "minotaur" || e.type === "cyclops" || e.type === "harpy";
+    return (isForest ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset;
+  }));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
   const [enemyIsChasing, setEnemyIsChasing] = useState(resolvedEnemies.map(() => false));
   const [battleFreezing, setBattleFreezing] = useState(false);
@@ -742,6 +754,7 @@ export default function SideScrollStage({
       // --- Enemy patrol + AI update ---
       const defeated = defeatedRef.current;
       const newEnemyX: number[] = [];
+      const newEnemyY: number[] = [];
       const newEnemyFL: boolean[] = [];
       const newEnemyChasing: boolean[] = [];
       const pCxAI = p.x + playerW * 0.5; // player center x for AI checks
@@ -804,6 +817,7 @@ export default function SideScrollStage({
         } else if ((enemy.type === "minotaur" || enemy.type === "cyclops" || enemy.type === "harpy") && !defeated.includes(idx)) {
           const es = ENEMY_SPRITES_SS[enemy.type];
           const eW = Math.round(es.iW * es.scale);
+          const eH = Math.round(es.iH * es.scale);
           const eCx = ep.x + eW * 0.5;
           const dist = Math.abs(pCxAI - eCx);
           const inSight = dist < (es.sightRange ?? 380);
@@ -812,6 +826,14 @@ export default function SideScrollStage({
           if (ds.mode === "chase") {
             ep.dir = faceDir;
             ep.x += ep.dir * (es.chaseSpeed ?? 160) * dt;
+            // Harpy also chases vertically — target same height as player center
+            if (enemy.type === "harpy") {
+              const targetY = p.y + playerH * 0.5 - eH * 0.5;
+              const minY = 60;
+              const maxY = PHYS_GROUND_Y - eH - 10;
+              const vy = Math.sign(targetY - ep.y) * (es.chaseSpeed ?? 220) * 0.55 * dt;
+              ep.y = Math.max(minY, Math.min(maxY, ep.y + vy));
+            }
             if (!inSight) ds.mode = "patrol";
           } else {
             if (inSight) {
@@ -820,11 +842,16 @@ export default function SideScrollStage({
               ep.x += ep.dir * (es.patrolSpeed ?? 70) * dt;
               if (ep.x >= ep.startX + (es.patrolRange ?? 200)) { ep.x = ep.startX + (es.patrolRange ?? 200); ep.dir = -1; }
               else if (ep.x <= ep.startX - (es.patrolRange ?? 200)) { ep.x = ep.startX - (es.patrolRange ?? 200); ep.dir = 1; }
+              // Harpy drifts back to its hover height when not chasing
+              if (enemy.type === "harpy") {
+                ep.y += (ep.startY - ep.y) * Math.min(1, 2.5 * dt);
+              }
             }
           }
         }
 
         newEnemyX.push(ep.x);
+        newEnemyY.push(ep.y);
         newEnemyFL.push(ep.dir === -1);
         newEnemyChasing.push(demonStateRef.current[idx].mode === "chase");
       });
@@ -845,8 +872,11 @@ export default function SideScrollStage({
         const eH = Math.round(es.iH * es.scale);
         const isForestEn = enemy.type === "minotaur" || enemy.type === "cyclops" || enemy.type === "harpy";
         const baseY = isForestEn ? PHYS_GROUND_Y : GROUND_Y;
-        const eCx = enemyPatrolRef.current[idx].x + eW * es.hbXOff;
-        const eCy = (baseY - eH) + eH * es.hbYOff;
+        const ep = enemyPatrolRef.current[idx];
+        const eCx = ep.x + eW * es.hbXOff;
+        const eCy = enemy.type === "harpy"
+          ? ep.y + eH * es.hbYOff
+          : (baseY - eH) + eH * es.hbYOff;
         const eHW = eW * es.hbHW;
         const eHH = eH * es.hbHH;
 
@@ -917,6 +947,7 @@ export default function SideScrollStage({
       setIsJumping(jumpActiveRef.current);
       setFacingRight(facingRightRef.current);
       setEnemyRenderPositions(newEnemyX);
+      setEnemyRenderY(newEnemyY);
       setEnemyFacingLeft(newEnemyFL);
       setEnemyIsChasing(newEnemyChasing);
       setFireballs([...fireballsRef.current]);
@@ -1103,10 +1134,11 @@ export default function SideScrollStage({
           const es = ENEMY_SPRITES_SS[enemy.type];
           const eW = Math.round(es.iW * es.scale);
           const eH = Math.round(es.iH * es.scale);
+          const isForestEnemy = enemy.type === "minotaur" || enemy.type === "cyclops" || enemy.type === "harpy";
           const liveX = enemyRenderPositions[idx] ?? enemy.x;
+          const liveY = enemyRenderY[idx] ?? ((isForestEnemy ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset);
           const facingLeft = enemyFacingLeft[idx] ?? true;
           const isChasing = enemyIsChasing[idx] ?? false;
-          const isForestEnemy = enemy.type === "minotaur" || enemy.type === "cyclops" || enemy.type === "harpy";
           const useWalk = isForestEnemy && !!es.walkSheet;
           const activeSheet = useWalk ? es.walkSheet! : es.sheet;
           const activeFrames = useWalk ? (es.walkFrames ?? es.frames) : es.frames;
@@ -1118,7 +1150,7 @@ export default function SideScrollStage({
               style={{
                 position: "absolute",
                 left: liveX,
-                top: (isForestEnemy ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset,
+                top: liveY,
                 width: eW,
                 height: eH,
                 filter: isChasing
