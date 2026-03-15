@@ -47,6 +47,43 @@ const EXP_DELAY_MS = 580; // ms to show explosion before triggering battle
 
 const STAGE_WIDTH = 5000;
 const VIEWPORT_H = 640;
+
+interface GrassBlade { stageX: number; h: number; w: number; phase: number; freq: number; color: string; }
+interface LeafParticle { x: number; y: number; vx: number; vy: number; rot: number; rotSpd: number; alpha: number; size: number; color: string; }
+
+function genGrass(seed: number): GrassBlade[] {
+  const rng = rand(seed);
+  const blades: GrassBlade[] = [];
+  const LEAF_COLORS = ["#4aaa20", "#5acc28", "#3d9018", "#6de030", "#88dd40"];
+  let x = -STAGE_PAD;
+  while (x < STAGE_WIDTH + STAGE_PAD) {
+    blades.push({
+      stageX: x,
+      h: 14 + rng() * 16,
+      w: 1.5 + rng() * 2,
+      phase: rng() * Math.PI * 2,
+      freq: 0.5 + rng() * 0.9,
+      color: LEAF_COLORS[Math.floor(rng() * LEAF_COLORS.length)],
+    });
+    x += 6 + rng() * 10;
+  }
+  return blades;
+}
+
+function spawnLeaf(rng: () => number, vw: number): LeafParticle {
+  const COLORS = ["#3a8c18", "#5aaa28", "#88cc44", "#4a9820", "#a0d840", "#c8e850"];
+  return {
+    x: -10,
+    y: 30 + rng() * (GROUND_Y - 80),
+    vx: 0.5 + rng() * 1.1,
+    vy: -0.08 + rng() * 0.22,
+    rot: rng() * Math.PI * 2,
+    rotSpd: (rng() - 0.5) * 0.07,
+    alpha: 0.45 + rng() * 0.45,
+    size: 4 + rng() * 5,
+    color: COLORS[Math.floor(rng() * COLORS.length)],
+  };
+}
 const GROUND_Y = 510;        // visual: orange line, rocks, enemies
 const PHYS_GROUND_Y = 534;   // physics: player stands 24px lower so feet appear at orange line
 const PATROL_SPEED = 85;     // px/s for fire demon patrol
@@ -401,9 +438,15 @@ export default function SideScrollStage({
   const [battleFreezing, setBattleFreezing] = useState(false);
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
+  const windCanvasRef = useRef<HTMLCanvasElement>(null);
   const rocks = useRef(generateRocks(STAGE_WIDTH));
   const containerRef = useRef<HTMLDivElement>(null);
   const viewportWRef = useRef<number>(VIEWPORT_W);
+  const isForestRef = useRef(isForest);
+  useEffect(() => { isForestRef.current = isForest; }, [isForest]);
+
+  const grassBlades = useRef<GrassBlade[]>(genGrass(53));
+  const windRafRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = bgCanvasRef.current;
@@ -415,6 +458,75 @@ export default function SideScrollStage({
     } else {
       drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
     }
+  }, [isForest]);
+
+  // Wind + grass animation loop (forest only)
+  useEffect(() => {
+    if (!isForest) return;
+    const canvas = windCanvasRef.current;
+    if (!canvas) return;
+    const leafRng = rand(77);
+    const leaves: LeafParticle[] = Array.from({ length: 38 }, () => {
+      const vw = viewportWRef.current;
+      const l = spawnLeaf(leafRng, vw);
+      l.x = leafRng() * vw;
+      return l;
+    });
+    let t = 0;
+    const draw = () => {
+      if (!isForestRef.current) { windRafRef.current = requestAnimationFrame(draw); return; }
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { windRafRef.current = requestAnimationFrame(draw); return; }
+      const vw = viewportWRef.current;
+      canvas.width = vw;
+      canvas.height = VIEWPORT_H;
+      ctx.clearRect(0, 0, vw, VIEWPORT_H);
+      t += 0.016;
+      const camX = cameraXRef.current;
+
+      // Grass blades
+      ctx.lineCap = "round";
+      for (const b of grassBlades.current) {
+        const sx = b.stageX - camX;
+        if (sx < -20 || sx > vw + 20) continue;
+        const sway = Math.sin(t * b.freq + b.phase) * 6;
+        ctx.beginPath();
+        ctx.moveTo(sx, GROUND_Y);
+        ctx.bezierCurveTo(
+          sx + sway * 0.25, GROUND_Y - b.h * 0.4,
+          sx + sway * 0.7,  GROUND_Y - b.h * 0.75,
+          sx + sway,        GROUND_Y - b.h,
+        );
+        ctx.strokeStyle = b.color;
+        ctx.lineWidth = b.w;
+        ctx.stroke();
+      }
+
+      // Leaf particles
+      for (const lf of leaves) {
+        lf.x += lf.vx + Math.sin(t * 0.4 + lf.rot) * 0.25;
+        lf.y += lf.vy + Math.sin(t * 0.3 + lf.rot * 1.3) * 0.18;
+        lf.rot += lf.rotSpd;
+        if (lf.x > vw + 20) { Object.assign(lf, spawnLeaf(leafRng, vw)); }
+        if (lf.y > GROUND_Y - 8 || lf.y < -20) {
+          lf.y = 20 + leafRng() * (GROUND_Y - 80);
+          lf.x = -10;
+        }
+        ctx.save();
+        ctx.translate(lf.x, lf.y);
+        ctx.rotate(lf.rot);
+        ctx.globalAlpha = lf.alpha;
+        ctx.fillStyle = lf.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, lf.size, lf.size * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      windRafRef.current = requestAnimationFrame(draw);
+    };
+    windRafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(windRafRef.current);
   }, [isForest]);
 
   // Keep viewportWRef in sync with the container's actual pixel width
@@ -909,6 +1021,21 @@ export default function SideScrollStage({
           pointerEvents: "none",
         }}
       />
+
+      {/* Wind / grass canvas — forest only, screen-space, sits above bg but below sprites */}
+      {isForest && (
+        <canvas
+          ref={windCanvasRef}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            width: "100%",
+            height: "100%",
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       <div
         style={{
