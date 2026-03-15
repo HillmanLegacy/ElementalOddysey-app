@@ -144,10 +144,10 @@ const ENEMY_SPRITES_SS: Record<EnemyType, {
   // hbHW/hbHH    = half-width / half-height as fraction of rendered W/H
   fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0,   hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.22, hbHH: 0.30 },
   demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.22, hbHH: 0.32 },
-  // Minotaur: 128×128 frame, character fills ~44% width / 70% height
-  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 0,   hbXOff: 0.50, hbYOff: 0.42, hbHW: 0.22, hbHH: 0.35, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
-  // Cyclops: 245×128 frame — very wide; actual body ~33% of frame width, centered
-  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 0,   hbXOff: 0.50, hbYOff: 0.42, hbHW: 0.16, hbHH: 0.35, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
+  // Minotaur 128×128 scale=1.4: body x=23-93 y=38-114 (13px transparent bottom → 18px scaled)
+  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 18,  hbXOff: 0.45, hbYOff: 0.59, hbHW: 0.27, hbHH: 0.30, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
+  // Cyclops 245×128 scale=2.7: body x=87-151 y=44-113 (14px transparent bottom → 38px scaled)
+  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 38,  hbXOff: 0.49, hbYOff: 0.61, hbHW: 0.13, hbHH: 0.27, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
   // Harpy: 96×96 frame, flying — body fills ~55% width / 60% height
   harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.28, hbHH: 0.30, walkSheet: harpyMoveSheet,  walkFrames: 6,  walkFps: 10, patrolSpeed: 120, patrolRange: 300, chaseSpeed: 220, sightRange: 440 },
 };
