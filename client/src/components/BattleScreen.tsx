@@ -1778,18 +1778,25 @@ export default function BattleScreen({
           walkToY = PLAYER_POS.y;
         }
 
-        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "transition" }));
+        const transitionOffset = ytrielHasFlown.current ? 0 : 400;
 
-        scheduleTimer(() => {
-          ytrielHasFlown.current = true;
-          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
+        if (ytrielHasFlown.current) {
+          // Already in flying mode — move immediately, no transition needed
           setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
-        }, 400);
+        } else {
+          // First flyby — play transition animation, then switch to flying
+          setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "transition" }));
+          scheduleTimer(() => {
+            ytrielHasFlown.current = true;
+            setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
+            setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+          }, 400);
+        }
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
           playSfx("swordSwing");
-        }, 950);
+        }, 550 + transitionOffset);
 
         scheduleTimer(() => {
           const result = onEnemyAttack(enemyIdx, preTarget);
@@ -1811,19 +1818,19 @@ export default function BattleScreen({
               : ALLY_SLOTS[0];
             spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
-        }, 1150);
+        }, 750 + transitionOffset);
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
           setBossOffset({ x: 0, y: 0 });
-        }, 1500);
+        }, 1100 + transitionOffset);
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: ytrielRestAnim(enemyIdx) }));
           setBossOffset(null);
           setAnimPhase("idle");
           scheduleTimer(onDone, 300);
-        }, 2100);
+        }, 1700 + transitionOffset);
       }
     } else if (isDemonKin(enemy)) {
       const aliveParty = battle.party.filter(p => p.currentHp > 0);
