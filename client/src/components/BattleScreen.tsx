@@ -3897,8 +3897,8 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "relative",
-                        width: 320,
-                        height: 320,
+                        width: 240,
+                        height: 240,
                         overflow: "visible",
                         filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(120,200,80,0.25))`,
                       }}
@@ -3927,7 +3927,7 @@ export default function BattleScreen({
                           : enemyAnimStates[idx] === "hurt" ? 12
                           : 8
                         }
-                        scale={2.5}
+                        scale={1.875}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={true}
                         onComplete={
@@ -3993,8 +3993,8 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "relative",
-                        width: 230,
-                        height: 230,
+                        width: 144,
+                        height: 144,
                         overflow: "visible",
                         filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(120,200,80,0.25))`,
                       }}
@@ -4023,7 +4023,7 @@ export default function BattleScreen({
                           : enemyAnimStates[idx] === "hurt" ? 12
                           : 9
                         }
-                        scale={2.4}
+                        scale={1.5}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={false}
                         onComplete={
