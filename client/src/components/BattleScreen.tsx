@@ -3591,7 +3591,7 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[ytrielIdle, ytrielFlying, ytrielAttack, ytrielHurt, ytrielDeath, ytrielTransition]}
-                        style={{ position: "absolute", left: "14px", top: "35px" }}
+                        style={{ position: "absolute", left: "14px", top: enemyAnimStates[idx] === "hurt" ? "56px" : "35px" }}
                       />
                     </div>
                     </PixelDissolve>
