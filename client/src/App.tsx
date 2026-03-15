@@ -95,10 +95,13 @@ function Game() {
   }, [state.musicVolume]);
 
   useEffect(() => {
-    if (state.screen === "hut") {
+    if (state.screen === "hut" && state.player) {
+      const hutRegion = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
       playAmbient("hut");
-      if (!battleTransition && !battleEntryReveal) {
+      if (!battleTransition && !battleEntryReveal && hutRegion.theme === "Fire") {
         playMusic("lava_region_music");
+      } else if (hutRegion.theme !== "Fire") {
+        stopMusic();
       }
     } else if (state.screen === "overworld" && state.player) {
       const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
@@ -272,6 +275,7 @@ function Game() {
                 initialPlayerX={sideScrollCtx.savedPlayerX}
                 shopVisited={state.player?.clearedNodes.includes(4) ?? false}
                 reversed={sideScrollCtx.reversed}
+                regionTheme={(() => { const r = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {})); return r.theme; })()}
                 onEnemyContact={(enemyIndex, enemyId, playerX) => {
                   if (sideScrollBattleActiveRef.current) return;
                   lastContactedEnemyIdxRef.current = enemyIndex;
@@ -521,8 +525,8 @@ function Game() {
           const ac = "#c9a44a";
           const tier = getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {});
           const region = getRegionForTier(state.player.currentRegion, tier);
-          const regionNames: Record<string, string> = { Fire: "Ember Hearth", Ice: "Frost Lodge", Shadow: "Shadow Refuge", Earth: "Stone Haven" };
-          const flavorText: Record<string, string> = { Fire: "Warmth against the inferno", Ice: "Shelter from the frost", Shadow: "Light in the darkness", Earth: "Rooted and restored" };
+          const regionNames: Record<string, string> = { Wind: "Verdant Lodge", Fire: "Ember Hearth", Ice: "Frost Lodge", Shadow: "Shadow Refuge", Earth: "Stone Haven" };
+          const flavorText: Record<string, string> = { Wind: "Rest among the whispering trees", Fire: "Warmth against the inferno", Ice: "Shelter from the frost", Shadow: "Light in the darkness", Earth: "Rooted and restored" };
           const hutName = regionNames[region.theme] || "The Hut";
           const hutFlavor = flavorText[region.theme] || "A safe haven";
 

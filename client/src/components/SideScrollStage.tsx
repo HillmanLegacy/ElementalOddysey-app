@@ -102,18 +102,33 @@ interface StageEnemy {
 }
 
 const LAVA_STAGES: Record<string, { enemies: StageEnemy[] }> = {
-  "0-1":  { enemies: [{ x: 900,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3100, type: "fireDemon", enemyId: "slime_fire" }, { x: 4000, type: "fireDemon", enemyId: "slime_fire" }] },
-  "1-2":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
-  "1-3":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
-  "3-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
-  "3-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
-  "5-6":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "fireDemon", enemyId: "slime_fire" }] },
-  "5-7":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3400, type: "fireDemon", enemyId: "slime_fire" }] },
-  "7-8":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
-  "7-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
-  "9-11": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "fireDemon", enemyId: "slime_fire" }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
-  "9-12": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
-  "9-13": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "fireDemon", enemyId: "slime_fire" }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "demonKin",  enemyId: "demon_kin"  }] },
+  "100-101": { enemies: [{ x: 900,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3100, type: "fireDemon", enemyId: "slime_fire" }, { x: 4000, type: "fireDemon", enemyId: "slime_fire" }] },
+  "101-102": { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3800, type: "fireDemon", enemyId: "slime_fire" }] },
+  "101-103": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
+  "103-104": { enemies: [{ x: 800,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1700, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "103-105": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "105-106": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3300, type: "fireDemon", enemyId: "slime_fire" }] },
+  "105-107": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2400, type: "fireDemon", enemyId: "slime_fire" }, { x: 3400, type: "fireDemon", enemyId: "slime_fire" }] },
+  "107-108": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
+  "107-109": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1600, type: "fireDemon", enemyId: "slime_fire" }, { x: 2600, type: "fireDemon", enemyId: "slime_fire" }, { x: 3600, type: "fireDemon", enemyId: "slime_fire" }] },
+  "109-110": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1400, type: "fireDemon", enemyId: "slime_fire" }, { x: 2200, type: "fireDemon", enemyId: "slime_fire" }, { x: 3000, type: "fireDemon", enemyId: "slime_fire" }, { x: 3900, type: "fireDemon", enemyId: "slime_fire" }] },
+  "109-111": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1500, type: "fireDemon", enemyId: "slime_fire" }, { x: 2500, type: "fireDemon", enemyId: "slime_fire" }, { x: 3500, type: "fireDemon", enemyId: "slime_fire" }] },
+  "109-112": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "slime_fire" }, { x: 1300, type: "fireDemon", enemyId: "slime_fire" }, { x: 2000, type: "fireDemon", enemyId: "slime_fire" }, { x: 2800, type: "demonKin",  enemyId: "demon_kin"  }, { x: 3700, type: "demonKin",  enemyId: "demon_kin"  }] },
+};
+
+const FOREST_STAGES: Record<string, { enemies: StageEnemy[] }> = {
+  "0-1":  { enemies: [{ x: 900,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1800, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3100, type: "fireDemon", enemyId: "wolf_wind" }, { x: 4000, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "1-2":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1700, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2800, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3800, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "1-3":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1600, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3500, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "3-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1700, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2800, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3600, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "3-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3600, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "5-6":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1400, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2400, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3300, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "5-7":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2400, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3400, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "7-8":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3500, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "7-9":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1600, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2600, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3600, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "9-10": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1400, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2200, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3000, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3900, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "9-11": { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3500, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "9-12": { enemies: [{ x: 600,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1300, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2000, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2800, type: "demonKin",  enemyId: "wolf_wind" }, { x: 3700, type: "demonKin",  enemyId: "wolf_wind" }] },
 };
 
 function rand(seed: number): () => number {
@@ -191,6 +206,84 @@ function drawLavaBg(ctx: CanvasRenderingContext2D, width: number, height: number
   ctx.fillRect(0, groundY, totalW, height - groundY);
 }
 
+function drawForestBg(ctx: CanvasRenderingContext2D, width: number, height: number, groundY: number, offsetX = 0) {
+  const totalW = width + 2 * offsetX;
+  ctx.clearRect(0, 0, totalW, height);
+
+  const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
+  skyGrad.addColorStop(0, "#5ba3d9");
+  skyGrad.addColorStop(0.6, "#8ec8e8");
+  skyGrad.addColorStop(1, "#c8e8c0");
+  ctx.fillStyle = skyGrad;
+  ctx.fillRect(0, 0, totalW, groundY);
+
+  const rng1 = rand(17);
+  for (let i = 0; i < 6; i++) {
+    const cx = (i * (totalW / 5)) + rng1() * 200 - 100;
+    const cy = groundY * 0.2 + rng1() * groundY * 0.15;
+    const rx = 80 + rng1() * 60;
+    const ry = 30 + rng1() * 20;
+    ctx.fillStyle = "rgba(255,255,255,0.65)";
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(cx + 40, cy + 5, rx * 0.7, ry * 0.7, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  const hillGrad = ctx.createLinearGradient(0, groundY * 0.65, 0, groundY);
+  hillGrad.addColorStop(0, "#4a8c3f");
+  hillGrad.addColorStop(1, "#3a7030");
+  ctx.fillStyle = hillGrad;
+  const rng2 = rand(23);
+  for (let i = 0; i < 10; i++) {
+    const hx = (i * (totalW / 8)) + rng2() * 100 - 50;
+    const hr = 90 + rng2() * 70;
+    ctx.beginPath();
+    ctx.ellipse(hx, groundY, hr, hr * 0.45, 0, 0, Math.PI);
+    ctx.fill();
+  }
+
+  const rng3 = rand(31);
+  for (let i = 0; i < 18; i++) {
+    const tx = (i * (totalW / 14)) + rng3() * 80 - 40;
+    const th = 55 + rng3() * 55;
+    const tw = 22 + rng3() * 18;
+    ctx.fillStyle = "#1e5c14";
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY - 2);
+    ctx.lineTo(tx - tw, groundY - th * 0.45);
+    ctx.lineTo(tx, groundY - th);
+    ctx.lineTo(tx + tw, groundY - th * 0.45);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#2d7a1e";
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY - 2);
+    ctx.lineTo(tx - tw * 0.7, groundY - th * 0.65);
+    ctx.lineTo(tx, groundY - th - 12);
+    ctx.lineTo(tx + tw * 0.7, groundY - th * 0.65);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  const groundGrad = ctx.createLinearGradient(0, groundY, 0, height);
+  groundGrad.addColorStop(0, "#4a7c30");
+  groundGrad.addColorStop(0.3, "#3d6826");
+  groundGrad.addColorStop(1, "#2d5018");
+  ctx.fillStyle = groundGrad;
+  ctx.fillRect(0, groundY, totalW, height - groundY);
+
+  ctx.fillStyle = "rgba(60, 100, 30, 0.5)";
+  const rng4 = rand(41);
+  for (let gx = 0; gx < totalW; gx += 60 + Math.floor(rng4() * 60)) {
+    const gy = groundY + rng4() * 8;
+    ctx.fillRect(gx, gy, 3, 10 + rng4() * 6);
+  }
+}
+
 interface SideScrollStageProps {
   player: PlayerCharacter;
   fromNodeId: number;
@@ -200,6 +293,7 @@ interface SideScrollStageProps {
   initialPlayerX?: number;
   shopVisited?: boolean;
   reversed?: boolean;
+  regionTheme?: string;
   onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onFireballContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onComplete: () => void;
@@ -215,13 +309,15 @@ export default function SideScrollStage({
   initialPlayerX = 150,
   shopVisited = false,
   reversed = false,
+  regionTheme = "Fire",
   onEnemyContact,
   onFireballContact,
   onComplete,
   onExit,
 }: SideScrollStageProps) {
   const stageKey = [Math.min(fromNodeId, toNodeId), Math.max(fromNodeId, toNodeId)].join("-");
-  const stageData = LAVA_STAGES[stageKey] ?? { enemies: [] };
+  const isForest = regionTheme === "Wind";
+  const stageData = (isForest ? FOREST_STAGES : LAVA_STAGES)[stageKey] ?? { enemies: [] };
 
   // Resolve enemy types once at mount: before shop = 100% fireDemon; after shop = 60% fireDemon / 40% demonKin.
   // Enemy count is randomly 2-4 per stage regardless of shop visit.
@@ -236,6 +332,9 @@ export default function SideScrollStage({
       const pool = [...filtered].sort(() => Math.random() - 0.5).slice(0, Math.min(targetCount, filtered.length));
       pool.sort((a, b) => reversed ? b.x - a.x : a.x - b.x);
       return pool.map(e => {
+        if (isForest) {
+          return { ...e, type: "fireDemon" as EnemyType, enemyId: "wolf_wind" };
+        }
         if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
         return Math.random() < 0.4
           ? { ...e, type: "demonKin" as EnemyType, enemyId: "demon_kin" }
@@ -341,8 +440,12 @@ export default function SideScrollStage({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
-    drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
-  }, []);
+    if (isForest) {
+      drawForestBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
+    } else {
+      drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
+    }
+  }, [isForest]);
 
   // Keep viewportWRef in sync with the container's actual pixel width
   useEffect(() => {
@@ -832,7 +935,9 @@ export default function SideScrollStage({
           top: GROUND_Y,
           width: STAGE_WIDTH,
           height: VIEWPORT_H - GROUND_Y,
-          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+          background: isForest
+            ? "linear-gradient(180deg, #3d6826 0%, #2d5018 40%, #1e3a10 100%)"
+            : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
         }} />
         {/* Ground fill — left extension for endless look */}
         <div style={{
@@ -841,7 +946,9 @@ export default function SideScrollStage({
           top: GROUND_Y,
           width: STAGE_PAD,
           height: VIEWPORT_H - GROUND_Y,
-          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+          background: isForest
+            ? "linear-gradient(180deg, #3d6826 0%, #2d5018 40%, #1e3a10 100%)"
+            : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
         }} />
         {/* Ground fill — right extension for endless look */}
         <div style={{
@@ -850,38 +957,48 @@ export default function SideScrollStage({
           top: GROUND_Y,
           width: STAGE_PAD,
           height: VIEWPORT_H - GROUND_Y,
-          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+          background: isForest
+            ? "linear-gradient(180deg, #3d6826 0%, #2d5018 40%, #1e3a10 100%)"
+            : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
         }} />
 
-        {/* Orange ground line — main stage */}
+        {/* Ground line — main stage */}
         <div style={{
           position: "absolute",
           left: 0,
           top: GROUND_Y - 3,
           width: STAGE_WIDTH,
           height: 3,
-          background: "linear-gradient(90deg, #ff5500, #ffaa00, #ff5500, #ff8800, #ff4400)",
-          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+          background: isForest
+            ? "linear-gradient(90deg, #5aaa20, #aadd50, #5aaa20, #88cc30, #4a9918)"
+            : "linear-gradient(90deg, #ff5500, #ffaa00, #ff5500, #ff8800, #ff4400)",
+          boxShadow: isForest
+            ? "0 0 18px rgba(80,200,30,0.9), 0 0 40px rgba(60,150,20,0.5)"
+            : "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
         }} />
-        {/* Orange ground line — left extension */}
+        {/* Ground line — left extension */}
         <div style={{
           position: "absolute",
           left: -STAGE_PAD,
           top: GROUND_Y - 3,
           width: STAGE_PAD,
           height: 3,
-          background: "#ff5500",
-          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+          background: isForest ? "#5aaa20" : "#ff5500",
+          boxShadow: isForest
+            ? "0 0 18px rgba(80,200,30,0.9), 0 0 40px rgba(60,150,20,0.5)"
+            : "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
         }} />
-        {/* Orange ground line — right extension */}
+        {/* Ground line — right extension */}
         <div style={{
           position: "absolute",
           left: STAGE_WIDTH,
           top: GROUND_Y - 3,
           width: STAGE_PAD,
           height: 3,
-          background: "#ff5500",
-          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+          background: isForest ? "#5aaa20" : "#ff5500",
+          boxShadow: isForest
+            ? "0 0 18px rgba(80,200,30,0.9), 0 0 40px rgba(60,150,20,0.5)"
+            : "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
         }} />
 
         {rocks.current.map((rock, i) => (
@@ -891,9 +1008,13 @@ export default function SideScrollStage({
             top: GROUND_Y - rock.h,
             width: rock.w,
             height: rock.h,
-            background: rock.dark
-              ? "linear-gradient(160deg, #100404 0%, #200808 50%, #2a1208 100%)"
-              : "linear-gradient(160deg, #1a0808 0%, #2a1010 50%, #3a1808 100%)",
+            background: isForest
+              ? (rock.dark
+                ? "linear-gradient(160deg, #1a3010 0%, #2a4818 50%, #1e3810 100%)"
+                : "linear-gradient(160deg, #243c14 0%, #345220 50%, #28441a 100%)")
+              : (rock.dark
+                ? "linear-gradient(160deg, #100404 0%, #200808 50%, #2a1208 100%)"
+                : "linear-gradient(160deg, #1a0808 0%, #2a1010 50%, #3a1808 100%)"),
             clipPath: "polygon(8% 100%, 0% 60%, 15% 20%, 35% 0%, 60% 5%, 85% 15%, 100% 55%, 95% 100%)",
           }} />
         ))}

@@ -821,7 +821,7 @@ export function useGameState() {
         regionBossDefeats[regionKey] = prevDefeats + 1;
         const newDefeats = regionBossDefeats[regionKey];
 
-        if (newDefeats >= 3) {
+        {
           const allOwnedIds = new Set([
             ...s.player.party.map(p => p.id),
             ...(s.player.benchedParty || []).map(p => p.id),
@@ -860,11 +860,6 @@ export function useGameState() {
             const inNewRegion = newRegion.nodes.some(n => n.id === nId);
             return !inNewRegion;
           });
-        } else {
-          const newTierForRegion = getRegionForTier(s.player.currentRegion, newDefeats);
-          currentNode = newTierForRegion.nodes[0].id;
-          const regionNodeIds = newTierForRegion.nodes.map(n => n.id);
-          finalCleared = newCleared.filter(nId => !regionNodeIds.includes(nId));
         }
       }
 
