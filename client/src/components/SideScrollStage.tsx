@@ -116,15 +116,17 @@ const CHAR_SPRITES: Record<string, {
   iW: number; iH: number;
   idleF: number; runF: number;
   scale: number;
+  groundOffset: number; // transparent bottom px × scale → pushes div down so visual feet = PHYS_GROUND_Y
   stepFrames?: number[];
   jumpFrame?: number;
 }> = {
-  samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   stepFrames: [7, 15], jumpFrame: 7 },
-  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6,  scale: 2.8 },
-  basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8 },
-  ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6,  scale: 2.8 },
-  knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8,  scale: 2   },
-  axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6,  scale: 2   },
+  // groundOffset = measured transparent_bottom_px × scale (from pixel analysis of idle sheet)
+  samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   groundOffset: 30, stepFrames: [7, 15], jumpFrame: 7 },
+  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6,  scale: 2.8, groundOffset: 6  },
+  basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8, groundOffset: 0  },
+  ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6,  scale: 2.8, groundOffset: 0  },
+  knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 46 },
+  axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6,  scale: 2,   groundOffset: 0  },
 };
 
 type DemonMode = "patrol" | "aiming" | "cooldown" | "chase";
@@ -361,7 +363,8 @@ export default function SideScrollStage({
   const playerColorMap = useColorMap(charSprite.idle, charSprite.iW, charSprite.iH, player.colorGroups);
   const playerW = Math.round(charSprite.iW * charSprite.scale);
   const playerH = Math.round(charSprite.iH * charSprite.scale);
-  const startY = PHYS_GROUND_Y - playerH;
+  const charGroundOffset = charSprite.groundOffset;
+  const startY = PHYS_GROUND_Y - playerH + charGroundOffset;
   const clampedStartX = Math.max(0, Math.min(STAGE_WIDTH - playerW, initialPlayerX));
 
   const physRef = useRef({
@@ -637,9 +640,9 @@ export default function SideScrollStage({
       // Horizontal clamp
       p.x = Math.max(0, Math.min(STAGE_WIDTH - playerW, p.x));
 
-      // Ground collision
-      if (p.y >= PHYS_GROUND_Y - playerH) {
-        p.y = PHYS_GROUND_Y - playerH;
+      // Ground collision — charGroundOffset shifts the floor down by the sprite's transparent bottom padding
+      if (p.y >= PHYS_GROUND_Y - playerH + charGroundOffset) {
+        p.y = PHYS_GROUND_Y - playerH + charGroundOffset;
         p.vy = 0;
         p.onGround = true;
         jumpActiveRef.current = false;
@@ -926,7 +929,7 @@ export default function SideScrollStage({
       cancelAnimationFrame(rafRef.current);
       lastTimeRef.current = null;
     };
-  }, [stageData, playerH, playerW, defeatedEnemyIndices]);
+  }, [stageData, playerH, playerW, charGroundOffset, defeatedEnemyIndices]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
