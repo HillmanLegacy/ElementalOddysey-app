@@ -3945,8 +3945,8 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "relative",
-                        width: 370,
-                        height: 230,
+                        width: 662,
+                        height: 346,
                         overflow: "visible",
                         filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(120,200,80,0.25))`,
                       }}
@@ -3975,7 +3975,7 @@ export default function BattleScreen({
                           : enemyAnimStates[idx] === "hurt" ? 12
                           : 8
                         }
-                        scale={1.5}
+                        scale={2.7}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         flipX={false}
                         onComplete={
