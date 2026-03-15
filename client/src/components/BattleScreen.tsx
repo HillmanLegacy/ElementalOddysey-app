@@ -43,6 +43,7 @@ import demonKinWalk from "@/assets/images/demonkin-walk.png";
 
 import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
 import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
+import forestBattleBg from "@assets/Forest_Region_Start_Background_1773587381198.jpg";
 import guardSpriteSheet from "@assets/10_weaponhit_spritesheet_1771628904150.png";
 import firespinSheet from "@assets/7_firespin_spritesheet_1771795176253.png";
 import nukeExplosionSheet from "@assets/Nuke_Explosion_1771631384679.png";
@@ -2550,6 +2551,16 @@ export default function BattleScreen({
       >
       {regionTheme === "Fire" ? (
         <LavaBattleBg />
+      ) : regionTheme === "Wind" ? (
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${forestBattleBg})`,
+            backgroundSize: "cover",
+            backgroundPosition: "center",
+            imageRendering: "pixelated",
+          }}
+        />
       ) : (
         <>
           <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" style={{ filter: "contrast(1.12) saturate(1.15)" }} />
