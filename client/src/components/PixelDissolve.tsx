@@ -77,6 +77,20 @@ export default function PixelDissolve({
       [indices[i], indices[j]] = [indices[j], indices[i]];
     }
 
+    // Pre-apply the frame-0 mask so there is no visible flash before the first draw call.
+    // In reverse mode, frame 0 is fully transparent (nothing shown yet).
+    // In normal mode, frame 0 is fully opaque (everything shown, then pixels disappear).
+    if (reverse) {
+      maskCtx.clearRect(0, 0, w, h);
+    } else {
+      maskCtx.fillStyle = "#fff";
+      maskCtx.fillRect(0, 0, w, h);
+    }
+    const initUrl = maskCanvas.toDataURL();
+    el.style.maskImage = `url(${initUrl})`;
+    el.style.webkitMaskImage = `url(${initUrl})`;
+    el.style.maskSize = "100% 100%";
+    el.style.webkitMaskSize = "100% 100%";
     el.style.visibility = "";
 
     const start = performance.now();
@@ -137,7 +151,7 @@ export default function PixelDissolve({
   }, [active, duration, pixelSize, reverse]);
 
   return (
-    <div ref={containerRef} style={{ display: "inline-block", visibility: reverse && !active ? "hidden" : undefined }}>
+    <div ref={containerRef} style={{ display: "inline-block", visibility: reverse ? "hidden" : undefined }}>
       {children}
     </div>
   );
