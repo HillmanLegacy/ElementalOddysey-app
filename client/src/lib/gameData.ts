@@ -230,6 +230,17 @@ export const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "crystal_titan", name: "Crystal Titan", element: "Earth", level: 7, xpReward: 250, goldReward: 100, isBoss: true, sprite: "diamond" },
 ];
 
+// Per-enemy stat multipliers relative to the generic non-boss formula.
+// hp/atk/def/agi/int each multiply their respective formula output.
+const ENEMY_STAT_PROFILES: Record<string, { hp: number; atk: number; def: number; agi: number; int: number }> = {
+  // Minotaur — high ATK, moderate DEF/AGI, low INT
+  minotaur_wind: { hp: 1.15, atk: 1.55, def: 1.05, agi: 0.85, int: 0.50 },
+  // Cyclops — high ATK/DEF/HP, very low AGI (hard to dodge), low INT
+  cyclops_wind:  { hp: 1.65, atk: 1.40, def: 1.55, agi: 0.30, int: 0.45 },
+  // Harpy — low HP/DEF, moderate ATK, high AGI (very agile/hard to hit), low INT
+  harpy_wind:    { hp: 0.70, atk: 0.85, def: 0.55, agi: 1.70, int: 0.50 },
+};
+
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number, levelBonus: number = 0): Enemy {
   const lv = base.level * scaleFactor + levelBonus;
   const vary = base.isBoss ? () => 1.0 : () => 0.9 + Math.random() * 0.2;
@@ -253,17 +264,20 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
     };
   }
 
-  const hp = Math.floor((18 + lv * 10) * vary());
+  const profile = ENEMY_STAT_PROFILES[base.id];
+  const p = profile ?? { hp: 1, atk: 1, def: 1, agi: 1, int: 1 };
+
+  const hp = Math.floor((18 + lv * 10) * p.hp * vary());
   return {
     ...base,
     level: Math.floor(lv),
     stats: {
       hp,
       maxHp: hp,
-      atk: Math.floor((5 + lv * 2.5) * vary()),
-      def: Math.floor((3 + lv * 1.5) * vary()),
-      agi: Math.floor((4 + lv * 1.5) * vary()),
-      int: Math.floor((4 + lv * 2) * vary()),
+      atk: Math.floor((5 + lv * 2.5) * p.atk * vary()),
+      def: Math.floor((3 + lv * 1.5) * p.def * vary()),
+      agi: Math.floor((4 + lv * 1.5) * p.agi * vary()),
+      int: Math.floor((4 + lv * 2) * p.int * vary()),
       luck: Math.floor((2 + lv) * vary()),
       mp: Math.floor((15 + lv * 5) * vary()),
       maxMp: Math.floor((15 + lv * 5) * vary()),
