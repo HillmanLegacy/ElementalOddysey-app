@@ -137,12 +137,19 @@ const ENEMY_SPRITES_SS: Record<EnemyType, {
   sheet: string; iW: number; iH: number; frames: number; scale: number; fps: number; groundOffset: number;
   walkSheet?: string; walkFrames?: number; walkFps?: number;
   patrolSpeed?: number; patrolRange?: number; chaseSpeed?: number; sightRange?: number;
+  // Hitbox as fractions of rendered (eW, eH): center offsets and half-extents
+  hbXOff: number; hbYOff: number; hbHW: number; hbHH: number;
 }> = {
-  fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0  },
-  demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24 },
-  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 0, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
-  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 0, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
-  harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36, walkSheet: harpyMoveSheet,  walkFrames: 6,  walkFps: 10, patrolSpeed: 120, patrolRange: 300, chaseSpeed: 220, sightRange: 440 },
+  // hbXOff/hbYOff = center of body as fraction of rendered W/H from top-left
+  // hbHW/hbHH    = half-width / half-height as fraction of rendered W/H
+  fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0,   hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.22, hbHH: 0.30 },
+  demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.22, hbHH: 0.32 },
+  // Minotaur: 128×128 frame, character fills ~44% width / 70% height
+  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 0,   hbXOff: 0.50, hbYOff: 0.42, hbHW: 0.22, hbHH: 0.35, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
+  // Cyclops: 245×128 frame — very wide; actual body ~33% of frame width, centered
+  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 0,   hbXOff: 0.50, hbYOff: 0.42, hbHW: 0.16, hbHH: 0.35, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
+  // Harpy: 96×96 frame, flying — body fills ~55% width / 60% height
+  harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.28, hbHH: 0.30, walkSheet: harpyMoveSheet,  walkFrames: 6,  walkFps: 10, patrolSpeed: 120, patrolRange: 300, chaseSpeed: 220, sightRange: 440 },
 };
 
 interface StageEnemy {
@@ -833,11 +840,12 @@ export default function SideScrollStage({
         const es = ENEMY_SPRITES_SS[enemy.type];
         const eW = Math.round(es.iW * es.scale);
         const eH = Math.round(es.iH * es.scale);
-        const eCx = enemyPatrolRef.current[idx].x + eW * 0.50;
-        // Use PHYS_GROUND_Y so the enemy hitbox aligns with the player's physics ground.
-        const eCy = (PHYS_GROUND_Y - eH) + eH * 0.45;
-        const eHW = eW * 0.20;
-        const eHH = eH * 0.26;
+        const isForestEn = enemy.type === "minotaur" || enemy.type === "cyclops" || enemy.type === "harpy";
+        const baseY = isForestEn ? PHYS_GROUND_Y : GROUND_Y;
+        const eCx = enemyPatrolRef.current[idx].x + eW * es.hbXOff;
+        const eCy = (baseY - eH) + eH * es.hbYOff;
+        const eHW = eW * es.hbHW;
+        const eHH = eH * es.hbHH;
 
         if (Math.abs(pCx - eCx) < (pHW + eHW) && Math.abs(pCy - eCy) < (pHH + eHH)) {
           contactCooldown.current.add(idx);
