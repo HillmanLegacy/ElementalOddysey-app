@@ -140,8 +140,8 @@ const ENEMY_SPRITES_SS: Record<EnemyType, {
 }> = {
   fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0  },
   demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24 },
-  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 24, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
-  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 24, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
+  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 0, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10, patrolSpeed: 70,  patrolRange: 200, chaseSpeed: 160, sightRange: 380 },
+  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 0, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9,  patrolSpeed: 50,  patrolRange: 160, chaseSpeed: 110, sightRange: 350 },
   harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36, walkSheet: harpyMoveSheet,  walkFrames: 6,  walkFps: 10, patrolSpeed: 120, patrolRange: 300, chaseSpeed: 220, sightRange: 440 },
 };
 
@@ -471,7 +471,8 @@ export default function SideScrollStage({
     const leaves: LeafParticle[] = Array.from({ length: 38 }, () => {
       const vw = viewportWRef.current;
       const l = spawnLeaf(leafRng, vw);
-      l.x = leafRng() * vw;
+      // world-space x: spread across the initial visible area
+      l.x = cameraXRef.current + leafRng() * vw;
       return l;
     });
     const draw = () => {
@@ -502,18 +503,22 @@ export default function SideScrollStage({
         ctx.stroke();
       }
 
-      // Leaf particles
+      // Leaf particles — x is world-space so camera movement doesn't carry them
       for (const lf of leaves) {
         lf.x += lf.vx + Math.sin(t * 0.4 + lf.rot) * 0.25;
         lf.y += lf.vy + Math.sin(t * 0.3 + lf.rot * 1.3) * 0.18;
         lf.rot += lf.rotSpd;
-        if (lf.x > vw + 20) { Object.assign(lf, spawnLeaf(leafRng, vw)); }
+        const screenX = lf.x - camX;
+        if (screenX > vw + 20) {
+          Object.assign(lf, spawnLeaf(leafRng, vw));
+          lf.x = camX - 10;
+        }
         if (lf.y > GROUND_Y - 8 || lf.y < -20) {
           lf.y = 20 + leafRng() * (GROUND_Y - 80);
-          lf.x = -10;
+          lf.x = camX + leafRng() * vw;
         }
         ctx.save();
-        ctx.translate(lf.x, lf.y);
+        ctx.translate(screenX, lf.y);
         ctx.rotate(lf.rot);
         ctx.globalAlpha = lf.alpha;
         ctx.fillStyle = lf.color;
@@ -1102,7 +1107,7 @@ export default function SideScrollStage({
               style={{
                 position: "absolute",
                 left: liveX,
-                top: GROUND_Y - eH + es.groundOffset,
+                top: (isForestEnemy ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset,
                 width: eW,
                 height: eH,
                 filter: isChasing
