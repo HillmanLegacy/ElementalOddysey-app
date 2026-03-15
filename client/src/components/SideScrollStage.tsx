@@ -1060,7 +1060,7 @@ export default function SideScrollStage({
                 fps={es.fps}
                 scale={es.scale}
                 loop={true}
-                flipX={!facingLeft}
+                flipX={enemy.type === "minotaur" ? facingLeft : !facingLeft}
                 paused={battleFreezing}
                 anchor="top-left"
               />
