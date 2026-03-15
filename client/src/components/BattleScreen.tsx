@@ -2383,8 +2383,7 @@ export default function BattleScreen({
       return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
     }
     if (animPhase === "hurt") {
-      const pp = getPlayerGridPos();
-      return { x: pp.x - 1, y: pp.y };
+      return getPlayerGridPos();
     }
     return getPlayerGridPos();
   };
@@ -3930,7 +3929,7 @@ export default function BattleScreen({
                         }
                         scale={2.5}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
-                        flipX={true}
+                        flipX={false}
                         onComplete={
                           enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
@@ -3978,7 +3977,7 @@ export default function BattleScreen({
                         }
                         scale={1.5}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
-                        flipX={true}
+                        flipX={false}
                         onComplete={
                           enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
@@ -4026,7 +4025,7 @@ export default function BattleScreen({
                         }
                         scale={2.4}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
-                        flipX={true}
+                        flipX={false}
                         onComplete={
                           enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
