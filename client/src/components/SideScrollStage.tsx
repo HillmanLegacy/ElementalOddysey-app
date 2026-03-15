@@ -23,6 +23,10 @@ import demonFireballSheet from "@/assets/images/demon-fireball.png";
 import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
 import demonKinIdleSheet from "@/assets/images/demonkin-idle.png";
 
+import minotaurIdleSheet from "@assets/iDLE_1773579538178.png";
+import cyclopsIdleSheet from "@assets/IDLE_1773579566925.png";
+import harpyIdleSheet from "@assets/IDLE_1773579631532.png";
+
 // Fireball projectile sprite (single 48×32 frame, scaled 2×)
 const FB_FRAME_W  = 48;
 const FB_FRAME_H  = 32;
@@ -86,13 +90,16 @@ type DemonMode = "patrol" | "aiming" | "cooldown";
 interface DemonState { mode: DemonMode; timer: number; }
 interface Fireball { id: number; x: number; y: number; vx: number; enemyIdx: number; }
 
-type EnemyType = "fireDemon" | "demonKin";
+type EnemyType = "fireDemon" | "demonKin" | "minotaur" | "cyclops" | "harpy";
 
 const ENEMY_SPRITES_SS: Record<EnemyType, {
   sheet: string; iW: number; iH: number; frames: number; scale: number; fps: number; groundOffset: number;
 }> = {
-  fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4, scale: 2.0, fps: 8, groundOffset: 0  },
-  demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6, scale: 1.3, fps: 8, groundOffset: 24 },
+  fireDemon:  { sheet: demonIdleSheet,      iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0  },
+  demonKin:   { sheet: demonKinIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24 },
+  minotaur:   { sheet: minotaurIdleSheet,   iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 28 },
+  cyclops:    { sheet: cyclopsIdleSheet,    iW: 245, iH: 128, frames: 14, scale: 0.9, fps: 8,  groundOffset: 18 },
+  harpy:      { sheet: harpyIdleSheet,      iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -36 },
 };
 
 interface StageEnemy {
@@ -331,9 +338,15 @@ export default function SideScrollStage({
       const targetCount = 2 + Math.floor(Math.random() * 3);
       const pool = [...filtered].sort(() => Math.random() - 0.5).slice(0, Math.min(targetCount, filtered.length));
       pool.sort((a, b) => reversed ? b.x - a.x : a.x - b.x);
+      const forestPool: Array<{ type: EnemyType; enemyId: string }> = [
+        { type: "minotaur", enemyId: "minotaur_wind" },
+        { type: "cyclops",  enemyId: "cyclops_wind"  },
+        { type: "harpy",    enemyId: "harpy_wind"    },
+      ];
       return pool.map(e => {
         if (isForest) {
-          return { ...e, type: "fireDemon" as EnemyType, enemyId: "wolf_wind" };
+          const pick = forestPool[Math.floor(Math.random() * forestPool.length)];
+          return { ...e, ...pick };
         }
         if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
         return Math.random() < 0.4

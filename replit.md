@@ -45,7 +45,7 @@ The application features a **React + Vite + Tailwind CSS** frontend using **shad
     -   **Battle Animations**: Event-driven queue manages character actions (attack, run, hurt).
     -   **Knight Animations**: Full sprite sheet with idle (4f), special attack (7f), basic attack (7f), and death (7f) at 86x49px per frame.
     -   **Incineration Slash**: Fire magic spell (replaces Fire Bolt) with custom animation — player runs to enemy, plays special attack sprite, fire explosion VFX triggers on 3rd and 6th frames.
-    -   **Animated Enemy Sprites**: Detailed idle, attack, hurt, and death animations for key enemies.
+    -   **Animated Enemy Sprites**: Detailed idle, attack, hurt, and death animations for key enemies. Forest region enemies (Minotaur 128×128, Cyclops 245×128, Harpy 96×96) each have full walk-approach + dual-attack + hurt + death sprite sets. Forest enemies walk to their target, strike (60% chance attack1, 40% attack2 for Minotaur/Cyclops), then walk back and return to idle.
     -   **Special VFX**: Cinematic spell animations with camera zooms, sprite transformations, and staggered visual effects.
     -   **Enemy Death Animation**: Features a pixel-dissolve effect triggered after a death animation or a delay for non-animated enemies.
 -   **Sound System**: An audio engine manages pooled HTMLAudio playback for sound effects with volume control and pitched variations for specific effects.

@@ -78,6 +78,25 @@ import ytrielHurt from "@assets/HURT_1773544582793.png";
 import ytrielDeath from "@assets/DEATH_1773544582793.png";
 import ytrielTransition from "@assets/TRANSITION_1773544582794.png";
 import ytrielSlashSheet from "@assets/Fire_1773545741081.png";
+
+import minotaurIdle from "@assets/iDLE_1773579538178.png";
+import minotaurWalk from "@assets/WALK_1773579538178.png";
+import minotaurAttack1 from "@assets/ATTACK1_1773579538177.png";
+import minotaurAttack2 from "@assets/ATTACK2_1773579538177.png";
+import minotaurHurt from "@assets/HURT_1773579538178.png";
+import minotaurDeath from "@assets/DEATH_1773579538178.png";
+import cyclopsIdle from "@assets/IDLE_1773579566925.png";
+import cyclopsWalk from "@assets/WALK_1773579566925.png";
+import cyclopsAttack1 from "@assets/ATTACK_1_1773579566924.png";
+import cyclopsAttack2 from "@assets/ATTACK_2_1773579566924.png";
+import cyclopsHurt from "@assets/HURT_1773579566925.png";
+import cyclopsDeath from "@assets/DEATH_1773579566925.png";
+import harpyIdle from "@assets/IDLE_1773579631532.png";
+import harpyMove from "@assets/MOVE_1773579631533.png";
+import harpyAttack from "@assets/ATTACK_1773579631531.png";
+import harpyHurt from "@assets/HURT_1773579631532.png";
+import harpyDeath from "@assets/DEATH_1773579631532.png";
+
 import infernoBallSheet from "@assets/dragon_lord_magic_1_1771826439516.png";
 import infernoBallExplodeSheet from "@assets/dragon_lord_magic_1_part_2_1771826450239.png";
 import ytrielExpD1  from "@assets/explosion-d1_1773546117139.png";
@@ -480,6 +499,7 @@ export default function BattleScreen({
   const [pixelDissolving, setPixelDissolving] = useState<Set<number>>(new Set());
   const [dissolvedEnemies, setDissolvedEnemies] = useState<Set<number>>(new Set());
   const [demonKinSpawnAnim, setDemonKinSpawnAnim] = useState<{ slotIndex: number } | null>(null);
+  const [forestAttackVariant, setForestAttackVariant] = useState<Record<number, 1 | 2>>({});
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [victoryReady, setVictoryReady] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
@@ -1545,9 +1565,12 @@ export default function BattleScreen({
   const isFrostLizard = useCallback((enemy: { id: string }) => enemy.id === "frost_lizard", []);
   const isJotem = useCallback((enemy: { id: string }) => enemy.id === "jotem", []);
   const isDemonKin = useCallback((enemy: { id: string }) => enemy.id === "demon_kin", []);
+  const isMinotaur = useCallback((enemy: { id: string }) => enemy.id === "minotaur_wind", []);
+  const isCyclops  = useCallback((enemy: { id: string }) => enemy.id === "cyclops_wind",  []);
+  const isHarpy    = useCallback((enemy: { id: string }) => enemy.id === "harpy_wind",    []);
   const isAnimatedEnemyCheck = useCallback((enemy: { id: string; element: string; isBoss: boolean }) => {
-    return (enemy.element === "Fire" && !enemy.isBoss) || isDragonLord(enemy) || isFrostLizard(enemy) || isJotem(enemy);
-  }, [isDragonLord, isFrostLizard, isJotem]);
+    return (enemy.element === "Fire" && !enemy.isBoss) || isDragonLord(enemy) || isFrostLizard(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy);
+  }, [isDragonLord, isFrostLizard, isJotem, isDemonKin, isMinotaur, isCyclops, isHarpy]);
 
   const ytrielRestAnim = useCallback((idx: number): "flying" | "idle" => {
     const e = battle.enemies[idx];
@@ -2135,6 +2158,72 @@ export default function BattleScreen({
           scheduleTimer(onDone, 300);
         }, 2100);
       }
+    } else if (isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy)) {
+      const useAlt = Math.random() < 0.4;
+      setForestAttackVariant(prev => ({ ...prev, [enemyIdx]: useAlt ? 2 : 1 }));
+
+      const aliveParty = battle.party.filter(p => p.currentHp > 0);
+      const totalTargets = 1 + aliveParty.length;
+      const targetRoll = Math.floor(Math.random() * totalTargets);
+      let preTarget: { type: "player" | "party"; index: number };
+      if (targetRoll === 0 || aliveParty.length === 0) {
+        preTarget = { type: "player", index: -1 };
+      } else {
+        const pt = aliveParty[targetRoll - 1];
+        preTarget = { type: "party", index: battle.party.findIndex(p => p.id === pt.id) };
+      }
+
+      let walkToX: number, walkToY: number;
+      if (preTarget.type === "party" && preTarget.index >= 0) {
+        const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
+        walkToX = tp.x + 8;
+        walkToY = tp.y;
+      } else {
+        walkToX = PLAYER_POS.x + 8;
+        walkToY = PLAYER_POS.y;
+      }
+
+      setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
+      setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
+        playSfx("stabWhoosh", 0.9);
+      }, 650);
+
+      scheduleTimer(() => {
+        const result = onEnemyAttack(enemyIdx, preTarget);
+        if (!result.dodged) {
+          setShakeScreen(true);
+          if (result.target.type === "party") {
+            setPartyHurtIndex(result.target.index);
+            scheduleTimer(() => setPartyHurtIndex(-1), 500);
+          } else {
+            setAnimPhase("hurt");
+          }
+          playSfx("hitMetal", 0.7);
+          scheduleTimer(() => setShakeScreen(false), 500);
+        } else {
+          setDodgeBlur(result.target);
+          scheduleTimer(() => setDodgeBlur(null), 600);
+          const dodgeSlot = result.target.type === "party"
+            ? ALLY_SLOTS[(result.target.index % PARTY_POSITIONS.length) + 1]
+            : ALLY_SLOTS[0];
+          spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
+        }
+      }, 1300);
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
+        setBossOffset({ x: 0, y: 0 });
+      }, 1600);
+
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
+        setBossOffset(null);
+        setAnimPhase("idle");
+        scheduleTimer(onDone, 300);
+      }, 2200);
     } else {
       playSfx("stabWhoosh");
       const result = onEnemyAttack(enemyIdx);
@@ -2159,7 +2248,7 @@ export default function BattleScreen({
         scheduleTimer(onDone, 300);
       }, 600);
     }
-  }, [isDragonLord, isFrostLizard, isJotem, isDemonKin, scheduleTimer, onEnemyAttack, spawnDamageNumber]);
+  }, [isDragonLord, isFrostLizard, isJotem, isDemonKin, isMinotaur, isCyclops, isHarpy, scheduleTimer, onEnemyAttack, spawnDamageNumber]);
 
   useEffect(() => {
     if (battle.phase !== "partyTurn") {
@@ -3320,7 +3409,7 @@ export default function BattleScreen({
             );
             const isFireDemon = enemy.element === "Fire" && !enemy.isBoss && !isDemonKin(enemy);
 
-            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy)) && bossOffset !== null;
+            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy)) && bossOffset !== null;
             const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
             const bossBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
 
@@ -3333,7 +3422,7 @@ export default function BattleScreen({
                   bottom: `${bossBottom}%`,
                   transform: "translateX(-50%)",
                   zIndex: Math.floor(pos.y),
-                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
+                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
                   cursor: isSpriteTargetable ? "pointer" : "default",
                 }}
                 onClick={() => isSpriteTargetable && handleEnemyClick(idx)}
@@ -3800,6 +3889,150 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[frostLizardIdle, frostLizardAttack, frostLizardHurt]}
+                        anchor="bottom-center"
+                      />
+                    </div>
+                    </PixelDissolve>
+                  ) : isMinotaur(enemy) ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
+                    <div
+                      style={{
+                        position: "relative",
+                        width: 320,
+                        height: 320,
+                        overflow: "visible",
+                        filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(120,200,80,0.25))`,
+                      }}
+                      data-testid={`img-enemy-${idx}`}
+                    >
+                      <SpriteAnimator
+                        spriteSheet={
+                          enemyAnimStates[idx] === "death" ? minotaurDeath
+                          : enemyAnimStates[idx] === "attack" ? (forestAttackVariant[idx] === 2 ? minotaurAttack2 : minotaurAttack1)
+                          : enemyAnimStates[idx] === "hurt" ? minotaurHurt
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? minotaurWalk
+                          : minotaurIdle
+                        }
+                        frameWidth={128}
+                        frameHeight={128}
+                        totalFrames={
+                          enemyAnimStates[idx] === "death" ? 6
+                          : enemyAnimStates[idx] === "attack" ? (forestAttackVariant[idx] === 2 ? 7 : 6)
+                          : enemyAnimStates[idx] === "hurt" ? 5
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 8
+                          : 6
+                        }
+                        fps={
+                          enemyAnimStates[idx] === "attack" ? 12
+                          : enemyAnimStates[idx] === "death" ? 9
+                          : enemyAnimStates[idx] === "hurt" ? 12
+                          : 8
+                        }
+                        scale={2.5}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        flipX={true}
+                        onComplete={
+                          enemyAnimStates[idx] === "death"
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
+                        preloadSheets={[minotaurIdle, minotaurWalk, minotaurAttack1, minotaurAttack2, minotaurHurt, minotaurDeath]}
+                        anchor="bottom-center"
+                      />
+                    </div>
+                    </PixelDissolve>
+                  ) : isCyclops(enemy) ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
+                    <div
+                      style={{
+                        position: "relative",
+                        width: 370,
+                        height: 230,
+                        overflow: "visible",
+                        filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(120,200,80,0.25))`,
+                      }}
+                      data-testid={`img-enemy-${idx}`}
+                    >
+                      <SpriteAnimator
+                        spriteSheet={
+                          enemyAnimStates[idx] === "death" ? cyclopsDeath
+                          : enemyAnimStates[idx] === "attack" ? (forestAttackVariant[idx] === 2 ? cyclopsAttack2 : cyclopsAttack1)
+                          : enemyAnimStates[idx] === "hurt" ? cyclopsHurt
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? cyclopsWalk
+                          : cyclopsIdle
+                        }
+                        frameWidth={245}
+                        frameHeight={128}
+                        totalFrames={
+                          enemyAnimStates[idx] === "death" ? 9
+                          : enemyAnimStates[idx] === "attack" ? (forestAttackVariant[idx] === 2 ? 23 : 17)
+                          : enemyAnimStates[idx] === "hurt" ? 6
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 12
+                          : 14
+                        }
+                        fps={
+                          enemyAnimStates[idx] === "attack" ? 12
+                          : enemyAnimStates[idx] === "death" ? 9
+                          : enemyAnimStates[idx] === "hurt" ? 12
+                          : 8
+                        }
+                        scale={1.5}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        flipX={true}
+                        onComplete={
+                          enemyAnimStates[idx] === "death"
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
+                        preloadSheets={[cyclopsIdle, cyclopsWalk, cyclopsAttack1, cyclopsAttack2, cyclopsHurt, cyclopsDeath]}
+                        anchor="bottom-center"
+                      />
+                    </div>
+                    </PixelDissolve>
+                  ) : isHarpy(enemy) ? (
+                    <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={800} pixelSize={4}>
+                    <div
+                      style={{
+                        position: "relative",
+                        width: 230,
+                        height: 230,
+                        overflow: "visible",
+                        filter: `drop-shadow(0 4px 14px rgba(0,0,0,0.85)) drop-shadow(0 0 12px rgba(120,200,80,0.25))`,
+                      }}
+                      data-testid={`img-enemy-${idx}`}
+                    >
+                      <SpriteAnimator
+                        spriteSheet={
+                          enemyAnimStates[idx] === "death" ? harpyDeath
+                          : enemyAnimStates[idx] === "attack" ? harpyAttack
+                          : enemyAnimStates[idx] === "hurt" ? harpyHurt
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? harpyMove
+                          : harpyIdle
+                        }
+                        frameWidth={96}
+                        frameHeight={96}
+                        totalFrames={
+                          enemyAnimStates[idx] === "death" ? 7
+                          : enemyAnimStates[idx] === "attack" ? 9
+                          : enemyAnimStates[idx] === "hurt" ? 6
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 6
+                          : 6
+                        }
+                        fps={
+                          enemyAnimStates[idx] === "attack" ? 12
+                          : enemyAnimStates[idx] === "death" ? 9
+                          : enemyAnimStates[idx] === "hurt" ? 12
+                          : 9
+                        }
+                        scale={2.4}
+                        loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
+                        flipX={true}
+                        onComplete={
+                          enemyAnimStates[idx] === "death"
+                            ? () => onEnemyDeathAnimDone?.(idx)
+                            : undefined
+                        }
+                        preloadSheets={[harpyIdle, harpyMove, harpyAttack, harpyHurt, harpyDeath]}
                         anchor="bottom-center"
                       />
                     </div>
