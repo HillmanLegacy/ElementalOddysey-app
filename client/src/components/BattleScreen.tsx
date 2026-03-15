@@ -1221,7 +1221,7 @@ export default function BattleScreen({
               setDeathAnimPending(prev => new Set(prev).add(tidx));
             }
             setEnemyAnimStates(prev => {
-              return { ...prev, [tidx]: isDying ? "death" : "idle" };
+              return { ...prev, [tidx]: isDying ? "death" : ytrielRestAnim(tidx) };
             });
           }, hurtDuration);
         }
@@ -3588,8 +3588,6 @@ export default function BattleScreen({
                         }
                         fps={
                           enemyAnimStates[idx] === "attack" ? 12
-                          : enemyAnimStates[idx] === "death" ? 8
-                          : enemyAnimStates[idx] === "hurt" ? 10
                           : 8
                         }
                         scale={2.6}
@@ -3605,7 +3603,7 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[ytrielIdle, ytrielFlying, ytrielAttack, ytrielHurt, ytrielDeath, ytrielTransition]}
-                        style={{ position: "absolute", left: "14px", top: enemyAnimStates[idx] === "hurt" ? "86px" : "35px" }}
+                        style={{ position: "absolute", left: "14px", top: "35px" }}
                       />
                     </div>
                     </PixelDissolve>
