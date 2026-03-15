@@ -3480,7 +3480,7 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[ytrielIdle, ytrielFlying, ytrielAttack, ytrielHurt, ytrielDeath, ytrielTransition]}
-                        anchor="bottom-center"
+                        style={{ position: "absolute", left: "14px", top: "35px" }}
                       />
                     </div>
                     </PixelDissolve>
