@@ -668,7 +668,8 @@ export function useGameState() {
           battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
           lastEnemyDodgedRef.current = true;
         } else {
-          const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
+          const enemyUseMagic = enemy.stats.int > enemy.stats.atk;
+          const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
           let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
           actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
           battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
@@ -688,7 +689,8 @@ export function useGameState() {
             battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
-            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, Math.random() > 0.5, enemy.element, s.player?.element);
+            const enemyUseMagic = enemy.stats.int > enemy.stats.atk;
+            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
             let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
             battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
@@ -702,7 +704,8 @@ export function useGameState() {
             battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
-            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, Math.random() > 0.5, enemy.element, partyTarget.element);
+            const enemyUseMagic = enemy.stats.int > enemy.stats.atk;
+            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, enemyUseMagic, enemy.element, partyTarget.element);
             let actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, partyTarget.perks || []);
             battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
