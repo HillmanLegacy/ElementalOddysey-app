@@ -716,6 +716,18 @@ export default function SideScrollStage({
               ds.timer = inSight ? FIRE_AIM_DELAY : 0;
             }
           }
+        } else if (enemy.type === "minotaur" && !defeated.includes(idx)) {
+          ep.x += ep.dir * 70 * dt;
+          if (ep.x >= ep.startX + 200) { ep.x = ep.startX + 200; ep.dir = -1; }
+          else if (ep.x <= ep.startX - 200) { ep.x = ep.startX - 200; ep.dir = 1; }
+        } else if (enemy.type === "cyclops" && !defeated.includes(idx)) {
+          ep.x += ep.dir * 50 * dt;
+          if (ep.x >= ep.startX + 160) { ep.x = ep.startX + 160; ep.dir = -1; }
+          else if (ep.x <= ep.startX - 160) { ep.x = ep.startX - 160; ep.dir = 1; }
+        } else if (enemy.type === "harpy" && !defeated.includes(idx)) {
+          ep.x += ep.dir * 120 * dt;
+          if (ep.x >= ep.startX + 300) { ep.x = ep.startX + 300; ep.dir = -1; }
+          else if (ep.x <= ep.startX - 300) { ep.x = ep.startX - 300; ep.dir = 1; }
         }
 
         newEnemyX.push(ep.x);
