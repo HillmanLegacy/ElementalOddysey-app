@@ -4,7 +4,6 @@ import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
 import { useColorMap } from "@/hooks/useColorMap";
 import lavaBgImg from "@assets/Lava_Stage_Side_Scroll_Background_upscayl_3x_digital-art-4x_1773372864153.png";
-import forestBgImg from "@assets/Forest_Region_Side_Scroll_Background_w_Ground_1773582435504.jpg";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -223,77 +222,75 @@ function drawForestBg(ctx: CanvasRenderingContext2D, width: number, height: numb
   const totalW = width + 2 * offsetX;
   ctx.clearRect(0, 0, totalW, height);
 
+  // Sky — deep forest blue fading to hazy green horizon
   const skyGrad = ctx.createLinearGradient(0, 0, 0, groundY);
-  skyGrad.addColorStop(0, "#5ba3d9");
-  skyGrad.addColorStop(0.6, "#8ec8e8");
-  skyGrad.addColorStop(1, "#c8e8c0");
+  skyGrad.addColorStop(0, "#2e6a9a");
+  skyGrad.addColorStop(0.45, "#4e90b8");
+  skyGrad.addColorStop(0.8, "#7ab89a");
+  skyGrad.addColorStop(1, "#9ad0a0");
   ctx.fillStyle = skyGrad;
   ctx.fillRect(0, 0, totalW, groundY);
 
+  // Wispy clouds
   const rng1 = rand(17);
-  for (let i = 0; i < 6; i++) {
-    const cx = (i * (totalW / 5)) + rng1() * 200 - 100;
-    const cy = groundY * 0.2 + rng1() * groundY * 0.15;
-    const rx = 80 + rng1() * 60;
-    const ry = 30 + rng1() * 20;
-    ctx.fillStyle = "rgba(255,255,255,0.65)";
-    ctx.beginPath();
-    ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "rgba(255,255,255,0.45)";
-    ctx.beginPath();
-    ctx.ellipse(cx + 40, cy + 5, rx * 0.7, ry * 0.7, 0, 0, Math.PI * 2);
-    ctx.fill();
+  for (let i = 0; i < 9; i++) {
+    const cx = (i * (totalW / 8)) + rng1() * 180 - 90;
+    const cy = groundY * 0.12 + rng1() * groundY * 0.22;
+    const rx = 55 + rng1() * 75;
+    const ry = 18 + rng1() * 14;
+    ctx.fillStyle = "rgba(255,255,255,0.52)";
+    ctx.beginPath(); ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.30)";
+    ctx.beginPath(); ctx.ellipse(cx + 45, cy + 6, rx * 0.6, ry * 0.65, 0, 0, Math.PI * 2); ctx.fill();
   }
 
-  const hillGrad = ctx.createLinearGradient(0, groundY * 0.65, 0, groundY);
-  hillGrad.addColorStop(0, "#4a8c3f");
-  hillGrad.addColorStop(1, "#3a7030");
-  ctx.fillStyle = hillGrad;
+  // Distant misty ridgeline
+  const rngM = rand(7);
+  const mistyGrad = ctx.createLinearGradient(0, groundY * 0.38, 0, groundY * 0.72);
+  mistyGrad.addColorStop(0, "rgba(60,105,70,0.45)");
+  mistyGrad.addColorStop(1, "rgba(45,82,48,0.80)");
+  ctx.fillStyle = mistyGrad;
+  for (let i = 0; i < 9; i++) {
+    const mx = (i * (totalW / 7)) + rngM() * 130 - 65;
+    const mr = 200 + rngM() * 110;
+    ctx.beginPath(); ctx.ellipse(mx, groundY * 0.68, mr, mr * 0.32, 0, 0, Math.PI); ctx.fill();
+  }
+
+  // Far background conifers — dark silhouette layer
   const rng2 = rand(23);
-  for (let i = 0; i < 10; i++) {
-    const hx = (i * (totalW / 8)) + rng2() * 100 - 50;
-    const hr = 90 + rng2() * 70;
+  for (let i = 0; i < 28; i++) {
+    const tx = (i * (totalW / 22)) + rng2() * 55 - 27;
+    const th = 110 + rng2() * 90;
+    const tw = 26 + rng2() * 18;
+    ctx.fillStyle = "#1e4a12";
     ctx.beginPath();
-    ctx.ellipse(hx, groundY, hr, hr * 0.45, 0, 0, Math.PI);
-    ctx.fill();
-  }
-
-  const rng3 = rand(31);
-  for (let i = 0; i < 18; i++) {
-    const tx = (i * (totalW / 14)) + rng3() * 80 - 40;
-    const th = 55 + rng3() * 55;
-    const tw = 22 + rng3() * 18;
-    ctx.fillStyle = "#1e5c14";
-    ctx.beginPath();
-    ctx.moveTo(tx, groundY - 2);
-    ctx.lineTo(tx - tw, groundY - th * 0.45);
+    ctx.moveTo(tx, groundY + 2);
+    ctx.lineTo(tx - tw, groundY - th * 0.48);
     ctx.lineTo(tx, groundY - th);
-    ctx.lineTo(tx + tw, groundY - th * 0.45);
-    ctx.closePath();
-    ctx.fill();
-    ctx.fillStyle = "#2d7a1e";
-    ctx.beginPath();
-    ctx.moveTo(tx, groundY - 2);
-    ctx.lineTo(tx - tw * 0.7, groundY - th * 0.65);
-    ctx.lineTo(tx, groundY - th - 12);
-    ctx.lineTo(tx + tw * 0.7, groundY - th * 0.65);
-    ctx.closePath();
-    ctx.fill();
+    ctx.lineTo(tx + tw, groundY - th * 0.48);
+    ctx.closePath(); ctx.fill();
   }
 
-  const groundGrad = ctx.createLinearGradient(0, groundY, 0, height);
-  groundGrad.addColorStop(0, "#4a7c30");
-  groundGrad.addColorStop(0.3, "#3d6826");
-  groundGrad.addColorStop(1, "#2d5018");
-  ctx.fillStyle = groundGrad;
-  ctx.fillRect(0, groundY, totalW, height - groundY);
-
-  ctx.fillStyle = "rgba(60, 100, 30, 0.5)";
-  const rng4 = rand(41);
-  for (let gx = 0; gx < totalW; gx += 60 + Math.floor(rng4() * 60)) {
-    const gy = groundY + rng4() * 8;
-    ctx.fillRect(gx, gy, 3, 10 + rng4() * 6);
+  // Mid-distance conifers — brighter, taller
+  const rng3 = rand(31);
+  for (let i = 0; i < 20; i++) {
+    const tx = (i * (totalW / 15)) + rng3() * 75 - 37;
+    const th = 80 + rng3() * 70;
+    const tw = 30 + rng3() * 22;
+    ctx.fillStyle = "#2d6818";
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY);
+    ctx.lineTo(tx - tw, groundY - th * 0.44);
+    ctx.lineTo(tx, groundY - th);
+    ctx.lineTo(tx + tw, groundY - th * 0.44);
+    ctx.closePath(); ctx.fill();
+    ctx.fillStyle = "#3d8822";
+    ctx.beginPath();
+    ctx.moveTo(tx, groundY);
+    ctx.lineTo(tx - tw * 0.68, groundY - th * 0.62);
+    ctx.lineTo(tx, groundY - th - 16);
+    ctx.lineTo(tx + tw * 0.68, groundY - th * 0.62);
+    ctx.closePath(); ctx.fill();
   }
 }
 
@@ -461,7 +458,7 @@ export default function SideScrollStage({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     if (isForest) {
-      ctx.clearRect(0, 0, STAGE_WIDTH + 2 * BG_EXT, VIEWPORT_H);
+      drawForestBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
     } else {
       drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
     }
@@ -926,26 +923,26 @@ export default function SideScrollStage({
       style={{ width: "100%", height: "100%", background: "#060108" }}
       data-testid="side-scroll-stage"
     >
-      {/* Parallax background — forest uses full-height image with ground included;
-          lava uses sky-only height (ground drawn separately) */}
-      <div
-        style={{
-          position: "absolute",
-          top: 0,
-          left: -BG_EXT,
-          width: STAGE_WIDTH + 2 * BG_EXT,
-          height: isForest ? VIEWPORT_H : GROUND_Y,
-          transform: `translateX(${-(cameraX * (isForest ? 0.3 : 0.35))}px)`,
-          backgroundImage: isForest ? `url(${forestBgImg})` : `url(${lavaBgImg})`,
-          backgroundSize: isForest ? "auto 100%" : "100% 100%",
-          backgroundRepeat: isForest ? "repeat-x" : "no-repeat",
-          backgroundPosition: isForest ? `left -35px` : "left top",
-          backgroundColor: isForest ? "#4a2e18" : "transparent",
-          imageRendering: "pixelated",
-          willChange: "transform",
-          pointerEvents: "none",
-        }}
-      />
+      {/* Parallax lava landscape background — sky layer only; forest uses canvas */}
+      {!isForest && (
+        <div
+          style={{
+            position: "absolute",
+            top: 0,
+            left: -BG_EXT,
+            width: STAGE_WIDTH + 2 * BG_EXT,
+            height: GROUND_Y,
+            transform: `translateX(${-(cameraX * 0.35)}px)`,
+            backgroundImage: `url(${lavaBgImg})`,
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+            backgroundPosition: "left top",
+            imageRendering: "pixelated",
+            willChange: "transform",
+            pointerEvents: "none",
+          }}
+        />
+      )}
 
       <canvas
         ref={bgCanvasRef}
@@ -973,62 +970,36 @@ export default function SideScrollStage({
           willChange: "transform",
         }}
       >
-        {/* Ground fill — main stage (hidden for forest; image ground covers it) */}
-        {!isForest && <div style={{
-          position: "absolute",
-          left: 0,
-          top: GROUND_Y,
-          width: STAGE_WIDTH,
-          height: VIEWPORT_H - GROUND_Y,
-          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
-        }} />}
-        {/* Ground fill — left extension */}
-        {!isForest && <div style={{
-          position: "absolute",
-          left: -STAGE_PAD,
-          top: GROUND_Y,
-          width: STAGE_PAD,
-          height: VIEWPORT_H - GROUND_Y,
-          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
-        }} />}
-        {/* Ground fill — right extension */}
-        {!isForest && <div style={{
-          position: "absolute",
-          left: STAGE_WIDTH,
-          top: GROUND_Y,
-          width: STAGE_PAD,
-          height: VIEWPORT_H - GROUND_Y,
-          background: "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
-        }} />}
+        {/* Ground fill — rich forest soil / lava rock */}
+        {[0, -STAGE_PAD, STAGE_WIDTH].map((left, i) => (
+          <div key={i} style={{
+            position: "absolute",
+            left,
+            top: GROUND_Y,
+            width: i === 0 ? STAGE_WIDTH : STAGE_PAD,
+            height: VIEWPORT_H - GROUND_Y,
+            background: isForest
+              ? "linear-gradient(180deg, #3a5c1a 0%, #2e4a14 18%, #4a3010 40%, #3a240c 70%, #2a1a08 100%)"
+              : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
+          }} />
+        ))}
 
-        {/* Ground line — hidden for forest (image provides its own ground edge) */}
-        {!isForest && <div style={{
-          position: "absolute",
-          left: 0,
-          top: GROUND_Y - 3,
-          width: STAGE_WIDTH,
-          height: 3,
-          background: "linear-gradient(90deg, #ff5500, #ffaa00, #ff5500, #ff8800, #ff4400)",
-          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
-        }} />}
-        {!isForest && <div style={{
-          position: "absolute",
-          left: -STAGE_PAD,
-          top: GROUND_Y - 3,
-          width: STAGE_PAD,
-          height: 3,
-          background: "#ff5500",
-          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
-        }} />}
-        {!isForest && <div style={{
-          position: "absolute",
-          left: STAGE_WIDTH,
-          top: GROUND_Y - 3,
-          width: STAGE_PAD,
-          height: 3,
-          background: "#ff5500",
-          boxShadow: "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
-        }} />}
+        {/* Ground line — glowing grass edge (forest) or lava seam (fire) */}
+        {[0, -STAGE_PAD, STAGE_WIDTH].map((left, i) => (
+          <div key={i} style={{
+            position: "absolute",
+            left,
+            top: GROUND_Y - 4,
+            width: i === 0 ? STAGE_WIDTH : STAGE_PAD,
+            height: 4,
+            background: isForest
+              ? "linear-gradient(90deg, #5aaa20, #88dd40, #5aaa20, #aaee50, #4a9918)"
+              : "linear-gradient(90deg, #ff5500, #ffaa00, #ff5500, #ff8800, #ff4400)",
+            boxShadow: isForest
+              ? "0 0 14px rgba(90,200,30,0.95), 0 0 32px rgba(60,160,20,0.55)"
+              : "0 0 18px rgba(255,100,0,0.95), 0 0 40px rgba(255,50,0,0.5)",
+          }} />
+        ))}
 
         {rocks.current.map((rock, i) => (
           <div key={i} style={{
