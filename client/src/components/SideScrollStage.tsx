@@ -465,6 +465,8 @@ export default function SideScrollStage({
     if (!isForest) return;
     const canvas = windCanvasRef.current;
     if (!canvas) return;
+    canvas.width = viewportWRef.current;
+    canvas.height = VIEWPORT_H;
     const leafRng = rand(77);
     const leaves: LeafParticle[] = Array.from({ length: 38 }, () => {
       const vw = viewportWRef.current;
@@ -478,24 +480,23 @@ export default function SideScrollStage({
       const ctx = canvas.getContext("2d");
       if (!ctx) { windRafRef.current = requestAnimationFrame(draw); return; }
       const vw = viewportWRef.current;
-      canvas.width = vw;
-      canvas.height = VIEWPORT_H;
+      if (canvas.width !== vw) canvas.width = vw;
       ctx.clearRect(0, 0, vw, VIEWPORT_H);
       t += 0.016;
       const camX = cameraXRef.current;
 
-      // Grass blades
+      // Grass blades — rooted at PHYS_GROUND_Y so they align with the knight's feet
       ctx.lineCap = "round";
       for (const b of grassBlades.current) {
         const sx = b.stageX - camX;
         if (sx < -20 || sx > vw + 20) continue;
         const sway = Math.sin(t * b.freq + b.phase) * 6;
         ctx.beginPath();
-        ctx.moveTo(sx, GROUND_Y);
+        ctx.moveTo(sx, PHYS_GROUND_Y);
         ctx.bezierCurveTo(
-          sx + sway * 0.25, GROUND_Y - b.h * 0.4,
-          sx + sway * 0.7,  GROUND_Y - b.h * 0.75,
-          sx + sway,        GROUND_Y - b.h,
+          sx + sway * 0.25, PHYS_GROUND_Y - b.h * 0.4,
+          sx + sway * 0.7,  PHYS_GROUND_Y - b.h * 0.75,
+          sx + sway,        PHYS_GROUND_Y - b.h,
         );
         ctx.strokeStyle = b.color;
         ctx.lineWidth = b.w;
@@ -1031,7 +1032,7 @@ export default function SideScrollStage({
             top: 0,
             left: 0,
             width: "100%",
-            height: "100%",
+            height: VIEWPORT_H,
             pointerEvents: "none",
           }}
         />
