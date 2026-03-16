@@ -289,6 +289,7 @@ export default function ClimbingStage({
   );
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(enemies.map(() => false));
   const [battleFreezing, setBattleFreezing] = useState(false);
+  const [hiddenEnemyIndices, setHiddenEnemyIndices] = useState<number[]>([]);
 
   const onEnemyContactRef = useRef(onEnemyContact);
   const onCompleteRef = useRef(onComplete);
@@ -564,6 +565,7 @@ export default function ClimbingStage({
         const eHH = eH * es.hbHH;
         if (Math.abs(pCx - eCx) < pHW + eHW && Math.abs(pCy - eCy) < pHH + eHH) {
           contactCooldown.current.add(idx);
+          setHiddenEnemyIndices(s => s.includes(idx) ? s : [...s, idx]);
           battlePendingRef.current = true;
           setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
@@ -696,7 +698,7 @@ export default function ClimbingStage({
       })}
 
       {enemies.map((enemy, idx) => {
-        if (defeatedEnemyIndices.includes(idx)) return null;
+        if (defeatedEnemyIndices.includes(idx) || hiddenEnemyIndices.includes(idx)) return null;
         const es = CLIMB_ENEMY[enemy.type];
         const eW = Math.round(es.iW * es.scale);
         const eH = Math.round(es.iH * es.scale);

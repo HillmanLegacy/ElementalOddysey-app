@@ -483,6 +483,7 @@ export default function SideScrollStage({
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
   const [enemyIsChasing, setEnemyIsChasing] = useState(resolvedEnemies.map(() => false));
   const [battleFreezing, setBattleFreezing] = useState(false);
+  const [hiddenEnemyIndices, setHiddenEnemyIndices] = useState<number[]>([]);
 
   const bgCanvasRef = useRef<HTMLCanvasElement>(null);
   const windCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -907,6 +908,7 @@ export default function SideScrollStage({
 
         if (Math.abs(pCx - eCx) < (pHW + eHW) && Math.abs(pCy - eCy) < (pHH + eHH)) {
           contactCooldown.current.add(idx);
+          setHiddenEnemyIndices(s => s.includes(idx) ? s : [...s, idx]);
           battlePendingRef.current = true;
           setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
@@ -940,6 +942,7 @@ export default function SideScrollStage({
         if (hitFb) {
           const hitEnemy = resolvedEnemies[hitFb.enemyIdx];
           contactCooldown.current.add(hitFb.enemyIdx);
+          setHiddenEnemyIndices(s => s.includes(hitFb!.enemyIdx) ? s : [...s, hitFb!.enemyIdx]);
           battlePendingRef.current = true;
           setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
@@ -1151,7 +1154,7 @@ export default function SideScrollStage({
         ))}
 
         {resolvedEnemies.map((enemy, idx) => {
-          if (defeatedEnemyIndices.includes(idx)) return null;
+          if (defeatedEnemyIndices.includes(idx) || hiddenEnemyIndices.includes(idx)) return null;
           const es = ENEMY_SPRITES_SS[enemy.type];
           const eW = Math.round(es.iW * es.scale);
           const eH = Math.round(es.iH * es.scale);
