@@ -611,6 +611,8 @@ export default function BattleScreen({
   const prevLogLenRef = useRef(battle.log.length);
   const playerSpriteRef = useRef<HTMLDivElement>(null);
   const enemyTurnTimers = useRef<number[]>([]);
+  const leafBattleCanvasRef = useRef<HTMLCanvasElement>(null);
+  const leafBattleRafRef = useRef<number>(0);
 
   const spells = getPlayerSpells(player);
   const consumables = player.inventory.filter(i => i.type === "consumable");
@@ -634,6 +636,63 @@ export default function BattleScreen({
     const t = window.setTimeout(() => setStartReady(true), 2000);
     return () => clearTimeout(t);
   }, []);
+
+  useEffect(() => {
+    if (regionTheme !== "Wind") return;
+    const canvas = leafBattleCanvasRef.current;
+    if (!canvas) return;
+    let s = 90731;
+    const rng = () => { s = (s * 1664525 + 1013904223) & 0xffffffff; return (s >>> 0) / 0xffffffff; };
+    const COLORS = ["#3a8c18", "#5aaa28", "#88cc44", "#4a9820", "#a0d840", "#c8e850"];
+    const spawnLeaf = (w: number, h: number) => ({
+      x: -10 as number,
+      y: 30 + rng() * (h * 0.78),
+      vx: 0.5 + rng() * 1.1,
+      vy: -0.08 + rng() * 0.22,
+      rot: rng() * Math.PI * 2,
+      rotSpd: (rng() - 0.5) * 0.07,
+      alpha: 0.45 + rng() * 0.45,
+      size: 4 + rng() * 5,
+      color: COLORS[Math.floor(rng() * COLORS.length)],
+    });
+    canvas.width = canvas.offsetWidth || 640;
+    canvas.height = canvas.offsetHeight || 400;
+    const leaves = Array.from({ length: 28 }, () => {
+      const l = spawnLeaf(canvas.width, canvas.height);
+      l.x = rng() * canvas.width;
+      return l;
+    });
+    const draw = () => {
+      const w = canvas.offsetWidth || canvas.width;
+      const h = canvas.offsetHeight || canvas.height;
+      if (canvas.width !== w) canvas.width = w;
+      if (canvas.height !== h) canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { leafBattleRafRef.current = requestAnimationFrame(draw); return; }
+      ctx.clearRect(0, 0, w, h);
+      const t = performance.now() / 1000;
+      for (const lf of leaves) {
+        lf.x += lf.vx + Math.sin(t * 0.4 + lf.rot) * 0.25;
+        lf.y += lf.vy + Math.sin(t * 0.3 + lf.rot * 1.3) * 0.18;
+        lf.rot += lf.rotSpd;
+        if (lf.x > w + 20) Object.assign(lf, spawnLeaf(w, h));
+        if (lf.y > h * 0.88 || lf.y < -20) { lf.y = 30 + rng() * (h * 0.78); lf.x = rng() * w; }
+        ctx.save();
+        ctx.translate(lf.x, lf.y);
+        ctx.rotate(lf.rot);
+        ctx.globalAlpha = lf.alpha;
+        ctx.fillStyle = lf.color;
+        ctx.beginPath();
+        ctx.ellipse(0, 0, lf.size, lf.size * 0.45, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.globalAlpha = 1;
+      leafBattleRafRef.current = requestAnimationFrame(draw);
+    };
+    leafBattleRafRef.current = requestAnimationFrame(draw);
+    return () => cancelAnimationFrame(leafBattleRafRef.current);
+  }, [regionTheme]);
 
   useEffect(() => {
     if (battle.phase === "victory" || battle.phase === "defeat") {
@@ -2612,17 +2671,24 @@ export default function BattleScreen({
       {regionTheme === "Fire" ? (
         <LavaBattleBg />
       ) : regionTheme === "Wind" ? (
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${forestBattleBg})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center bottom",
-            filter: "saturate(1.2) brightness(0.85) contrast(1.05)",
-            transform: "scale(1.8) translateX(-75px)",
-            transformOrigin: "center bottom",
-          }}
-        />
+        <>
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${forestBattleBg})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center bottom",
+              filter: "saturate(1.2) brightness(0.85) contrast(1.05)",
+              transform: "scale(1.8) translateX(-75px)",
+              transformOrigin: "center bottom",
+            }}
+          />
+          <canvas
+            ref={leafBattleCanvasRef}
+            className="absolute inset-0 pointer-events-none"
+            style={{ width: "100%", height: "100%", zIndex: 1 }}
+          />
+        </>
       ) : (
         <>
           <div className="absolute inset-0 bg-gradient-to-b from-[#0c0520] via-[#150a30] to-[#0a0418]" style={{ filter: "contrast(1.12) saturate(1.15)" }} />
@@ -2674,18 +2740,20 @@ export default function BattleScreen({
         zIndex: 2,
       }} />
 
-      <ParticleCanvas
-        colors={battle.phase === "victory"
-          ? ["#fbbf24", "#f59e0b", "#eab308"]
-          : regionTheme === "Fire" ? ["#ef4444", "#f97316", "#fbbf24", "#dc2626"]
-          : regionTheme === "Ice" ? ["#67e8f9", "#3b82f6", "#93c5fd", "#e0f2fe"]
-          : regionTheme === "Shadow" ? ["#7c3aed", "#6b21a8", "#4c1d95", "#ddd6fe"]
-          : regionTheme === "Earth" ? ["#a16207", "#ca8a04", "#d97706", "#92400e"]
-          : [elementColor, "#a855f7", "#6b21a8"]}
-        count={battle.phase === "victory" ? 120 : regionTheme === "Fire" ? 35 : 20}
-        speed={battle.phase === "victory" ? 1.5 : regionTheme === "Fire" ? 0.5 : 0.3}
-        style={battle.phase === "victory" ? "burst" : regionTheme === "Fire" ? "rain" : "ambient"}
-      />
+      {(battle.phase === "victory" || regionTheme !== "Wind") && (
+        <ParticleCanvas
+          colors={battle.phase === "victory"
+            ? ["#fbbf24", "#f59e0b", "#eab308"]
+            : regionTheme === "Fire" ? ["#ef4444", "#f97316", "#fbbf24", "#dc2626"]
+            : regionTheme === "Ice" ? ["#67e8f9", "#3b82f6", "#93c5fd", "#e0f2fe"]
+            : regionTheme === "Shadow" ? ["#7c3aed", "#6b21a8", "#4c1d95", "#ddd6fe"]
+            : regionTheme === "Earth" ? ["#a16207", "#ca8a04", "#d97706", "#92400e"]
+            : [elementColor, "#a855f7", "#6b21a8"]}
+          count={battle.phase === "victory" ? 120 : regionTheme === "Fire" ? 35 : 20}
+          speed={battle.phase === "victory" ? 1.5 : regionTheme === "Fire" ? 0.5 : 0.3}
+          style={battle.phase === "victory" ? "burst" : regionTheme === "Fire" ? "rain" : "ambient"}
+        />
+      )}
 
       {isLowHp && battle.phase !== "victory" && battle.phase !== "defeat" && (
         <div className="absolute inset-0 pointer-events-none animate-pulse z-5" style={{ boxShadow: "inset 0 0 80px rgba(239, 68, 68, 0.15)" }} />
