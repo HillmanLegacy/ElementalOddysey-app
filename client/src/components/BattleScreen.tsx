@@ -2558,7 +2558,7 @@ export default function BattleScreen({
             backgroundImage: `url(${forestBattleBg})`,
             backgroundSize: "cover",
             backgroundPosition: "center bottom",
-            filter: "saturate(1.6) brightness(1.15) contrast(1.05)",
+            filter: "saturate(1.2) brightness(0.85) contrast(1.05)",
             transform: "scale(1.8) translateX(-75px)",
             transformOrigin: "center bottom",
           }}
