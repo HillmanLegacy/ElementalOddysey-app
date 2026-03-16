@@ -42,6 +42,7 @@ const VIEWPORT_H = 640;
 const VIEWPORT_W_DEFAULT = 1024;
 const PLAT_THICK = 16;
 const GOAL_Y = 90;
+const EXIT_TRIGGER_X = 80;
 
 const CHAR_SPRITES: Record<string, {
   idle: string; run: string;
@@ -488,6 +489,13 @@ export default function ClimbingStage({
         return;
       }
 
+      if (p.x <= EXIT_TRIGGER_X && p.onGround && p.y + playerH - charGroundOffset >= groundPlat.y - 4 && !stageCompleteRef.current) {
+        stageCompleteRef.current = true;
+        cancelAnimationFrame(rafRef.current);
+        onExitRef.current();
+        return;
+      }
+
       const defeated = defeatedRef.current;
       const newPos: { x: number; y: number }[] = [];
       const newFL: boolean[] = [];
@@ -709,6 +717,20 @@ export default function ClimbingStage({
                 animation: "pulse 1.4s ease-in-out infinite",
               }}>
                 ★ SUMMIT ★
+              </div>
+            )}
+            {plat.isGround && (
+              <div style={{
+                position: "absolute", top: -26, left: 10,
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: 8,
+                color: isForest ? "#86efac" : "#fde047",
+                textShadow: isForest ? "0 0 8px #22c55e, 0 0 16px #16a34a" : "0 0 8px #f59e0b, 0 0 16px #d97706",
+                whiteSpace: "nowrap",
+                letterSpacing: 1,
+                animation: "pulse 1.4s ease-in-out infinite",
+              }}>
+                ◄ EXIT
               </div>
             )}
           </div>
