@@ -2740,18 +2740,16 @@ export default function BattleScreen({
         zIndex: 2,
       }} />
 
-      {(battle.phase === "victory" || regionTheme !== "Wind") && (
+      {battle.phase !== "victory" && regionTheme !== "Wind" && (
         <ParticleCanvas
-          colors={battle.phase === "victory"
-            ? ["#fbbf24", "#f59e0b", "#eab308"]
-            : regionTheme === "Fire" ? ["#ef4444", "#f97316", "#fbbf24", "#dc2626"]
+          colors={regionTheme === "Fire" ? ["#ef4444", "#f97316", "#fbbf24", "#dc2626"]
             : regionTheme === "Ice" ? ["#67e8f9", "#3b82f6", "#93c5fd", "#e0f2fe"]
             : regionTheme === "Shadow" ? ["#7c3aed", "#6b21a8", "#4c1d95", "#ddd6fe"]
             : regionTheme === "Earth" ? ["#a16207", "#ca8a04", "#d97706", "#92400e"]
             : [elementColor, "#a855f7", "#6b21a8"]}
-          count={battle.phase === "victory" ? 120 : regionTheme === "Fire" ? 35 : 20}
-          speed={battle.phase === "victory" ? 1.5 : regionTheme === "Fire" ? 0.5 : 0.3}
-          style={battle.phase === "victory" ? "burst" : regionTheme === "Fire" ? "rain" : "ambient"}
+          count={regionTheme === "Fire" ? 35 : 20}
+          speed={regionTheme === "Fire" ? 0.5 : 0.3}
+          style={regionTheme === "Fire" ? "rain" : "ambient"}
         />
       )}
 
@@ -3484,6 +3482,7 @@ export default function BattleScreen({
           </div>
 
           {battle.enemies.map((enemy, idx) => {
+            if (dissolvedEnemies.has(idx)) return null;
             const isDead = enemy.currentHp <= 0;
             const isHit = enemyHitIdx === idx;
             const spriteImg = getEnemySprite(enemy.id);
