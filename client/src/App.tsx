@@ -31,6 +31,7 @@ import { groupConsumables } from "@/lib/utils";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
 import SideScrollStage from "@/components/SideScrollStage";
+import ClimbingStage from "@/components/ClimbingStage";
 
 const DESIGN_WIDTH = 1024;
 const DESIGN_HEIGHT = 640;
@@ -161,6 +162,7 @@ function Game() {
     defeatedEnemyIndices: number[];
     savedPlayerX: number;
     reversed: boolean;
+    isClimbing: boolean;
   } | null>(null);
   const [sideScrollBattleTransition, setSideScrollBattleTransition] = useState<{
     enemyIndex: number;
@@ -178,6 +180,7 @@ function Game() {
     defeatedEnemyIndices: number[];
     savedPlayerX: number;
     reversed: boolean;
+    isClimbing: boolean;
   } | null>(null);
   const sideScrollBattleActiveRef = useRef(false);
   const lastContactedEnemyIdxRef = useRef<number | null>(null);
@@ -264,51 +267,61 @@ function Game() {
         if (!state.player) return null;
         if (sideScrollCtx) {
           const ssPlayer = state.player;
+          const regionTheme = (() => { const r = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {})); return r.theme; })();
+          const sharedEnemyContact = (enemyIndex: number, enemyId: string, playerX: number) => {
+            if (sideScrollBattleActiveRef.current) return;
+            lastContactedEnemyIdxRef.current = enemyIndex;
+            sideScrollBattleActiveRef.current = true;
+            setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
+            setTransitionElementColor("#ef4444");
+            fadeOutMusic(600);
+            const trSfx = playSfx('battleTransition');
+            if (trSfx) trSfx.playbackRate = 2.0;
+            setSideScrollBattleTransition({ enemyIndex, enemyId });
+          };
+          const sharedComplete = () => { fadeOutMusic(700); setSideScrollCompleteTransition(true); };
+          const sharedExit = () => { fadeOutMusic(700); setSideScrollExitTransition(true); };
           return (
             <>
-              <SideScrollStage
-                player={ssPlayer}
-                fromNodeId={sideScrollCtx.fromNodeId}
-                toNodeId={sideScrollCtx.toNodeId}
-                stageName={sideScrollCtx.toNodeName}
-                defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
-                initialPlayerX={sideScrollCtx.savedPlayerX}
-                shopVisited={state.player?.clearedNodes.includes(4) ?? false}
-                reversed={sideScrollCtx.reversed}
-                regionTheme={(() => { const r = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {})); return r.theme; })()}
-                onEnemyContact={(enemyIndex, enemyId, playerX) => {
-                  if (sideScrollBattleActiveRef.current) return;
-                  lastContactedEnemyIdxRef.current = enemyIndex;
-                  sideScrollBattleActiveRef.current = true;
-                  setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
-                  const ec = "#ef4444";
-                  setTransitionElementColor(ec);
-                  fadeOutMusic(600);
-                  const trSfx = playSfx('battleTransition');
-                  if (trSfx) trSfx.playbackRate = 2.0;
-                  setSideScrollBattleTransition({ enemyIndex, enemyId });
-                }}
-                onFireballContact={(enemyIndex, enemyId, playerX) => {
-                  if (sideScrollBattleActiveRef.current) return;
-                  applyFireballDamage(10);
-                  lastContactedEnemyIdxRef.current = enemyIndex;
-                  sideScrollBattleActiveRef.current = true;
-                  setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
-                  setTransitionElementColor("#ef4444");
-                  fadeOutMusic(600);
-                  const trSfx = playSfx('battleTransition');
-                  if (trSfx) trSfx.playbackRate = 2.0;
-                  setSideScrollBattleTransition({ enemyIndex, enemyId });
-                }}
-                onComplete={() => {
-                  fadeOutMusic(700);
-                  setSideScrollCompleteTransition(true);
-                }}
-                onExit={() => {
-                  fadeOutMusic(700);
-                  setSideScrollExitTransition(true);
-                }}
-              />
+              {sideScrollCtx.isClimbing ? (
+                <ClimbingStage
+                  player={ssPlayer}
+                  fromNodeId={sideScrollCtx.fromNodeId}
+                  toNodeId={sideScrollCtx.toNodeId}
+                  defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
+                  regionTheme={regionTheme}
+                  onEnemyContact={sharedEnemyContact}
+                  onComplete={sharedComplete}
+                  onExit={sharedExit}
+                />
+              ) : (
+                <SideScrollStage
+                  player={ssPlayer}
+                  fromNodeId={sideScrollCtx.fromNodeId}
+                  toNodeId={sideScrollCtx.toNodeId}
+                  stageName={sideScrollCtx.toNodeName}
+                  defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
+                  initialPlayerX={sideScrollCtx.savedPlayerX}
+                  shopVisited={state.player?.clearedNodes.includes(4) ?? false}
+                  reversed={sideScrollCtx.reversed}
+                  regionTheme={regionTheme}
+                  onEnemyContact={sharedEnemyContact}
+                  onFireballContact={(enemyIndex, enemyId, playerX) => {
+                    if (sideScrollBattleActiveRef.current) return;
+                    applyFireballDamage(10);
+                    lastContactedEnemyIdxRef.current = enemyIndex;
+                    sideScrollBattleActiveRef.current = true;
+                    setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
+                    setTransitionElementColor("#ef4444");
+                    fadeOutMusic(600);
+                    const trSfx = playSfx('battleTransition');
+                    if (trSfx) trSfx.playbackRate = 2.0;
+                    setSideScrollBattleTransition({ enemyIndex, enemyId });
+                  }}
+                  onComplete={sharedComplete}
+                  onExit={sharedExit}
+                />
+              )}
               {sideScrollBattleTransition && (
                 <BattleTransition
                   direction="in"
@@ -433,6 +446,7 @@ function Game() {
                 const r = getRegionForTier(state.player.currentRegion, t);
                 const fromNode = r.nodes.find(n => n.id === fromNodeId);
                 const reversed = fromNode ? fromNode.x > toNode.x : false;
+                const isClimbing = fromNode ? toNode.y < fromNode.y : false;
                 stopAmbient();
                 fadeOutMusic(400);
                 setSideScrollEnterPending({
@@ -442,6 +456,7 @@ function Game() {
                   defeatedEnemyIndices: [],
                   savedPlayerX: reversed ? 4300 : 150,
                   reversed,
+                  isClimbing,
                 });
               }}
             />
