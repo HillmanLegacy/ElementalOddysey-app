@@ -274,6 +274,7 @@ export default function ClimbingStage({
   );
 
   const lastHandledFleeRef = useRef<number | null>(null);
+  const lastHandledVictoryCountRef = useRef(defeatedEnemyIndices.length);
 
   const initCamY = Math.max(0, Math.min(startY - VIEWPORT_H * 0.5, CLIMB_H - VIEWPORT_H));
 
@@ -305,20 +306,37 @@ export default function ClimbingStage({
       if (!defeatedEnemyIndices.includes(idx)) contactCooldown.current.delete(idx);
     });
 
-    if (
-      fleeEnemyIndex !== null &&
-      fleeEnemyIndex !== undefined &&
-      fleeEnemyIndex !== lastHandledFleeRef.current &&
-      fleeEnemyIndex < enemies.length
-    ) {
-      lastHandledFleeRef.current = fleeEnemyIndex;
-      const enemy = enemies[fleeEnemyIndex];
-      const enemyPlat = platforms[enemy.platformIdx];
-      const lowerPlats = platforms.filter(p => p.y > enemyPlat.y);
-      if (lowerPlats.length > 0) {
-        const nextPlat = lowerPlats.reduce((best, p) => p.y < best.y ? p : best, lowerPlats[0]);
-        physRef.current.x = Math.max(0, nextPlat.x + nextPlat.w / 2 - playerW / 2);
-        physRef.current.y = nextPlat.y - playerH + charGroundOffset;
+    const newCount = defeatedEnemyIndices.length;
+    const prevCount = lastHandledVictoryCountRef.current;
+    if (newCount > prevCount) {
+      lastHandledVictoryCountRef.current = newCount;
+
+      if (
+        fleeEnemyIndex !== null &&
+        fleeEnemyIndex !== undefined &&
+        fleeEnemyIndex !== lastHandledFleeRef.current &&
+        fleeEnemyIndex < enemies.length
+      ) {
+        lastHandledFleeRef.current = fleeEnemyIndex;
+        const enemy = enemies[fleeEnemyIndex];
+        const enemyPlat = platforms[enemy.platformIdx];
+        const lowerPlats = platforms.filter(p => p.y > enemyPlat.y);
+        if (lowerPlats.length > 0) {
+          const nextPlat = lowerPlats.reduce((best, p) => p.y < best.y ? p : best, lowerPlats[0]);
+          physRef.current.x = Math.max(0, nextPlat.x + nextPlat.w / 2 - playerW / 2);
+          physRef.current.y = nextPlat.y - playerH + charGroundOffset;
+          physRef.current.vx = 0;
+          physRef.current.vy = 0;
+          physRef.current.onGround = true;
+          jumpActiveRef.current = false;
+        }
+      } else {
+        const playerBottom = physRef.current.y + playerH - charGroundOffset;
+        const nearestPlat = platforms.reduce((best, p) =>
+          Math.abs(p.y - playerBottom) < Math.abs(best.y - playerBottom) ? p : best
+        );
+        physRef.current.x = Math.max(nearestPlat.x, Math.min(nearestPlat.x + nearestPlat.w - playerW, nearestPlat.x + nearestPlat.w / 2 - playerW / 2));
+        physRef.current.y = nearestPlat.y - playerH + charGroundOffset;
         physRef.current.vx = 0;
         physRef.current.vy = 0;
         physRef.current.onGround = true;
