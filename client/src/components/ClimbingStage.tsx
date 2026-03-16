@@ -103,21 +103,32 @@ function generatePlatforms(seed: number, vw: number): ClimbPlatform[] {
 
   plats.push({ x: 0, y: CLIMB_H - PLAT_THICK, w: vw, isGround: true });
 
-  // Max jump height with held jump: JUMP_VELOCITY²/(2×GRAVITY_HOLD) = 490²/1400 ≈ 171px
-  // Keep vertical step safely below that — 90–140px gives a comfortable margin
+  // Max jump height (held): JUMP_VELOCITY²/(2×GRAVITY_HOLD) = 490²/1400 ≈ 171px
+  // Step 80–120px → always ≤ 70% of max jump height, comfortable margin.
+  // Loop runs until we're close enough to the goal that the last hop is also safe.
+  const STEP_MIN = 80;
+  const STEP_MAX = 120;
   let y = CLIMB_H - 190;
   let lastCenter = vw / 2;
 
-  while (y > GOAL_Y + 180) {
+  while (y > GOAL_Y + PLAT_THICK + STEP_MAX) {
     const w = 95 + r() * 125;
-    const hopMax = Math.min(320, vw - w - 20);
+    const hopMax = Math.min(300, vw - w - 20);
     const cMin = Math.max(w / 2 + 10, lastCenter - hopMax);
     const cMax = Math.min(vw - w / 2 - 10, lastCenter + hopMax);
     let center = cMin + r() * Math.max(0, cMax - cMin);
     center = Math.max(w / 2 + 10, Math.min(vw - w / 2 - 10, center));
     plats.push({ x: center - w / 2, y, w });
     lastCenter = center;
-    y -= 90 + r() * 50;   // 90–140px — always within 171px max jump
+    y -= STEP_MIN + r() * (STEP_MAX - STEP_MIN);
+  }
+  // Fill any remaining gap between the last intermediate platform and the goal
+  // so the final hop is never larger than STEP_MAX.
+  while (y > GOAL_Y + PLAT_THICK + 10) {
+    const w = 110 + r() * 100;
+    const x = 10 + r() * Math.max(0, vw - w - 20);
+    plats.push({ x, y, w });
+    y -= STEP_MIN + r() * (STEP_MAX - STEP_MIN);
   }
 
   plats.push({ x: 0, y: GOAL_Y, w: vw, isGoal: true });
