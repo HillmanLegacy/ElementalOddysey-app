@@ -370,7 +370,12 @@ function Game() {
                     const toNodeId = sideScrollCtx?.toNodeId;
                     setSideScrollCtx(null);
                     setSideScrollCompleteReveal(true);
-                    if (toNodeId !== undefined) updatePlayer({ currentNode: toNodeId });
+                    if (toNodeId !== undefined && ssPlayer) {
+                      const curRegion = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
+                      if (curRegion.nodes.some(n => n.id === toNodeId)) {
+                        updatePlayer({ currentNode: toNodeId });
+                      }
+                    }
                     const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
