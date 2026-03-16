@@ -426,6 +426,66 @@ function YtrielExplosion({ onComplete }: { onComplete: () => void }) {
   );
 }
 
+function AnimatedHpBar({ value, max, lowThreshold = 25, height = "2.5" }: { value: number; max: number; lowThreshold?: number; height?: string }) {
+  const pct = Math.max(0, Math.min(100, (value / max) * 100));
+  const [ghostPct, setGhostPct] = useState(pct);
+  const prevPctRef = useRef(pct);
+  const ghostTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    const newPct = Math.max(0, Math.min(100, (value / max) * 100));
+    const prevPct = prevPctRef.current;
+    if (newPct < prevPct) {
+      if (ghostTimerRef.current) clearTimeout(ghostTimerRef.current);
+      ghostTimerRef.current = setTimeout(() => setGhostPct(newPct), 450);
+    } else {
+      if (ghostTimerRef.current) clearTimeout(ghostTimerRef.current);
+      setGhostPct(newPct);
+    }
+    prevPctRef.current = newPct;
+  }, [value, max]);
+
+  useEffect(() => () => { if (ghostTimerRef.current) clearTimeout(ghostTimerRef.current); }, []);
+
+  const lowHp = pct <= lowThreshold;
+  const barColor = lowHp
+    ? "linear-gradient(90deg, #ef4444, #ff7070)"
+    : pct > 50
+      ? "linear-gradient(90deg, #22c55e, #6efa9e)"
+      : "linear-gradient(90deg, #f59e0b, #fde047)";
+  const barShadow = lowHp
+    ? "0 0 8px 2px rgba(239,68,68,1.0), inset 0 1px 0 rgba(255,255,255,0.25)"
+    : pct > 50
+      ? "0 0 8px 2px rgba(34,197,94,0.95), inset 0 1px 0 rgba(255,255,255,0.25)"
+      : "0 0 8px 2px rgba(245,158,11,0.95), inset 0 1px 0 rgba(255,255,255,0.25)";
+
+  return (
+    <div
+      className="flex-1 overflow-visible relative"
+      style={{ height: `${height === "2.5" ? "10px" : "8px"}`, background: "rgba(0,0,0,0.45)", border: "1px solid rgba(255,255,255,0.15)" }}
+    >
+      <div
+        className="absolute h-full"
+        style={{
+          width: `${ghostPct}%`,
+          background: "rgba(255, 210, 80, 0.38)",
+          transition: "width 0.75s ease-out",
+        }}
+      />
+      <div
+        className={`absolute h-full ${lowHp ? "animate-pulse" : ""}`}
+        style={{
+          width: `${pct}%`,
+          background: barColor,
+          boxShadow: barShadow,
+          imageRendering: "pixelated",
+          transition: "width 0.3s ease-out",
+        }}
+      />
+    </div>
+  );
+}
+
 export default function BattleScreen({
   player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier,
 }: BattleScreenProps) {
@@ -3091,31 +3151,7 @@ export default function BattleScreen({
                             width: "18px",
                             imageRendering: "pixelated",
                           }}>HP</span>
-                          <div
-                            className="flex-1 h-2.5 overflow-visible relative"
-                            style={{
-                              background: "rgba(0,0,0,0.45)",
-                              border: "1px solid rgba(255,255,255,0.15)",
-                            }}
-                          >
-                            <div
-                              className={`h-full transition-all duration-500 ease-out ${charLowHp ? "animate-pulse" : ""}`}
-                              style={{
-                                width: `${charHpPct}%`,
-                                background: charLowHp
-                                  ? "linear-gradient(90deg, #ef4444, #ff7070)"
-                                  : charHpPct > 50
-                                    ? "linear-gradient(90deg, #22c55e, #6efa9e)"
-                                    : "linear-gradient(90deg, #f59e0b, #fde047)",
-                                boxShadow: charLowHp
-                                  ? "0 0 8px 2px rgba(239,68,68,1.0), inset 0 1px 0 rgba(255,255,255,0.25)"
-                                  : charHpPct > 50
-                                    ? "0 0 8px 2px rgba(34,197,94,0.95), inset 0 1px 0 rgba(255,255,255,0.25)"
-                                    : "0 0 8px 2px rgba(245,158,11,0.95), inset 0 1px 0 rgba(255,255,255,0.25)",
-                                imageRendering: "pixelated",
-                              }}
-                            />
-                          </div>
+                          <AnimatedHpBar value={char.hp} max={char.maxHp} lowThreshold={25} height="2.5" />
                           <span
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
@@ -3355,31 +3391,7 @@ export default function BattleScreen({
                             width: "18px",
                             imageRendering: "pixelated",
                           }}>HP</span>
-                          <div
-                            className="flex-1 h-2.5 overflow-visible relative"
-                            style={{
-                              background: "rgba(0,0,0,0.45)",
-                              border: "1px solid rgba(255,255,255,0.15)",
-                            }}
-                          >
-                            <div
-                              className={`h-full transition-all duration-500 ease-out ${eLowHp ? "animate-pulse" : ""}`}
-                              style={{
-                                width: `${eHpPct}%`,
-                                background: eLowHp
-                                  ? "linear-gradient(90deg, #ef4444, #ff7070)"
-                                  : eHpPct > 50
-                                    ? "linear-gradient(90deg, #22c55e, #6efa9e)"
-                                    : "linear-gradient(90deg, #f59e0b, #fde047)",
-                                boxShadow: eLowHp
-                                  ? "0 0 8px 2px rgba(239,68,68,1.0), inset 0 1px 0 rgba(255,255,255,0.25)"
-                                  : eHpPct > 50
-                                    ? "0 0 8px 2px rgba(34,197,94,0.95), inset 0 1px 0 rgba(255,255,255,0.25)"
-                                    : "0 0 8px 2px rgba(245,158,11,0.95), inset 0 1px 0 rgba(255,255,255,0.25)",
-                                imageRendering: "pixelated",
-                              }}
-                            />
-                          </div>
+                          <AnimatedHpBar value={enemy.currentHp} max={enemy.stats.hp} lowThreshold={25} height="2.5" />
                           <span
                             style={{
                               fontFamily: "'Press Start 2P', cursive",
