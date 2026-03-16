@@ -83,11 +83,20 @@ interface ClimbPlatform {
   isGround?: boolean;
 }
 
+const HARPY_COLOR_VARIANTS: Array<Record<string, string> | null> = [
+  null,
+  { "#0069aa": "#a80e00", "#00396d": "#6b0900", "#657392": "#926761", "#92a1b9": "#bb948f", "#c7cfdd": "#e2cdca" },
+  { "#0069aa": "#1a8c3d", "#00396d": "#0a4d1f", "#657392": "#537365", "#92a1b9": "#85b998", "#c7cfdd": "#c5ddc9" },
+  { "#0069aa": "#6a00aa", "#00396d": "#3a006d", "#657392": "#6e5892", "#92a1b9": "#a490b9", "#c7cfdd": "#d3c7dd" },
+  { "#0069aa": "#aa7000", "#00396d": "#6d3e00", "#657392": "#927055", "#92a1b9": "#b9a880", "#c7cfdd": "#ddd4ba" },
+];
+
 interface ClimbEnemy {
   type: ClimbEnemyType;
   enemyId: string;
   platformIdx: number;
   xOffset: number;
+  colorVariant?: number;
 }
 
 function rng(seed: number): () => number {
@@ -155,7 +164,8 @@ function generateEnemies(seed: number, plats: ClimbPlatform[], isForest: boolean
     const enemyId = isForest
       ? (type === "harpy" ? "harpy_wind" : type === "cyclops" ? "cyclops_wind" : "minotaur_wind")
       : (type === "demonKin" ? "demon_kin" : "slime_fire");
-    return { type, enemyId, platformIdx: idx, xOffset };
+    const colorVariant = type === "harpy" ? Math.floor(r() * HARPY_COLOR_VARIANTS.length) : undefined;
+    return { type, enemyId, platformIdx: idx, xOffset, colorVariant };
   });
 }
 
@@ -771,6 +781,7 @@ export default function ClimbingStage({
               flipX={enemy.type === "minotaur" ? fl : !fl}
               paused={battleFreezing}
               anchor="top-left"
+              colorMap={enemy.type === "harpy" && enemy.colorVariant != null ? (HARPY_COLOR_VARIANTS[enemy.colorVariant] ?? undefined) : undefined}
             />
           </div>
         );
