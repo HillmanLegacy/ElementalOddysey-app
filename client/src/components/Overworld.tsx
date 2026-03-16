@@ -716,11 +716,11 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           return (
             <button
               key={`arrow-${connId}`}
-              className="absolute transform -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center"
+              className="absolute -translate-x-1/2 -translate-y-1/2 w-9 h-9 flex items-center justify-center cursor-pointer group hover:scale-125 transition-transform duration-150"
               style={{
                 left: `${arrowX}%`,
                 top: `${arrowY}%`,
-                zIndex: 80,
+                zIndex: 999,
               }}
               onClick={() => { playSfx('menuSelect'); handleArrowClick(targetNode); }}
               data-testid={`arrow-to-node-${connId}`}
@@ -730,15 +730,12 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                 height="16"
                 viewBox="0 0 20 16"
                 fill="none"
-                style={{
-                  transform: `rotate(${angle}deg)`,
-                  animation: "pulse 2s ease-in-out infinite",
-                  filter: `drop-shadow(0 0 3px rgba(255, 255, 255, 0.6))`,
-                }}
+                className="transition-all duration-150 [filter:drop-shadow(0_0_3px_rgba(255,255,255,0.6))] group-hover:[filter:drop-shadow(0_0_10px_rgba(251,191,36,1))_drop-shadow(0_0_4px_rgba(245,158,11,1))]"
+                style={{ transform: `rotate(${angle}deg)`, animation: "pulse 2s ease-in-out infinite" }}
               >
                 <polygon
                   points="16,8 0,0 0,16"
-                  fill="white"
+                  className="fill-white group-hover:fill-yellow-400 transition-colors duration-150"
                   strokeWidth="0"
                 />
               </svg>
