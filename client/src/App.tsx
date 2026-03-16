@@ -163,6 +163,7 @@ function Game() {
     savedPlayerX: number;
     reversed: boolean;
     isClimbing: boolean;
+    fleeEnemyIndex: number | null;
   } | null>(null);
   const [sideScrollBattleTransition, setSideScrollBattleTransition] = useState<{
     enemyIndex: number;
@@ -181,6 +182,7 @@ function Game() {
     savedPlayerX: number;
     reversed: boolean;
     isClimbing: boolean;
+    fleeEnemyIndex: number | null;
   } | null>(null);
   const sideScrollBattleActiveRef = useRef(false);
   const lastContactedEnemyIdxRef = useRef<number | null>(null);
@@ -289,6 +291,7 @@ function Game() {
                   fromNodeId={sideScrollCtx.fromNodeId}
                   toNodeId={sideScrollCtx.toNodeId}
                   defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
+                  fleeEnemyIndex={sideScrollCtx.fleeEnemyIndex}
                   regionTheme={regionTheme}
                   onEnemyContact={sharedEnemyContact}
                   onComplete={sharedComplete}
@@ -301,6 +304,7 @@ function Game() {
                   toNodeId={sideScrollCtx.toNodeId}
                   stageName={sideScrollCtx.toNodeName}
                   defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
+                  fleeEnemyIndex={sideScrollCtx.fleeEnemyIndex}
                   initialPlayerX={sideScrollCtx.savedPlayerX}
                   shopVisited={state.player?.clearedNodes.includes(4) ?? false}
                   reversed={sideScrollCtx.reversed}
@@ -457,6 +461,7 @@ function Game() {
                   savedPlayerX: reversed ? 4300 : 150,
                   reversed,
                   isClimbing,
+                  fleeEnemyIndex: null,
                 });
               }}
             />
@@ -1301,6 +1306,7 @@ function Game() {
                       setSideScrollCtx(ctx => ctx ? {
                         ...ctx,
                         defeatedEnemyIndices: [...ctx.defeatedEnemyIndices, enemyIdx],
+                        fleeEnemyIndex: fled ? enemyIdx : null,
                       } : null);
                     }
                     lastContactedEnemyIdxRef.current = null;

@@ -299,6 +299,7 @@ interface SideScrollStageProps {
   toNodeId: number;
   stageName: string;
   defeatedEnemyIndices: number[];
+  fleeEnemyIndex?: number | null;
   initialPlayerX?: number;
   shopVisited?: boolean;
   reversed?: boolean;
@@ -315,6 +316,7 @@ export default function SideScrollStage({
   toNodeId,
   stageName,
   defeatedEnemyIndices,
+  fleeEnemyIndex = null,
   initialPlayerX = 150,
   shopVisited = false,
   reversed = false,
@@ -404,6 +406,7 @@ export default function SideScrollStage({
   }, [exitAnim]);
 
   const defeatedRef = useRef(defeatedEnemyIndices);
+  const lastHandledFleeRef = useRef<number | null>(null);
   useEffect(() => {
     defeatedRef.current = defeatedEnemyIndices;
     resolvedEnemies.forEach((_, idx) => {
@@ -411,7 +414,29 @@ export default function SideScrollStage({
         contactCooldown.current.delete(idx);
       }
     });
-  }, [defeatedEnemyIndices, resolvedEnemies]);
+
+    if (
+      fleeEnemyIndex !== null &&
+      fleeEnemyIndex !== undefined &&
+      fleeEnemyIndex !== lastHandledFleeRef.current &&
+      fleeEnemyIndex < resolvedEnemies.length
+    ) {
+      lastHandledFleeRef.current = fleeEnemyIndex;
+      const fleeEnemy = resolvedEnemies[fleeEnemyIndex];
+      const es = ENEMY_SPRITES_SS[fleeEnemy.type];
+      const eW = Math.round(es.iW * es.scale);
+      const ep = enemyPatrolRef.current[fleeEnemyIndex];
+      const playerCenter = physRef.current.x + playerW / 2;
+      const enemyCenterX = ep.x + eW * es.hbXOff;
+      const fleeDist = playerW * 2;
+      if (playerCenter <= enemyCenterX) {
+        physRef.current.x = Math.max(0, ep.x - fleeDist - playerW);
+      } else {
+        physRef.current.x = Math.min(STAGE_WIDTH - playerW, ep.x + eW + fleeDist);
+      }
+      physRef.current.vx = 0;
+    }
+  }, [defeatedEnemyIndices, fleeEnemyIndex, resolvedEnemies, playerW]);
 
   // Per-enemy patrol state: live x/y position + movement direction
   const enemyPatrolRef = useRef(

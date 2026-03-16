@@ -140,7 +140,7 @@ function generateEnemies(seed: number, plats: ClimbPlatform[], isForest: boolean
   const candidates = plats.filter(p => !p.isGround && !p.isGoal);
   const count = 4 + Math.floor(r() * 3);
   const chosen = [...candidates].sort(() => r() - 0.5).slice(0, Math.min(count, candidates.length));
-  const forestTypes: ClimbEnemyType[] = ["minotaur", "cyclops", "harpy"];
+  const forestTypes: ClimbEnemyType[] = ["harpy"];
   const lavaTypes: ClimbEnemyType[] = ["fireDemon", "demonKin"];
 
   return chosen.map(plat => {
@@ -163,6 +163,7 @@ interface ClimbingStageProps {
   fromNodeId: number;
   toNodeId: number;
   defeatedEnemyIndices: number[];
+  fleeEnemyIndex?: number | null;
   regionTheme?: string;
   onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
   onComplete: () => void;
@@ -194,6 +195,7 @@ export default function ClimbingStage({
   fromNodeId,
   toNodeId,
   defeatedEnemyIndices,
+  fleeEnemyIndex = null,
   regionTheme = "Fire",
   onEnemyContact,
   onComplete,
@@ -251,15 +253,27 @@ export default function ClimbingStage({
       const es = CLIMB_ENEMY[e.type];
       const eH = Math.round(es.iH * es.scale);
       const worldY = plat.y - eH + es.groundOffset;
-      return {
+      const base = {
         x: plat.x + e.xOffset,
         y: worldY,
         dir: (Math.random() > 0.5 ? 1 : -1) as 1 | -1,
         platLeft: plat.x,
         platRight: plat.x + plat.w,
       };
+      if (e.type === "harpy") {
+        return {
+          ...base,
+          aiMode: "wander" as "wander" | "aggro",
+          targetX: 40 + Math.random() * (VIEWPORT_W_DEFAULT - 80),
+          targetY: GOAL_Y + 100 + Math.random() * (CLIMB_H - GOAL_Y - 250),
+          wanderTimer: 1.5 + Math.random() * 2.5,
+        };
+      }
+      return base;
     })
   );
+
+  const lastHandledFleeRef = useRef<number | null>(null);
 
   const initCamY = Math.max(0, Math.min(startY - VIEWPORT_H * 0.5, CLIMB_H - VIEWPORT_H));
 
@@ -289,7 +303,28 @@ export default function ClimbingStage({
     enemies.forEach((_, idx) => {
       if (!defeatedEnemyIndices.includes(idx)) contactCooldown.current.delete(idx);
     });
-  }, [defeatedEnemyIndices, enemies]);
+
+    if (
+      fleeEnemyIndex !== null &&
+      fleeEnemyIndex !== undefined &&
+      fleeEnemyIndex !== lastHandledFleeRef.current &&
+      fleeEnemyIndex < enemies.length
+    ) {
+      lastHandledFleeRef.current = fleeEnemyIndex;
+      const enemy = enemies[fleeEnemyIndex];
+      const enemyPlat = platforms[enemy.platformIdx];
+      const lowerPlats = platforms.filter(p => p.y > enemyPlat.y);
+      if (lowerPlats.length > 0) {
+        const nextPlat = lowerPlats.reduce((best, p) => p.y < best.y ? p : best, lowerPlats[0]);
+        physRef.current.x = Math.max(0, nextPlat.x + nextPlat.w / 2 - playerW / 2);
+        physRef.current.y = nextPlat.y - playerH + charGroundOffset;
+        physRef.current.vx = 0;
+        physRef.current.vy = 0;
+        physRef.current.onGround = true;
+        jumpActiveRef.current = false;
+      }
+    }
+  }, [defeatedEnemyIndices, fleeEnemyIndex, enemies, platforms, playerH, playerW, charGroundOffset]);
 
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
@@ -438,14 +473,74 @@ export default function ClimbingStage({
       const newPos: { x: number; y: number }[] = [];
       const newFL: boolean[] = [];
 
+      const HARPY_WANDER_SPD = 90;
+      const HARPY_AGGRO_SPD  = 210;
+      const HARPY_DETECT_R   = 300;
+      const HARPY_LOSE_R     = 520;
+
       enemies.forEach((enemy, idx) => {
-        const ep = enemyPatrolRef.current[idx];
+        const ep = enemyPatrolRef.current[idx] as typeof enemyPatrolRef.current[number] & {
+          aiMode?: "wander" | "aggro";
+          targetX?: number;
+          targetY?: number;
+          wanderTimer?: number;
+        };
         const es = CLIMB_ENEMY[enemy.type];
         const eW = Math.round(es.iW * es.scale);
+        const eH = Math.round(es.iH * es.scale);
+
         if (!defeated.includes(idx)) {
-          ep.x += ep.dir * es.patrolSpeed * dt;
-          if (ep.x <= ep.platLeft) { ep.x = ep.platLeft; ep.dir = 1; }
-          if (ep.x + eW >= ep.platRight) { ep.x = ep.platRight - eW; ep.dir = -1; }
+          if (enemy.type === "harpy") {
+            const pCx = p.x + playerW * 0.5;
+            const pCy = p.y + playerH * 0.48;
+            const hCx = ep.x + eW * es.hbXOff;
+            const hCy = ep.y + eH * es.hbYOff;
+            const dist = Math.sqrt((pCx - hCx) ** 2 + (pCy - hCy) ** 2);
+
+            if (ep.aiMode === "wander" && dist < HARPY_DETECT_R) {
+              ep.aiMode = "aggro";
+            } else if (ep.aiMode === "aggro" && dist > HARPY_LOSE_R) {
+              ep.aiMode = "wander";
+              ep.targetX = 30 + Math.random() * (vw - 60);
+              ep.targetY = GOAL_Y + 80 + Math.random() * (CLIMB_H - GOAL_Y - 200);
+              ep.wanderTimer = 2 + Math.random() * 3;
+            }
+
+            if (ep.aiMode === "aggro") {
+              const dx = pCx - hCx;
+              const dy = pCy - hCy;
+              const d = Math.max(1, Math.sqrt(dx * dx + dy * dy));
+              ep.x += (dx / d) * HARPY_AGGRO_SPD * dt;
+              ep.y += (dy / d) * HARPY_AGGRO_SPD * dt;
+              ep.dir = dx >= 0 ? 1 : -1;
+            } else {
+              ep.wanderTimer = Math.max(0, (ep.wanderTimer ?? 3) - dt);
+              const tx = ep.targetX ?? vw / 2;
+              const ty = ep.targetY ?? CLIMB_H / 2;
+              const dx = tx - hCx;
+              const dy = ty - hCy;
+              const d = Math.sqrt(dx * dx + dy * dy);
+              if (d < 50 || ep.wanderTimer <= 0) {
+                const goOffScreen = Math.random() < 0.22;
+                if (goOffScreen) {
+                  ep.targetX = Math.random() < 0.5 ? -eW - 60 : vw + 60;
+                  ep.targetY = ep.y + eH * 0.5 + (Math.random() - 0.5) * 200;
+                } else {
+                  ep.targetX = 25 + Math.random() * Math.max(0, vw - 50);
+                  ep.targetY = GOAL_Y + 80 + Math.random() * (CLIMB_H - GOAL_Y - 200);
+                }
+                ep.wanderTimer = 2 + Math.random() * 3.5;
+              } else {
+                ep.x += (dx / d) * HARPY_WANDER_SPD * dt;
+                ep.y += (dy / d) * HARPY_WANDER_SPD * dt;
+                ep.dir = dx >= 0 ? 1 : -1;
+              }
+            }
+          } else {
+            ep.x += ep.dir * es.patrolSpeed * dt;
+            if (ep.x <= ep.platLeft) { ep.x = ep.platLeft; ep.dir = 1; }
+            if (ep.x + eW >= ep.platRight) { ep.x = ep.platRight - eW; ep.dir = -1; }
+          }
         }
         newPos.push({ x: ep.x, y: ep.y });
         newFL.push(ep.dir === -1);
