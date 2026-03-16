@@ -662,14 +662,11 @@ export default function ClimbingStage({
       {isForest ? (
         <>
           <div style={{
-            position: "absolute",
-            left: 0,
-            top: -cameraY,
-            width: "100%",
-            height: CLIMB_H,
+            position: "absolute", inset: 0,
             backgroundImage: `url(${forestClimbBg})`,
-            backgroundSize: "100% 100%",
+            backgroundSize: "100% auto",
             backgroundRepeat: "no-repeat",
+            backgroundPosition: `center ${(cameraY / (CLIMB_H - VIEWPORT_H)) * 100}%`,
             imageRendering: "auto",
             zIndex: 0,
           }} />
