@@ -3004,8 +3004,7 @@ export default function BattleScreen({
                 const charXpPct = char.xpToNext > 0 ? Math.min(100, (char.xp / char.xpToNext) * 100) : 0;
                 const charLowHp = charHpPct <= 25;
                 const elColor = ELEMENT_COLORS[char.element];
-                const isAnimating = animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn";
-                const charOpacity = char.isDead ? 0.3 : isAnimating ? 0.35 : 1;
+                const charOpacity = char.isDead ? 0.3 : 1;
                 return (
                   <div
                     key={i}
@@ -3258,8 +3257,7 @@ export default function BattleScreen({
                 const eHpPct = Math.max(0, (enemy.currentHp / enemy.stats.hp) * 100);
                 const eLowHp = eHpPct <= 25;
                 const elColor = ELEMENT_COLORS[enemy.element];
-                const isAnimating = animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase === "animating" || battle.phase === "enemyTurn";
-                const eOpacity = isDead ? 0.3 : isAnimating ? 0.35 : 1;
+                const eOpacity = isDead ? 0.3 : 1;
                 const eTargetable = !isDead && (
                   (!isInputBlocked && (selectedAction === "attack" || (selectedAction === "magic" && selectedSpell?.targetType === "enemy"))) ||
                   (battle.phase === "partyTurn" && (partyAction === "selectTarget" || partyAction === "selectMagicTarget"))
