@@ -25,6 +25,7 @@ import cyclopsIdleSheet from "@assets/IDLE_1773579566925.png";
 import cyclopsWalkSheet from "@assets/WALK_1773579566925.png";
 import harpyIdleSheet from "@assets/IDLE_1773579631532.png";
 import harpyMoveSheet from "@assets/MOVE_1773579631533.png";
+import forestClimbBg from "@assets/A_pixel__upscayl_2x_digital-art-4x_1773704775371.png";
 
 const MAX_SPEED = 480;
 const GROUND_ACCEL = 2200;
@@ -639,11 +640,11 @@ export default function ClimbingStage({
   const altitudePct = Math.max(0, Math.min(100, Math.round(((CLIMB_H - renderY) / (CLIMB_H - GOAL_Y)) * 100)));
 
   const bgTop = isForest
-    ? "linear-gradient(180deg, #061408 0%, #0d2208 18%, #112a09 40%, #1a3810 70%, #204810 100%)"
+    ? "#7bafc5"
     : "linear-gradient(180deg, #030000 0%, #0a0200 18%, #160402 35%, #220604 55%, #321008 100%)";
 
   const fogColor = isForest
-    ? "rgba(6,18,4,0.88)"
+    ? "rgba(10,28,8,0.80)"
     : "rgba(40,4,0,0.88)";
 
   return (
@@ -658,12 +659,31 @@ export default function ClimbingStage({
         imageRendering: "pixelated",
       }}
     >
-      <div style={{
-        position: "absolute", inset: 0, pointerEvents: "none",
-        background: isForest
-          ? `radial-gradient(ellipse at 50% ${100 - altitudePct}%, rgba(60,160,20,0.12) 0%, transparent 55%)`
-          : `radial-gradient(ellipse at 50% ${100 - altitudePct}%, rgba(255,60,0,0.10) 0%, transparent 55%)`,
-      }} />
+      {isForest ? (
+        <>
+          <div style={{
+            position: "absolute",
+            left: 0,
+            top: -cameraY,
+            width: "100%",
+            height: CLIMB_H,
+            backgroundImage: `url(${forestClimbBg})`,
+            backgroundSize: "100% 100%",
+            backgroundRepeat: "no-repeat",
+            imageRendering: "auto",
+            zIndex: 0,
+          }} />
+          <div style={{
+            position: "absolute", inset: 0, pointerEvents: "none", zIndex: 1,
+            background: "rgba(5,18,5,0.28)",
+          }} />
+        </>
+      ) : (
+        <div style={{
+          position: "absolute", inset: 0, pointerEvents: "none",
+          background: `radial-gradient(ellipse at 50% ${100 - altitudePct}%, rgba(255,60,0,0.10) 0%, transparent 55%)`,
+        }} />
+      )}
 
       <div style={{
         position: "absolute", bottom: 0, left: 0, right: 0, height: 90,
