@@ -2559,7 +2559,7 @@ export default function BattleScreen({
             backgroundSize: "cover",
             backgroundPosition: "center bottom",
             filter: "saturate(1.6) brightness(1.15) contrast(1.05)",
-            transform: "scale(1.3) translateY(-96px)",
+            transform: "scale(1.5) translateX(-75px)",
             transformOrigin: "center bottom",
           }}
         />
