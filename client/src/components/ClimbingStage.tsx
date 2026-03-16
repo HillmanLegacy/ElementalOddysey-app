@@ -108,7 +108,7 @@ function generatePlatforms(seed: number, vw: number): ClimbPlatform[] {
   // Loop runs until we're close enough to the goal that the last hop is also safe.
   const STEP_MIN = 80;
   const STEP_MAX = 120;
-  let y = CLIMB_H - 190;
+  let y = CLIMB_H - 170;
   let lastCenter = vw / 2;
 
   while (y > GOAL_Y + PLAT_THICK + STEP_MAX) {
