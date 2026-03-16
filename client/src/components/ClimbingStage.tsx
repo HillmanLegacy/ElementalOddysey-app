@@ -108,7 +108,7 @@ function rng(seed: number): () => number {
   };
 }
 
-function generatePlatforms(seed: number, vw: number): ClimbPlatform[] {
+function generatePlatforms(seed: number, vw: number, centerConstrained = false): ClimbPlatform[] {
   const r = rng(seed);
   const plats: ClimbPlatform[] = [];
 
@@ -122,11 +122,17 @@ function generatePlatforms(seed: number, vw: number): ClimbPlatform[] {
   let y = CLIMB_H - 170;
   let lastCenter = vw / 2;
 
+  // Forest stages constrain platforms to within 100px of screen centre (tree trunk area)
+  const screenCenterMin = centerConstrained ? vw / 2 - 100 : 0;
+  const screenCenterMax = centerConstrained ? vw / 2 + 100 : vw;
+
   while (y > GOAL_Y + PLAT_THICK + STEP_MAX) {
     const w = 95 + r() * 125;
     const hopMax = Math.min(300, vw - w - 20);
-    const cMin = Math.max(w / 2 + 10, lastCenter - hopMax);
-    const cMax = Math.min(vw - w / 2 - 10, lastCenter + hopMax);
+    const rawCMin = Math.max(w / 2 + 10, lastCenter - hopMax);
+    const rawCMax = Math.min(vw - w / 2 - 10, lastCenter + hopMax);
+    const cMin = centerConstrained ? Math.max(rawCMin, screenCenterMin + w / 2) : rawCMin;
+    const cMax = centerConstrained ? Math.min(rawCMax, screenCenterMax - w / 2) : rawCMax;
     let center = cMin + r() * Math.max(0, cMax - cMin);
     center = Math.max(w / 2 + 10, Math.min(vw - w / 2 - 10, center));
     plats.push({ x: center - w / 2, y, w });
@@ -137,7 +143,9 @@ function generatePlatforms(seed: number, vw: number): ClimbPlatform[] {
   // so the final hop is never larger than STEP_MAX.
   while (y > GOAL_Y + PLAT_THICK + 10) {
     const w = 110 + r() * 100;
-    const x = 10 + r() * Math.max(0, vw - w - 20);
+    const xMin = centerConstrained ? Math.max(10, vw / 2 - 100 - w / 2) : 10;
+    const xMax = centerConstrained ? Math.min(vw - w - 10, vw / 2 + 100 - w / 2) : vw - w - 10;
+    const x = xMin + r() * Math.max(0, xMax - xMin);
     plats.push({ x, y, w });
     y -= STEP_MIN + r() * (STEP_MAX - STEP_MIN);
   }
@@ -238,7 +246,7 @@ export default function ClimbingStage({
   }, []);
 
   const stageHash = fromNodeId * 137 + toNodeId * 31;
-  const platformsRef = useRef<ClimbPlatform[]>(generatePlatforms(stageHash, VIEWPORT_W_DEFAULT));
+  const platformsRef = useRef<ClimbPlatform[]>(generatePlatforms(stageHash, VIEWPORT_W_DEFAULT, isForest));
   const enemiesRef = useRef<ClimbEnemy[]>(generateEnemies(stageHash, platformsRef.current, isForest, VIEWPORT_W_DEFAULT));
 
   const platforms = platformsRef.current;
@@ -702,27 +710,27 @@ export default function ClimbingStage({
             borderRadius: plat.isGround ? 0 : "4px 4px 0 0",
             background: plat.isGoal
               ? (isForest
-                ? "linear-gradient(90deg, #15803d, #22c55e, #86efac, #22c55e, #15803d)"
+                ? "linear-gradient(90deg, #6b3420, #bf6f4a, #e8a87c, #bf6f4a, #6b3420)"
                 : "linear-gradient(90deg, #92400e, #f59e0b, #fde047, #f59e0b, #92400e)")
               : plat.isGround
                 ? (isForest
-                  ? "linear-gradient(180deg, #365214 0%, #1e3409 100%)"
+                  ? "linear-gradient(180deg, #5a2c18 0%, #3a1808 100%)"
                   : "linear-gradient(180deg, #5a1a08 0%, #2c0a04 100%)")
                 : (isForest
-                  ? "linear-gradient(180deg, #486020 0%, #2c4010 80%, #1a2a08 100%)"
+                  ? "linear-gradient(180deg, #9a5838 0%, #6a3820 80%, #3d1e10 100%)"
                   : "linear-gradient(180deg, #7a2808 0%, #4a1408 80%, #2c0a04 100%)"),
             boxShadow: plat.isGoal
               ? (isForest
-                ? "0 0 20px rgba(34,197,94,0.85), 0 0 50px rgba(34,197,94,0.35), inset 0 1px 0 rgba(255,255,255,0.3)"
+                ? "0 0 20px rgba(191,111,74,0.85), 0 0 50px rgba(191,111,74,0.35), inset 0 1px 0 rgba(255,220,180,0.4)"
                 : "0 0 20px rgba(245,158,11,0.85), 0 0 50px rgba(245,158,11,0.35), inset 0 1px 0 rgba(255,255,255,0.3)")
               : plat.isGround
                 ? "none"
                 : (isForest
-                  ? "0 3px 10px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08)"
+                  ? "0 3px 10px rgba(0,0,0,0.65), inset 0 1px 0 rgba(200,120,60,0.18)"
                   : "0 3px 10px rgba(200,40,0,0.25), inset 0 1px 0 rgba(255,120,0,0.12)"),
             borderTop: plat.isGoal
-              ? (isForest ? "2px solid #86efac" : "2px solid #fde047")
-              : "1px solid rgba(255,255,255,0.10)",
+              ? (isForest ? "2px solid #e8a87c" : "2px solid #fde047")
+              : (isForest ? "1px solid rgba(200,120,60,0.20)" : "1px solid rgba(255,255,255,0.10)"),
           }}>
             {!plat.isGround && !plat.isGoal && Array.from({ length: Math.floor(plat.w / 22) }, (_, ti) => (
               <div key={ti} style={{
@@ -737,8 +745,8 @@ export default function ClimbingStage({
                 transform: "translateX(-50%)",
                 fontFamily: "'Press Start 2P', monospace",
                 fontSize: 9,
-                color: isForest ? "#86efac" : "#fde047",
-                textShadow: isForest ? "0 0 12px #22c55e, 0 0 24px #16a34a" : "0 0 12px #f59e0b, 0 0 24px #d97706",
+                color: isForest ? "#e8a87c" : "#fde047",
+                textShadow: isForest ? "0 0 12px #bf6f4a, 0 0 24px #9a5838" : "0 0 12px #f59e0b, 0 0 24px #d97706",
                 whiteSpace: "nowrap",
                 letterSpacing: 2,
                 animation: "pulse 1.4s ease-in-out infinite",
@@ -751,8 +759,8 @@ export default function ClimbingStage({
                 position: "absolute", top: -26, left: 10,
                 fontFamily: "'Press Start 2P', monospace",
                 fontSize: 8,
-                color: isForest ? "#86efac" : "#fde047",
-                textShadow: isForest ? "0 0 8px #22c55e, 0 0 16px #16a34a" : "0 0 8px #f59e0b, 0 0 16px #d97706",
+                color: isForest ? "#e8a87c" : "#fde047",
+                textShadow: isForest ? "0 0 8px #bf6f4a, 0 0 16px #9a5838" : "0 0 8px #f59e0b, 0 0 16px #d97706",
                 whiteSpace: "nowrap",
                 letterSpacing: 1,
                 animation: "pulse 1.4s ease-in-out infinite",
