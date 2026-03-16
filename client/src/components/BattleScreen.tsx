@@ -2553,8 +2553,13 @@ export default function BattleScreen({
         <LavaBattleBg />
       ) : regionTheme === "Wind" ? (
         <div
-          className="absolute inset-0"
           style={{
+            position: "absolute",
+            top: -200,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            height: "calc(100% + 200px)",
             backgroundImage: `url(${forestBattleBg})`,
             backgroundSize: "cover",
             backgroundPosition: "center 90%",
