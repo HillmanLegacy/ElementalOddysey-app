@@ -1001,10 +1001,6 @@ export default function SideScrollStage({
   }, []);
 
 
-  const progressPercent = reversed
-    ? Math.min(100, Math.round(((STAGE_END_X - renderX) / STAGE_END_X) * 100))
-    : Math.min(100, Math.round((renderX / STAGE_END_X) * 100));
-
   // Jump: freeze on first frame of run sheet (totalFrames=1 = naturally frozen).
   // Ground: run or idle based on velocity.
   const spriteSrc    = (isJumping || isRunning) ? charSprite.run : charSprite.idle;
@@ -1301,29 +1297,8 @@ export default function SideScrollStage({
           letterSpacing: 1,
           lineHeight: "1.6",
         }}>
-          <div style={{ color: "#666", fontSize: 6, marginBottom: 2 }}>DESTINATION</div>
-          {stageName.toUpperCase()}
-        </div>
-
-        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
-          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 6, color: "#666", letterSpacing: 1 }}>PROGRESS</div>
-          <div style={{
-            width: 180,
-            height: 10,
-            background: "rgba(0,0,0,0.7)",
-            border: "1px solid #444",
-            borderRadius: 3,
-            overflow: "hidden",
-          }}>
-            <div style={{
-              width: `${progressPercent}%`,
-              height: "100%",
-              background: "linear-gradient(90deg, #c9a44a, #f0d060, #c9a44a)",
-              transition: "width 0.08s",
-              boxShadow: "0 0 6px rgba(201,164,74,0.7)",
-            }} />
-          </div>
-          <div style={{ fontFamily: "'Press Start 2P', monospace", fontSize: 7, color: "#c9a44a" }}>{progressPercent}%</div>
+          <div style={{ color: "#666", fontSize: 6, marginBottom: 2 }}>STAGE</div>
+          {stageKey.toUpperCase()}
         </div>
 
       </div>
