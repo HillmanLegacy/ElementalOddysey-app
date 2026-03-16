@@ -207,7 +207,7 @@ export default function BattleEffectsLayer({
     return () => cancelAnimationFrame(rafRef.current);
   }, []);
 
-  const gradeColor = REGION_GRADE[regionTheme ?? ""] ?? "rgba(15,8,35,0.03)";
+  const gradeColor = regionTheme === "Wind" ? "transparent" : (REGION_GRADE[regionTheme ?? ""] ?? "rgba(15,8,35,0.03)");
   const isFire = regionTheme === "Fire";
 
   return (
