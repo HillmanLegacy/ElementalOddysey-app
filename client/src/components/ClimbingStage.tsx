@@ -176,7 +176,7 @@ interface ClimbingStageProps {
   defeatedEnemyIndices: number[];
   fleeEnemyIndex?: number | null;
   regionTheme?: string;
-  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
+  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number) => void;
   onComplete: () => void;
   onExit: () => void;
 }
@@ -605,7 +605,7 @@ export default function ClimbingStage({
           battlePendingRef.current = true;
           setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
-          onEnemyContactRef.current(idx, enemy.enemyId, p.x);
+          onEnemyContactRef.current(idx, enemy.enemyId, p.x, enemy.colorVariant);
           hit = true;
         }
       });

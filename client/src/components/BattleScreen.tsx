@@ -227,6 +227,14 @@ const SPRITE_COLORS: Record<string, string> = {
   axewarrior: "#a16207",
 };
 
+const HARPY_COLOR_VARIANTS: Array<Record<string, string> | null> = [
+  null,
+  { "#0069aa": "#a80e00", "#00396d": "#6b0900", "#657392": "#926761", "#92a1b9": "#bb948f", "#c7cfdd": "#e2cdca" },
+  { "#0069aa": "#1a8c3d", "#00396d": "#0a4d1f", "#657392": "#537365", "#92a1b9": "#85b998", "#c7cfdd": "#c5ddc9" },
+  { "#0069aa": "#6a00aa", "#00396d": "#3a006d", "#657392": "#6e5892", "#92a1b9": "#a490b9", "#c7cfdd": "#d3c7dd" },
+  { "#0069aa": "#aa7000", "#00396d": "#6d3e00", "#657392": "#927055", "#92a1b9": "#b9a880", "#c7cfdd": "#ddd4ba" },
+];
+
 interface BattleScreenProps {
   player: PlayerCharacter;
   battle: BattleState;
@@ -251,6 +259,7 @@ interface BattleScreenProps {
   showDamageNumbers: boolean;
   regionTheme?: string;
   regionTier?: number;
+  enemyColorVariant?: number;
 }
 
 type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
@@ -487,7 +496,7 @@ function AnimatedHpBar({ value, max, lowThreshold = 25, height = "2.5" }: { valu
 }
 
 export default function BattleScreen({
-  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier,
+  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier, enemyColorVariant,
 }: BattleScreenProps) {
   const _bsPlayerSprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
   const playerColorMap = useColorMap(_bsPlayerSprites.idle, _bsPlayerSprites.frameWidth, _bsPlayerSprites.frameHeight, player.colorGroups);
@@ -4119,6 +4128,7 @@ export default function BattleScreen({
                         }
                         preloadSheets={[harpyIdle, harpyMove, harpyAttack, harpyHurt, harpyDeath]}
                         anchor="bottom-center"
+                        colorMap={enemyColorVariant != null ? (HARPY_COLOR_VARIANTS[enemyColorVariant] ?? undefined) : undefined}
                       />
                     </div>
                     </PixelDissolve>

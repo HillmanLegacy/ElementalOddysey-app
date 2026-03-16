@@ -186,6 +186,7 @@ function Game() {
   } | null>(null);
   const sideScrollBattleActiveRef = useRef(false);
   const lastContactedEnemyIdxRef = useRef<number | null>(null);
+  const lastContactedEnemyColorVariantRef = useRef<number | undefined>(undefined);
   const [menuFadeOut, setMenuFadeOut] = useState<{ save: any } | null>(null);
   const [menuFadeIn, setMenuFadeIn] = useState(false);
   const [menuReveal, setMenuReveal] = useState(false);
@@ -270,9 +271,10 @@ function Game() {
         if (sideScrollCtx) {
           const ssPlayer = state.player;
           const regionTheme = (() => { const r = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {})); return r.theme; })();
-          const sharedEnemyContact = (enemyIndex: number, enemyId: string, playerX: number) => {
+          const sharedEnemyContact = (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number) => {
             if (sideScrollBattleActiveRef.current) return;
             lastContactedEnemyIdxRef.current = enemyIndex;
+            lastContactedEnemyColorVariantRef.current = colorVariant;
             sideScrollBattleActiveRef.current = true;
             setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
             setTransitionElementColor("#ef4444");
@@ -1248,6 +1250,7 @@ function Game() {
               battle={state.battle}
               showDamageNumbers={state.showDamageNumbers}
               regionTheme={battleRegion.theme}
+              enemyColorVariant={lastContactedEnemyColorVariantRef.current}
               onAttack={playerAttack}
               onCastSpell={castSpell}
               onDefend={playerDefend}
