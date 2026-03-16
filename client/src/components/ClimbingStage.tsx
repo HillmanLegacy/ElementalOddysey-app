@@ -103,19 +103,21 @@ function generatePlatforms(seed: number, vw: number): ClimbPlatform[] {
 
   plats.push({ x: 0, y: CLIMB_H - PLAT_THICK, w: vw, isGround: true });
 
-  let y = CLIMB_H - 210;
+  // Max jump height with held jump: JUMP_VELOCITY²/(2×GRAVITY_HOLD) = 490²/1400 ≈ 171px
+  // Keep vertical step safely below that — 90–140px gives a comfortable margin
+  let y = CLIMB_H - 190;
   let lastCenter = vw / 2;
 
-  while (y > GOAL_Y + 200) {
+  while (y > GOAL_Y + 180) {
     const w = 95 + r() * 125;
-    const hopMax = Math.min(340, vw - w - 20);
+    const hopMax = Math.min(320, vw - w - 20);
     const cMin = Math.max(w / 2 + 10, lastCenter - hopMax);
     const cMax = Math.min(vw - w / 2 - 10, lastCenter + hopMax);
     let center = cMin + r() * Math.max(0, cMax - cMin);
     center = Math.max(w / 2 + 10, Math.min(vw - w / 2 - 10, center));
     plats.push({ x: center - w / 2, y, w });
     lastCenter = center;
-    y -= 140 + r() * 55;
+    y -= 90 + r() * 50;   // 90–140px — always within 171px max jump
   }
 
   plats.push({ x: 0, y: GOAL_Y, w: vw, isGoal: true });
