@@ -43,7 +43,7 @@ import demonKinWalk from "@/assets/images/demonkin-walk.png";
 
 import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
 import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
-import forestBattleBg from "@assets/A_pixel_art_forest_clearing,_seen_from_a_profile_perspective,__1773688990352.jpg";
+import forestBattleBg from "@assets/A_pixel_art_forest__upscayl_2x_digital-art-4x_1773689565858.png";
 import guardSpriteSheet from "@assets/10_weaponhit_spritesheet_1771628904150.png";
 import firespinSheet from "@assets/7_firespin_spritesheet_1771795176253.png";
 import nukeExplosionSheet from "@assets/Nuke_Explosion_1771631384679.png";
