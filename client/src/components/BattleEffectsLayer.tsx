@@ -109,55 +109,19 @@ export default function BattleEffectsLayer({
       const moveRaw = Math.min(1, Math.max(0, (now - phaseStartRef.current) / moveDur));
       const moveEase = phase === "runToEnemy" ? easeIn(moveRaw) : easeOut(moveRaw);
 
-      let animPlayerX = playerPosRef.current.x;
-      let animPlayerY = playerPosRef.current.y;
-      if (isMoving && attackTargetRef.current) {
-        const idle   = idlePosRef.current;
-        const target = attackTargetRef.current;
-        const sx = phase === "runToEnemy" ? idle.x   : target.x;
-        const sy = phase === "runToEnemy" ? idle.y   : target.y;
-        const ex = phase === "runToEnemy" ? target.x : idle.x;
-        const ey = phase === "runToEnemy" ? target.y : idle.y;
-        animPlayerX = lerp(sx, ex, moveEase);
-        animPlayerY = lerp(sy, ey, moveEase);
-      }
 
-      const ALLY_Y_LIFT  = 14;
-      const ENEMY_Y_LIFT = 18;
-
-      const allUnits: (UnitInfo & { isAlly: boolean })[] = [];
-      if (playerAliveRef.current) {
-        allUnits.push({ x: idlePosRef.current.x, y: idlePosRef.current.y, alive: true, element: playerElemRef.current, isAlly: true });
-      }
-      partyInfosRef.current.forEach(p => { if (p.alive) allUnits.push({ ...p, isAlly: true }); });
-      enemyInfosRef.current.forEach(e => { if (e.alive) allUnits.push({ ...e, isAlly: false }); });
-
-      const lightDiv = lightingRef.current;
-
-      if (lightDiv) {
-        const darkR = regionRef.current === "Fire" ? [12, 4, 28] : [6, 4, 18];
-        const darkA = 0.25;
-
-        const stops = allUnits.map((u, i) => {
-          const lift  = u.isAlly ? ALLY_Y_LIFT : ENEMY_Y_LIFT;
-          const base  = 22 + (i === 0 ? 5 : 0);
-          const pulse = 1 + 0.055 * Math.sin(t * 3.2 + i * 1.9) * flicker;
-          const r     = Math.max(8, base * pulse);
-          const cx    = u.x;
-          const cy    = 100 - (u.y + lift);
-          return `radial-gradient(circle ${r}vw at ${cx}% ${cy}%, transparent 0%, transparent 50%, rgba(${darkR.join(",")},${(darkA * 0.18).toFixed(3)}) 72%, rgba(${darkR.join(",")},${darkA.toFixed(3)}) 100%)`;
-        });
-        stops.push(`rgba(${darkR.join(",")},${darkA.toFixed(3)})`);
-        lightDiv.style.background = stops.join(", ");
-      }
 
 
       const screenGlowDiv = screenGlowRef.current;
       if (screenGlowDiv) {
         const region = regionRef.current;
-        const rgb    = ELEM_RGB[region ?? ""] ?? ELEM_RGB.Neutral;
-        const pulse  = 0.18 + 0.07 * Math.sin(t * 1.8) * flicker;
-        screenGlowDiv.style.boxShadow = `inset 0 0 140px 50px rgba(${rgb.join(",")},${pulse.toFixed(3)})`;
+        if (region === "Wind") {
+          screenGlowDiv.style.boxShadow = "none";
+        } else {
+          const rgb    = ELEM_RGB[region ?? ""] ?? ELEM_RGB.Neutral;
+          const pulse  = 0.18 + 0.07 * Math.sin(t * 1.8) * flicker;
+          screenGlowDiv.style.boxShadow = `inset 0 0 140px 50px rgba(${rgb.join(",")},${pulse.toFixed(3)})`;
+        }
       }
 
       const lavaBloomDiv = lavaBloomRef.current;

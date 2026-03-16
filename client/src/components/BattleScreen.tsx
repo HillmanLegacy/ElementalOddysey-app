@@ -2834,10 +2834,6 @@ export default function BattleScreen({
                   />
                 </div>
               )}
-              <div
-                className="absolute -bottom-2 left-1/2 -translate-x-1/2 w-20 h-3 rounded-full blur-md opacity-40"
-                style={{ backgroundColor: elementColor }}
-              />
             </div>
           </div>
 
@@ -4091,10 +4087,6 @@ export default function BattleScreen({
                       />
                     </div>
                   )}
-                  <div
-                    className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-16 h-2 rounded-full blur-sm opacity-30"
-                    style={{ backgroundColor: ELEMENT_COLORS[enemy.element] }}
-                  />
                 </div>
 
                 </div>
