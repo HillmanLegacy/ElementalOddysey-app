@@ -3,6 +3,7 @@ import { Progress } from "@/components/ui/progress";
 import ParticleCanvas from "./ParticleCanvas";
 import SpriteAnimator from "./SpriteAnimator";
 import PixelDissolve from "./PixelDissolve";
+import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, BattleState, Spell, BattlePartyMember } from "@shared/schema";
 import { ELEMENT_COLORS, getPlayerSpells, getPartyMemberSpells, xpForLevel, generateDemonKinSpawn } from "@/lib/gameData";
 import { useColorMap } from "@/hooks/useColorMap";
@@ -606,6 +607,7 @@ export default function BattleScreen({
   const [showVictoryUI, setShowVictoryUI] = useState(false);
   const [victoryReady, setVictoryReady] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
+  const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
   const [fleeFailed, setFleeFailed] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
@@ -759,13 +761,12 @@ export default function BattleScreen({
     if (battle.phase === "defeat") {
       fadeOutMusic(1000);
       const timer = setTimeout(() => {
-        setShowDefeatUI(true);
-        stopAll();
-        playAmbient("game_over");
-      }, 1500);
+        setShowDefeatOverlay(true);
+      }, 800);
       return () => clearTimeout(timer);
     } else {
       setShowDefeatUI(false);
+      setShowDefeatOverlay(false);
     }
   }, [battle.phase]);
 
@@ -5344,10 +5345,25 @@ export default function BattleScreen({
         );
       })()}
 
+      {battle.phase === "defeat" && showDefeatOverlay && !showDefeatUI && (
+        <BattleTransition
+          direction="in"
+          onComplete={() => {
+            setShowDefeatUI(true);
+            stopAll();
+            playAmbient("game_over");
+          }}
+        />
+      )}
+
+      {battle.phase === "defeat" && showDefeatOverlay && showDefeatUI && (
+        <div className="absolute inset-0 z-[999]" style={{ background: "#000" }} />
+      )}
+
       {battle.phase === "defeat" && showDefeatUI && (() => {
         const ec = "#ef4444";
         return (
-          <div className="absolute inset-0 z-[200] flex items-center justify-center">
+          <div className="absolute inset-0 z-[1001] flex items-center justify-center">
             <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}10 0%, rgba(0,0,0,0.85) 70%)` }} />
             <PixelDissolve active={showDefeatUI} reverse={true} duration={600} pixelSize={5}>
             <div
