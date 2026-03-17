@@ -222,7 +222,7 @@ export const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "shade", name: "Dark Shade", element: "Shadow", level: 2, xpReward: 25, goldReward: 11, isBoss: false, sprite: "ghost" },
   { id: "spark_bug", name: "Spark Bug", element: "Lightning", level: 1, xpReward: 18, goldReward: 8, isBoss: false, sprite: "zap" },
   { id: "frost_lizard", name: "Frost Lizard", element: "Ice", level: 1, xpReward: 19, goldReward: 8, isBoss: false, sprite: "snowflake" },
-  { id: "tempest_drake", name: "Tempest Drake", element: "Wind", level: 3, xpReward: 100, goldReward: 40, isBoss: true, sprite: "wind" },
+  { id: "resk", name: "Resk The Forest Dragon", element: "Wind", level: 3, xpReward: 100, goldReward: 40, isBoss: true, sprite: "wind" },
   { id: "dragon_lord", name: "Crown Of Cinder - Ytriel", element: "Fire", level: 4, xpReward: 120, goldReward: 50, isBoss: true, sprite: "flame" },
   { id: "jotem", name: "Jotem", element: "Ice", level: 4, xpReward: 120, goldReward: 50, isBoss: true, sprite: "snowflake" },
   { id: "kraken", name: "Deep Kraken", element: "Water", level: 5, xpReward: 150, goldReward: 60, isBoss: true, sprite: "droplets" },
