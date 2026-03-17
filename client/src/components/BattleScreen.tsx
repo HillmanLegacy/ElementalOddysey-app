@@ -4521,7 +4521,7 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "relative",
-                        top: 60,
+                        top: 160,
                         width: 1440,
                         height: 960,
                         overflow: "visible",
