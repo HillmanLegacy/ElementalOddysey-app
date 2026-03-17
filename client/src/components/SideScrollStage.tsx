@@ -523,7 +523,7 @@ export default function SideScrollStage({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     if (isForest) {
-      drawForestBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
+      drawForestBg(ctx, STAGE_WIDTH, VIEWPORT_H, PHYS_GROUND_Y, BG_EXT);
     } else {
       drawLavaBg(ctx, STAGE_WIDTH, VIEWPORT_H, GROUND_Y, BG_EXT);
     }
@@ -1157,9 +1157,9 @@ export default function SideScrollStage({
           <div key={i} style={{
             position: "absolute",
             left,
-            top: GROUND_Y,
+            top: isForest ? PHYS_GROUND_Y : GROUND_Y,
             width: i === 0 ? STAGE_WIDTH : STAGE_PAD,
-            height: VIEWPORT_H - GROUND_Y,
+            height: VIEWPORT_H - (isForest ? PHYS_GROUND_Y : GROUND_Y),
             background: isForest
               ? "linear-gradient(180deg, #3a5c1a 0%, #2e4a14 18%, #4a3010 40%, #3a240c 70%, #2a1a08 100%)"
               : "linear-gradient(180deg, #3a1505 0%, #6b2810 25%, #a04018 60%, #d06020 100%)",
@@ -1171,7 +1171,7 @@ export default function SideScrollStage({
           <div key={i} style={{
             position: "absolute",
             left,
-            top: GROUND_Y - 4,
+            top: (isForest ? PHYS_GROUND_Y : GROUND_Y) - 4,
             width: i === 0 ? STAGE_WIDTH : STAGE_PAD,
             height: 4,
             background: isForest
@@ -1187,7 +1187,7 @@ export default function SideScrollStage({
           <div key={i} style={{
             position: "absolute",
             left: rock.x,
-            top: GROUND_Y - rock.h,
+            top: (isForest ? PHYS_GROUND_Y : GROUND_Y) - rock.h,
             width: rock.w,
             height: rock.h,
             background: isForest
