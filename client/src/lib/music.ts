@@ -289,6 +289,40 @@ export function stopAll() {
   stopJingle();
 }
 
+export function playAmbientWithFade(track: AmbientTrack, fadeDuration = FADE_DURATION) {
+  if (!track) { stopAmbient(); return; }
+  const src = AMBIENT_TRACKS[track];
+  if (!src) return;
+
+  const scale = AMBIENT_VOLUME_SCALE[track] ?? 1.0;
+  const targetVol = musicVolume * scale;
+
+  // Hard-stop current ambient immediately so there's no overlap
+  clearLayerFade(ambientLayer);
+  if (ambientLayer.element) {
+    ambientLayer.element.pause();
+    ambientLayer.element.src = "";
+    ambientLayer.element = null;
+  }
+  ambientLayer.currentTrack = null;
+
+  const el = new Audio(src);
+  el.loop = true;
+  el.volume = 0;
+  ambientLayer.element = el;
+  ambientLayer.currentTrack = track;
+  el.play().catch(() => {});
+
+  const steps = Math.ceil(fadeDuration / FADE_STEP);
+  let step = 0;
+  ambientLayer.fadeInterval = setInterval(() => {
+    step++;
+    if (!ambientLayer.element) { clearLayerFade(ambientLayer); return; }
+    ambientLayer.element.volume = Math.min(targetVol, targetVol * (step / steps));
+    if (step >= steps) { ambientLayer.element.volume = targetVol; clearLayerFade(ambientLayer); }
+  }, FADE_STEP);
+}
+
 export function setMusicVolume(percent: number) {
   musicVolume = Math.max(0, Math.min(1, percent / 100));
   if (ambientLayer.element && !ambientLayer.element.paused && !ambientLayer.fadeInterval) {

@@ -13,7 +13,7 @@ import BattleEffectsLayer from "./BattleEffectsLayer";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap, LogOut, Feather, Axe, Eye, Flame } from "lucide-react";
 
 import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
-import { playAmbient, stopAll, fadeMusicTo, fadeOutMusic, playJingle } from "@/lib/music";
+import { playAmbient, playAmbientWithFade, stopAll, fadeMusicTo, fadeOutMusic, playJingle } from "@/lib/music";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
@@ -763,12 +763,8 @@ export default function BattleScreen({
     if (battle.phase === "defeat") {
       setShowDefeatOverlay(true);
       setShowDefeatUI(true);
-      fadeOutMusic(800);
-      const timer = setTimeout(() => {
-        stopAll();
-        playAmbient("game_over");
-      }, 900);
-      return () => clearTimeout(timer);
+      fadeOutMusic(1800);
+      playAmbientWithFade("game_over", 1800);
     } else {
       setShowDefeatUI(false);
       setShowDefeatOverlay(false);
@@ -5383,6 +5379,7 @@ export default function BattleScreen({
       {battle.phase === "defeat" && showDefeatOverlay && !defeatOverlayDone && (
         <BattleTransition
           direction="in"
+          duration={1800}
           onComplete={() => setDefeatOverlayDone(true)}
         />
       )}
@@ -5396,7 +5393,7 @@ export default function BattleScreen({
         return (
           <div className="absolute inset-0 z-[1001] flex items-center justify-center">
             <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}10 0%, rgba(0,0,0,0.85) 70%)` }} />
-            <PixelDissolve active={showDefeatUI} reverse={true} duration={600} pixelSize={5}>
+            <PixelDissolve active={showDefeatUI} reverse={true} duration={1800} pixelSize={5}>
             <div
               className="relative w-[320px] h-[220px] overflow-hidden flex flex-col"
               style={{

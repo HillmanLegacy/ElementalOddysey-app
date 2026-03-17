@@ -8,6 +8,7 @@ interface BattleTransitionProps {
   elementColor?: string;
   sfx?: SfxName;
   sfxPlaybackRate?: number;
+  duration?: number;
 }
 
 const DURATION = 800;
@@ -115,7 +116,7 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle, alpha: number)
   ctx.restore();
 }
 
-export default function BattleTransition({ onComplete, direction = "in", elementColor, sfx, sfxPlaybackRate }: BattleTransitionProps) {
+export default function BattleTransition({ onComplete, direction = "in", elementColor, sfx, sfxPlaybackRate, duration = DURATION }: BattleTransitionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const startTimeRef = useRef<number>(0);
   const completedRef = useRef(false);
@@ -168,7 +169,7 @@ export default function BattleTransition({ onComplete, direction = "in", element
       const elapsed = now - startTimeRef.current;
       const dt = (now - lastTime) / 1000;
       lastTime = now;
-      const t = Math.min(elapsed / DURATION, 1);
+      const t = Math.min(elapsed / duration, 1);
 
       if (direction === "in") {
         ctx.clearRect(0, 0, w, h);
@@ -281,7 +282,7 @@ export default function BattleTransition({ onComplete, direction = "in", element
 
     animId = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(animId);
-  }, [direction, elementColor]);
+  }, [direction, elementColor, duration]);
 
   return (
     <canvas
