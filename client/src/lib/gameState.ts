@@ -184,8 +184,16 @@ export function useGameState() {
         if (!weaponElement && s.player.perks.some(pid => { const pk = PERKS.find(p => p.id === pid); return pk && pk.effect.special === "elemental_basic_attack"; })) {
           weaponElement = s.player.element;
         }
+        const accEquip = s.player.equipment.accessory;
+        if (!weaponElement && accEquip?.effect.special === "fireBasicAttack") {
+          weaponElement = "Fire";
+        }
         const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
-        const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element, 1.0, critMod);
+        const { damage: rawAtkDmg, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element, 1.0, critMod);
+        let damage = rawAtkDmg;
+        if (accEquip?.effect.special === "windBoost" && weaponElement === "Wind") {
+          damage = Math.floor(damage * (1 + (accEquip.effect.specialValue || 0)));
+        }
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.animation = isCrit ? "critical" : "attack";
         battle.lastElementLabel = elementLabel || undefined;
@@ -306,12 +314,18 @@ export function useGameState() {
   const castSpell = useCallback((spell: Spell, targetIndex?: number) => {
     setState(s => {
       if (!s.battle || !s.player || s.battle.phase !== "animating") return s;
-      if (s.battle.playerMp < spell.mpCost) {
-        return { ...s, battle: { ...s.battle, log: [...s.battle.log, "Not enough MP!"], phase: "playerTurn" } };
-      }
 
       const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })), buffs: [...s.battle.buffs] };
-      battle.playerMp -= spell.mpCost;
+      const spellAcc = s.player.equipment.accessory;
+      const spellElement = spell.element ?? s.player.element;
+      const fireMagicMult = (spellAcc?.effect.special === "fireMagicBoost" && spellElement === "Fire")
+        ? (1 + (spellAcc.effect.specialValue || 0))
+        : 1.0;
+      const actualMpCost = spell.type === "damage" ? Math.ceil(spell.mpCost * fireMagicMult) : spell.mpCost;
+      if (s.battle.playerMp < actualMpCost) {
+        return { ...s, battle: { ...s.battle, log: [...s.battle.log, "Not enough MP!"], phase: "playerTurn" } };
+      }
+      battle.playerMp -= actualMpCost;
       battle.animation = "magic";
 
       if (spell.type === "buff" && spell.effect.stat && spell.effect.amount && spell.effect.duration) {
@@ -345,7 +359,8 @@ export function useGameState() {
           }
           const skillMult = spell.effect.damageMultiplier || 1;
           const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
-          const { damage, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, true, s.player.element, target.element, skillMult, critMod);
+          const { damage: rawSpellDmg, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, true, s.player.element, target.element, skillMult, critMod);
+          const damage = Math.floor(rawSpellDmg * fireMagicMult);
           const evt = { id: ++damageEventCounter, amount: damage, targetType: "enemy" as const, targetIndex: tIdx >= 0 ? tIdx : 0, isCrit, element: spell.element || s.player.element, label: elementLabel || undefined };
           battle.lastDamageEvent = evt;
           damageEventsCollector.push(evt);
@@ -718,6 +733,12 @@ export function useGameState() {
           const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
           let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
           actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
+          // Accessory elemental resistance
+          const playerAcc = s.player.equipment?.accessory;
+          if (playerAcc?.effect.special && enemy.element) {
+            const resistEl = playerAcc.effect.special === "windResist" ? "Wind" : playerAcc.effect.special === "fireResist" ? "Fire" : null;
+            if (resistEl === enemy.element) actualDamage = Math.max(1, Math.floor(actualDamage * (1 - (playerAcc.effect.specialValue || 0))));
+          }
           battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
           battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
           battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -739,6 +760,11 @@ export function useGameState() {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
             let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
+            const playerAcc2 = s.player.equipment?.accessory;
+            if (playerAcc2?.effect.special && enemy.element) {
+              const resistEl2 = playerAcc2.effect.special === "windResist" ? "Wind" : playerAcc2.effect.special === "fireResist" ? "Fire" : null;
+              if (resistEl2 === enemy.element) actualDamage = Math.max(1, Math.floor(actualDamage * (1 - (playerAcc2.effect.specialValue || 0))));
+            }
             battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
             battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -1299,19 +1325,43 @@ export function useGameState() {
       if (currentEquipped) newInventory.push(currentEquipped);
 
       const newStats = { ...s.player.stats };
-      if (currentEquipped?.effect.stat && currentEquipped.effect.amount) {
-        (newStats as any)[currentEquipped.effect.stat] -= currentEquipped.effect.amount;
+      // Revert outgoing equipped item bonuses (flat + secondary flat)
+      if (currentEquipped) {
+        if (currentEquipped.effect.stat && currentEquipped.effect.amount) {
+          (newStats as any)[currentEquipped.effect.stat] -= currentEquipped.effect.amount;
+        }
+        if (currentEquipped.effect.stat2 && currentEquipped.effect.amount2) {
+          (newStats as any)[currentEquipped.effect.stat2] -= currentEquipped.effect.amount2;
+        }
       }
-      if (item.effect.stat && item.effect.amount) {
-        (newStats as any)[item.effect.stat] += item.effect.amount;
+
+      // Resolve percentage bonuses to flat values using post-unequip base stats
+      let computedEffect = { ...item.effect };
+      if (item.effect.percentStat && item.effect.percentAmount) {
+        const base = (newStats as any)[item.effect.percentStat] as number;
+        computedEffect = { ...computedEffect, stat: item.effect.percentStat, amount: Math.max(1, Math.floor(base * item.effect.percentAmount / 100)) };
       }
+      if (item.effect.percentStat2 && item.effect.percentAmount2) {
+        const base2 = (newStats as any)[item.effect.percentStat2] as number;
+        computedEffect = { ...computedEffect, stat2: item.effect.percentStat2, amount2: Math.max(1, Math.floor(base2 * item.effect.percentAmount2 / 100)) };
+      }
+
+      // Apply new item bonuses
+      if (computedEffect.stat && computedEffect.amount) {
+        (newStats as any)[computedEffect.stat] += computedEffect.amount;
+      }
+      if (computedEffect.stat2 && computedEffect.amount2) {
+        (newStats as any)[computedEffect.stat2] += computedEffect.amount2;
+      }
+
+      const itemToEquip = { ...item, effect: computedEffect };
 
       return {
         ...s,
         player: {
           ...s.player,
           inventory: newInventory,
-          equipment: { ...s.player.equipment, [slot]: item },
+          equipment: { ...s.player.equipment, [slot]: itemToEquip },
           stats: newStats,
         },
       };
@@ -1328,6 +1378,9 @@ export function useGameState() {
       const newStats = { ...s.player.stats };
       if (currentEquipped.effect.stat && currentEquipped.effect.amount) {
         (newStats as any)[currentEquipped.effect.stat] -= currentEquipped.effect.amount;
+      }
+      if (currentEquipped.effect.stat2 && currentEquipped.effect.amount2) {
+        (newStats as any)[currentEquipped.effect.stat2] -= currentEquipped.effect.amount2;
       }
 
       return {

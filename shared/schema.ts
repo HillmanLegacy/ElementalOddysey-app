@@ -96,6 +96,17 @@ export interface ItemEffect {
   amount?: number;
   duration?: number;
   type: "heal" | "buff" | "damage" | "equip";
+  // Secondary flat stat bonus (e.g. Demon's Blade +ATK AND +AGI)
+  stat2?: keyof PlayerStats;
+  amount2?: number;
+  // Percentage-based stat bonuses — resolved to flat at equip time
+  percentStat?: keyof PlayerStats;
+  percentAmount?: number;
+  percentStat2?: keyof PlayerStats;
+  percentAmount2?: number;
+  // Special passive accessory effects
+  special?: string;
+  specialValue?: number;
 }
 
 export interface Equipment {
