@@ -4521,6 +4521,7 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "relative",
+                        top: 10,
                         width: 1440,
                         height: 960,
                         overflow: "visible",
@@ -4551,7 +4552,7 @@ export default function BattleScreen({
                           : enemyAnimStates[idx] === "hurt" ? 10
                           : 9
                         }
-                        scale={10.0}
+                        scale={9.3}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
                         onComplete={
                           enemyAnimStates[idx] === "death"
