@@ -2378,6 +2378,20 @@ export default function BattleScreen({
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
       setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
 
+      // Cyclops has much longer attack animations (17/23 frames vs 6-9 for minotaur/harpy)
+      // so compute timing from the actual frame count to let the full animation play
+      let hitTime: number, walkBackTime: number, idleTime: number;
+      if (isCyclops(enemy)) {
+        const attackMs = useAlt ? Math.round(23 * 1000 / 12) : Math.round(17 * 1000 / 12);
+        hitTime = 650 + Math.round(attackMs * 0.52);
+        walkBackTime = 650 + attackMs + 80;
+        idleTime = walkBackTime + 500;
+      } else {
+        hitTime = 1300;
+        walkBackTime = 1600;
+        idleTime = 2200;
+      }
+
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
         playSfx("stabWhoosh", 0.9);
@@ -2403,19 +2417,19 @@ export default function BattleScreen({
             : ALLY_SLOTS[0];
           spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
         }
-      }, 1300);
+      }, hitTime);
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
         setBossOffset({ x: 0, y: 0 });
-      }, 1600);
+      }, walkBackTime);
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
         setBossOffset(null);
         setAnimPhase("idle");
         scheduleTimer(onDone, 300);
-      }, 2200);
+      }, idleTime);
     } else if (isResk(enemy)) {
       const useBreath = Math.random() < 0.4;
       setForestAttackVariant(prev => ({ ...prev, [enemyIdx]: useBreath ? 2 : 1 }));
