@@ -584,9 +584,10 @@ export default function SideScrollStage({
         // Mark leaf as seen once it enters the viewport
         if (screenX >= -20 && screenX <= vw + 20) lf.seen = true;
         if (lf.seen && screenX > vw + 20) {
-          // Leaf drifted off the right side — re-enter from the left edge
+          // Leaf drifted off the right side — re-enter just off the left edge
+          // (must stay within screenX >= -20 or the left-exit recycle fires instead)
           Object.assign(lf, spawnLeaf(leafRng, vw));
-          lf.x = camX - 10 - leafRng() * 150;
+          lf.x = camX - 10;
           lf.y = 20 + leafRng() * (GROUND_Y - 80);
           lf.seen = false;
         } else if (screenX < -20) {
