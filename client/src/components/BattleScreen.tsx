@@ -4523,6 +4523,7 @@ export default function BattleScreen({
                       style={{
                         position: "relative",
                         top: 160,
+                        left: -10,
                         width: 1440,
                         height: 960,
                         overflow: "visible",
