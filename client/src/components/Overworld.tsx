@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import ParticleCanvas from "./ParticleCanvas";
 import lavaRegionBg from "@assets/lava_stage_region_background_1773416952733.jpg";
+import forestRegionBg from "@assets/Forest_Region_Scene_Background_upscayl_2x_digital-art-4x_1773707314050.png";
 import SpriteAnimator from "./SpriteAnimator";
 import BattleTransition from "./BattleTransition";
 import type { PlayerCharacter, OverworldNode } from "@shared/schema";
@@ -341,6 +342,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   }, [charPos.x, charPos.y]);
 
   const isFireRegion = region.theme === "Fire";
+  const isWindRegion = region.theme === "Wind";
   const elemColor = ELEMENT_COLORS[region.theme];
 
   return (
@@ -378,6 +380,14 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           }} />
         </div>
       )}
+      {isWindRegion && (
+        <div className="absolute inset-0" style={{
+          backgroundImage: `url(${forestRegionBg})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center center",
+          zIndex: 0,
+        }} />
+      )}
       <div
         className="absolute inset-0"
         style={{
@@ -387,7 +397,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           willChange: "transform",
         }}
       >
-      {!isFireRegion && (
+      {!isFireRegion && !isWindRegion && (
         <div className="absolute inset-0" style={{ filter: "contrast(1.15) saturate(1.2)" }}>
           <div className="absolute inset-0" style={{
             background: `linear-gradient(180deg, ${theme.sky[0]} 0%, ${theme.sky[1]} 15%, ${theme.sky[2]} 30%, ${theme.sky[3]} 55%, ${theme.sky[4]} 80%)`,
