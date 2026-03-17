@@ -236,6 +236,13 @@ export function useGameState() {
         battle.log = [...battle.log, "Tidal Heal restores 5 HP!"];
         battle.lastDamageEvent = { id: ++damageEventCounter, amount: 5, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       }
+      battle.party.forEach((member, idx) => {
+        if (member.perks?.includes("water_regen") && member.currentHp > 0) {
+          member.currentHp = Math.min(member.stats.maxHp, member.currentHp + 5);
+          battle.log = [...battle.log, `${member.name}'s Tidal Heal restores 5 HP!`];
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: 5, targetType: "party", targetIndex: idx, isCrit: false, isHeal: true };
+        }
+      });
 
       battle.buffs = battle.buffs
         .map(b => ({ ...b, turnsRemaining: b.turnsRemaining - 1 }))
@@ -466,15 +473,23 @@ export function useGameState() {
         battle.log = [...battle.log, `${target.name} dodged ${member.name}'s attack!`];
         battle.lastElementLabel = undefined;
       } else {
+        const buffedMemberStats = getBuffedStats(member.stats, battle.buffs);
         let memberWeaponElement: string | undefined = undefined;
         if (member.perks && member.perks.some(pid => { const pk = PERKS.find(p => p.id === pid); return pk && pk.effect.special === "elemental_basic_attack"; })) {
           memberWeaponElement = member.element;
         }
-        const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, false, memberWeaponElement, target.element);
+        const critMod = member.perks?.includes("lightning_crit") ? 0.10 : 0;
+        const { damage, isCrit, elementLabel } = calculateDamage(buffedMemberStats, target.stats, false, memberWeaponElement, target.element, 1.0, critMod);
         target.currentHp = Math.max(0, target.currentHp - damage);
         battle.lastElementLabel = elementLabel || undefined;
         battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: targetIndex, isCrit, label: elementLabel || undefined };
         battle.log = [...battle.log, `${member.name} deals ${damage}${isCrit ? " CRIT" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+        if (member.perks?.includes("shadow_lifesteal")) {
+          const heal = Math.floor(damage * 0.1);
+          member.currentHp = Math.min(member.stats.maxHp, member.currentHp + heal);
+          battle.log = [...battle.log, `${member.name}'s Soul Drain heals ${heal} HP!`];
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: heal, targetType: "party", targetIndex: partyIndex, isCrit: false, isHeal: true };
+        }
       }
 
       const allDead = battle.enemies.every(e => e.currentHp <= 0);
@@ -494,7 +509,9 @@ export function useGameState() {
       const member = battle.party[partyIndex];
       if (!member || member.currentHp <= 0) return s;
       member.defending = true;
-      battle.log = [...battle.log, `${member.name} is defending!`];
+      const mpRestore = Math.floor(member.stats.maxMp * 0.1);
+      member.currentMp = Math.min(member.stats.maxMp, member.currentMp + mpRestore);
+      battle.log = [...battle.log, `${member.name} is defending! (+${mpRestore} MP)`];
       return { ...s, battle };
     });
   }, []);
@@ -513,13 +530,17 @@ export function useGameState() {
       member.currentMp -= spell.mpCost;
 
       if (spell.type === "damage") {
+        const buffedMemberStats = getBuffedStats(member.stats, battle.buffs);
+        const critMod = member.perks?.includes("lightning_crit") ? 0.10 : 0;
         let lastLabel = "";
+        let totalLifestealHeal = 0;
         if (spell.targetType === "allEnemies") {
           const damageEventsCollector: Array<{ id: number; amount: number; targetType: string; targetIndex: number; isCrit: boolean; element?: string; label?: string; isHeal?: boolean }> = [];
           battle.enemies.forEach((e, eIdx) => {
             if (e.currentHp <= 0) return;
-            const { damage, isCrit, elementLabel } = calculateDamage(member.stats, e.stats, true, spell.element || member.element, e.element, spell.effect.damageMultiplier);
+            const { damage, isCrit, elementLabel } = calculateDamage(buffedMemberStats, e.stats, true, spell.element || member.element, e.element, spell.effect.damageMultiplier, critMod);
             e.currentHp = Math.max(0, e.currentHp - damage);
+            totalLifestealHeal += damage;
             const evt = { id: ++damageEventCounter, amount: damage, targetType: "enemy" as const, targetIndex: eIdx, isCrit, element: spell.element || member.element, label: elementLabel || undefined };
             battle.lastDamageEvent = evt;
             damageEventsCollector.push(evt);
@@ -532,12 +553,19 @@ export function useGameState() {
         } else if (targetIndex !== undefined) {
           const target = battle.enemies[targetIndex];
           if (target && target.currentHp > 0) {
-            const { damage, isCrit, elementLabel } = calculateDamage(member.stats, target.stats, true, spell.element || member.element, target.element, spell.effect.damageMultiplier);
+            const { damage, isCrit, elementLabel } = calculateDamage(buffedMemberStats, target.stats, true, spell.element || member.element, target.element, spell.effect.damageMultiplier, critMod);
             target.currentHp = Math.max(0, target.currentHp - damage);
+            totalLifestealHeal += damage;
             battle.lastDamageEvent = { id: ++damageEventCounter, amount: damage, targetType: "enemy", targetIndex: targetIndex, isCrit, element: spell.element || member.element, label: elementLabel || undefined };
             battle.log = [...battle.log, `${member.name}'s ${spell.name} deals ${damage}${isCrit ? " CRIT" : ""} to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
             if (elementLabel) lastLabel = elementLabel;
           }
+        }
+        if (member.perks?.includes("shadow_lifesteal") && totalLifestealHeal > 0) {
+          const heal = Math.floor(totalLifestealHeal * 0.1);
+          member.currentHp = Math.min(member.stats.maxHp, member.currentHp + heal);
+          battle.log = [...battle.log, `${member.name}'s Soul Drain heals ${heal} HP!`];
+          battle.lastDamageEvent = { id: ++damageEventCounter, amount: heal, targetType: "party", targetIndex: partyIndex, isCrit: false, isHeal: true };
         }
         battle.lastElementLabel = lastLabel || undefined;
       } else if (spell.type === "heal") {
