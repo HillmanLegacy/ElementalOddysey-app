@@ -579,8 +579,13 @@ export default function SideScrollStage({
         lf.rot += lf.rotSpd;
         const screenX = lf.x - camX;
         if (screenX > vw + 20) {
+          // drifted off the right — re-enter from the left edge
           Object.assign(lf, spawnLeaf(leafRng, vw));
           lf.x = camX - 10;
+        } else if (screenX < -20) {
+          // camera moved right past this leaf — re-enter just ahead of the player
+          Object.assign(lf, spawnLeaf(leafRng, vw));
+          lf.x = camX + vw + 10;
         }
         if (lf.y > GROUND_Y - 8 || lf.y < -20) {
           lf.y = 20 + leafRng() * (GROUND_Y - 80);
