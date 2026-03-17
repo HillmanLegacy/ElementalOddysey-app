@@ -541,15 +541,15 @@ export const PERKS: Perk[] = [
 
 export const SPELLS: Spell[] = [
   { id: "speed_up", name: "Speed Up", description: "+5 AGI for 2 turns", mpCost: 8, type: "buff", targetType: "self", effect: { stat: "agi", amount: 5, duration: 2 } },
-  { id: "fire_bolt", name: "Incineration Slash", description: "Blazing slash engulfing one enemy in flames (80% INT)", mpCost: 10, type: "damage", element: "Fire", targetType: "enemy", animation: "incinerationSlash", effect: { damageMultiplier: 0.8 } },
-  { id: "eruption_cleave", name: "Eruption Cleave", description: "A devastating flame-charged cleave ending in a massive explosion (150% INT)", mpCost: 18, type: "damage", element: "Fire", targetType: "enemy", animation: "eruptionCleave", effect: { damageMultiplier: 1.5 } },
+  { id: "fire_bolt", name: "Incineration Slash", description: "Blazing slash engulfing one enemy in flames", mpCost: 10, type: "damage", element: "Fire", targetType: "enemy", animation: "incinerationSlash", effect: { damageMultiplier: 0.8 } },
+  { id: "eruption_cleave", name: "Eruption Cleave", description: "A devastating flame-charged cleave ending in a massive explosion", mpCost: 18, type: "damage", element: "Fire", targetType: "enemy", animation: "eruptionCleave", effect: { damageMultiplier: 1.5 } },
   { id: "ice_lance", name: "Ice Lance", description: "Ice damage to one enemy", mpCost: 10, type: "damage", element: "Ice", targetType: "enemy", effect: { damageMultiplier: 1.8 } },
-  { id: "thunder", name: "Thunder", description: "Lightning damage to one enemy (75% INT)", mpCost: 12, type: "damage", element: "Lightning", targetType: "enemy", animation: "thunderBolt", effect: { damageMultiplier: 0.75 } },
+  { id: "thunder", name: "Thunder", description: "Lightning damage to one enemy", mpCost: 12, type: "damage", element: "Lightning", targetType: "enemy", animation: "thunderBolt", effect: { damageMultiplier: 0.75 } },
   { id: "shadow_strike", name: "Shadow Strike", description: "Shadow damage to one enemy", mpCost: 10, type: "damage", element: "Shadow", targetType: "enemy", effect: { damageMultiplier: 1.8 } },
-  { id: "wind_blade", name: "Wind Blade", description: "Sharp wind slash on one enemy (75% INT)", mpCost: 10, type: "damage", element: "Wind", targetType: "enemy", animation: "windBlade", effect: { damageMultiplier: 0.75 } },
-  { id: "gale_slash", name: "Gale Slash", description: "Wind blades slash all enemies (75% INT)", mpCost: 15, type: "damage", element: "Wind", targetType: "allEnemies", animation: "galeSlash", effect: { damageMultiplier: 0.75 } },
+  { id: "wind_blade", name: "Wind Blade", description: "Sharp wind slash on one enemy", mpCost: 10, type: "damage", element: "Wind", targetType: "enemy", animation: "windBlade", effect: { damageMultiplier: 0.75 } },
+  { id: "gale_slash", name: "Gale Slash", description: "Wind blades slash all enemies", mpCost: 15, type: "damage", element: "Wind", targetType: "allEnemies", animation: "galeSlash", effect: { damageMultiplier: 0.75 } },
   { id: "tempest", name: "Tempest", description: "Devastating wind vortex on all enemies", mpCost: 22, type: "damage", element: "Wind", targetType: "allEnemies", animation: "tempest", effect: { damageMultiplier: 1.8 } },
-  { id: "fujin_slice", name: "Fujin's Slice", description: "Wind blade barrage on one enemy (150% INT)", mpCost: 14, type: "damage", element: "Wind", targetType: "enemy", animation: "fujinSlice", effect: { damageMultiplier: 1.5 } },
+  { id: "fujin_slice", name: "Fujin's Slice", description: "Wind blade barrage on one enemy", mpCost: 14, type: "damage", element: "Wind", targetType: "enemy", animation: "fujinSlice", effect: { damageMultiplier: 1.5 } },
   { id: "earth_quake", name: "Earthquake", description: "Earth damage to all enemies", mpCost: 15, type: "damage", element: "Earth", targetType: "allEnemies", effect: { damageMultiplier: 1.2 } },
   { id: "holy_light", name: "Holy Light", description: "Light damage + heal 15 HP", mpCost: 14, type: "damage", element: "Light", targetType: "enemy", effect: { damageMultiplier: 1.5 } },
   { id: "aqua_wave", name: "Aqua Wave", description: "Water damage to all enemies", mpCost: 15, type: "damage", element: "Water", targetType: "allEnemies", effect: { damageMultiplier: 1.2 } },
@@ -721,11 +721,11 @@ export function calculateDamage(
   critChanceModifier: number = 0,
   critDamageModifier: number = 0,
 ): { damage: number; isCrit: boolean; elementLabel: string } {
-  const offense = isMagic ? attacker.int : attacker.atk;
-  const defense = isMagic ? defender.int : defender.def;
+  const offense = isMagic ? attacker.int * 2.5 : attacker.atk;
+  const defense = isMagic ? Math.floor(defender.def * 0.4) : defender.def;
   const { multiplier: elementMultiplier, label: elementLabel } = getElementMultiplier(attackElement, defenderElement);
 
-  const baseDamage = (offense * skillMultiplier);
+  const baseDamage = offense * skillMultiplier;
   const elementAdjusted = baseDamage * elementMultiplier;
 
   let damage = Math.max(elementAdjusted - defense, MIN_DAMAGE);
