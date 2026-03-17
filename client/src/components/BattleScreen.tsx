@@ -4177,8 +4177,8 @@ export default function BattleScreen({
                     <div
                       style={{
                         position: "relative",
-                        width: 450,
-                        height: 420,
+                        width: 1800,
+                        height: 1680,
                         overflow: "visible",
                         filter: `drop-shadow(0 4px 16px rgba(0,0,0,0.9)) drop-shadow(0 0 24px rgba(255,50,0,0.5))`,
                       }}
@@ -4206,7 +4206,7 @@ export default function BattleScreen({
                           enemyAnimStates[idx] === "attack" ? 12
                           : 8
                         }
-                        scale={2.6}
+                        scale={10.4}
                         loop={
                           enemyAnimStates[idx] === "idle" ||
                           enemyAnimStates[idx] === "flying" ||
@@ -4219,7 +4219,7 @@ export default function BattleScreen({
                             : undefined
                         }
                         preloadSheets={[ytrielIdle, ytrielFlying, ytrielAttack, ytrielHurt, ytrielDeath, ytrielTransition]}
-                        style={{ position: "absolute", left: "14px", top: "35px" }}
+                        style={{ position: "absolute", left: "56px", top: "140px" }}
                       />
                     </div>
                     </PixelDissolve>
