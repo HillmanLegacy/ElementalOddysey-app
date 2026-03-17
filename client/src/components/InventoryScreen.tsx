@@ -1,8 +1,14 @@
 import { useState } from "react";
 import type { PlayerCharacter } from "@shared/schema";
-import { Heart, Droplets } from "lucide-react";
+import { Heart, Droplets, Feather, Axe, Eye, Flame, Swords, Shield, Sparkles } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
 import { playSfx } from "@/lib/sfx";
+
+const LOOT_ICON_MAP: Record<string, any> = {
+  heart: Heart, droplets: Droplets, sword: Swords, shield: Shield,
+  gem: Sparkles, feather: Feather, axe: Axe, eye: Eye, flame: Flame,
+  horn: Swords, claw: Swords,
+};
 
 interface InventoryScreenProps {
   player: PlayerCharacter;
@@ -17,6 +23,7 @@ const ACCENT = "#c9a44a";
 export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem, onBack }: InventoryScreenProps) {
   const consumables = player.inventory.filter(i => i.type === "consumable");
   const equipables = player.inventory.filter(i => i.type === "weapon" || i.type === "armor" || i.type === "accessory");
+  const lootItems = player.inventory.filter(i => i.type === "loot");
   const [targetingItemId, setTargetingItemId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"items" | "equipment">("items");
 
@@ -276,6 +283,30 @@ export default function InventoryScreen({ player, onEquip, onUnequip, onUseItem,
                     </div>
                   );
                 })
+              )}
+
+              {lootItems.length > 0 && (
+                <div style={{ marginTop: "12px" }}>
+                  <p style={{ fontSize: "6px", color: `${ACCENT}50`, textTransform: "uppercase", letterSpacing: "1px", padding: "0 4px 4px" }}>Loot Items</p>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    {lootItems.map(item => {
+                      const Icon = LOOT_ICON_MAP[item.icon] || Sparkles;
+                      const rc = item.value >= 150 ? "#c084fc" : item.value >= 80 ? "#60a5fa" : item.value >= 40 ? "#4ade80" : `${ACCENT}cc`;
+                      return (
+                        <div key={item.id} style={{ padding: "7px 8px", background: "#0d0b0bf0", border: `1px solid ${rc}20`, display: "flex", alignItems: "center", gap: "8px" }}>
+                          <div style={{ width: 24, height: 24, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, border: `1px solid ${rc}30`, background: "#0a080840" }}>
+                            <Icon style={{ width: 13, height: 13, color: rc }} />
+                          </div>
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <p style={{ fontSize: "7px", color: "#e8e0d0" }}>{item.name}</p>
+                            <p style={{ fontSize: "6px", color: `${rc}60`, marginTop: "2px" }}>{item.description}</p>
+                          </div>
+                          <span style={{ fontSize: "6px", color: `${rc}80`, flexShrink: 0 }}>{item.value}g</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               )}
             </div>
           )}

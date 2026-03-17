@@ -83,7 +83,7 @@ export interface PlayerCharacter {
 export interface InventoryItem {
   id: string;
   name: string;
-  type: "consumable" | "weapon" | "armor" | "accessory";
+  type: "consumable" | "weapon" | "armor" | "accessory" | "loot";
   description: string;
   effect: ItemEffect;
   icon: string;
@@ -252,6 +252,7 @@ export interface BattleState {
     party: number[];
     enemies: number[];
   };
+  lootDrops?: InventoryItem[];
 }
 
 export interface ShopItem extends InventoryItem {

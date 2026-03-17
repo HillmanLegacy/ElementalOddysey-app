@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef } from "react";
 import type { GameState, PlayerCharacter, BattleState, ShopItem, Element, Spell, Buff, PartyMemberDef, PartyMember, BattlePartyMember, PendingLevelUp, Enemy } from "@shared/schema";
-import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, getRegionForTier, buildTurnQueue, getNewSpellsAtLevel, ENEMY_POOL, generateEnemyStats } from "./gameData";
+import { createNewPlayer, xpForLevel, calculateDamage, checkDodge, initBattle, getEnemiesForNode, getShopItems, REGIONS, PERKS, PARTY_CHARACTERS, STARTER_CHARACTERS, getRegionTier, getRegionForTier, buildTurnQueue, getNewSpellsAtLevel, ENEMY_POOL, generateEnemyStats, rollLootDrops } from "./gameData";
 import type { EnergyColor, EnergyShape } from "@shared/schema";
 
 const INITIAL_STATE: GameState = {
@@ -971,12 +971,15 @@ export function useGameState() {
       const tierChangedAfterBoss = isBossNode && (currentRegion !== s.player.currentRegion ||
         getRegionTier(currentRegion, regionBossDefeats) !== getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {}));
 
+      const lootItems = s.battle.lootDrops ?? [];
+
       const updatedPlayer: PlayerCharacter = {
         ...s.player,
         xp: newXp,
         xpToNext,
         level: newLevel,
         gold: s.player.gold + totalGold,
+        inventory: [...s.player.inventory, ...lootItems],
         clearedNodes: finalCleared,
         currentRegion,
         currentNode,
@@ -1254,6 +1257,32 @@ export function useGameState() {
     });
   }, []);
 
+  const rollLoot = useCallback(() => {
+    setState(s => {
+      if (!s.battle || s.battle.lootDrops) return s;
+      return {
+        ...s,
+        battle: { ...s.battle, lootDrops: rollLootDrops(s.battle.enemies) },
+      };
+    });
+  }, []);
+
+  const sellItem = useCallback((itemId: string) => {
+    setState(s => {
+      if (!s.player) return s;
+      const item = s.player.inventory.find(i => i.id === itemId);
+      if (!item) return s;
+      return {
+        ...s,
+        player: {
+          ...s.player,
+          inventory: s.player.inventory.filter(i => i.id !== itemId),
+          gold: s.player.gold + (item.value || 0),
+        },
+      };
+    });
+  }, []);
+
   const equipItem = useCallback((itemId: string) => {
     setState(s => {
       if (!s.player) return s;
@@ -1479,6 +1508,8 @@ export function useGameState() {
     selectPerk,
     openShop,
     buyItem,
+    rollLoot,
+    sellItem,
     equipItem,
     unequipItem,
     restAtNode,

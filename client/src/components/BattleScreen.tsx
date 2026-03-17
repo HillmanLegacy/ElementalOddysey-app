@@ -10,7 +10,7 @@ import { useColorMap } from "@/hooks/useColorMap";
 import { groupConsumables } from "@/lib/utils";
 import LavaBattleBg from "./LavaBattleBg";
 import BattleEffectsLayer from "./BattleEffectsLayer";
-import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap, LogOut } from "lucide-react";
+import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap, LogOut, Feather, Axe, Eye, Flame } from "lucide-react";
 
 import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
 import { playAmbient, stopAll, fadeMusicTo, fadeOutMusic, playJingle } from "@/lib/music";
@@ -290,6 +290,7 @@ interface BattleScreenProps {
   onRepositionUnit: (unitType: "player" | "party", unitIndex: number, newRow: number, newCol: number) => void;
   onFlee: () => void;
   onSpawnEnemy?: (slotIndex: number, enemy: import("@shared/schema").Enemy & { currentHp: number }) => void;
+  onRollLoot?: () => void;
   showDamageNumbers: boolean;
   regionTheme?: string;
   regionTier?: number;
@@ -530,7 +531,7 @@ function AnimatedHpBar({ value, max, lowThreshold = 25, height = "2.5" }: { valu
 }
 
 export default function BattleScreen({
-  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, regionTier, enemyColorVariant,
+  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, onRollLoot, regionTier, enemyColorVariant,
 }: BattleScreenProps) {
   const _bsPlayerSprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
   const playerColorMap = useColorMap(_bsPlayerSprites.idle, _bsPlayerSprites.frameWidth, _bsPlayerSprites.frameHeight, player.colorGroups);
@@ -796,6 +797,7 @@ export default function BattleScreen({
 
   useEffect(() => {
     if (!victoryReady || battle.phase !== "victory") return;
+    onRollLoot?.();
     fadeMusicTo(0.3, 600);
     playJingle("battle_victory", () => {
       fadeOutMusic(1200);
@@ -5269,13 +5271,19 @@ export default function BattleScreen({
 
       {battle.phase === "victory" && showVictoryUI && (() => {
         const ec = "#facc15";
+        const lootDrops = battle.lootDrops ?? [];
+        const LOOT_ICON_MAP: Record<string, any> = {
+          heart: Heart, droplets: Droplets, sword: Swords, shield: Shield,
+          gem: Sparkles, feather: Feather, axe: Axe, eye: Eye, flame: Flame,
+          horn: Swords, claw: Swords,
+        };
         return (
           <div className="absolute inset-0 z-[200] flex items-center justify-center">
             <div className="absolute inset-0" style={{ background: `radial-gradient(ellipse at center, ${ec}15 0%, rgba(0,0,0,0.75) 70%)` }} />
             <PixelDissolve active={showVictoryUI} reverse={true} duration={600} pixelSize={5}>
             <div className="flex flex-col items-center">
             <div
-              className="relative w-[320px] h-[220px] overflow-hidden flex flex-col"
+              className="relative w-[320px] overflow-hidden flex flex-col"
               style={{
                 fontFamily: "'Press Start 2P', cursive",
                 imageRendering: "pixelated",
@@ -5296,7 +5304,7 @@ export default function BattleScreen({
                 <Trophy className="w-4 h-4" style={{ color: ec }} />
               </div>
 
-              <div className="relative px-4 py-4 flex-1 flex flex-col justify-center space-y-3">
+              <div className="relative px-4 pt-4 pb-3 flex flex-col space-y-3">
                 <div className="flex items-center justify-center gap-4 text-xs" style={{ fontFamily: "'Press Start 2P', cursive" }}>
                   <div className="flex flex-col items-center gap-1 px-3 py-2" style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${ec}30` }}>
                     <span style={{ fontSize: "7px", color: `${ec}80` }}>EXP</span>
@@ -5307,6 +5315,28 @@ export default function BattleScreen({
                     <span style={{ color: "#facc15", fontSize: "11px" }}>+{battle.enemies.reduce((s, e) => s + e.goldReward, 0)}</span>
                   </div>
                 </div>
+
+                {lootDrops.length > 0 && (
+                  <div style={{ borderTop: `1px solid ${ec}25`, paddingTop: "8px" }}>
+                    <div style={{ fontSize: "6px", color: `${ec}60`, textAlign: "center", marginBottom: "6px", letterSpacing: "1px" }}>ITEMS OBTAINED</div>
+                    <div className="flex flex-col gap-1">
+                      {lootDrops.map((item, idx) => {
+                        const Icon = LOOT_ICON_MAP[item.icon] || Sparkles;
+                        const rarityColor = item.value >= 150 ? "#c084fc" : item.value >= 80 ? "#60a5fa" : item.value >= 40 ? "#4ade80" : `${ec}cc`;
+                        return (
+                          <div key={idx} className="flex items-center gap-2 px-2 py-1" style={{ background: "rgba(0,0,0,0.3)", border: `1px solid ${rarityColor}30` }}>
+                            <div style={{ width: 18, height: 18, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                              <Icon style={{ width: 12, height: 12, color: rarityColor }} />
+                            </div>
+                            <span style={{ fontSize: "7px", color: "#e8e0d0", flex: 1 }}>{item.name}</span>
+                            <span style={{ fontSize: "6px", color: `${rarityColor}80` }}>{item.value}g</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
                 {xpBarLevelUp && (
                   <div className="text-center font-bold animate-pulse" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "10px", color: "#fbbf24" }}>
                     Level Up!

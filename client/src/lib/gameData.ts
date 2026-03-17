@@ -697,6 +697,119 @@ export function getPartyMemberSpells(element: Element, level: number = 1, learne
   return spells;
 }
 
+// ── Loot System ──────────────────────────────────────────────────────────────
+
+export const LOOT_ITEMS: Record<string, import("@shared/schema").InventoryItem> = {
+  // Harpy
+  harpy_feather:           { id: "harpy_feather",           name: "Harpy Feather",           type: "loot", description: "A soft feather shed by a harpy. Merchants prize these.",                 effect: { type: "equip" }, icon: "feather",  value: 15, element: "Wind" },
+  harpy_claw:              { id: "harpy_claw",              name: "Harpy Claw",               type: "loot", description: "A razor-sharp talon from a harpy's foot.",                               effect: { type: "equip" }, icon: "claw",     value: 30, element: "Wind" },
+  crystallized_wind_shard: { id: "crystallized_wind_shard", name: "Crystallized Wind Shard",  type: "loot", description: "Pure wind energy crystallized into solid form. Rare and valuable.",      effect: { type: "equip" }, icon: "gem",      value: 90, element: "Wind" },
+  // Minotaur
+  minotaur_horn:           { id: "minotaur_horn",           name: "Minotaur Horn",            type: "loot", description: "A broken horn from a minotaur's skull.",                                 effect: { type: "equip" }, icon: "horn",     value: 20, element: "Wind" },
+  tuft_of_fur:             { id: "tuft_of_fur",             name: "Tuft of Fur",              type: "loot", description: "A clump of coarse fur from a minotaur's hide.",                          effect: { type: "equip" }, icon: "feather",  value: 12 },
+  minotaur_axe:            { id: "minotaur_axe",            name: "Minotaur Axe",             type: "loot", description: "A crude but heavy axe once swung by a minotaur.",                       effect: { type: "equip" }, icon: "axe",      value: 120, element: "Wind" },
+  // Cyclops
+  cyclops_eye:             { id: "cyclops_eye",             name: "Cyclops Eye",              type: "loot", description: "The single glassy eye of a cyclops. Unsettling but valuable.",          effect: { type: "equip" }, icon: "eye",      value: 45, element: "Wind" },
+  // Resk (boss)
+  eye_of_resk:             { id: "eye_of_resk",             name: "Eye of Resk",              type: "loot", description: "The fearsome eye of Resk the Forest Dragon. Radiates wind energy.",    effect: { type: "equip" }, icon: "eye",      value: 250, element: "Wind" },
+  wind_dragon_scale:       { id: "wind_dragon_scale",       name: "Wind Dragon Scale",        type: "loot", description: "An iridescent scale from Resk's hide, light as a feather yet hard.",   effect: { type: "equip" }, icon: "shield",   value: 180, element: "Wind" },
+  imbued_wind_gem:         { id: "imbued_wind_gem",         name: "Imbued Wind Gem",          type: "loot", description: "A gemstone saturated with pure wind magic.",                            effect: { type: "equip" }, icon: "gem",      value: 200, element: "Wind" },
+  // Fire Demon
+  fire_demon_hide:         { id: "fire_demon_hide",         name: "Fire Demon Hide",          type: "loot", description: "Scorched hide from a fire demon. Still warm to the touch.",            effect: { type: "equip" }, icon: "flame",    value: 18, element: "Fire" },
+  demonic_cinder:          { id: "demonic_cinder",          name: "Demonic Cinder",           type: "loot", description: "An ember that never stops burning, taken from a fire demon.",           effect: { type: "equip" }, icon: "flame",    value: 40, element: "Fire" },
+  crystallized_fire_shard: { id: "crystallized_fire_shard", name: "Crystallized Fire Shard",  type: "loot", description: "Fire energy crystallized into a hard glowing shard.",                   effect: { type: "equip" }, icon: "gem",      value: 90, element: "Fire" },
+  // Demon Kin
+  demons_blade:            { id: "demons_blade",            name: "Demon's Blade",            type: "loot", description: "A jagged blade carried by a Demon Kin. Dangerous and valuable.",       effect: { type: "equip" }, icon: "sword",    value: 110, element: "Fire" },
+  // Ytriel (dragon_lord)
+  ytriels_flame:           { id: "ytriels_flame",           name: "Ytriel's Flame",           type: "loot", description: "An undying flame torn from the Crown of Cinder himself.",              effect: { type: "equip" }, icon: "flame",    value: 300, element: "Fire" },
+  ytriels_horn:            { id: "ytriels_horn",            name: "Ytriel's Horn",            type: "loot", description: "A magnificent horn from the fire dragon lord Ytriel.",                  effect: { type: "equip" }, icon: "horn",     value: 200, element: "Fire" },
+  imbued_fire_gem:         { id: "imbued_fire_gem",         name: "Imbued Fire Gem",          type: "loot", description: "A gemstone saturated with ancient fire magic.",                         effect: { type: "equip" }, icon: "gem",      value: 200, element: "Fire" },
+  // Potion drops (consumable, reused as loot drops)
+  loot_hp_potion:          { id: "loot_hp_potion",          name: "Health Potion",            type: "consumable", description: "Restores 30 HP.",  effect: { type: "heal", stat: "hp", amount: 30 }, icon: "heart",    value: 15 },
+  loot_mp_potion:          { id: "loot_mp_potion",          name: "Mana Potion",              type: "consumable", description: "Restores 20 MP.",  effect: { type: "heal", stat: "mp", amount: 20 }, icon: "droplets", value: 15 },
+};
+
+interface DropEntry { itemId: string; chance: number; }
+
+const ENEMY_DROP_TABLES: Record<string, DropEntry[]> = {
+  harpy_wind: [
+    { itemId: "harpy_feather",           chance: 0.30 },
+    { itemId: "harpy_claw",              chance: 0.15 },
+    { itemId: "crystallized_wind_shard", chance: 0.05 },
+    { itemId: "loot_mp_potion",          chance: 0.20 },
+    { itemId: "loot_hp_potion",          chance: 0.20 },
+  ],
+  minotaur_wind: [
+    { itemId: "minotaur_horn",  chance: 0.30 },
+    { itemId: "tuft_of_fur",    chance: 0.15 },
+    { itemId: "minotaur_axe",   chance: 0.05 },
+    { itemId: "loot_mp_potion", chance: 0.20 },
+    { itemId: "loot_hp_potion", chance: 0.20 },
+  ],
+  cyclops_wind: [
+    { itemId: "cyclops_eye",    chance: 0.20 },
+    { itemId: "loot_mp_potion", chance: 0.20 },
+    { itemId: "loot_hp_potion", chance: 0.20 },
+  ],
+  resk: [
+    { itemId: "eye_of_resk",       chance: 1.00 },
+    { itemId: "wind_dragon_scale", chance: 0.80 },
+    { itemId: "imbued_wind_gem",   chance: 0.60 },
+  ],
+  slime_fire: [
+    { itemId: "fire_demon_hide",         chance: 0.60 },
+    { itemId: "demonic_cinder",          chance: 0.15 },
+    { itemId: "crystallized_fire_shard", chance: 0.05 },
+    { itemId: "loot_mp_potion",          chance: 0.05 },
+    { itemId: "loot_hp_potion",          chance: 0.05 },
+  ],
+  demon_kin: [
+    { itemId: "demons_blade",            chance: 0.40 },
+    { itemId: "crystallized_fire_shard", chance: 0.10 },
+  ],
+  dragon_lord: [
+    { itemId: "ytriels_flame",   chance: 1.00 },
+    { itemId: "ytriels_horn",    chance: 0.50 },
+    { itemId: "imbued_fire_gem", chance: 0.60 },
+  ],
+};
+
+export function rollLootDrops(enemies: import("@shared/schema").Enemy[]): import("@shared/schema").InventoryItem[] {
+  const allDrops: import("@shared/schema").InventoryItem[] = [];
+  for (const enemy of enemies) {
+    const table = ENEMY_DROP_TABLES[enemy.id];
+    if (!table) continue;
+    const rolledIds = new Set<string>();
+    const rolled: import("@shared/schema").InventoryItem[] = [];
+    for (const entry of table) {
+      if (Math.random() < entry.chance) {
+        const base = LOOT_ITEMS[entry.itemId];
+        if (base) {
+          rolled.push({ ...base, id: `${base.id}_${Date.now()}_${Math.random().toString(36).slice(2)}` });
+          rolledIds.add(entry.itemId);
+        }
+      }
+    }
+    if (enemy.isBoss && rolled.length < 2) {
+      const sorted = [...table].sort((a, b) => b.chance - a.chance);
+      for (const entry of sorted) {
+        if (rolled.length >= 2) break;
+        if (rolledIds.has(entry.itemId)) continue;
+        const base = LOOT_ITEMS[entry.itemId];
+        if (base) {
+          rolled.push({ ...base, id: `${base.id}_${Date.now()}_${Math.random().toString(36).slice(2)}` });
+          rolledIds.add(entry.itemId);
+        }
+      }
+    }
+    const cap = enemy.isBoss ? table.length : 2;
+    allDrops.push(...rolled.slice(0, cap));
+  }
+  return allDrops;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+
 export function getShopItems(region: Region): ShopItem[] {
   const tier = region.id + 1;
   return [

@@ -77,7 +77,7 @@ function Game() {
     startBattle, startBattleCustom, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
     partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, fleeBattle, allocateStat, selectPerk, openShop,
-    buyItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn, repositionUnit,
+    buyItem, rollLoot, sellItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn, repositionUnit,
     confirmUnlock,
     changeRegion,
     spawnEnemy,
@@ -1361,6 +1361,7 @@ function Game() {
                 stopJingle();
                 setBattleExitTransition({ victory: false, fled: true });
               }}
+              onRollLoot={rollLoot}
               onSetAnimating={setAnimating}
               onFinishPlayerTurn={finishPlayerTurn}
               onRepositionUnit={repositionUnit}
@@ -1475,6 +1476,7 @@ function Game() {
             player={state.player}
             items={state.currentShop}
             onBuy={buyItem}
+            onSell={sellItem}
             onBack={() => setScreen("overworld")}
           />
         );
