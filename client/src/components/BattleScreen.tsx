@@ -2493,10 +2493,10 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
-          playSfx("stabWhoosh", 0.9);
         }, 650);
 
         scheduleTimer(() => {
+          playSfx("stabWhoosh", 0.9);
           const result = onEnemyAttack(enemyIdx, preTarget);
           if (!result.dodged) {
             setShakeScreen(true);
@@ -2516,7 +2516,7 @@ export default function BattleScreen({
               : ALLY_SLOTS[0];
             spawnDamageNumber("DODGE", dodgeSlot.x, 100 - dodgeSlot.y - 16, "#aaaaaa");
           }
-        }, 1300);
+        }, 1317);
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
