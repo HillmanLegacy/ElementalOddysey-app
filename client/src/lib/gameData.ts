@@ -233,12 +233,12 @@ export const ENEMY_POOL: Omit<Enemy, "stats">[] = [
 // Per-enemy stat multipliers relative to the generic non-boss formula.
 // hp/atk/def/agi/int each multiply their respective formula output.
 const ENEMY_STAT_PROFILES: Record<string, { hp: number; atk: number; def: number; agi: number; int: number }> = {
-  // Minotaur — high ATK, moderate DEF/AGI, low INT
-  minotaur_wind: { hp: 1.15, atk: 1.55, def: 1.05, agi: 0.85, int: 0.50 },
-  // Cyclops — high ATK/DEF/HP, very low AGI (hard to dodge), low INT
-  cyclops_wind:  { hp: 1.65, atk: 1.40, def: 1.55, agi: 0.30, int: 0.45 },
-  // Harpy — low HP/DEF, moderate ATK, high AGI (very agile/hard to hit), low INT
-  harpy_wind:    { hp: 0.70, atk: 0.85, def: 0.55, agi: 1.70, int: 0.50 },
+  // Minotaur — high ATK, moderate DEF/HP/AGI, low INT
+  minotaur_wind: { hp: 1.05, atk: 1.55, def: 0.90, agi: 1.05, int: 0.50 },
+  // Cyclops — high ATK/DEF/HP, very low AGI, low INT
+  cyclops_wind:  { hp: 1.65, atk: 1.70, def: 1.55, agi: 0.30, int: 0.45 },
+  // Harpy — low HP/ATK/DEF, high AGI, moderate INT
+  harpy_wind:    { hp: 0.70, atk: 0.70, def: 0.55, agi: 1.70, int: 1.00 },
 };
 
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number, levelBonus: number = 0): Enemy {
