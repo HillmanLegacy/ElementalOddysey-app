@@ -692,6 +692,7 @@ export const BASE_CRIT_DAMAGE = 2.0;
 export const RNG_MIN = 0.90;
 export const RNG_MAX = 1.10;
 export const MIN_DAMAGE = 1;
+export const PHYSICAL_PIERCE_RATIO = 0.20;
 export const ELEMENT_ADVANTAGE = 1.3;
 export const ELEMENT_NEUTRAL = 1.0;
 export const ELEMENT_DISADVANTAGE = 0.7;
@@ -728,7 +729,8 @@ export function calculateDamage(
   const baseDamage = offense * skillMultiplier;
   const elementAdjusted = baseDamage * elementMultiplier;
 
-  let damage = Math.max(elementAdjusted - defense, MIN_DAMAGE);
+  const pierceFloor = isMagic ? MIN_DAMAGE : Math.max(MIN_DAMAGE, Math.floor(elementAdjusted * PHYSICAL_PIERCE_RATIO));
+  let damage = Math.max(elementAdjusted - defense, pierceFloor);
   const finalCritChance = BASE_CRIT_CHANCE + critChanceModifier;
   const isCrit = Math.random() < finalCritChance;
   if (isCrit) {
