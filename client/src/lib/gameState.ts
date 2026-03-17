@@ -105,7 +105,7 @@ export function useGameState() {
     });
   }, []);
 
-  const startBattleCustom = useCallback((enemyIds: string[]) => {
+  const startBattleCustom = useCallback((enemyIds: string[], nodeId?: number) => {
     setState(s => {
       if (!s.player) return s;
       const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
@@ -159,7 +159,8 @@ export function useGameState() {
         }
       }
 
-      return { ...s, battle, screen: "battle" };
+      const playerUpdate = nodeId !== undefined ? { ...s.player, currentNode: nodeId } : s.player;
+      return { ...s, battle, screen: "battle", player: playerUpdate };
     });
   }, []);
 
