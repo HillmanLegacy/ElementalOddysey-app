@@ -4063,7 +4063,7 @@ export default function BattleScreen({
                   ))}
                   {eruptionNukeActive && eruptionNukeTargetIdx === idx && (
                     <div className="absolute z-50 pointer-events-none" style={{
-                      top: "50%",
+                      top: isResk(enemy) ? "78%" : "50%",
                       left: "50%",
                       width: 576,
                       height: 576,
