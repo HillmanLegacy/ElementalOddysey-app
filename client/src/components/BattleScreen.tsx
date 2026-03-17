@@ -4552,6 +4552,7 @@ export default function BattleScreen({
                           enemyAnimStates[idx] === "attack" ? 12
                           : enemyAnimStates[idx] === "death" ? 8
                           : enemyAnimStates[idx] === "hurt" ? 10
+                          : (enemyAnimStates[idx] === "walk" || enemyAnimStates[idx] === "walkBack") ? 6
                           : 9
                         }
                         scale={9.3}
