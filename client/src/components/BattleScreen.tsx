@@ -2487,10 +2487,12 @@ export default function BattleScreen({
           walkToY = PLAYER_POS.y;
         }
 
+        const reskStopX = Math.max(walkToX + 18, pos.x - 15);
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
+        setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - reskStopX), y: -(pos.y - walkToY) } }));
 
         scheduleTimer(() => {
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
           playSfx("stabWhoosh", 0.9);
         }, 650);
