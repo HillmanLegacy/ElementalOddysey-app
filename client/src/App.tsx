@@ -122,6 +122,7 @@ function Game() {
       }
     } else if (state.screen === "battle" && state.player) {
       stopAmbient();
+      fadeOutMusic(400);
     } else if (state.screen === "menu") {
       stopAmbient();
       playMusic("main_menu");
