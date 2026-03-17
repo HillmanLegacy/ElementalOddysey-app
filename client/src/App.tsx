@@ -374,7 +374,7 @@ function Game() {
                     const { enemyId } = sideScrollBattleTransition;
                     setSideScrollBattleTransition(null);
                     setBattleEntryReveal(true);
-                    startBattleCustom([enemyId], sideScrollCtx?.fromNodeId);
+                    startBattleCustom([enemyId]);
                   }}
                 />
               )}

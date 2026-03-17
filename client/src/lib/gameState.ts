@@ -105,7 +105,7 @@ export function useGameState() {
     });
   }, []);
 
-  const startBattleCustom = useCallback((enemyIds: string[], nodeId?: number) => {
+  const startBattleCustom = useCallback((enemyIds: string[]) => {
     setState(s => {
       if (!s.player) return s;
       const tier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
@@ -159,8 +159,8 @@ export function useGameState() {
         }
       }
 
-      const playerUpdate = nodeId !== undefined ? { ...s.player, currentNode: nodeId } : s.player;
-      return { ...s, battle, screen: "battle", player: playerUpdate };
+      battle.isSideScrollBattle = true;
+      return { ...s, battle, screen: "battle" };
     });
   }, []);
 
@@ -844,7 +844,8 @@ export function useGameState() {
 
       const currentTier = getRegionTier(s.player.currentRegion, s.player.regionBossDefeats || {});
       const currentRegionData = getRegionForTier(s.player.currentRegion, currentTier);
-      const isBossNode = currentRegionData.nodes.find(n => n.id === s.player!.currentNode)?.type === "boss";
+      const isBossNode = !s.battle.isSideScrollBattle &&
+        currentRegionData.nodes.find(n => n.id === s.player!.currentNode)?.type === "boss";
       const regionBossDefeats = { ...(s.player.regionBossDefeats || {}) };
       let currentRegion = s.player.currentRegion;
       let finalCleared = newCleared;
