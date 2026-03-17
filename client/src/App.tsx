@@ -24,7 +24,7 @@ import BattleTransition from "@/components/BattleTransition";
 import { getSaves, upsertSave, type LocalSave } from "@/lib/localSaves";
 import { useToast } from "@/hooks/use-toast";
 import { setSfxVolume } from "@/lib/sfx";
-import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume, fadeOutMusic, stopJingle } from "@/lib/music";
+import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume, fadeOutMusic, killMusic, stopJingle } from "@/lib/music";
 import { playSfx } from "@/lib/sfx";
 import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut, Heart, Droplets, BarChart2 } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
@@ -1321,6 +1321,7 @@ function Game() {
                 elementColor={transitionElementColor}
                 onComplete={() => {
                   setBattleEntryReveal(false);
+                  killMusic();
                   playMusic("lava_region_battle");
                 }}
               />

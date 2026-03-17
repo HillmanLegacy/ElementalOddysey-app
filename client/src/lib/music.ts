@@ -222,6 +222,16 @@ export function playMusic(track: MusicTrack) {
   }
 }
 
+export function killMusic() {
+  clearLayerFade(musicLayer);
+  musicLayer.currentTrack = null;
+  if (musicLayer.element) {
+    musicLayer.element.pause();
+    musicLayer.element.src = "";
+    musicLayer.element = null;
+  }
+}
+
 export function fadeOutMusic(duration = FADE_DURATION) {
   if (musicLayer.element && !musicLayer.element.paused) {
     fadeOutLayer(musicLayer, () => {
