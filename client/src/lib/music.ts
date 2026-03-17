@@ -23,6 +23,7 @@ const AMBIENT_VOLUME_SCALE: Record<string, number> = {
 
 const MUSIC_VOLUME_SCALE: Record<string, number> = {
   main_menu: 0.35,
+  forest_region: 0.45,
 };
 
 const MUSIC_TRACKS: Record<string, string> = {
