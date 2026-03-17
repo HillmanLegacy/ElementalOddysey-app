@@ -2638,7 +2638,7 @@ export default function BattleScreen({
       }
       case "thunderBolt": {
         if (player.element === "Lightning") {
-          return { src: baskenThunderCast, frames: 7, fps: 10, loop: false, pauseAt: 6, w: 56, h: 56 };
+          return { src: baskenThunderCast, frames: 7, fps: 10, loop: false, pauseAt: 6, w: 34, h: 56 };
         }
         return atk;
       }
