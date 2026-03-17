@@ -427,7 +427,7 @@ export function useGameState() {
 
   const useItemOverworld = useCallback((itemId: string, targetPartyIndex?: number) => {
     setState(s => {
-      if (!s.player || s.screen !== "inventory") return s;
+      if (!s.player || s.screen === "battle" || s.screen === "menu") return s;
       const itemIndex = s.player.inventory.findIndex(i => i.id === itemId);
       if (itemIndex === -1) return s;
       const item = s.player.inventory[itemIndex];
