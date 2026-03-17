@@ -109,6 +109,7 @@ export interface Enemy {
   name: string;
   element: Element;
   level: number;
+  levelRange?: [number, number];
   stats: PlayerStats;
   xpReward: number;
   goldReward: number;
