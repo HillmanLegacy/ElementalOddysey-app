@@ -313,8 +313,6 @@ function Game() {
             setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX, savedPlayerY: playerY, savedEnemyPatrol: patrol, savedDemonStates: demonStates } : null);
             setTransitionElementColor("#ef4444");
             fadeOutMusic(600);
-            const trSfx = playSfx('battleTransition');
-            if (trSfx) trSfx.playbackRate = 2.0;
             setSideScrollBattleTransition({ enemyIndex, enemyId });
           };
           const sharedComplete = () => { if (regionTheme !== "Wind") fadeOutMusic(700); setSideScrollCompleteTransition(true); };
@@ -358,8 +356,6 @@ function Game() {
                     setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX, savedEnemyPatrol: patrol, savedDemonStates: demonStates } : null);
                     setTransitionElementColor("#ef4444");
                     fadeOutMusic(600);
-                    const trSfx = playSfx('battleTransition');
-                    if (trSfx) trSfx.playbackRate = 2.0;
                     setSideScrollBattleTransition({ enemyIndex, enemyId });
                   }}
                   onComplete={sharedComplete}
@@ -370,6 +366,8 @@ function Game() {
                 <BattleTransition
                   direction="in"
                   elementColor="#ef4444"
+                  sfx="battleTransition"
+                  sfxPlaybackRate={2.0}
                   onComplete={() => {
                     const { enemyId } = sideScrollBattleTransition;
                     setSideScrollBattleTransition(null);
@@ -483,8 +481,6 @@ function Game() {
                 const ec = ELEMENT_COLORS[r.theme] || "#c9a44a";
                 setTransitionElementColor(ec);
                 fadeOutMusic(700);
-                const trSfx = playSfx('battleTransition');
-                if (trSfx) trSfx.playbackRate = 2.0;
                 setBattleTransition({ nodeId, elementColor: ec });
               }}
               onShopOpen={(nodeId: number) => {
@@ -556,6 +552,8 @@ function Game() {
               <BattleTransition
                 direction="in"
                 elementColor={battleTransition.elementColor}
+                sfx="battleTransition"
+                sfxPlaybackRate={2.0}
                 onComplete={() => {
                   const nodeId = battleTransition.nodeId;
                   setBattleTransition(null);
@@ -1334,14 +1332,10 @@ function Game() {
                 if (!victory) {
                   fadeOutMusic(700);
                 }
-                const trSfx2 = playSfx('battleTransition');
-                if (trSfx2) trSfx2.playbackRate = 2.0;
                 setBattleExitTransition({ victory });
               }}
               onFlee={() => {
                 stopJingle();
-                const trSfx3 = playSfx('battleTransition');
-                if (trSfx3) trSfx3.playbackRate = 2.0;
                 setBattleExitTransition({ victory: false, fled: true });
               }}
               onSetAnimating={setAnimating}
@@ -1365,6 +1359,8 @@ function Game() {
               <BattleTransition
                 direction="in"
                 elementColor={transitionElementColor}
+                sfx="battleTransition"
+                sfxPlaybackRate={2.0}
                 onComplete={() => {
                   const v = battleExitTransition.victory;
                   const fled = battleExitTransition.fled;

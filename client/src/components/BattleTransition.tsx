@@ -1,9 +1,13 @@
 import { useEffect, useLayoutEffect, useRef } from "react";
+import { playSfx } from "@/lib/sfx";
+import type { SfxName } from "@/lib/sfx";
 
 interface BattleTransitionProps {
   onComplete: () => void;
   direction?: "in" | "out";
   elementColor?: string;
+  sfx?: SfxName;
+  sfxPlaybackRate?: number;
 }
 
 const DURATION = 800;
@@ -111,7 +115,7 @@ function drawParticle(ctx: CanvasRenderingContext2D, p: Particle, alpha: number)
   ctx.restore();
 }
 
-export default function BattleTransition({ onComplete, direction = "in", elementColor }: BattleTransitionProps) {
+export default function BattleTransition({ onComplete, direction = "in", elementColor, sfx, sfxPlaybackRate }: BattleTransitionProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const startTimeRef = useRef<number>(0);
   const completedRef = useRef(false);
@@ -119,6 +123,12 @@ export default function BattleTransition({ onComplete, direction = "in", element
   const particlesRef = useRef<Particle[]>([]);
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
+
+  useEffect(() => {
+    if (!sfx) return;
+    const audio = playSfx(sfx);
+    if (audio && sfxPlaybackRate !== undefined) audio.playbackRate = sfxPlaybackRate;
+  }, []);
 
   useLayoutEffect(() => {
     const canvas = canvasRef.current;
