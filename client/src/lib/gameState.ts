@@ -171,7 +171,7 @@ export function useGameState() {
       const target = battle.enemies[targetIndex];
       if (!target || target.currentHp <= 0) return s;
 
-      const buffedStats = getBuffedStats(s.player.stats, battle.buffs);
+      const buffedStats = getBuffedStats(s.player.stats, battle.buffs, "player", -1);
 
       const dodged = checkDodge(target.stats);
       if (dodged) {
@@ -319,6 +319,8 @@ export function useGameState() {
           stat: spell.effect.stat,
           amount: spell.effect.amount,
           turnsRemaining: spell.effect.duration,
+          targetType: "player",
+          targetIndex: -1,
         });
         battle.log = [...battle.log, `${spell.name}! +${spell.effect.amount} ${spell.effect.stat.toUpperCase()} for ${spell.effect.duration} turns!`];
       } else if (spell.type === "heal" && spell.effect.stat === "hp" && spell.effect.amount) {
@@ -326,7 +328,7 @@ export function useGameState() {
         battle.log = [...battle.log, `${spell.name}! Restored ${spell.effect.amount} HP!`];
         battle.lastDamageEvent = { id: ++damageEventCounter, amount: spell.effect.amount, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       } else if (spell.type === "damage") {
-        const buffedStats = getBuffedStats(s.player.stats, battle.buffs);
+        const buffedStats = getBuffedStats(s.player.stats, battle.buffs, "player", -1);
         const hasAoe = spell.targetType === "allEnemies";
         const targets = hasAoe ? battle.enemies.filter(e => e.currentHp > 0) : (targetIndex !== undefined ? [battle.enemies[targetIndex]] : []);
 
@@ -473,7 +475,7 @@ export function useGameState() {
         battle.log = [...battle.log, `${target.name} dodged ${member.name}'s attack!`];
         battle.lastElementLabel = undefined;
       } else {
-        const buffedMemberStats = getBuffedStats(member.stats, battle.buffs);
+        const buffedMemberStats = getBuffedStats(member.stats, battle.buffs, "party", partyIndex);
         let memberWeaponElement: string | undefined = undefined;
         if (member.perks && member.perks.some(pid => { const pk = PERKS.find(p => p.id === pid); return pk && pk.effect.special === "elemental_basic_attack"; })) {
           memberWeaponElement = member.element;
@@ -530,7 +532,7 @@ export function useGameState() {
       member.currentMp -= spell.mpCost;
 
       if (spell.type === "damage") {
-        const buffedMemberStats = getBuffedStats(member.stats, battle.buffs);
+        const buffedMemberStats = getBuffedStats(member.stats, battle.buffs, "party", partyIndex);
         const critMod = member.perks?.includes("lightning_crit") ? 0.10 : 0;
         let lastLabel = "";
         let totalLifestealHeal = 0;
@@ -579,6 +581,8 @@ export function useGameState() {
           stat: spell.effect.stat || "atk",
           amount: spell.effect.amount || 0,
           turnsRemaining: spell.effect.duration || 2,
+          targetType: "party" as const,
+          targetIndex: partyIndex,
         }];
         battle.log = [...battle.log, `${member.name} casts ${spell.name}!`];
       }
@@ -658,7 +662,7 @@ export function useGameState() {
       if (!s.battle || !s.player || s.battle.phase !== "enemyTurn") return s;
 
       const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })), party: s.battle.party.map(p => ({ ...p })) };
-      const buffedStats = getBuffedStats(s.player.stats, battle.buffs);
+      const buffedStats = getBuffedStats(s.player.stats, battle.buffs, "player", -1);
 
       const enemy = battle.enemies[enemyIndex];
       if (!enemy || enemy.currentHp <= 0) return s;
@@ -727,13 +731,14 @@ export function useGameState() {
             battle.animation = "enemyAttack";
           }
         } else {
-          const dodged = checkDodge(partyTarget.stats, partyTarget.perks);
+          const buffedPartyStats = getBuffedStats(partyTarget.stats, battle.buffs, "party", partyIdx);
+          const dodged = checkDodge(buffedPartyStats, partyTarget.perks);
           if (dodged) {
             battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
             const enemyUseMagic = enemy.stats.int > enemy.stats.atk;
-            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, partyTarget.stats, enemyUseMagic, enemy.element, partyTarget.element);
+            const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedPartyStats, enemyUseMagic, enemy.element, partyTarget.element);
             let actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, partyTarget.perks || []);
             battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
@@ -1474,10 +1479,17 @@ export function useGameState() {
   };
 }
 
-function getBuffedStats(base: import("@shared/schema").PlayerStats, buffs: Buff[]): import("@shared/schema").PlayerStats {
+function getBuffedStats(
+  base: import("@shared/schema").PlayerStats,
+  buffs: Buff[],
+  targetType: "player" | "party" = "player",
+  targetIndex: number = -1
+): import("@shared/schema").PlayerStats {
   const result = { ...base };
   for (const buff of buffs) {
-    (result as any)[buff.stat] += buff.amount;
+    if (buff.targetType === targetType && buff.targetIndex === targetIndex) {
+      (result as any)[buff.stat] += buff.amount;
+    }
   }
   return result;
 }

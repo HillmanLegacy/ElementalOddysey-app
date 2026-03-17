@@ -174,6 +174,8 @@ export interface Buff {
   stat: keyof PlayerStats;
   amount: number;
   turnsRemaining: number;
+  targetType: "player" | "party";
+  targetIndex: number;
 }
 
 export interface PartyMemberDef {
