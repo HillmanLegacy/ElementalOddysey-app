@@ -474,6 +474,7 @@ function Game() {
                   fleeEnemyIndex: null,
                 });
               }}
+              onSave={handleSaveToSlot}
             />
             {hutTransitionIn && (
               <BattleTransition

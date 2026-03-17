@@ -10,7 +10,8 @@ import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { useColorMap } from "@/hooks/useColorMap";
 import { playSfx } from "@/lib/sfx";
-import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap } from "lucide-react";
+import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap, Save } from "lucide-react";
+import { getSaves, type LocalSave } from "@/lib/localSaves";
 import { groupConsumables } from "@/lib/utils";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
@@ -146,9 +147,10 @@ interface OverworldProps {
   onUnequip: (slot: "weapon" | "armor" | "accessory") => void;
   onUseItem: (itemId: string, targetPartyIndex?: number) => void;
   onArrowClick?: (fromNodeId: number, toNode: OverworldNode) => void;
+  onSave: (slotNumber: number) => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave }: OverworldProps) {
   const _owSpriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;
   const playerColorMap = useColorMap(_owSpriteConfig.idle.sheet, _owSpriteConfig.idle.frameWidth, _owSpriteConfig.idle.frameHeight, player.colorGroups);
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
@@ -156,7 +158,9 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<"party" | "items" | "gear">("party");
+  const [menuTab, setMenuTab] = useState<"party" | "items" | "gear" | "save">("party");
+  const [saves, setSaves] = useState<LocalSave[]>(() => getSaves());
+  const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [targetingItemId, setTargetingItemId] = useState<string | null>(null);
   const [charPos, setCharPos] = useState<{ x: number; y: number }>(() => {
     const currentNode = region.nodes.find(n => n.id === player.currentNode);
@@ -850,10 +854,10 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
             </div>
 
             <div className="relative flex gap-0 px-4 pt-2">
-              {(["party", "items", "gear"] as const).map(tab => (
+              {(["party", "items", "gear", "save"] as const).map(tab => (
                 <button
                   key={tab}
-                  onClick={() => { playSfx('menuSelect'); setMenuTab(tab); setTargetingItemId(null); }}
+                  onClick={() => { playSfx('menuSelect'); setMenuTab(tab); setTargetingItemId(null); if (tab === "save") setSaves(getSaves()); }}
                   style={{
                     fontFamily: "'Press Start 2P', cursive",
                     fontSize: "8px",
@@ -1117,6 +1121,57 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                   </div>
                 );
               })()}
+
+              {menuTab === "save" && (
+                <div className="space-y-2">
+                  <p style={{ fontSize: "8px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>Save to slot</p>
+                  {[1, 2, 3].map(slot => {
+                    const existing = saves.find(s => s.slotName === `Slot ${slot}`);
+                    const isSuccess = saveSuccessSlot === slot;
+                    return (
+                      <div key={slot} style={{ padding: "10px 10px", background: "#0d0b0bf0", border: `1px solid ${isSuccess ? "#4ade80" : "#c9a44a30"}`, transition: "border-color 0.3s" }}>
+                        <div className="flex items-center justify-between gap-2">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div className="flex items-center gap-2">
+                              <Save className="w-3 h-3" style={{ color: isSuccess ? "#4ade80" : "#c9a44a80" }} />
+                              <span style={{ fontSize: "9px", color: isSuccess ? "#4ade80" : "#e8e0d0", letterSpacing: "1px" }}>
+                                {isSuccess ? "SAVED!" : `Slot ${slot}`}
+                              </span>
+                            </div>
+                            {existing && !isSuccess && (
+                              <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "3px" }}>
+                                Lv.{existing.playerData.level} {existing.playerData.name} · {new Date(existing.updatedAt).toLocaleDateString()}
+                              </p>
+                            )}
+                            {!existing && !isSuccess && (
+                              <p style={{ fontSize: "7px", color: "#c9a44a30", marginTop: "3px", fontStyle: "italic" }}>Empty</p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              playSfx('menuSelect');
+                              onSave(slot);
+                              setSaves(getSaves());
+                              setSaveSuccessSlot(slot);
+                              setTimeout(() => setSaveSuccessSlot(null), 2000);
+                            }}
+                            style={{
+                              fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "5px 10px",
+                              border: `1px solid ${isSuccess ? "#4ade8060" : "#c9a44a60"}`,
+                              background: isSuccess ? "#4ade8015" : "transparent",
+                              color: isSuccess ? "#4ade80" : "#c9a44a",
+                              cursor: "pointer",
+                            }}
+                            data-testid={`button-save-slot-${slot}`}
+                          >
+                            {existing ? "OVERWRITE" : "SAVE"}
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <div className="relative h-1" style={{ background: `linear-gradient(90deg, transparent, #c9a44a40, transparent)` }} />
