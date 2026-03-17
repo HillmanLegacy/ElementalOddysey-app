@@ -4535,7 +4535,6 @@ export default function BattleScreen({
                         }
                         scale={2.5}
                         loop={enemyAnimStates[idx] !== "attack" && enemyAnimStates[idx] !== "hurt" && enemyAnimStates[idx] !== "death"}
-                        flipX={true}
                         onComplete={
                           enemyAnimStates[idx] === "death"
                             ? () => onEnemyDeathAnimDone?.(idx)
