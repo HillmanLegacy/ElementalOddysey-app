@@ -537,9 +537,9 @@ export default function SideScrollStage({
     canvas.width = viewportWRef.current;
     canvas.height = VIEWPORT_H;
     const leafRng = rand(77);
-    // World-space leaves spread across the full stage so they're already present
-    // everywhere and don't react to player/camera movement
-    const leaves: LeafParticle[] = Array.from({ length: 80 }, () => {
+    // World-space leaves spread across the full stage — 100 leaves gives ~16 visible
+    // in any 800px viewport without clustering on init
+    const leaves: LeafParticle[] = Array.from({ length: 100 }, () => {
       const l = spawnLeaf(leafRng, viewportWRef.current);
       l.x = leafRng() * STAGE_WIDTH;
       l.y = 20 + leafRng() * (GROUND_Y - 80);
@@ -573,27 +573,30 @@ export default function SideScrollStage({
         ctx.stroke();
       }
 
-      // Leaf particles — world-space so camera movement doesn't carry them
+      // Leaf particles — world-space so camera movement doesn't carry them.
+      // Only two recycle rules to avoid burst-spawning on init:
+      //   1) camera walks past a leaf (screenX < -20) → place it ahead of the viewport
+      //   2) leaf drifts off the right end of the whole stage → wrap to stage start
       for (const lf of leaves) {
         lf.x += lf.vx + Math.sin(t * 0.4 + lf.rot) * 0.25;
         lf.y += lf.vy + Math.sin(t * 0.3 + lf.rot * 1.3) * 0.18;
         lf.rot += lf.rotSpd;
         const screenX = lf.x - camX;
-        if (screenX > vw + 20) {
-          // drifted off the right of screen — re-enter from left edge
+        if (screenX < -20) {
+          // camera moved right past this leaf — scatter it somewhere ahead
           Object.assign(lf, spawnLeaf(leafRng, vw));
-          lf.x = camX - 10;
+          lf.x = camX + vw + leafRng() * vw;
           lf.y = 20 + leafRng() * (GROUND_Y - 80);
-        } else if (screenX < -20) {
-          // camera moved right past this leaf — re-enter just off the right edge
+        } else if (lf.x > STAGE_WIDTH + 200) {
+          // leaf drifted off the right end of the stage — wrap near the start
           Object.assign(lf, spawnLeaf(leafRng, vw));
-          lf.x = camX + vw + 10;
+          lf.x = leafRng() * 400;
           lf.y = 20 + leafRng() * (GROUND_Y - 80);
         }
         if (lf.y > GROUND_Y - 8 || lf.y < -20) {
           lf.y = 20 + leafRng() * (GROUND_Y - 80);
-          lf.x = camX + leafRng() * vw;
         }
+        if (screenX < -20 || screenX > vw + 20) continue;
         ctx.save();
         ctx.translate(screenX, lf.y);
         ctx.rotate(lf.rot);
