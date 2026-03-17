@@ -359,14 +359,14 @@ export default function SideScrollStage({
       const targetCount = 2 + Math.floor(Math.random() * 3);
       const pool = [...filtered].sort(() => Math.random() - 0.5).slice(0, Math.min(targetCount, filtered.length));
       pool.sort((a, b) => reversed ? b.x - a.x : a.x - b.x);
-      const forestPool: Array<{ type: EnemyType; enemyId: string }> = [
-        { type: "minotaur", enemyId: "minotaur_wind" },
-        { type: "cyclops",  enemyId: "cyclops_wind"  },
-        { type: "harpy",    enemyId: "harpy_wind"    },
-      ];
       return pool.map(e => {
         if (isForest) {
-          const pick = forestPool[Math.floor(Math.random() * forestPool.length)];
+          // 40% harpy, 40% minotaur, 20% cyclops
+          const r = Math.random();
+          const pick: { type: EnemyType; enemyId: string } =
+            r < 0.40 ? { type: "harpy",    enemyId: "harpy_wind"    } :
+            r < 0.80 ? { type: "minotaur", enemyId: "minotaur_wind" } :
+                       { type: "cyclops",  enemyId: "cyclops_wind"  };
           return { ...e, ...pick };
         }
         if (!shopVisited) return { ...e, type: "fireDemon" as EnemyType, enemyId: "slime_fire" };
