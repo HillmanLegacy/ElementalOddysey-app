@@ -566,7 +566,7 @@ export default function BattleScreen({
   const [enemyAnimStates, setEnemyAnimStates] = useState<Record<number, "idle" | "flying" | "transition" | "attack" | "hurt" | "death" | "walk" | "walkBack" | "slash" | "castInferno">>({});
   const [fireballAnim, setFireballAnim] = useState<{ fromX: number; fromY: number; toX: number; toY: number; active: boolean } | null>(null);
   const [potionVfx, setPotionVfx] = useState<{ x: number; y: number; color: string; active: boolean } | null>(null);
-  const [bossOffset, setBossOffset] = useState<{ x: number; y: number } | null>(null);
+  const [bossOffset, setBossOffset] = useState<Record<number, { x: number; y: number } | null>>({});
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
   const [frostBreathAnim, setFrostBreathAnim] = useState<{ fromX: number; fromY: number; active: boolean } | null>(null);
   const [frostHitSfx, setFrostHitSfx] = useState(false);
@@ -1997,14 +1997,14 @@ export default function BattleScreen({
 
         if (ytrielHasFlown.current) {
           // Already in flying mode — move immediately, no transition needed
-          setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
         } else {
           // First flyby — play transition animation, then switch to flying
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "transition" }));
           scheduleTimer(() => {
             ytrielHasFlown.current = true;
             setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
-            setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+            setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
           }, 400);
         }
 
@@ -2037,12 +2037,12 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "flying" }));
-          setBossOffset({ x: 0, y: 0 });
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: 0, y: 0 } }));
         }, 1100 + transitionOffset);
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: ytrielRestAnim(enemyIdx) }));
-          setBossOffset(null);
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: null }));
           setAnimPhase("idle");
           scheduleTimer(onDone, 300);
         }, 1700 + transitionOffset);
@@ -2070,7 +2070,7 @@ export default function BattleScreen({
       }
 
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-      setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+      setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
@@ -2101,12 +2101,12 @@ export default function BattleScreen({
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: 0, y: 0 });
+        setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: 0, y: 0 } }));
       }, 1500);
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-        setBossOffset(null);
+        setBossOffset(prev => ({ ...prev, [enemyIdx]: null }));
         setAnimPhase("idle");
         scheduleTimer(onDone, 300);
       }, 2100);
@@ -2309,7 +2309,7 @@ export default function BattleScreen({
         }
 
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+        setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
@@ -2340,12 +2340,12 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-          setBossOffset({ x: 0, y: 0 });
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: 0, y: 0 } }));
         }, 1500);
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-          setBossOffset(null);
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: null }));
           setAnimPhase("idle");
           scheduleTimer(onDone, 300);
         }, 2100);
@@ -2376,7 +2376,7 @@ export default function BattleScreen({
       }
 
       setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-      setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+      setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
 
       // Cyclops has much longer attack animations (17/23 frames vs 6-9 for minotaur/harpy)
       // so compute timing from the actual frame count to let the full animation play
@@ -2421,12 +2421,12 @@ export default function BattleScreen({
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: 0, y: 0 });
+        setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: 0, y: 0 } }));
       }, walkBackTime);
 
       scheduleTimer(() => {
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-        setBossOffset(null);
+        setBossOffset(prev => ({ ...prev, [enemyIdx]: null }));
         setAnimPhase("idle");
         scheduleTimer(onDone, 300);
       }, idleTime);
@@ -2488,7 +2488,7 @@ export default function BattleScreen({
         }
 
         setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-        setBossOffset({ x: -(pos.x - walkToX), y: -(pos.y - walkToY) });
+        setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
@@ -2519,12 +2519,12 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "walk" }));
-          setBossOffset({ x: 0, y: 0 });
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: 0, y: 0 } }));
         }, 1600);
 
         scheduleTimer(() => {
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "idle" }));
-          setBossOffset(null);
+          setBossOffset(prev => ({ ...prev, [enemyIdx]: null }));
           setAnimPhase("idle");
           scheduleTimer(onDone, 300);
         }, 2200);
@@ -3935,9 +3935,10 @@ export default function BattleScreen({
             );
             const isFireDemon = enemy.element === "Fire" && !enemy.isBoss && !isDemonKin(enemy);
 
-            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy) || isResk(enemy)) && bossOffset !== null;
-            const bossLeft = isBossMoving ? pos.x + bossOffset.x : pos.x;
-            const bossBottom = isBossMoving ? pos.y + bossOffset.y : pos.y;
+            const enemyBossOffset = bossOffset[idx] ?? null;
+            const isBossMoving = (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy) || isResk(enemy)) && enemyBossOffset !== null;
+            const bossLeft = isBossMoving ? pos.x + enemyBossOffset.x : pos.x;
+            const bossBottom = isBossMoving ? pos.y + enemyBossOffset.y : pos.y;
 
             return (
               <div
