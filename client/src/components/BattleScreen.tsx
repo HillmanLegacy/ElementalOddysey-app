@@ -2698,7 +2698,7 @@ export default function BattleScreen({
 
   const playerPos = getPlayerPosition();
 
-  const isInputBlocked = !startReady || animPhase !== "idle" || battle.phase !== "playerTurn";
+  const isInputBlocked = !startReady || animPhase !== "idle" || partyAnimPhase !== "idle" || battle.phase !== "playerTurn";
 
   const partyRunBackHandled = useRef(false);
 
