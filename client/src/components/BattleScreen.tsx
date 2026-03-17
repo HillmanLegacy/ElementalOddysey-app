@@ -2552,8 +2552,11 @@ export default function BattleScreen({
     }
 
     setPartyAnimIndex(battle.activePartyIndex);
+    setPartyAnimPhase("idle");
+    setPartyTargetIdx(null);
     setPartyAction("menu");
     setPartySelectedSpell(null);
+    pendingPartySpellRef.current = null;
   }, [battle.phase, battle.activePartyIndex]);
 
   const prevQueueIdxRef = useRef(-1);
@@ -5065,12 +5068,23 @@ export default function BattleScreen({
                   {activeMember.name}'s Turn
                 </p>
                 {partyAction === "menu" && partyAnimPhase === "idle" && (
-                  <div className="grid grid-cols-4 gap-2 mb-1">
+                  <div className="grid grid-cols-5 gap-1.5 mb-1">
                     {[
-                      { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => { playSfx('menuSelect'); setPartyAction("selectTarget"); } },
-                      { key: "defend", label: "DEF", icon: <Shield className="w-5 h-5" />, color: "#3b82f6", onClick: () => { setPartyGuardIndex(battle.activePartyIndex); playSfx("block"); onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 1200); } },
-                      { key: "magic", label: "MAG", icon: <Sparkles className="w-5 h-5" />, color: "#a855f7", onClick: () => { playSfx('menuSelect'); setPartyAction("showSpells"); }, disabled: partySpells.length === 0 },
-                      { key: "item", label: "ITEM", icon: <Package className="w-5 h-5" />, color: "#22c55e", onClick: () => { playSfx('menuSelect'); setPartyAction("showItems"); }, disabled: consumables.length === 0 },
+                      { key: "attack", label: "ATK", icon: <Swords className="w-4 h-4" />, color: "#ef4444", onClick: () => { playSfx('menuSelect'); setPartyAction("selectTarget"); } },
+                      { key: "defend", label: "DEF", icon: <Shield className="w-4 h-4" />, color: "#3b82f6", onClick: () => { setPartyGuardIndex(battle.activePartyIndex); playSfx("block"); onPartyMemberDefend(battle.activePartyIndex); setTimeout(() => onAdvancePartyTurn(), 1200); } },
+                      { key: "magic", label: "MAG", icon: <Sparkles className="w-4 h-4" />, color: "#a855f7", onClick: () => { playSfx('menuSelect'); setPartyAction("showSpells"); }, disabled: partySpells.length === 0 },
+                      { key: "item", label: "ITEM", icon: <Package className="w-4 h-4" />, color: "#22c55e", onClick: () => { playSfx('menuSelect'); setPartyAction("showItems"); }, disabled: consumables.length === 0 },
+                      { key: "flee", label: "RUN", icon: <LogOut className="w-4 h-4" />, color: "#f59e0b", onClick: () => {
+                        playSfx('menuSelect');
+                        setFleeFailed(false);
+                        if (Math.random() < 0.5) {
+                          onFlee();
+                        } else {
+                          setFleeFailed(true);
+                          setTimeout(() => setFleeFailed(false), 2000);
+                          onAdvancePartyTurn();
+                        }
+                      }},
                     ].map(btn => (
                       <button
                         key={btn.key}
