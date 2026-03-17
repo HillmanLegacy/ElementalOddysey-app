@@ -30,8 +30,8 @@ import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut, Heart
 import { groupConsumables } from "@/lib/utils";
 import type { PlayerCharacter } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
-import SideScrollStage from "@/components/SideScrollStage";
-import ClimbingStage from "@/components/ClimbingStage";
+import SideScrollStage, { SSEnemySnapshot, SSDemonSnapshot } from "@/components/SideScrollStage";
+import ClimbingStage, { ClimbEnemySnapshot } from "@/components/ClimbingStage";
 
 const DESIGN_WIDTH = 1024;
 const DESIGN_HEIGHT = 640;
@@ -171,6 +171,8 @@ function Game() {
     reversed: boolean;
     isClimbing: boolean;
     fleeEnemyIndex: number | null;
+    savedEnemyPatrol?: SSEnemySnapshot[] | ClimbEnemySnapshot[];
+    savedDemonStates?: SSDemonSnapshot[];
   } | null>(null);
   const [sideScrollBattleTransition, setSideScrollBattleTransition] = useState<{
     enemyIndex: number;
@@ -303,12 +305,12 @@ function Game() {
         if (sideScrollCtx) {
           const ssPlayer = state.player;
           const regionTheme = (() => { const r = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {})); return r.theme; })();
-          const sharedEnemyContact = (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number) => {
+          const sharedEnemyContact = (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number, patrol?: SSEnemySnapshot[] | ClimbEnemySnapshot[], demonStates?: SSDemonSnapshot[]) => {
             if (sideScrollBattleActiveRef.current) return;
             lastContactedEnemyIdxRef.current = enemyIndex;
             lastContactedEnemyColorVariantRef.current = colorVariant;
             sideScrollBattleActiveRef.current = true;
-            setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX, savedPlayerY: playerY } : null);
+            setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX, savedPlayerY: playerY, savedEnemyPatrol: patrol, savedDemonStates: demonStates } : null);
             setTransitionElementColor("#ef4444");
             fadeOutMusic(600);
             const trSfx = playSfx('battleTransition');
@@ -328,7 +330,8 @@ function Game() {
                   fleeEnemyIndex={sideScrollCtx.fleeEnemyIndex}
                   savedPlayerY={sideScrollCtx.savedPlayerY}
                   regionTheme={regionTheme}
-                  onEnemyContact={sharedEnemyContact}
+                  savedEnemyPatrol={sideScrollCtx.savedEnemyPatrol as ClimbEnemySnapshot[] | undefined}
+                  onEnemyContact={(idx, eid, px, cv, py, patrol) => sharedEnemyContact(idx, eid, px, cv, py, patrol)}
                   onComplete={sharedComplete}
                   onExit={sharedExit}
                 />
@@ -344,13 +347,15 @@ function Game() {
                   shopVisited={state.player?.clearedNodes.includes(4) ?? false}
                   reversed={sideScrollCtx.reversed}
                   regionTheme={regionTheme}
-                  onEnemyContact={sharedEnemyContact}
-                  onFireballContact={(enemyIndex, enemyId, playerX) => {
+                  savedEnemyPatrol={sideScrollCtx.savedEnemyPatrol as SSEnemySnapshot[] | undefined}
+                  savedDemonStates={sideScrollCtx.savedDemonStates}
+                  onEnemyContact={(idx, eid, px, patrol, demonStates) => sharedEnemyContact(idx, eid, px, undefined, undefined, patrol, demonStates)}
+                  onFireballContact={(enemyIndex, enemyId, playerX, patrol, demonStates) => {
                     if (sideScrollBattleActiveRef.current) return;
                     applyFireballDamage(10);
                     lastContactedEnemyIdxRef.current = enemyIndex;
                     sideScrollBattleActiveRef.current = true;
-                    setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
+                    setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX, savedEnemyPatrol: patrol, savedDemonStates: demonStates } : null);
                     setTransitionElementColor("#ef4444");
                     fadeOutMusic(600);
                     const trSfx = playSfx('battleTransition');

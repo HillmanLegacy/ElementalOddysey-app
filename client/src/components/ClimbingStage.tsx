@@ -183,6 +183,12 @@ function generateEnemies(seed: number, plats: ClimbPlatform[], isForest: boolean
   });
 }
 
+export type ClimbEnemySnapshot = {
+  x: number; y: number; dir: 1 | -1;
+  aiMode?: "wander" | "aggro";
+  targetX?: number; targetY?: number; wanderTimer?: number;
+};
+
 interface ClimbingStageProps {
   player: PlayerCharacter;
   fromNodeId: number;
@@ -191,7 +197,8 @@ interface ClimbingStageProps {
   fleeEnemyIndex?: number | null;
   savedPlayerY?: number;
   regionTheme?: string;
-  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number) => void;
+  savedEnemyPatrol?: ClimbEnemySnapshot[];
+  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number, patrol?: ClimbEnemySnapshot[]) => void;
   onComplete: () => void;
   onExit: () => void;
 }
@@ -224,6 +231,7 @@ export default function ClimbingStage({
   fleeEnemyIndex = null,
   savedPlayerY,
   regionTheme = "Fire",
+  savedEnemyPatrol,
   onEnemyContact,
   onComplete,
   onExit,
@@ -275,25 +283,26 @@ export default function ClimbingStage({
   const playerFrameAccRef = useRef(0);
 
   const enemyPatrolRef = useRef(
-    enemies.map(e => {
+    enemies.map((e, i) => {
       const plat = platforms[e.platformIdx];
       const es = CLIMB_ENEMY[e.type];
       const eH = Math.round(es.iH * es.scale);
       const worldY = plat.y - eH + es.groundOffset;
+      const saved = savedEnemyPatrol?.[i];
       const base = {
-        x: plat.x + e.xOffset,
-        y: worldY,
-        dir: (Math.random() > 0.5 ? 1 : -1) as 1 | -1,
+        x: saved?.x ?? (plat.x + e.xOffset),
+        y: saved?.y ?? worldY,
+        dir: saved?.dir ?? ((Math.random() > 0.5 ? 1 : -1) as 1 | -1),
         platLeft: plat.x,
         platRight: plat.x + plat.w,
       };
       if (e.type === "harpy") {
         return {
           ...base,
-          aiMode: "wander" as "wander" | "aggro",
-          targetX: 40 + Math.random() * (VIEWPORT_W_DEFAULT - 80),
-          targetY: GOAL_Y + 100 + Math.random() * (CLIMB_H - GOAL_Y - 250),
-          wanderTimer: 1.5 + Math.random() * 2.5,
+          aiMode: (saved?.aiMode ?? "wander") as "wander" | "aggro",
+          targetX: saved?.targetX ?? (40 + Math.random() * (VIEWPORT_W_DEFAULT - 80)),
+          targetY: saved?.targetY ?? (GOAL_Y + 100 + Math.random() * (CLIMB_H - GOAL_Y - 250)),
+          wanderTimer: saved?.wanderTimer ?? (1.5 + Math.random() * 2.5),
         };
       }
       return base;
@@ -316,7 +325,9 @@ export default function ClimbingStage({
   const [enemyPositions, setEnemyPositions] = useState(
     enemies.map((_, i) => ({ x: enemyPatrolRef.current[i].x, y: enemyPatrolRef.current[i].y }))
   );
-  const [enemyFacingLeft, setEnemyFacingLeft] = useState(enemies.map(() => false));
+  const [enemyFacingLeft, setEnemyFacingLeft] = useState(
+    enemies.map((_, i) => savedEnemyPatrol?.[i] ? savedEnemyPatrol[i].dir !== 1 : false)
+  );
   const [battleFreezing, setBattleFreezing] = useState(false);
   const [hiddenEnemyIndices, setHiddenEnemyIndices] = useState<number[]>([]);
 
@@ -622,7 +633,14 @@ export default function ClimbingStage({
           battlePendingRef.current = true;
           setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
-          onEnemyContactRef.current(idx, enemy.enemyId, p.x, enemy.colorVariant, p.y);
+          {
+            const patrol = enemyPatrolRef.current.map(ep => {
+              const snap: ClimbEnemySnapshot = { x: ep.x, y: ep.y, dir: ep.dir };
+              if ("aiMode" in ep) { snap.aiMode = (ep as any).aiMode; snap.targetX = (ep as any).targetX; snap.targetY = (ep as any).targetY; snap.wanderTimer = (ep as any).wanderTimer; }
+              return snap;
+            });
+            onEnemyContactRef.current(idx, enemy.enemyId, p.x, enemy.colorVariant, p.y, patrol);
+          }
           hit = true;
         }
       });

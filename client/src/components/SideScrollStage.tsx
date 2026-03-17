@@ -303,6 +303,9 @@ function drawForestBg(ctx: CanvasRenderingContext2D, width: number, height: numb
   }
 }
 
+export type SSEnemySnapshot = { x: number; y: number; dir: 1 | -1 };
+export type SSDemonSnapshot = { mode: DemonMode; timer: number };
+
 interface SideScrollStageProps {
   player: PlayerCharacter;
   fromNodeId: number;
@@ -314,8 +317,10 @@ interface SideScrollStageProps {
   shopVisited?: boolean;
   reversed?: boolean;
   regionTheme?: string;
-  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
-  onFireballContact: (enemyIndex: number, enemyId: string, playerX: number) => void;
+  savedEnemyPatrol?: SSEnemySnapshot[];
+  savedDemonStates?: SSDemonSnapshot[];
+  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, patrol: SSEnemySnapshot[], demonStates: SSDemonSnapshot[]) => void;
+  onFireballContact: (enemyIndex: number, enemyId: string, playerX: number, patrol: SSEnemySnapshot[], demonStates: SSDemonSnapshot[]) => void;
   onComplete: () => void;
   onExit: () => void;
 }
@@ -331,6 +336,8 @@ export default function SideScrollStage({
   shopVisited = false,
   reversed = false,
   regionTheme = "Fire",
+  savedEnemyPatrol,
+  savedDemonStates,
   onEnemyContact,
   onFireballContact,
   onComplete,
@@ -450,18 +457,21 @@ export default function SideScrollStage({
 
   // Per-enemy patrol state: live x/y position + movement direction
   const enemyPatrolRef = useRef(
-    resolvedEnemies.map(e => {
+    resolvedEnemies.map((e, i) => {
       const es = ENEMY_SPRITES_SS[e.type];
       const eH = Math.round(es.iH * es.scale);
       const isForest = e.type === "minotaur" || e.type === "cyclops" || e.type === "harpy";
       const initY = (isForest ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset;
-      return { x: e.x, dir: -1 as 1 | -1, startX: e.x, y: initY, startY: initY };
+      const saved = savedEnemyPatrol?.[i];
+      return { x: saved?.x ?? e.x, dir: saved?.dir ?? (-1 as 1 | -1), startX: e.x, y: saved?.y ?? initY, startY: initY };
     })
   );
 
   // Fire demon AI state machine
   const demonStateRef = useRef<DemonState[]>(
-    resolvedEnemies.map(() => ({ mode: "patrol" as DemonMode, timer: 0 }))
+    resolvedEnemies.map((_, i) =>
+      savedDemonStates?.[i] ? { mode: savedDemonStates[i].mode, timer: savedDemonStates[i].timer } : { mode: "patrol" as DemonMode, timer: 0 }
+    )
   );
 
   // Active fireballs
@@ -483,14 +493,15 @@ export default function SideScrollStage({
   const playerFrameAccRef = useRef(0);
   const jumpActiveRef = useRef(false);
   const [facingRight, setFacingRight] = useState(!reversed);
-  const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map(e => e.x));
-  const [enemyRenderY, setEnemyRenderY] = useState<number[]>(resolvedEnemies.map(e => {
+  const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map((e, i) => savedEnemyPatrol?.[i]?.x ?? e.x));
+  const [enemyRenderY, setEnemyRenderY] = useState<number[]>(resolvedEnemies.map((e, i) => {
+    if (savedEnemyPatrol?.[i]?.y !== undefined) return savedEnemyPatrol[i].y;
     const es = ENEMY_SPRITES_SS[e.type];
     const eH = Math.round(es.iH * es.scale);
     const isForest = e.type === "minotaur" || e.type === "cyclops" || e.type === "harpy";
     return (isForest ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset;
   }));
-  const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map(() => true));
+  const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map((_, i) => savedEnemyPatrol?.[i] ? savedEnemyPatrol[i].dir !== 1 : true));
   const [enemyIsChasing, setEnemyIsChasing] = useState(resolvedEnemies.map(() => false));
   const [battleFreezing, setBattleFreezing] = useState(false);
   const [hiddenEnemyIndices, setHiddenEnemyIndices] = useState<number[]>([]);
@@ -922,7 +933,11 @@ export default function SideScrollStage({
           battlePendingRef.current = true;
           setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
-          onEnemyContactRef.current(idx, enemy.enemyId, p.x);
+          {
+            const patrol = enemyPatrolRef.current.map(ep => ({ x: ep.x, y: ep.y, dir: ep.dir }));
+            const demonStates = demonStateRef.current.map(ds => ({ mode: ds.mode, timer: ds.timer }));
+            onEnemyContactRef.current(idx, enemy.enemyId, p.x, patrol, demonStates);
+          }
           return;
         }
       });
@@ -964,9 +979,11 @@ export default function SideScrollStage({
           const capturedPlayerX = p.x;
           const capturedEnemyIdx = hitFb.enemyIdx;
           const capturedEnemyId = hitEnemy?.enemyId ?? "";
+          const capturedPatrol = enemyPatrolRef.current.map(ep => ({ x: ep.x, y: ep.y, dir: ep.dir }));
+          const capturedDemonStates = demonStateRef.current.map(ds => ({ mode: ds.mode, timer: ds.timer }));
           setTimeout(() => {
             setExplosions(prev => prev.filter(e => e.id !== expId));
-            onFireballContactRef.current(capturedEnemyIdx, capturedEnemyId, capturedPlayerX);
+            onFireballContactRef.current(capturedEnemyIdx, capturedEnemyId, capturedPlayerX, capturedPatrol, capturedDemonStates);
           }, EXP_DELAY_MS);
           return;
         }
