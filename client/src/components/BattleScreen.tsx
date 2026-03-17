@@ -1414,6 +1414,34 @@ export default function BattleScreen({
         scheduleTimer(() => setEnemyHitIdx(null), 400);
       }
 
+      if (matched && partyAnimPhase === "attacking" && partyTargetIdx !== null) {
+        const isCrit = !!(matched[2]);
+        const tidx = partyTargetIdx;
+        setEnemyHitIdx(tidx);
+        playSfx("hitMetal");
+        if (battle.lastElementLabel === "Super effective!") {
+          scheduleTimer(() => playSfx("effectiveHit", 0.6), 200);
+        }
+        const hitEnemy = battle.enemies[tidx];
+        if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
+          setEnemyAnimStates(prev => ({ ...prev, [tidx]: "hurt" }));
+          const hurtDuration = hitEnemy.currentHp <= 0 ? 250 : 500;
+          scheduleTimer(() => {
+            const e = battle.enemies[tidx];
+            const isDying = e && e.currentHp <= 0;
+            if (isDying) {
+              setDeathAnimPending(prev => new Set(prev).add(tidx));
+            }
+            setEnemyAnimStates(prev => ({ ...prev, [tidx]: isDying ? "death" : ytrielRestAnim(tidx) }));
+          }, hurtDuration);
+        }
+        if (isCrit) {
+          setShakeScreen(true);
+          scheduleTimer(() => setShakeScreen(false), 400);
+        }
+        scheduleTimer(() => setEnemyHitIdx(null), 400);
+      }
+
       if (matched && (animPhase === "casting" || animPhase === "fujinSlice")) {
         const allEnemyTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
         const targetIdx = pendingTargetIdx ?? fujinTargetIdx ?? allEnemyTargets[0] ?? 0;
@@ -1500,7 +1528,7 @@ export default function BattleScreen({
         playSfx("damage", 0.9);
       }
     }
-  }, [battle.log.length, animPhase, partyAnimPhase, pendingTargetIdx, battle.enemies, battle.animation, spawnDamageNumber, battle.lastElementLabel, scheduleTimer]);
+  }, [battle.log.length, animPhase, partyAnimPhase, pendingTargetIdx, partyTargetIdx, battle.enemies, battle.animation, spawnDamageNumber, battle.lastElementLabel, scheduleTimer]);
 
   const lastItemUsedRef = useRef<typeof battle.lastItemUsed>(undefined);
   useEffect(() => {
@@ -2656,6 +2684,11 @@ export default function BattleScreen({
 
   const partyRunBackHandled = useRef(false);
 
+  useEffect(() => {
+    setPartyAction("menu");
+    setPartySelectedSpell(null);
+  }, [battle.activePartyIndex]);
+
   const handleEnemyClick = (idx: number) => {
     if (battle.phase === "partyTurn" && partyAction === "selectTarget") {
       const target = battle.enemies[idx];
@@ -3159,7 +3192,8 @@ export default function BattleScreen({
                   if (!isActiveParty) return;
                   if (partyAnimPhase === "runToEnemy") {
                     setPartyAnimPhase("attacking");
-                    playSfx("swordSwing");
+                    const attackingMember = battle.party[battle.activePartyIndex];
+                    playSfx(attackingMember?.element === "Wind" ? "mifuneSlice" : "swordSwing");
                     if (partyTargetIdx !== null) {
                       onPartyMemberAttack(battle.activePartyIndex, partyTargetIdx);
                     }
