@@ -198,6 +198,9 @@ function Game() {
   const [menuFadeOut, setMenuFadeOut] = useState<{ save: any } | null>(null);
   const [menuFadeIn, setMenuFadeIn] = useState(false);
   const [menuReveal, setMenuReveal] = useState(false);
+  const [levelUpExitFade, setLevelUpExitFade] = useState(false);
+  const [overworldFromLevelUp, setOverworldFromLevelUp] = useState(false);
+  const pendingLevelUpActionRef = useRef<(() => void) | null>(null);
 
   const handleSaveToSlot = (slotNumber: number) => {
     if (!state.player) return;
@@ -226,6 +229,27 @@ function Game() {
     if (saves && saves.length > 0) {
       const sorted = [...saves].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
       setMenuFadeOut({ save: sorted[0] });
+    }
+  };
+
+  const handleAllocateStat = (stat: Parameters<typeof allocateStat>[0]) => {
+    const lu = state.pendingLevelUp;
+    const goesToOverworld = lu && lu.statsToAllocate === 1 && lu.perksToChoose === 0 && state.pendingLevelUpQueue.length === 0 && !state.pendingUnlock && state.pendingUnlocks.length === 0;
+    if (goesToOverworld) {
+      pendingLevelUpActionRef.current = () => allocateStat(stat);
+      setLevelUpExitFade(true);
+    } else {
+      allocateStat(stat);
+    }
+  };
+
+  const handleSelectPerk = (perkId: string) => {
+    const goesToOverworld = state.pendingLevelUpQueue.length === 0 && !state.pendingUnlock && state.pendingUnlocks.length === 0;
+    if (goesToOverworld) {
+      pendingLevelUpActionRef.current = () => selectPerk(perkId);
+      setLevelUpExitFade(true);
+    } else {
+      selectPerk(perkId);
     }
   };
 
@@ -581,6 +605,12 @@ function Game() {
               <BattleTransition
                 direction="out"
                 onComplete={() => setHutTransitionOut(false)}
+              />
+            )}
+            {overworldFromLevelUp && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setOverworldFromLevelUp(false)}
               />
             )}
           </>
@@ -1366,7 +1396,7 @@ function Game() {
               player={state.player}
               pendingLevelUp={state.pendingLevelUp}
               statsRemaining={state.pendingLevelUp.statsToAllocate}
-              onAllocate={allocateStat}
+              onAllocate={handleAllocateStat}
             />
             {postBattleReveal && (
               <BattleTransition
@@ -1377,17 +1407,41 @@ function Game() {
                 }}
               />
             )}
+            {levelUpExitFade && (
+              <BattleTransition
+                direction="in"
+                onComplete={() => {
+                  setLevelUpExitFade(false);
+                  setOverworldFromLevelUp(true);
+                  pendingLevelUpActionRef.current?.();
+                  pendingLevelUpActionRef.current = null;
+                }}
+              />
+            )}
           </>
         );
 
       case "perkSelect":
         if (!state.player || !state.pendingLevelUp) return null;
         return (
-          <PerkSelectScreen
-            player={state.player}
-            pendingLevelUp={state.pendingLevelUp}
-            onSelect={selectPerk}
-          />
+          <>
+            <PerkSelectScreen
+              player={state.player}
+              pendingLevelUp={state.pendingLevelUp}
+              onSelect={handleSelectPerk}
+            />
+            {levelUpExitFade && (
+              <BattleTransition
+                direction="in"
+                onComplete={() => {
+                  setLevelUpExitFade(false);
+                  setOverworldFromLevelUp(true);
+                  pendingLevelUpActionRef.current?.();
+                  pendingLevelUpActionRef.current = null;
+                }}
+              />
+            )}
+          </>
         );
 
       case "shop":
