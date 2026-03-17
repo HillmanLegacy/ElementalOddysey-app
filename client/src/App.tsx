@@ -111,6 +111,11 @@ function Game() {
         if (!postBattleReveal && !battleTransition) {
           playMusic("lava_region_music");
         }
+      } else if (region.theme === "Wind") {
+        stopAmbient();
+        if (!postBattleReveal && !battleTransition) {
+          playMusic("forest_region");
+        }
       } else {
         stopAmbient();
         stopMusic();
@@ -285,8 +290,8 @@ function Game() {
             if (trSfx) trSfx.playbackRate = 2.0;
             setSideScrollBattleTransition({ enemyIndex, enemyId });
           };
-          const sharedComplete = () => { fadeOutMusic(700); setSideScrollCompleteTransition(true); };
-          const sharedExit = () => { fadeOutMusic(700); setSideScrollExitTransition(true); };
+          const sharedComplete = () => { if (regionTheme !== "Wind") fadeOutMusic(700); setSideScrollCompleteTransition(true); };
+          const sharedExit = () => { if (regionTheme !== "Wind") fadeOutMusic(700); setSideScrollExitTransition(true); };
           return (
             <>
               {sideScrollCtx.isClimbing ? (
@@ -351,12 +356,19 @@ function Game() {
                     setPostBattleReveal(false);
                     if (ssPlayer) {
                       if (sideScrollCtx) {
-                        playMusic("lava_region_battle");
+                        if (regionTheme === "Wind") {
+                          playMusic("forest_region");
+                        } else {
+                          playMusic("lava_region_battle");
+                        }
                       } else {
                         const region = getRegionForTier(ssPlayer.currentRegion, getRegionTier(ssPlayer.currentRegion, ssPlayer.regionBossDefeats || {}));
                         if (region.theme === "Fire") {
                           playAmbient("lava_region");
                           playMusic("lava_region_music");
+                        } else if (region.theme === "Wind") {
+                          stopAmbient();
+                          playMusic("forest_region");
                         } else {
                           stopAmbient();
                           stopMusic();
@@ -385,6 +397,9 @@ function Game() {
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
                       playMusic("lava_region_music");
+                    } else if (region.theme === "Wind") {
+                      stopAmbient();
+                      playMusic("forest_region");
                     } else {
                       stopAmbient();
                       stopMusic();
@@ -404,6 +419,9 @@ function Game() {
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
                       playMusic("lava_region_music");
+                    } else if (region.theme === "Wind") {
+                      stopAmbient();
+                      playMusic("forest_region");
                     } else {
                       stopAmbient();
                       stopMusic();
@@ -495,7 +513,12 @@ function Game() {
                   setSideScrollEnterPending(null);
                   setSideScrollCtx(pending);
                   setSideScrollEnterReveal(true);
-                  playMusic("lava_region_battle");
+                  const enterRegion = state.player ? getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {})) : null;
+                  if (enterRegion?.theme === "Wind") {
+                    playMusic("forest_region");
+                  } else {
+                    playMusic("lava_region_battle");
+                  }
                 }}
               />
             )}
@@ -528,6 +551,9 @@ function Game() {
                     if (region.theme === "Fire") {
                       playAmbient("lava_region");
                       playMusic("lava_region_music");
+                    } else if (region.theme === "Wind") {
+                      stopAmbient();
+                      playMusic("forest_region");
                     } else {
                       stopAmbient();
                       stopMusic();
