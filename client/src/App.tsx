@@ -374,7 +374,26 @@ function Game() {
                     const { enemyId } = sideScrollBattleTransition;
                     setSideScrollBattleTransition(null);
                     setBattleEntryReveal(true);
-                    startBattleCustom([enemyId]);
+                    let battleEnemies: string[];
+                    const roll = Math.random();
+                    if (enemyId === "harpy_wind") {
+                      // 50% single, 35% two, 15% three harpies
+                      if (roll < 0.15)      battleEnemies = ["harpy_wind", "harpy_wind", "harpy_wind"];
+                      else if (roll < 0.50) battleEnemies = ["harpy_wind", "harpy_wind"];
+                      else                  battleEnemies = ["harpy_wind"];
+                    } else if (enemyId === "minotaur_wind") {
+                      // 60% minotaur + harpy, 25% solo minotaur, 15% two minotaurs
+                      if (roll < 0.15)      battleEnemies = ["minotaur_wind", "minotaur_wind"];
+                      else if (roll < 0.40) battleEnemies = ["minotaur_wind"];
+                      else                  battleEnemies = ["minotaur_wind", "harpy_wind"];
+                    } else if (enemyId === "cyclops_wind") {
+                      // 75% solo cyclops, 25% cyclops + harpy
+                      if (roll < 0.25) battleEnemies = ["cyclops_wind", "harpy_wind"];
+                      else             battleEnemies = ["cyclops_wind"];
+                    } else {
+                      battleEnemies = [enemyId];
+                    }
+                    startBattleCustom(battleEnemies);
                   }}
                 />
               )}
