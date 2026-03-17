@@ -4899,7 +4899,7 @@ export default function BattleScreen({
               <div className="flex-1 h-px" style={{ background: "linear-gradient(90deg, transparent, #c9a44a40, transparent)" }} />
             </div>
 
-            <div className="px-3 py-2">
+            <div className="px-3 py-2 overflow-y-auto" style={{ height: "96px" }}>
 
           
 
