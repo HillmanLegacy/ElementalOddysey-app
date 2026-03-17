@@ -740,8 +740,11 @@ export function calculateDamage(
   return { damage, isCrit, elementLabel };
 }
 
-export function checkDodge(defender: PlayerStats, perks?: string[]): boolean {
-  let dodgeChance = Math.min(0.25, defender.agi * 0.015);
+export function checkDodge(defender: PlayerStats, attacker: PlayerStats | null, perks?: string[]): boolean {
+  const BASE_DODGE = 0.05;
+  const agiDiff = Math.max(0, (defender.agi ?? 10) - (attacker?.agi ?? 10));
+  const agiBonus = Math.min(0.05, agiDiff * 0.001);
+  let dodgeChance = BASE_DODGE + agiBonus;
   if (perks) {
     for (const perkId of perks) {
       const perk = PERKS.find(p => p.id === perkId);
@@ -750,7 +753,7 @@ export function checkDodge(defender: PlayerStats, perks?: string[]): boolean {
       }
     }
   }
-  return Math.random() < dodgeChance;
+  return Math.random() < Math.min(0.20, dodgeChance);
 }
 
 export function buildTurnQueue(
