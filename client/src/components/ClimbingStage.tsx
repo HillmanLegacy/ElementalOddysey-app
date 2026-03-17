@@ -184,8 +184,9 @@ interface ClimbingStageProps {
   toNodeId: number;
   defeatedEnemyIndices: number[];
   fleeEnemyIndex?: number | null;
+  savedPlayerY?: number;
   regionTheme?: string;
-  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number) => void;
+  onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number) => void;
   onComplete: () => void;
   onExit: () => void;
 }
@@ -216,6 +217,7 @@ export default function ClimbingStage({
   toNodeId,
   defeatedEnemyIndices,
   fleeEnemyIndex = null,
+  savedPlayerY,
   regionTheme = "Fire",
   onEnemyContact,
   onComplete,
@@ -256,7 +258,7 @@ export default function ClimbingStage({
   const startY = groundPlat.y - playerH + charGroundOffset;
   const startX = VIEWPORT_W_DEFAULT / 2 - playerW / 2;
 
-  const physRef = useRef({ x: startX, y: startY, vx: 0, vy: 0, onGround: true, coyoteTimer: 0, jumpBufferTimer: 0 });
+  const physRef = useRef({ x: startX, y: savedPlayerY ?? startY, vx: 0, vy: 0, onGround: savedPlayerY === undefined, coyoteTimer: 0, jumpBufferTimer: 0 });
   const keysRef = useRef({ left: false, right: false, jumpPressed: false, jumpHeld: false });
   const facingRightRef = useRef(true);
   const stageCompleteRef = useRef(false);
@@ -296,10 +298,11 @@ export default function ClimbingStage({
   const lastHandledFleeRef = useRef<number | null>(null);
   const lastHandledVictoryCountRef = useRef(defeatedEnemyIndices.length);
 
-  const initCamY = Math.max(0, Math.min(startY - VIEWPORT_H * 0.5, CLIMB_H - VIEWPORT_H));
+  const initPlayerY = savedPlayerY ?? startY;
+  const initCamY = Math.max(0, Math.min(initPlayerY - VIEWPORT_H * 0.5, CLIMB_H - VIEWPORT_H));
 
   const [renderX, setRenderX] = useState(startX);
-  const [renderY, setRenderY] = useState(startY);
+  const [renderY, setRenderY] = useState(initPlayerY);
   const [cameraY, setCameraY] = useState(initCamY);
   const cameraYRef = useRef(initCamY);
   const [isRunning, setIsRunning] = useState(false);
@@ -614,7 +617,7 @@ export default function ClimbingStage({
           battlePendingRef.current = true;
           setBattleFreezing(true);
           cancelAnimationFrame(rafRef.current);
-          onEnemyContactRef.current(idx, enemy.enemyId, p.x, enemy.colorVariant);
+          onEnemyContactRef.current(idx, enemy.enemyId, p.x, enemy.colorVariant, p.y);
           hit = true;
         }
       });

@@ -161,6 +161,7 @@ function Game() {
     toNodeName: string;
     defeatedEnemyIndices: number[];
     savedPlayerX: number;
+    savedPlayerY?: number;
     reversed: boolean;
     isClimbing: boolean;
     fleeEnemyIndex: number | null;
@@ -180,6 +181,7 @@ function Game() {
     toNodeName: string;
     defeatedEnemyIndices: number[];
     savedPlayerX: number;
+    savedPlayerY?: number;
     reversed: boolean;
     isClimbing: boolean;
     fleeEnemyIndex: number | null;
@@ -271,12 +273,12 @@ function Game() {
         if (sideScrollCtx) {
           const ssPlayer = state.player;
           const regionTheme = (() => { const r = getRegionForTier(state.player!.currentRegion, getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {})); return r.theme; })();
-          const sharedEnemyContact = (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number) => {
+          const sharedEnemyContact = (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number) => {
             if (sideScrollBattleActiveRef.current) return;
             lastContactedEnemyIdxRef.current = enemyIndex;
             lastContactedEnemyColorVariantRef.current = colorVariant;
             sideScrollBattleActiveRef.current = true;
-            setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX } : null);
+            setSideScrollCtx(ctx => ctx ? { ...ctx, savedPlayerX: playerX, savedPlayerY: playerY } : null);
             setTransitionElementColor("#ef4444");
             fadeOutMusic(600);
             const trSfx = playSfx('battleTransition');
@@ -294,6 +296,7 @@ function Game() {
                   toNodeId={sideScrollCtx.toNodeId}
                   defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
                   fleeEnemyIndex={sideScrollCtx.fleeEnemyIndex}
+                  savedPlayerY={sideScrollCtx.savedPlayerY}
                   regionTheme={regionTheme}
                   onEnemyContact={sharedEnemyContact}
                   onComplete={sharedComplete}
