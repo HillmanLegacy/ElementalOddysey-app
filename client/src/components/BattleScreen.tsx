@@ -281,7 +281,7 @@ interface BattleScreenProps {
   onPartyMemberUseItem: (partyIndex: number, itemId: string) => void;
   onAdvancePartyTurn: () => void;
   onFinishPartyTurn: () => void;
-  onEnemyAttack: (enemyIndex: number, preSelectedTarget?: { type: "player" | "party"; index: number }) => { dodged: boolean; target: { type: "player" | "party"; index: number } };
+  onEnemyAttack: (enemyIndex: number, preSelectedTarget?: { type: "player" | "party"; index: number }, forceMagic?: boolean) => { dodged: boolean; target: { type: "player" | "party"; index: number } };
   onEnemyTurnEnd: () => void;
   onEndBattle: (victory: boolean) => void;
   onSetAnimating: () => void;
@@ -2450,7 +2450,7 @@ export default function BattleScreen({
         playSfx("stabWhoosh", 0.8);
 
         scheduleTimer(() => {
-          const result = onEnemyAttack(enemyIdx, preTarget);
+          const result = onEnemyAttack(enemyIdx, preTarget, true);
           if (!result.dodged) {
             setShakeScreen(true);
             if (result.target.type === "party") {
@@ -2497,7 +2497,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           playSfx("stabWhoosh", 0.9);
-          const result = onEnemyAttack(enemyIdx, preTarget);
+          const result = onEnemyAttack(enemyIdx, preTarget, false);
           if (!result.dodged) {
             setShakeScreen(true);
             if (result.target.type === "party") {

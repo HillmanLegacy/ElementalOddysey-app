@@ -222,7 +222,7 @@ export const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "shade", name: "Dark Shade", element: "Shadow", level: 2, xpReward: 25, goldReward: 11, isBoss: false, sprite: "ghost" },
   { id: "spark_bug", name: "Spark Bug", element: "Lightning", level: 1, xpReward: 18, goldReward: 8, isBoss: false, sprite: "zap" },
   { id: "frost_lizard", name: "Frost Lizard", element: "Ice", level: 1, xpReward: 19, goldReward: 8, isBoss: false, sprite: "snowflake" },
-  { id: "resk", name: "Resk The Forest Dragon", element: "Wind", level: 3, xpReward: 100, goldReward: 40, isBoss: true, sprite: "wind" },
+  { id: "resk", name: "Resk The Forest Dragon", element: "Wind", level: 5, xpReward: 100, goldReward: 40, isBoss: true, sprite: "wind" },
   { id: "dragon_lord", name: "Crown Of Cinder - Ytriel", element: "Fire", level: 4, xpReward: 120, goldReward: 50, isBoss: true, sprite: "flame" },
   { id: "jotem", name: "Jotem", element: "Ice", level: 4, xpReward: 120, goldReward: 50, isBoss: true, sprite: "snowflake" },
   { id: "kraken", name: "Deep Kraken", element: "Water", level: 5, xpReward: 150, goldReward: 60, isBoss: true, sprite: "droplets" },
@@ -241,6 +241,12 @@ const ENEMY_STAT_PROFILES: Record<string, { hp: number; atk: number; def: number
   harpy_wind:    { hp: 0.70, atk: 0.70, def: 0.55, agi: 1.70, int: 1.00 },
 };
 
+// Per-boss stat multipliers applied on top of the generic boss formula.
+const BOSS_STAT_PROFILES: Record<string, { hp: number; atk: number; def: number; agi: number; int: number }> = {
+  // Resk — very high ATK/HP, high DEF, moderate AGI/INT; rivals lv8 player while at lv5
+  resk: { hp: 1.45, atk: 1.25, def: 1.55, agi: 1.10, int: 0.73 },
+};
+
 export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: number, levelBonus: number = 0): Enemy {
   const pickedLevel = base.levelRange
     ? base.levelRange[0] + Math.floor(Math.random() * (base.levelRange[1] - base.levelRange[0] + 1))
@@ -249,17 +255,18 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   const vary = base.isBoss ? () => 1.0 : () => 0.9 + Math.random() * 0.2;
 
   if (base.isBoss) {
-    const hp = Math.floor((50 + lv * 25) * vary());
+    const bp = BOSS_STAT_PROFILES[base.id] ?? { hp: 1, atk: 1, def: 1, agi: 1, int: 1 };
+    const hp = Math.floor((50 + lv * 25) * bp.hp * vary());
     return {
       ...base,
       level: Math.floor(lv),
       stats: {
         hp,
         maxHp: hp,
-        atk: Math.floor((8 + lv * 3) * vary()),
-        def: Math.floor((5 + lv * 2) * vary()),
-        agi: Math.floor((4 + lv * 1.5) * vary()),
-        int: Math.floor((7 + lv * 2.5) * vary()),
+        atk: Math.floor((8 + lv * 3) * bp.atk * vary()),
+        def: Math.floor((5 + lv * 2) * bp.def * vary()),
+        agi: Math.floor((4 + lv * 1.5) * bp.agi * vary()),
+        int: Math.floor((7 + lv * 2.5) * bp.int * vary()),
         luck: Math.floor((3 + lv) * vary()),
         mp: Math.floor((30 + lv * 10) * vary()),
         maxMp: Math.floor((30 + lv * 10) * vary()),

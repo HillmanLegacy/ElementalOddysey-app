@@ -669,7 +669,7 @@ export function useGameState() {
   const lastEnemyDodgedRef = useRef(false);
   const lastEnemyTargetRef = useRef<{ type: "player" | "party"; index: number }>({ type: "player", index: -1 });
 
-  const enemyAttack = useCallback((enemyIndex: number, preSelectedTarget?: { type: "player" | "party"; index: number }) => {
+  const enemyAttack = useCallback((enemyIndex: number, preSelectedTarget?: { type: "player" | "party"; index: number }, forceMagic?: boolean) => {
     lastEnemyDodgedRef.current = false;
     lastEnemyTargetRef.current = { type: "player", index: -1 };
     setState(s => {
@@ -714,7 +714,7 @@ export function useGameState() {
           battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
           lastEnemyDodgedRef.current = true;
         } else {
-          const enemyUseMagic = enemy.stats.int > enemy.stats.atk;
+          const enemyUseMagic = forceMagic !== undefined ? forceMagic : enemy.stats.int > enemy.stats.atk;
           const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
           let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
           actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
@@ -735,7 +735,7 @@ export function useGameState() {
             battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
-            const enemyUseMagic = enemy.stats.int > enemy.stats.atk;
+            const enemyUseMagic = forceMagic !== undefined ? forceMagic : enemy.stats.int > enemy.stats.atk;
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
             let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
@@ -751,7 +751,7 @@ export function useGameState() {
             battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
-            const enemyUseMagic = enemy.stats.int > enemy.stats.atk;
+            const enemyUseMagic = forceMagic !== undefined ? forceMagic : enemy.stats.int > enemy.stats.atk;
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedPartyStats, enemyUseMagic, enemy.element, partyTarget.element);
             let actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, partyTarget.perks || []);
