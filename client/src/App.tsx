@@ -275,6 +275,8 @@ function Game() {
             {menuFadeOut && (
               <BattleTransition
                 direction="in"
+                sfx="battleTransition"
+                sfxPlaybackRate={2.0}
                 onComplete={() => {
                   const save = menuFadeOut.save;
                   setMenuFadeOut(null);
@@ -534,6 +536,8 @@ function Game() {
               <BattleTransition
                 direction="in"
                 elementColor="#c9a44a"
+                sfx="battleTransition"
+                sfxPlaybackRate={2.0}
                 onComplete={() => {
                   const pending = sideScrollEnterPending;
                   setSideScrollEnterPending(null);
