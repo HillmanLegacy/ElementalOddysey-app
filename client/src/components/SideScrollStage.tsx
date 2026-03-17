@@ -537,12 +537,12 @@ export default function SideScrollStage({
     canvas.width = viewportWRef.current;
     canvas.height = VIEWPORT_H;
     const leafRng = rand(77);
+    const vwInit = viewportWRef.current;
+    // Screen-space leaves: always uniformly distributed across the visible screen
+    // regardless of where in the stage the player is
     const leaves: LeafParticle[] = Array.from({ length: 38 }, () => {
-      const vw = viewportWRef.current;
-      const l = spawnLeaf(leafRng, vw);
-      // world-space x: spread across the entire stage so leaves look
-      // like they've already been drifting throughout, not just started
-      l.x = leafRng() * STAGE_WIDTH;
+      const l = spawnLeaf(leafRng, vwInit);
+      l.x = leafRng() * vwInit;
       l.y = 20 + leafRng() * (GROUND_Y - 80);
       return l;
     });
@@ -574,27 +574,22 @@ export default function SideScrollStage({
         ctx.stroke();
       }
 
-      // Leaf particles — x is world-space so camera movement doesn't carry them
+      // Leaf particles — screen-space so density stays constant wherever the player is
       for (const lf of leaves) {
         lf.x += lf.vx + Math.sin(t * 0.4 + lf.rot) * 0.25;
         lf.y += lf.vy + Math.sin(t * 0.3 + lf.rot * 1.3) * 0.18;
         lf.rot += lf.rotSpd;
-        const screenX = lf.x - camX;
-        if (screenX > vw + 20) {
-          // drifted off the right — re-enter from the left edge
+        if (lf.x > vw + 20) {
           Object.assign(lf, spawnLeaf(leafRng, vw));
-          lf.x = camX - 10;
-        } else if (screenX < -20) {
-          // camera moved right past this leaf — re-enter just ahead of the player
-          Object.assign(lf, spawnLeaf(leafRng, vw));
-          lf.x = camX + vw + 10;
+          lf.x = -10;
+          lf.y = 20 + leafRng() * (GROUND_Y - 80);
         }
         if (lf.y > GROUND_Y - 8 || lf.y < -20) {
           lf.y = 20 + leafRng() * (GROUND_Y - 80);
-          lf.x = camX + leafRng() * vw;
+          lf.x = leafRng() * vw;
         }
         ctx.save();
-        ctx.translate(screenX, lf.y);
+        ctx.translate(lf.x, lf.y);
         ctx.rotate(lf.rot);
         ctx.globalAlpha = lf.alpha;
         ctx.fillStyle = lf.color;
