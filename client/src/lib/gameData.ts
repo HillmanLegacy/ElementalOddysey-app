@@ -257,14 +257,18 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   if (base.isBoss) {
     const bp = BOSS_STAT_PROFILES[base.id] ?? { hp: 1, atk: 1, def: 1, agi: 1, int: 1 };
     const hp = Math.floor((50 + lv * 25) * bp.hp * vary());
+    const atk = Math.floor((8 + lv * 3) * bp.atk * vary());
+    const def = Math.floor((5 + lv * 2) * bp.def * vary());
+    const xpReward = Math.floor(50 + lv * 12 + atk * 0.8 + def * 0.6 + hp * 0.15);
     return {
       ...base,
       level: Math.floor(lv),
+      xpReward,
       stats: {
         hp,
         maxHp: hp,
-        atk: Math.floor((8 + lv * 3) * bp.atk * vary()),
-        def: Math.floor((5 + lv * 2) * bp.def * vary()),
+        atk,
+        def,
         agi: Math.floor((4 + lv * 1.5) * bp.agi * vary()),
         int: Math.floor((7 + lv * 2.5) * bp.int * vary()),
         luck: Math.floor((3 + lv) * vary()),
@@ -278,14 +282,18 @@ export function generateEnemyStats(base: Omit<Enemy, "stats">, scaleFactor: numb
   const p = profile ?? { hp: 1, atk: 1, def: 1, agi: 1, int: 1 };
 
   const hp = Math.floor((18 + lv * 10) * p.hp * vary());
+  const atk = Math.floor((5 + lv * 2.5) * p.atk * vary());
+  const def = Math.floor((3 + lv * 1.5) * p.def * vary());
+  const xpReward = Math.floor(10 + lv * 5 + atk * 0.5 + def * 0.4 + hp * 0.1);
   return {
     ...base,
     level: Math.floor(lv),
+    xpReward,
     stats: {
       hp,
       maxHp: hp,
-      atk: Math.floor((5 + lv * 2.5) * p.atk * vary()),
-      def: Math.floor((3 + lv * 1.5) * p.def * vary()),
+      atk,
+      def,
       agi: Math.floor((4 + lv * 1.5) * p.agi * vary()),
       int: Math.floor((4 + lv * 2) * p.int * vary()),
       luck: Math.floor((2 + lv) * vary()),
@@ -300,17 +308,20 @@ export function generateDemonKinSpawn(refLevel: number): Enemy & { currentHp: nu
   const lv = Math.max(refLevel + 2, 7);
   const vary = () => 0.9 + Math.random() * 0.2;
   const hp = Math.floor((30 + lv * 14) * vary());
+  const atk = Math.floor((10 + lv * 3.5) * vary());
+  const def = Math.floor((5 + lv * 2) * vary());
+  const xpReward = Math.floor(10 + lv * 5 + atk * 0.5 + def * 0.4 + hp * 0.1);
   return {
     ...base,
     level: lv,
-    xpReward: Math.floor(base.xpReward * 2.5),
+    xpReward,
     goldReward: Math.floor(base.goldReward * 2.5),
     currentHp: hp,
     stats: {
       hp,
       maxHp: hp,
-      atk: Math.floor((10 + lv * 3.5) * vary()),
-      def: Math.floor((5 + lv * 2) * vary()),
+      atk,
+      def,
       agi: Math.floor((10 + lv * 3) * vary()),
       int: Math.floor((5 + lv * 2) * vary()),
       luck: Math.floor((5 + lv * 1.5) * vary()),
