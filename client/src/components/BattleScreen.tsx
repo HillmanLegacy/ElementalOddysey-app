@@ -639,6 +639,7 @@ export default function BattleScreen({
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
   const pendingEruptionCleave = useRef<{ targetIdx: number; spell: Spell } | null>(null);
+  const pendingPartySpellRef = useRef<{ spell: Spell; targetIdx: number; pIdx: number } | null>(null);
   const [thunderBoltActive, setThunderBoltActive] = useState(false);
   const [thunderBoltFrame, setThunderBoltFrame] = useState(0);
   const [thunderFrozenEnemy, setThunderFrozenEnemy] = useState<number | null>(null);
@@ -2706,12 +2707,58 @@ export default function BattleScreen({
       const target = battle.enemies[idx];
       if (!target || target.currentHp <= 0) return;
       const pIdx = battle.activePartyIndex;
-      setMagicZoom(true);
-      setMagicZoomTarget(idx);
-      onPartyMemberCastSpell(pIdx, partySelectedSpell, idx);
-      playSfx("magicRing");
+      const spell = partySelectedSpell;
+      const anim = spell.animation;
       setPartySelectedSpell(null);
       setPartyAction("menu");
+
+      if (anim === "thunderBolt" || anim === "thunder") {
+        setMagicZoom(true);
+        setMagicZoomTarget(idx);
+        playSfx("magicRing", 0.6);
+        setThunderBoltActive(true);
+        setThunderFrozenEnemy(idx);
+        setThunderBoltFrame(0);
+        const frameDuration = 80;
+        const totalFrames = LIGHTNING_VFX_SEQUENCE.length;
+        for (let i = 0; i < totalFrames; i++) {
+          scheduleTimer(() => setThunderBoltFrame(i), i * frameDuration);
+        }
+        const damageTime = 10 * frameDuration;
+        scheduleTimer(() => {
+          onPartyMemberCastSpell(pIdx, spell, idx);
+          setShakeScreen(true);
+          scheduleTimer(() => setShakeScreen(false), 300);
+          setEnemyHitIdx(idx);
+          scheduleTimer(() => setEnemyHitIdx(null), 180);
+          setEnemyAnimStates(prev => ({ ...prev, [idx]: "hurt" }));
+          scheduleTimer(() => {
+            setEnemyAnimStates(prev => prev[idx] === "death" ? prev : { ...prev, [idx]: ytrielRestAnim(idx) });
+          }, 333);
+        }, damageTime);
+        scheduleTimer(() => {
+          setThunderBoltActive(false);
+          setThunderBoltFrame(0);
+          setThunderFrozenEnemy(null);
+          setMagicZoom(false);
+          setMagicZoomTarget(null);
+          if (battle.enemies.every(e => e.currentHp <= 0)) return;
+          onAdvancePartyTurn();
+        }, totalFrames * frameDuration + 200);
+        return;
+      }
+
+      if (anim === "fujinSlice" || anim === "windBlade" || anim === "incinerationSlash" || anim === "eruptionCleave") {
+        pendingPartySpellRef.current = { spell, targetIdx: idx, pIdx };
+        setPartyTargetIdx(idx);
+        setPartyAnimPhase("runToEnemy");
+        return;
+      }
+
+      setMagicZoom(true);
+      setMagicZoomTarget(idx);
+      onPartyMemberCastSpell(pIdx, spell, idx);
+      playSfx("magicRing");
       setTimeout(() => {
         setMagicZoom(false);
         setMagicZoomTarget(null);
@@ -3191,27 +3238,228 @@ export default function BattleScreen({
                   if (e.propertyName !== "left") return;
                   if (!isActiveParty) return;
                   if (partyAnimPhase === "runToEnemy") {
-                    setPartyAnimPhase("attacking");
                     const attackingMember = battle.party[battle.activePartyIndex];
-                    playSfx(attackingMember?.element === "Wind" ? "mifuneSlice" : "swordSwing");
+                    const memberElement = attackingMember?.element;
+
+                    const doRunBack = (delay = 400) => {
+                      scheduleTimer(() => {
+                        partyRunBackHandled.current = false;
+                        setPartyAnimPhase("runBack");
+                        scheduleTimer(() => {
+                          if (!partyRunBackHandled.current) {
+                            partyRunBackHandled.current = true;
+                            setPartyAnimPhase("idle");
+                            setPartyTargetIdx(null);
+                            scheduleTimer(() => {
+                              if (battle.enemies.every(e => e.currentHp <= 0)) return;
+                              onAdvancePartyTurn();
+                            }, 600);
+                          }
+                        }, 500);
+                      }, delay);
+                    };
+
+                    const pendingSpell = pendingPartySpellRef.current;
+                    if (pendingSpell) {
+                      pendingPartySpellRef.current = null;
+                      setPartyAnimPhase("attacking");
+                      const { spell, targetIdx: spellTarget, pIdx } = pendingSpell;
+                      const anim = spell.animation;
+
+                      if (anim === "fujinSlice" || anim === "windBlade") {
+                        playSfx("mifuneSlice");
+                        playSfx("gruntAttack", 0.7);
+                        const slashCount = 7;
+                        const slashes = Array.from({ length: slashCount }, (_, i) => ({
+                          id: i, rotation: Math.random() * 360,
+                          offsetX: (Math.random() - 0.5) * 40,
+                          offsetY: (Math.random() - 0.5) * 40,
+                          scale: 0.8 + Math.random() * 0.5, active: false,
+                        }));
+                        setWindBladeFrozenEnemy(spellTarget);
+                        setWindBladeSlashes(slashes);
+                        setWindBladeActive(true);
+                        for (let i = 0; i < slashCount; i++) {
+                          scheduleTimer(() => {
+                            setWindBladeSlashes(prev => prev.map((s, si) => si === i ? { ...s, active: true } : s));
+                            playSfxPitched("windSlash", 0.7, 1.4, 0.7 + Math.random() * 0.3);
+                            setEnemyHitIdx(spellTarget);
+                            scheduleTimer(() => setEnemyHitIdx(null), 100);
+                          }, i * 120);
+                        }
+                        scheduleTimer(() => {
+                          onPartyMemberCastSpell(pIdx, spell, spellTarget);
+                          playSfx("magicRing", 0.4);
+                        }, 400);
+                        scheduleTimer(() => {
+                          setWindBladeSlashes([]);
+                          setWindBladeActive(false);
+                          setWindBladeFrozenEnemy(null);
+                          doRunBack(0);
+                        }, 1200);
+                        return;
+                      }
+
+                      if (anim === "incinerationSlash") {
+                        setIncinerationFrozenEnemy(spellTarget);
+                        const fd = 1000 / 14;
+                        const hold = 333;
+                        scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
+                        scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd * 4 + hold);
+                        [fd * 2, fd * 5 + hold].forEach(t => {
+                          scheduleTimer(() => {
+                            const id = ++fireImpactId.current;
+                            setFireImpactVfx(prev => [...prev, { targetIdx: spellTarget, id }]);
+                            playSfx("incinerationCleave", 1.2);
+                            setShakeScreen(true);
+                            scheduleTimer(() => setShakeScreen(false), 300);
+                            setEnemyHitIdx(spellTarget);
+                            scheduleTimer(() => setEnemyHitIdx(null), 180);
+                          }, t);
+                        });
+                        const totalAnim = fd * 7 + hold * 2;
+                        scheduleTimer(() => {
+                          onPartyMemberCastSpell(pIdx, spell, spellTarget);
+                          playSfx("magicRing", 0.4);
+                        }, totalAnim + 200);
+                        scheduleTimer(() => {
+                          setFireImpactVfx([]);
+                          setIncinerationFrozenEnemy(null);
+                          doRunBack(0);
+                        }, totalAnim + 600);
+                        return;
+                      }
+
+                      if (anim === "eruptionCleave") {
+                        setEruptionFrozenEnemy(spellTarget);
+                        playSfx("gruntAttack", 0.7);
+                        const fd = 1000 / 14;
+                        const flamelashDur = Math.ceil(61 / 38 * 1000);
+                        const flamelashStart = fd + 200;
+                        const resumeAfter = flamelashStart + flamelashDur;
+                        const nukeStart = resumeAfter + fd * 3;
+                        const totalAnim = nukeStart + 11 * (1000 / 18) + 400;
+                        scheduleTimer(() => {
+                          setEruptionFlamelashActive(true);
+                          eruptionFlamelashAudio.current = playSfx("eruptionFlamelash", 0.8);
+                          eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0.8);
+                          setEruptionShakeIntensity(1);
+                        }, flamelashStart);
+                        const shakeSteps = 8;
+                        for (let i = 1; i <= shakeSteps; i++) {
+                          scheduleTimer(() => setEruptionShakeIntensity(Math.min(i + 1, shakeSteps)), flamelashStart + (flamelashDur / shakeSteps) * i);
+                        }
+                        scheduleTimer(() => {
+                          setEruptionFlamelashActive(false);
+                          setEruptionShakeIntensity(0);
+                          playSfx("eruptionDownwardSlash", 0.9);
+                        }, resumeAfter);
+                        scheduleTimer(() => {
+                          stopSfx(eruptionFirechargeAudio.current);
+                          eruptionFirechargeAudio.current = null;
+                          stopSfx(eruptionFlamelashAudio.current);
+                          eruptionFlamelashAudio.current = null;
+                          setEruptionNukeActive(true);
+                          setEruptionNukeTargetIdx(spellTarget);
+                          playSfx("eruptionCleave", 1.3);
+                          setShakeScreen(true);
+                          scheduleTimer(() => setShakeScreen(false), 500);
+                          setEnemyHitIdx(spellTarget);
+                          scheduleTimer(() => setEnemyHitIdx(null), 300);
+                          setEnemyAnimStates(prev => ({ ...prev, [spellTarget]: "hurt" }));
+                          scheduleTimer(() => {
+                            setEnemyAnimStates(prev => prev[spellTarget] === "death" ? prev : { ...prev, [spellTarget]: ytrielRestAnim(spellTarget) });
+                          }, 500);
+                        }, nukeStart);
+                        scheduleTimer(() => {
+                          onPartyMemberCastSpell(pIdx, spell, spellTarget);
+                          playSfx("magicRing", 0.4);
+                        }, nukeStart + 200);
+                        scheduleTimer(() => {
+                          setEruptionNukeActive(false);
+                          setEruptionNukeTargetIdx(null);
+                          setEruptionFrozenEnemy(null);
+                          doRunBack(0);
+                        }, totalAnim);
+                        return;
+                      }
+
+                      playSfx("magicRing", 0.6);
+                      onPartyMemberCastSpell(pIdx, spell, spellTarget);
+                      doRunBack(400);
+                      return;
+                    }
+
+                    setPartyAnimPhase("attacking");
+                    if (memberElement === "Wind") {
+                      playSfx("mifuneSlice");
+                      playSfx("gruntAttack", 0.7);
+                      if (partyTargetIdx !== null) {
+                        const tidx = partyTargetIdx;
+                        const slashCount = 7;
+                        const slashes = Array.from({ length: slashCount }, (_, i) => ({
+                          id: i, rotation: Math.random() * 360,
+                          offsetX: (Math.random() - 0.5) * 40,
+                          offsetY: (Math.random() - 0.5) * 40,
+                          scale: 0.8 + Math.random() * 0.5, active: false,
+                        }));
+                        setWindBladeFrozenEnemy(tidx);
+                        setWindBladeSlashes(slashes);
+                        setWindBladeActive(true);
+                        for (let i = 0; i < slashCount; i++) {
+                          scheduleTimer(() => {
+                            setWindBladeSlashes(prev => prev.map((s, si) => si === i ? { ...s, active: true } : s));
+                            playSfxPitched("windSlash", 0.7, 1.4, 0.7 + Math.random() * 0.3);
+                            setEnemyHitIdx(tidx);
+                            scheduleTimer(() => setEnemyHitIdx(null), 100);
+                          }, i * 120);
+                        }
+                        scheduleTimer(() => onPartyMemberAttack(battle.activePartyIndex, tidx), 300);
+                        scheduleTimer(() => {
+                          setWindBladeSlashes([]);
+                          setWindBladeActive(false);
+                          setWindBladeFrozenEnemy(null);
+                          doRunBack(0);
+                        }, 1200);
+                      }
+                      return;
+                    }
+
+                    if (memberElement === "Fire") {
+                      if (partyTargetIdx !== null) {
+                        const tidx = partyTargetIdx;
+                        setIncinerationFrozenEnemy(tidx);
+                        const fd = 1000 / 14;
+                        const hold = 333;
+                        scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
+                        scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd * 4 + hold);
+                        [fd * 2, fd * 5 + hold].forEach(t => {
+                          scheduleTimer(() => {
+                            const id = ++fireImpactId.current;
+                            setFireImpactVfx(prev => [...prev, { targetIdx: tidx, id }]);
+                            playSfx("incinerationCleave", 1.2);
+                            setShakeScreen(true);
+                            scheduleTimer(() => setShakeScreen(false), 300);
+                            setEnemyHitIdx(tidx);
+                            scheduleTimer(() => setEnemyHitIdx(null), 180);
+                          }, t);
+                        });
+                        const totalAnim = fd * 7 + hold * 2;
+                        scheduleTimer(() => onPartyMemberAttack(battle.activePartyIndex, tidx), fd * 2);
+                        scheduleTimer(() => {
+                          setFireImpactVfx([]);
+                          setIncinerationFrozenEnemy(null);
+                          doRunBack(0);
+                        }, totalAnim + 200);
+                      }
+                      return;
+                    }
+
+                    playSfx("swordSwing");
                     if (partyTargetIdx !== null) {
                       onPartyMemberAttack(battle.activePartyIndex, partyTargetIdx);
                     }
-                    scheduleTimer(() => {
-                      partyRunBackHandled.current = false;
-                      setPartyAnimPhase("runBack");
-                      scheduleTimer(() => {
-                        if (!partyRunBackHandled.current) {
-                          partyRunBackHandled.current = true;
-                          setPartyAnimPhase("idle");
-                          setPartyTargetIdx(null);
-                          scheduleTimer(() => {
-                            if (battle.enemies.every(e => e.currentHp <= 0)) return;
-                            onAdvancePartyTurn();
-                          }, 600);
-                        }
-                      }, 500);
-                    }, 400);
+                    doRunBack(400);
                   } else if (partyAnimPhase === "runBack" && !partyRunBackHandled.current) {
                     partyRunBackHandled.current = true;
                     setPartyAnimPhase("idle");
@@ -4817,7 +5065,7 @@ export default function BattleScreen({
                 <p className="text-center mb-1.5" style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "9px", color: ELEMENT_COLORS[activeMember.element] }}>
                   {activeMember.name}'s Turn
                 </p>
-                {partyAction === "menu" && (
+                {partyAction === "menu" && partyAnimPhase === "idle" && (
                   <div className="grid grid-cols-4 gap-2 mb-1">
                     {[
                       { key: "attack", label: "ATK", icon: <Swords className="w-5 h-5" />, color: "#ef4444", onClick: () => { playSfx('menuSelect'); setPartyAction("selectTarget"); } },
@@ -4875,9 +5123,22 @@ export default function BattleScreen({
                                   setPartySelectedSpell(spell);
                                   setPartyAction("selectMagicTarget");
                                 } else if (spell.targetType === "allEnemies") {
+                                  playSfx("magicRing", 0.6);
+                                  if (spell.animation === "galeSlash") {
+                                    const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
+                                    setWindSpellVfx({ type: "galeSlash", targets: aliveTargets });
+                                    playSfx("whoosh");
+                                    scheduleTimer(() => setWindSpellVfx(null), 800);
+                                  } else if (spell.animation === "tempest") {
+                                    const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
+                                    setWindSpellVfx({ type: "tempest", targets: aliveTargets });
+                                    setTempestVortexActive(true);
+                                    playSfx("whoosh");
+                                    scheduleTimer(() => { setWindSpellVfx(null); setTempestVortexActive(false); }, 2000);
+                                  }
                                   onPartyMemberCastSpell(battle.activePartyIndex, spell);
-                                  playSfx("magicRing");
-                                  setTimeout(() => onAdvancePartyTurn(), 600);
+                                  const delay = spell.animation === "tempest" ? 2200 : 800;
+                                  setTimeout(() => onAdvancePartyTurn(), delay);
                                   setPartyAction("menu");
                                 } else {
                                   onPartyMemberCastSpell(battle.activePartyIndex, spell);
