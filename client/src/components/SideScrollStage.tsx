@@ -540,8 +540,10 @@ export default function SideScrollStage({
     const leaves: LeafParticle[] = Array.from({ length: 38 }, () => {
       const vw = viewportWRef.current;
       const l = spawnLeaf(leafRng, vw);
-      // world-space x: spread across the initial visible area
-      l.x = cameraXRef.current + leafRng() * vw;
+      // world-space x: spread across the entire stage so leaves look
+      // like they've already been drifting throughout, not just started
+      l.x = leafRng() * STAGE_WIDTH;
+      l.y = 20 + leafRng() * (GROUND_Y - 80);
       return l;
     });
     const draw = () => {
