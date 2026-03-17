@@ -608,6 +608,7 @@ export default function BattleScreen({
   const [victoryReady, setVictoryReady] = useState(false);
   const [showDefeatUI, setShowDefeatUI] = useState(false);
   const [showDefeatOverlay, setShowDefeatOverlay] = useState(false);
+  const [defeatOverlayDone, setDefeatOverlayDone] = useState(false);
   const [fleeFailed, setFleeFailed] = useState(false);
   const [xpBarPhase, setXpBarPhase] = useState<"waiting" | "animating" | "done">("waiting");
   const [xpBarPercent, setXpBarPercent] = useState(0);
@@ -759,14 +760,18 @@ export default function BattleScreen({
       setXpBarLevelUp(false);
     }
     if (battle.phase === "defeat") {
-      fadeOutMusic(1000);
+      setShowDefeatOverlay(true);
+      setShowDefeatUI(true);
+      fadeOutMusic(800);
       const timer = setTimeout(() => {
-        setShowDefeatOverlay(true);
-      }, 800);
+        stopAll();
+        playAmbient("game_over");
+      }, 900);
       return () => clearTimeout(timer);
     } else {
       setShowDefeatUI(false);
       setShowDefeatOverlay(false);
+      setDefeatOverlayDone(false);
     }
   }, [battle.phase]);
 
@@ -5345,18 +5350,14 @@ export default function BattleScreen({
         );
       })()}
 
-      {battle.phase === "defeat" && showDefeatOverlay && !showDefeatUI && (
+      {battle.phase === "defeat" && showDefeatOverlay && !defeatOverlayDone && (
         <BattleTransition
           direction="in"
-          onComplete={() => {
-            setShowDefeatUI(true);
-            stopAll();
-            playAmbient("game_over");
-          }}
+          onComplete={() => setDefeatOverlayDone(true)}
         />
       )}
 
-      {battle.phase === "defeat" && showDefeatOverlay && showDefeatUI && (
+      {battle.phase === "defeat" && defeatOverlayDone && (
         <div className="absolute inset-0 z-[999]" style={{ background: "#000" }} />
       )}
 
