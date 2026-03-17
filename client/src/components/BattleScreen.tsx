@@ -2492,7 +2492,6 @@ export default function BattleScreen({
         setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - reskStopX), y: -(pos.y - walkToY) } }));
 
         scheduleTimer(() => {
-          setBossOffset(prev => ({ ...prev, [enemyIdx]: { x: -(pos.x - walkToX), y: -(pos.y - walkToY) } }));
           setEnemyAnimStates(prev => ({ ...prev, [enemyIdx]: "attack" }));
           playSfx("stabWhoosh", 0.9);
         }, 650);
