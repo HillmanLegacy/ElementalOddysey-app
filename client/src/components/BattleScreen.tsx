@@ -311,6 +311,12 @@ const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
   { x: 75, y: 28, z: 1.0 },
 ];
 
+const ENEMY_GROUND_Y_OFFSET: Record<string, number> = {
+  minotaur_wind: 48,
+  cyclops_wind: -28,
+  harpy_wind: 0,
+};
+
 const PLAYER_POS = ALLY_SLOTS[0];
 const PARTY_POSITIONS = [ALLY_SLOTS[1], ALLY_SLOTS[2]];
 const ENEMY_POSITIONS = ENEMY_SLOTS;
@@ -3945,6 +3951,8 @@ export default function BattleScreen({
             const bossLeft = isBossMoving ? pos.x + enemyBossOffset.x : pos.x;
             const bossBottom = isBossMoving ? pos.y + enemyBossOffset.y : pos.y;
 
+            const groundYShift = ENEMY_GROUND_Y_OFFSET[enemy.id] ?? 0;
+
             return (
               <div
                 key={idx}
@@ -3952,7 +3960,7 @@ export default function BattleScreen({
                 style={{
                   left: `${bossLeft}%`,
                   bottom: `${bossBottom}%`,
-                  transform: "translateX(-50%)",
+                  transform: groundYShift !== 0 ? `translateX(-50%) translateY(${groundYShift}px)` : "translateX(-50%)",
                   zIndex: Math.floor(pos.y),
                   transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy) || isResk(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
                   cursor: isSpriteTargetable ? "pointer" : "default",
