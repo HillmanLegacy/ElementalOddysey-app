@@ -51,14 +51,16 @@ const CHAR_SPRITES: Record<string, {
   idleF: number; runF: number;
   scale: number;
   groundOffset: number;
+  // Hitbox as fractions of rendered (playerW, playerH): center offsets and half-extents
+  hbXOff: number; hbYOff: number; hbHW: number; hbHH: number;
   stepFrames?: number[];
 }> = {
-  samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   groundOffset: 30, stepFrames: [7, 15] },
-  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6,  scale: 2.8, groundOffset: 6  },
-  basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8, groundOffset: 0  },
-  ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6,  scale: 2.8, groundOffset: 0  },
-  knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 46 },
-  axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6,  scale: 2,   groundOffset: 0  },
+  samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   groundOffset: 30, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.19, hbHH: 0.27, stepFrames: [7, 15] },
+  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6,  scale: 2.8, groundOffset: 6,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.27, hbHH: 0.37 },
+  basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8, groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.23, hbHH: 0.33 },
+  ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6,  scale: 2.8, groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.48, hbHW: 0.21, hbHH: 0.37 },
+  knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 46, hbXOff: 0.50, hbYOff: 0.38, hbHW: 0.23, hbHH: 0.26 },
+  axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6,  scale: 2,   groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.24, hbHH: 0.32 },
 };
 
 type ClimbEnemyType = "fireDemon" | "demonKin" | "minotaur" | "cyclops" | "harpy";
@@ -69,11 +71,14 @@ const CLIMB_ENEMY: Record<ClimbEnemyType, {
   patrolSpeed: number; patrolRange: number;
   hbXOff: number; hbYOff: number; hbHW: number; hbHH: number;
 }> = {
-  fireDemon: { sheet: demonIdleSheet,    iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0,   patrolSpeed: 60,  patrolRange: 80,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.22, hbHH: 0.30 },
-  demonKin:  { sheet: demonKinIdleSheet, iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24,  patrolSpeed: 70,  patrolRange: 80,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.22, hbHH: 0.32 },
+  fireDemon: { sheet: demonIdleSheet,    iW: 81,  iH: 71,  frames: 4,  scale: 2.0, fps: 8,  groundOffset: 0,   patrolSpeed: 60,  patrolRange: 80,  hbXOff: 0.50, hbYOff: 0.52, hbHW: 0.24, hbHH: 0.32 },
+  demonKin:  { sheet: demonKinIdleSheet, iW: 128, iH: 128, frames: 6,  scale: 1.3, fps: 8,  groundOffset: 24,  patrolSpeed: 70,  patrolRange: 80,  hbXOff: 0.50, hbYOff: 0.52, hbHW: 0.23, hbHH: 0.34 },
+  // Minotaur 128×128 scale=1.4: body x=23-93 y=38-114 (13px transparent bottom → 18px scaled)
   minotaur:  { sheet: minotaurIdleSheet, iW: 128, iH: 128, frames: 6,  scale: 1.4, fps: 8,  groundOffset: 18,  patrolSpeed: 65,  patrolRange: 90,  hbXOff: 0.45, hbYOff: 0.59, hbHW: 0.27, hbHH: 0.30, walkSheet: minotaurWalkSheet, walkFrames: 8,  walkFps: 10 },
+  // Cyclops 245×128 scale=2.7: body x=87-151 y=44-113 (14px transparent bottom → 38px scaled)
   cyclops:   { sheet: cyclopsIdleSheet,  iW: 245, iH: 128, frames: 14, scale: 2.7, fps: 8,  groundOffset: 38,  patrolSpeed: 45,  patrolRange: 70,  hbXOff: 0.49, hbYOff: 0.61, hbHW: 0.13, hbHH: 0.27, walkSheet: cyclopsWalkSheet,  walkFrames: 12, walkFps: 9  },
-  harpy:     { sheet: harpyIdleSheet,    iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -30, patrolSpeed: 90,  patrolRange: 100, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.28, hbHH: 0.30, walkSheet: harpyMoveSheet,   walkFrames: 6,  walkFps: 10 },
+  // Harpy 96×96 scale=1.5 → 144×144; wings are wide so body hitbox is narrower than full frame
+  harpy:     { sheet: harpyIdleSheet,    iW: 96,  iH: 96,  frames: 6,  scale: 1.5, fps: 9,  groundOffset: -30, patrolSpeed: 90,  patrolRange: 100, hbXOff: 0.50, hbYOff: 0.48, hbHW: 0.22, hbHH: 0.27, walkSheet: harpyMoveSheet,   walkFrames: 6,  walkFps: 10 },
 };
 
 interface ClimbPlatform {
@@ -540,8 +545,8 @@ export default function ClimbingStage({
 
         if (!defeated.includes(idx)) {
           if (enemy.type === "harpy") {
-            const pCx = p.x + playerW * 0.5;
-            const pCy = p.y + playerH * 0.48;
+            const pCx = p.x + playerW * charSprite.hbXOff;
+            const pCy = p.y + playerH * charSprite.hbYOff;
             const hCx = ep.x + eW * es.hbXOff;
             const hCy = ep.y + eH * es.hbYOff;
             const dist = Math.sqrt((pCx - hCx) ** 2 + (pCy - hCy) ** 2);
@@ -595,10 +600,10 @@ export default function ClimbingStage({
         newFL.push(ep.dir === -1);
       });
 
-      const pCx = p.x + playerW * 0.5;
-      const pCy = p.y + playerH * 0.48;
-      const pHW = playerW * 0.18;
-      const pHH = playerH * 0.28;
+      const pCx = p.x + playerW * charSprite.hbXOff;
+      const pCy = p.y + playerH * charSprite.hbYOff;
+      const pHW = playerW * charSprite.hbHW;
+      const pHH = playerH * charSprite.hbHH;
 
       let hit = false;
       enemies.forEach((enemy, idx) => {
