@@ -132,6 +132,7 @@ import slknightRun from "@/assets/images/slknight-run.png";
 import slknightSpecial from "@/assets/images/slknight-special.png";
 import slknightDeath from "@/assets/images/slknight-death.png";
 import slknightJump from "@/assets/images/slknight-jump.png";
+import slknightAirAttack from "@/assets/images/slknight-airattack.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
 import rangerAttack from "@/assets/images/ranger-attack.png";
 import rangerHurt from "@/assets/images/ranger-hurt.png";
@@ -1035,8 +1036,7 @@ export default function BattleScreen({
       setShowSpells(false);
 
       const target = ENEMY_POSITIONS[targetIdx % ENEMY_POSITIONS.length];
-      const isBoss = battle.enemies[targetIdx]?.isBoss;
-      const targetX = target.x - (isBoss ? 16 : 8);
+      const targetX = target.x;
       const targetY = target.y - 4;
       const midX = (PLAYER_POS.x + targetX) / 2;
       const groundY = PLAYER_POS.y;
@@ -2765,7 +2765,7 @@ export default function BattleScreen({
         if (eruptionSubPhase === "jumpRise") {
           return { src: slknightJump, frames: 4, fps: 14, loop: false, pauseAt: 3, w: 128, h: 64 };
         }
-        return { src: slknightAttack, frames: 9, fps: 14, loop: false, pauseAt: 8, w: 128, h: 64 };
+        return { src: slknightAirAttack, frames: 8, fps: 14, loop: false, pauseAt: 7, w: 128, h: 64 };
       }
       case "thunderBolt": {
         if (player.element === "Lightning") {
@@ -3259,6 +3259,26 @@ export default function BattleScreen({
                   scale={3.85}
                   loop={false}
                   flipX={true}
+                />
+              </div>
+            )}
+            {eruptionNukeActive && (
+              <div className="absolute z-50 pointer-events-none" style={{
+                left: `${eruptionKnightX}%`,
+                bottom: `${eruptionKnightY}%`,
+                width: 576,
+                height: 576,
+                transform: "translate(-50%, 30%)",
+                filter: "drop-shadow(0 0 24px rgba(255,80,0,0.9)) drop-shadow(0 0 48px rgba(255,40,0,0.5))",
+              }}>
+                <SpriteAnimator
+                  spriteSheet={nukeExplosionSheet}
+                  frameWidth={64}
+                  frameHeight={64}
+                  totalFrames={11}
+                  fps={18}
+                  scale={9}
+                  loop={false}
                 />
               </div>
             )}
@@ -4182,26 +4202,6 @@ export default function BattleScreen({
                       />
                     </div>
                   ))}
-                  {eruptionNukeActive && eruptionNukeTargetIdx === idx && (
-                    <div className="absolute z-50 pointer-events-none" style={{
-                      top: isResk(enemy) ? "78%" : "50%",
-                      left: "50%",
-                      width: 576,
-                      height: 576,
-                      transform: "translate(-50%, -50%)",
-                      filter: "drop-shadow(0 0 24px rgba(255,80,0,0.9)) drop-shadow(0 0 48px rgba(255,40,0,0.5))",
-                    }}>
-                      <SpriteAnimator
-                        spriteSheet={nukeExplosionSheet}
-                        frameWidth={64}
-                        frameHeight={64}
-                        totalFrames={11}
-                        fps={18}
-                        scale={9}
-                        loop={false}
-                      />
-                    </div>
-                  )}
                   {windSpellVfx && windSpellVfx.targets.includes(idx) && windSpellVfx.type !== "tempest" && (
                     <div className="absolute z-25 pointer-events-none" style={{
                       top: "-60%",
