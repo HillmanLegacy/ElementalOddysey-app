@@ -75,7 +75,7 @@ function useViewportScale() {
 function Game() {
   const {
     state, setState, setScreen, createCharacter, completeIntro, updatePlayer,
-    startBattle, startBattleCustom, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
+    startBattle, startBattleCustom, playerAttack, playerAttackFirstHit, playerAttackSecondHit, castSpell, playerDefend, useItem, useItemOverworld,
     partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, fleeBattle, allocateStat, selectPerk, openShop,
     buyItem, rollLoot, sellItem, equipItem, unequipItem, restAtNode, loadGame, setAnimating, finishPlayerTurn, repositionUnit,
@@ -1358,6 +1358,8 @@ function Game() {
               regionTheme={battleRegion.theme}
               enemyColorVariant={lastContactedEnemyColorVariantRef.current}
               onAttack={playerAttack}
+              onAttackFirstHit={playerAttackFirstHit}
+              onAttackSecondHit={playerAttackSecondHit}
               onCastSpell={castSpell}
               onDefend={playerDefend}
               onUseItem={useItem}

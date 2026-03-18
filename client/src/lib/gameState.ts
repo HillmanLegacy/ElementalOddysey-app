@@ -19,6 +19,7 @@ const INITIAL_STATE: GameState = {
 };
 
 let damageEventCounter = 0;
+let pendingKnightSecondHit: { amount: number; isCrit: boolean; weaponElement?: string; elementLabel?: string; targetIndex: number } | null = null;
 
 export function useGameState() {
   const [state, setState] = useState<GameState>(INITIAL_STATE);
@@ -218,6 +219,75 @@ export function useGameState() {
         battle.animation = "victory";
       }
 
+      return { ...s, battle };
+    });
+  }, []);
+
+  const playerAttackFirstHit = useCallback((targetIndex: number) => {
+    setState(s => {
+      if (!s.battle || !s.player || s.battle.phase !== "animating") return s;
+      const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })) };
+      const target = battle.enemies[targetIndex];
+      if (!target || target.currentHp <= 0) return s;
+      const buffedStats = getBuffedStats(s.player.stats, battle.buffs, "player", -1);
+      const dodged = checkDodge(target.stats, buffedStats);
+      if (dodged) {
+        battle.log = [...battle.log, `${target.name} dodged the attack!`];
+        battle.animation = "dodge";
+        battle.lastElementLabel = undefined;
+        pendingKnightSecondHit = null;
+      } else {
+        let weaponElement = s.player.equipment.weapon?.element;
+        if (!weaponElement && s.player.perks.some(pid => { const pk = PERKS.find(p => p.id === pid); return pk && pk.effect.special === "elemental_basic_attack"; })) {
+          weaponElement = s.player.element;
+        }
+        const accEquip = s.player.equipment.accessory;
+        if (!weaponElement && accEquip?.effect.special === "fireBasicAttack") weaponElement = "Fire";
+        const critMod = s.player.perks.includes("lightning_crit") ? 0.10 : 0;
+        const { damage: rawAtkDmg, isCrit, elementLabel } = calculateDamage(buffedStats, target.stats, false, weaponElement, target.element, 1.0, critMod);
+        let totalDamage = rawAtkDmg;
+        if (accEquip?.effect.special === "windBoost" && weaponElement === "Wind") {
+          totalDamage = Math.floor(totalDamage * (1 + (accEquip.effect.specialValue || 0)));
+        }
+        const hit1 = Math.ceil(totalDamage / 2);
+        const hit2 = Math.floor(totalDamage / 2);
+        target.currentHp = Math.max(0, target.currentHp - hit1);
+        battle.animation = isCrit ? "critical" : "attack";
+        battle.lastElementLabel = elementLabel || undefined;
+        battle.lastDamageEvent = { id: ++damageEventCounter, amount: hit1, targetType: "enemy", targetIndex, isCrit, element: weaponElement, label: elementLabel || undefined };
+        battle.log = [...battle.log, `You deal ${hit1}${isCrit ? " CRITICAL" : ""} damage to ${target.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
+        pendingKnightSecondHit = { amount: hit2, isCrit, weaponElement, elementLabel, targetIndex };
+        if (s.player.perks.includes("shadow_lifesteal")) {
+          const heal = Math.floor(hit1 * 0.1);
+          battle.playerHp = Math.min(s.player.stats.maxHp, battle.playerHp + heal);
+          battle.log = [...battle.log, `Soul Drain heals ${heal} HP!`];
+        }
+      }
+      const allDead = battle.enemies.every(e => e.currentHp <= 0);
+      if (allDead) { battle.phase = "victory"; battle.animation = "victory"; pendingKnightSecondHit = null; }
+      return { ...s, battle };
+    });
+  }, []);
+
+  const playerAttackSecondHit = useCallback(() => {
+    if (!pendingKnightSecondHit) return;
+    const hitData = pendingKnightSecondHit;
+    pendingKnightSecondHit = null;
+    setState(s => {
+      if (!s.battle || !s.player) return s;
+      const battle = { ...s.battle, enemies: s.battle.enemies.map(e => ({ ...e })) };
+      const target = battle.enemies[hitData.targetIndex];
+      if (!target || target.currentHp <= 0) return s;
+      target.currentHp = Math.max(0, target.currentHp - hitData.amount);
+      battle.lastDamageEvent = { id: ++damageEventCounter, amount: hitData.amount, targetType: "enemy", targetIndex: hitData.targetIndex, isCrit: hitData.isCrit, element: hitData.weaponElement, label: hitData.elementLabel || undefined };
+      battle.log = [...battle.log, `You deal ${hitData.amount}${hitData.isCrit ? " CRITICAL" : ""} damage to ${target.name}!${hitData.elementLabel ? ` ${hitData.elementLabel}` : ""}`];
+      if (s.player.perks.includes("shadow_lifesteal")) {
+        const heal = Math.floor(hitData.amount * 0.1);
+        battle.playerHp = Math.min(s.player.stats.maxHp, battle.playerHp + heal);
+        battle.log = [...battle.log, `Soul Drain heals ${heal} HP!`];
+      }
+      const allDead = battle.enemies.every(e => e.currentHp <= 0);
+      if (allDead) { battle.phase = "victory"; battle.animation = "victory"; }
       return { ...s, battle };
     });
   }, []);
@@ -1548,6 +1618,8 @@ export function useGameState() {
     startBattleCustom,
     applyFireballDamage,
     playerAttack,
+    playerAttackFirstHit,
+    playerAttackSecondHit,
     castSpell,
     playerDefend,
     useItem,

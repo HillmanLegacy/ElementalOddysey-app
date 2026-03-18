@@ -272,6 +272,8 @@ interface BattleScreenProps {
   player: PlayerCharacter;
   battle: BattleState;
   onAttack: (targetIndex: number) => void;
+  onAttackFirstHit: (targetIndex: number) => void;
+  onAttackSecondHit: () => void;
   onCastSpell: (spell: Spell, targetIndex?: number) => void;
   onDefend: () => void;
   onUseItem: (itemId: string) => void;
@@ -536,7 +538,7 @@ function AnimatedHpBar({ value, max, lowThreshold = 25, height = "2.5" }: { valu
 }
 
 export default function BattleScreen({
-  player, battle, showDamageNumbers, onAttack, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, onRollLoot, regionTier, enemyColorVariant,
+  player, battle, showDamageNumbers, onAttack, onAttackFirstHit, onAttackSecondHit, onCastSpell, onDefend, onUseItem, onPartyMemberAttack, onPartyMemberDefend, onPartyMemberCastSpell, onPartyMemberUseItem, onAdvancePartyTurn, onFinishPartyTurn, onEnemyAttack, onEnemyTurnEnd, onEndBattle, onSetAnimating, onFinishPlayerTurn, onRepositionUnit, onFlee, regionTheme, onSpawnEnemy, onRollLoot, regionTier, enemyColorVariant,
 }: BattleScreenProps) {
   const _bsPlayerSprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
   const playerColorMap = useColorMap(_bsPlayerSprites.idle, _bsPlayerSprites.frameWidth, _bsPlayerSprites.frameHeight, player.colorGroups);
@@ -1197,19 +1199,19 @@ export default function BattleScreen({
         setIncinerationFrozenEnemy(targetIdx);
 
         const frameDuration = 1000 / 14;
-        const holdDuration = 333;
-        const frame2Time = frameDuration * 1;
-        const frame3Time = frameDuration * 2;
-        const frame5Time = frameDuration * 4 + holdDuration;
-        const frame6Time = frameDuration * 5 + holdDuration;
+        const hold = 200;
+        const swing1Time = frameDuration * 1;
+        const swing2Time = frameDuration * 4 + hold;
+        const fire1Time = frameDuration * 2 + hold;
+        const fire2Time = frameDuration * 6 + hold * 2;
 
         scheduleTimer(() => {
           playSfx("incinerationBladeSwings", 0.8);
-        }, frame2Time);
+        }, swing1Time);
 
         scheduleTimer(() => {
           playSfx("incinerationBladeSwings", 0.8);
-        }, frame5Time);
+        }, swing2Time);
 
         scheduleTimer(() => {
           const id1 = ++fireImpactId.current;
@@ -1223,7 +1225,7 @@ export default function BattleScreen({
           scheduleTimer(() => {
             setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
           }, 333);
-        }, frame3Time);
+        }, fire1Time);
 
         scheduleTimer(() => {
           const id2 = ++fireImpactId.current;
@@ -1237,9 +1239,9 @@ export default function BattleScreen({
           scheduleTimer(() => {
             setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
           }, 333);
-        }, frame6Time);
+        }, fire2Time);
 
-        const totalAnimTime = frameDuration * 7 + holdDuration * 2;
+        const totalAnimTime = frameDuration * 11 + hold * 2;
 
         scheduleTimer(() => {
           setIncinerationSlashActive(false);
@@ -1360,10 +1362,25 @@ export default function BattleScreen({
         }, totalAnimTime + 800);
       } else {
         setAnimPhase("attacking");
-        playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
-        playSfx("gruntAttack", 0.7);
-        if (pendingTargetIdx !== null) {
-          onAttack(pendingTargetIdx);
+        const fd = 1000 / 14;
+        if (player.spriteId === "knight" && pendingTargetIdx !== null) {
+          const tIdx = pendingTargetIdx;
+          scheduleTimer(() => {
+            playSfx("swordSwing");
+            playSfx("gruntAttack", 0.7);
+            onAttackFirstHit(tIdx);
+          }, fd * 4);
+          scheduleTimer(() => {
+            playSfx("swordSwing");
+            playSfx("gruntAttack", 0.7);
+            onAttackSecondHit();
+          }, fd * 8);
+        } else {
+          playSfx(player.element === "Wind" ? "mifuneSlice" : "swordSwing");
+          playSfx("gruntAttack", 0.7);
+          if (pendingTargetIdx !== null) {
+            onAttack(pendingTargetIdx);
+          }
         }
       }
     } else if (animPhase === "runBack" && !runBackHandled.current) {
@@ -1377,7 +1394,7 @@ export default function BattleScreen({
         setTimeout(() => onFinishPlayerTurn(), 2400);
       }
     }
-  }, [animPhase, pendingTargetIdx, onAttack, battle.phase, onFinishPlayerTurn, player.element, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, eruptionFrozenEnemy, battle.enemies]);
+  }, [animPhase, pendingTargetIdx, onAttack, onAttackFirstHit, onAttackSecondHit, battle.phase, onFinishPlayerTurn, player.element, player.spriteId, scheduleTimer, onCastSpell, windSparkleTarget, windBladeFrozenEnemy, incinerationFrozenEnemy, eruptionFrozenEnemy, battle.enemies]);
 
   useEffect(() => {
     if (battle.log.length <= prevLogLenRef.current) {
@@ -3331,10 +3348,10 @@ export default function BattleScreen({
                       if (anim === "incinerationSlash") {
                         setIncinerationFrozenEnemy(spellTarget);
                         const fd = 1000 / 14;
-                        const hold = 333;
+                        const hold = 200;
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd * 4 + hold);
-                        [fd * 2, fd * 5 + hold].forEach(t => {
+                        [fd * 2 + hold, fd * 6 + hold * 2].forEach(t => {
                           scheduleTimer(() => {
                             const id = ++fireImpactId.current;
                             setFireImpactVfx(prev => [...prev, { targetIdx: spellTarget, id }]);
@@ -3345,7 +3362,7 @@ export default function BattleScreen({
                             scheduleTimer(() => setEnemyHitIdx(null), 180);
                           }, t);
                         });
-                        const totalAnim = fd * 7 + hold * 2;
+                        const totalAnim = fd * 11 + hold * 2;
                         scheduleTimer(() => {
                           onPartyMemberCastSpell(pIdx, spell, spellTarget);
                           playSfx("magicRing", 0.4);
