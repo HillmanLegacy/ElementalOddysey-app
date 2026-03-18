@@ -16,8 +16,8 @@ import { groupConsumables } from "@/lib/utils";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
-import knightIdle from "@/assets/images/knight-idle-4f.png";
-import knightRun from "@/assets/images/knight-run.png";
+import slknightIdle from "@/assets/images/slknight-idle.png";
+import slknightRun from "@/assets/images/slknight-run.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 import baskenRun from "@/assets/images/basken-run.png";
 import hutOverworldIcon from "@/assets/hut_overworld_icon.png";
@@ -34,9 +34,9 @@ const OVERWORLD_SPRITES: Record<string, {
     scale: 2,
   },
   knight: {
-    idle: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4, fps: 8 },
-    run: { sheet: knightRun, frameWidth: 86, frameHeight: 49, totalFrames: 6, fps: 14 },
-    scale: 3,
+    idle: { sheet: slknightIdle, frameWidth: 128, frameHeight: 64, totalFrames: 8, fps: 8 },
+    run: { sheet: slknightRun, frameWidth: 128, frameHeight: 64, totalFrames: 8, fps: 14 },
+    scale: 2,
   },
   basken: {
     idle: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5, fps: 8 },

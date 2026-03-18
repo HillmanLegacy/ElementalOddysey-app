@@ -6,12 +6,12 @@ import { Heart, Droplets, Swords, Shield, Zap, Brain, Clover, Sparkles, Crown } 
 import { playSfx } from "@/lib/sfx";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
-import knightIdle from "@/assets/images/knight-idle-4f.png";
+import slknightIdle from "@/assets/images/slknight-idle.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 
 const IDLE_SHEETS: Record<string, string> = {
   samurai: samuraiIdle,
-  knight: knightIdle,
+  knight: slknightIdle,
   basken: baskenIdle,
 };
 

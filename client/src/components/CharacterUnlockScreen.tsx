@@ -6,12 +6,12 @@ import type { PartyMemberDef } from "@shared/schema";
 import { Sparkles, Swords, Shield, Zap, Heart } from "lucide-react";
 import { playSfx } from "@/lib/sfx";
 
-import knightIdle from "@/assets/images/knight-idle-4f.png";
+import slknightIdle from "@/assets/images/slknight-idle.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 
 const UNLOCK_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number }> = {
-  knight: { sheet: knightIdle, frameWidth: 86, frameHeight: 49, totalFrames: 4 },
+  knight: { sheet: slknightIdle, frameWidth: 128, frameHeight: 64, totalFrames: 8 },
   samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10 },
   basken: { sheet: baskenIdle, frameWidth: 56, frameHeight: 56, totalFrames: 5 },
 };

@@ -5,12 +5,12 @@ import { ArrowLeft, ArrowRight, Sparkles, Check, RefreshCw } from "lucide-react"
 import SpriteAnimator from "./SpriteAnimator";
 import { analyzeSpriteGroups, buildColorMap, COLOR_OPTIONS, type DetectedGroup } from "@/lib/colorUtils";
 
-import knightIdle from "@/assets/images/knight-idle-4f.png";
+import slknightIdle from "@/assets/images/slknight-idle.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 
 const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number; displayScale: number }> = {
-  knight:  { sheet: knightIdle,  frameWidth: 86, frameHeight: 49, totalFrames: 4,  displayScale: 1.5 },
+  knight:  { sheet: slknightIdle, frameWidth: 128, frameHeight: 64, totalFrames: 8, displayScale: 1.2 },
   samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10, displayScale: 0.9 },
   basken:  { sheet: baskenIdle,  frameWidth: 56, frameHeight: 56, totalFrames: 5,  displayScale: 1.5 },
 };

@@ -4,7 +4,7 @@ import type { PlayerCharacter, PlayerStats, PendingLevelUp } from "@shared/schem
 import { ELEMENT_COLORS, PARTY_SPRITE_DATA, SPELLS } from "@/lib/gameData";
 import { Star, Heart, Droplets, Swords, Shield, Zap, Brain, Clover, Sparkles } from "lucide-react";
 import { playSfx } from "@/lib/sfx";
-import knightIdle from "@/assets/images/knight-idle-4f.png";
+import slknightIdle from "@/assets/images/slknight-idle.png";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 import knight2dIdle from "@/assets/images/knight2d-idle.png";
@@ -12,7 +12,7 @@ import axewarriorIdle from "@/assets/images/axewarrior-idle.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
 
 const SPRITE_SHEETS: Record<string, string> = {
-  knight: knightIdle,
+  knight: slknightIdle,
   samurai: samuraiIdle,
   basken: baskenIdle,
   knight2d: knight2dIdle,
