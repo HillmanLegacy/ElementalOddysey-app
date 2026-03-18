@@ -316,8 +316,10 @@ const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
 
 const getEnemyGroundYShift = (enemy: { id: string; element: string; isBoss?: boolean }): number => {
   const isFireDemon = enemy.element === "Fire" && !enemy.isBoss && enemy.id !== "demon_kin";
-  const isHarpy = enemy.id === "harpy_wind";
-  return (isFireDemon || isHarpy) ? -35 : 0;
+  if (isFireDemon || enemy.id === "harpy_wind") return -35;
+  if (enemy.id === "minotaur_wind") return 48;
+  if (enemy.id === "cyclops_wind") return -28;
+  return 0;
 };
 
 const PLAYER_POS = ALLY_SLOTS[0];
