@@ -2765,7 +2765,7 @@ export default function BattleScreen({
         if (eruptionSubPhase === "jumpRise") {
           return { src: slknightJump, frames: 4, fps: 14, loop: false, pauseAt: 3, w: 128, h: 64 };
         }
-        return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, w: 86, h: 49 };
+        return { src: slknightAttack, frames: 9, fps: 14, loop: false, pauseAt: 8, w: 128, h: 64 };
       }
       case "thunderBolt": {
         if (player.element === "Lightning") {
