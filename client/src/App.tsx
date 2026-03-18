@@ -111,8 +111,6 @@ function Game() {
       playAmbient("hut");
       if (!battleTransition && !battleEntryReveal && hutRegion.theme === "Fire") {
         playMusic("lava_region_music");
-      } else if (hutRegion.theme !== "Fire") {
-        stopMusic();
       }
     } else if (state.screen === "overworld" && state.player) {
       const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));

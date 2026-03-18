@@ -18,7 +18,7 @@ const AMBIENT_TRACKS: Record<string, string> = {
 };
 
 const AMBIENT_VOLUME_SCALE: Record<string, number> = {
-  hut: 0.85,
+  hut: 0.72,
 };
 
 const MUSIC_VOLUME_SCALE: Record<string, number> = {
