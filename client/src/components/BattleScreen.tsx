@@ -658,6 +658,8 @@ export default function BattleScreen({
   const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpFall">("idle");
   const [eruptionKnightX, setEruptionKnightX] = useState(PLAYER_POS.x);
   const [eruptionKnightY, setEruptionKnightY] = useState(PLAYER_POS.y);
+  const [eruptionAirAttackRestartKey, setEruptionAirAttackRestartKey] = useState(0);
+  const [eruptionAirAttackStartFrame, setEruptionAirAttackStartFrame] = useState(0);
   const pendingEruptionCleave = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const pendingPartySpellRef = useRef<{ spell: Spell; targetIdx: number; pIdx: number } | null>(null);
   const [thunderBoltActive, setThunderBoltActive] = useState(false);
@@ -1047,13 +1049,14 @@ export default function BattleScreen({
       const highY = 60;
       const runDur = 403;
       const riseDur = Math.round(4 / 12 * 1000);
-      const fallDur = Math.round(4 / 12 * 1000);
+      const nukeAtMs = Math.round(6 / 12 * 1000);
 
       setEruptionCleaveActive(true);
       setEruptionFrozenEnemy(targetIdx);
       setEruptionSubPhase("run");
       setEruptionKnightX(PLAYER_POS.x);
       setEruptionKnightY(groundY);
+      setEruptionAirAttackStartFrame(0);
       setAnimPhase("eruptionCleave");
       playSfx("gruntAttack", 0.7);
       scheduleTimer(() => setEruptionKnightX(midX), 16);
@@ -1070,10 +1073,12 @@ export default function BattleScreen({
         playSfx("eruptionDownwardSlash", 0.9);
       }, runDur + riseDur);
 
-      const nukeStart = runDur + riseDur + fallDur;
+      const nukeStart = runDur + riseDur + nukeAtMs;
       scheduleTimer(() => {
         setEruptionNukeActive(true);
         setEruptionNukeTargetIdx(targetIdx);
+        setEruptionAirAttackStartFrame(4);
+        setEruptionAirAttackRestartKey(k => k + 1);
         playSfx("eruptionCleave", 1.3);
         setShakeScreen(true);
         scheduleTimer(() => setShakeScreen(false), 500);
@@ -1095,6 +1100,7 @@ export default function BattleScreen({
       scheduleTimer(() => {
         setEruptionCleaveActive(false);
         setEruptionSubPhase("idle");
+        setEruptionAirAttackStartFrame(0);
         setMagicZoom(false);
         setMagicZoomTarget(null);
         castingNeedsRunBack.current = false;
@@ -1376,7 +1382,7 @@ export default function BattleScreen({
         const flamelashDuration = Math.ceil(61 / 38 * 1000);
         const resumeAfterFlamelash = pauseFrame1Time + pauseFrame1Duration + flamelashDuration;
         const nukeDuration = 11 * (1000 / 18);
-        const nukeStartTime = resumeAfterFlamelash + (frameDuration * 3);
+        const nukeStartTime = resumeAfterFlamelash + Math.round(6 / 12 * 1000);
         const totalAnimTime = nukeStartTime + nukeDuration + 400;
 
         const flamelashStart = pauseFrame1Time + pauseFrame1Duration;
@@ -1407,6 +1413,8 @@ export default function BattleScreen({
           eruptionFlamelashAudio.current = null;
           setEruptionNukeActive(true);
           setEruptionNukeTargetIdx(targetIdx);
+          setEruptionAirAttackStartFrame(4);
+          setEruptionAirAttackRestartKey(k => k + 1);
           playSfx("eruptionCleave", 1.3);
           setShakeScreen(true);
           scheduleTimer(() => setShakeScreen(false), 500);
@@ -1425,6 +1433,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setEruptionCleaveActive(false);
+          setEruptionAirAttackStartFrame(0);
           setMagicZoom(false);
           setMagicZoomTarget(null);
           castingNeedsRunBack.current = false;
@@ -2769,7 +2778,7 @@ export default function BattleScreen({
         if (eruptionSubPhase === "jumpRise") {
           return { src: slknightJump, frames: 4, fps: 12, loop: false, pauseAt: 3, w: 128, h: 64 };
         }
-        return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, pauseAt: 7, w: 128, h: 64 };
+        return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, pauseAt: 7, startAt: eruptionAirAttackStartFrame, w: 128, h: 64 };
       }
       case "thunderBolt": {
         if (player.element === "Lightning") {
@@ -3219,7 +3228,7 @@ export default function BattleScreen({
                         : eruptionSubPhase === "jumpRise"
                           ? "left 0.30s ease-out, bottom 0.30s ease-out"
                           : eruptionSubPhase === "jumpFall"
-                            ? "bottom 0.33s ease-in, left 0s"
+                            ? "bottom 0.50s ease-in, left 0s"
                             : "none"
                       : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
@@ -3266,26 +3275,6 @@ export default function BattleScreen({
                 />
               </div>
             )}
-            {eruptionNukeActive && (
-              <div className="absolute z-50 pointer-events-none" style={{
-                left: `${eruptionKnightX}%`,
-                bottom: `${eruptionKnightY}%`,
-                width: 576,
-                height: 576,
-                transform: "translate(-50%, 30%)",
-                filter: "drop-shadow(0 0 24px rgba(255,80,0,0.9)) drop-shadow(0 0 48px rgba(255,40,0,0.5))",
-              }}>
-                <SpriteAnimator
-                  spriteSheet={nukeExplosionSheet}
-                  frameWidth={64}
-                  frameHeight={64}
-                  totalFrames={11}
-                  fps={18}
-                  scale={9}
-                  loop={false}
-                />
-              </div>
-            )}
             {darkMagicSfx && (
               <div className="absolute z-30" style={{ top: "-80%", left: "-70%", width: "240%", height: "240%", pointerEvents: "none" }}>
                 <div className="absolute inset-0 animate-[darkMagicExplosion_0.8s_ease-out_forwards]"
@@ -3320,6 +3309,7 @@ export default function BattleScreen({
             
             <div style={{ position: "relative", width: Math.round(playerSprites.frameWidth * (playerSprites.scale || 3.5)), height: Math.round(playerSprites.frameHeight * (playerSprites.scale || 3.5)), overflow: "visible", filter: "brightness(1.15) saturate(1.35)" }}>
               <SpriteAnimator
+                key={animPhase === "eruptionCleave" && eruptionSubPhase === "jumpFall" ? `erup-fall-${eruptionAirAttackRestartKey}` : "player-main"}
                 spriteSheet={spriteConfig.src}
                 frameWidth={spriteConfig.w}
                 frameHeight={spriteConfig.h}
@@ -3355,6 +3345,28 @@ export default function BattleScreen({
               )}
             </div>
           </div>
+
+          {eruptionNukeActive && (
+            <div className="absolute pointer-events-none" style={{
+              zIndex: 300,
+              left: `${eruptionKnightX}%`,
+              bottom: `${eruptionKnightY}%`,
+              width: 576,
+              height: 576,
+              transform: "translate(-50%, 30%)",
+              filter: "drop-shadow(0 0 24px rgba(255,80,0,0.9)) drop-shadow(0 0 48px rgba(255,40,0,0.5))",
+            }}>
+              <SpriteAnimator
+                spriteSheet={nukeExplosionSheet}
+                frameWidth={64}
+                frameHeight={64}
+                totalFrames={11}
+                fps={18}
+                scale={9}
+                loop={false}
+              />
+            </div>
+          )}
 
           {battle.party.length > 0 && battle.party.map((member, idx) => {
             const spriteInfo = PARTY_SPRITE_MAP[member.spriteId];
@@ -3506,7 +3518,7 @@ export default function BattleScreen({
                         const flamelashDur = Math.ceil(61 / 38 * 1000);
                         const flamelashStart = fd + 200;
                         const resumeAfter = flamelashStart + flamelashDur;
-                        const nukeStart = resumeAfter + fd * 3;
+                        const nukeStart = resumeAfter + Math.round(6 / 12 * 1000);
                         const totalAnim = nukeStart + 11 * (1000 / 18) + 400;
                         scheduleTimer(() => {
                           setEruptionFlamelashActive(true);
@@ -3530,6 +3542,8 @@ export default function BattleScreen({
                           eruptionFlamelashAudio.current = null;
                           setEruptionNukeActive(true);
                           setEruptionNukeTargetIdx(spellTarget);
+                          setEruptionAirAttackStartFrame(4);
+                          setEruptionAirAttackRestartKey(k => k + 1);
                           playSfx("eruptionCleave", 1.3);
                           setShakeScreen(true);
                           scheduleTimer(() => setShakeScreen(false), 500);
@@ -3547,6 +3561,7 @@ export default function BattleScreen({
                         scheduleTimer(() => {
                           setEruptionNukeActive(false);
                           setEruptionNukeTargetIdx(null);
+                          setEruptionAirAttackStartFrame(0);
                           setEruptionFrozenEnemy(null);
                           doRunBack(0);
                         }, totalAnim);
