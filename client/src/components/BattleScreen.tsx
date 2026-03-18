@@ -1096,7 +1096,8 @@ export default function BattleScreen({
         setEruptionNukeTargetIdx(null);
       }, nukeStart + nukeDuration);
 
-      const totalAnimTime = nukeStart + nukeDuration + 400;
+      const airAttackRemainingMs = Math.round(4 / 12 * 1000);
+      const totalAnimTime = nukeStart + airAttackRemainingMs + 150;
       scheduleTimer(() => {
         setEruptionCleaveActive(false);
         setEruptionSubPhase("idle");
