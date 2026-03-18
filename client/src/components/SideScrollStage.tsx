@@ -1415,35 +1415,38 @@ export default function SideScrollStage({
               {([
                 { label: "STATUS", action: onStatus },
                 { label: "OPTIONS", action: onOptions },
+                { label: "SAVE", disabled: true },
                 { label: "MAIN MENU", action: onExitToMenu, danger: true },
-              ] as { label: string; action?: () => void; danger?: boolean }[]).map(({ label, action, danger }) => (
+              ] as { label: string; action?: () => void; danger?: boolean; disabled?: boolean }[]).map(({ label, action, danger, disabled }) => (
                 <button
                   key={label}
                   data-testid={`button-stage-menu-${label.toLowerCase().replace(" ", "-")}`}
-                  onClick={() => { playSfx("menuSelect"); setMenuOpen(false); action?.(); }}
+                  disabled={disabled}
+                  onClick={disabled ? undefined : () => { playSfx("menuSelect"); setMenuOpen(false); action?.(); }}
                   style={{
                     width: "100%",
                     display: "block",
                     padding: "10px 14px",
                     fontFamily: "'Press Start 2P', monospace",
                     fontSize: 7,
-                    color: danger ? "rgba(239,68,68,0.7)" : "#c9a44a",
+                    color: disabled ? "rgba(120,110,90,0.45)" : danger ? "rgba(239,68,68,0.7)" : "#c9a44a",
                     background: "transparent",
                     border: "none",
                     borderBottom: "1px solid rgba(201,164,74,0.15)",
-                    cursor: "pointer",
+                    cursor: disabled ? "default" : "pointer",
                     textAlign: "left",
                     letterSpacing: 1,
+                    opacity: disabled ? 0.5 : 1,
                   }}
-                  onMouseEnter={e => {
+                  onMouseEnter={disabled ? undefined : e => {
                     e.currentTarget.style.background = "#1a1010";
                     e.currentTarget.style.color = danger ? "#ef4444" : "#e8d080";
                   }}
-                  onMouseLeave={e => {
+                  onMouseLeave={disabled ? undefined : e => {
                     e.currentTarget.style.background = "transparent";
                     e.currentTarget.style.color = danger ? "rgba(239,68,68,0.7)" : "#c9a44a";
                   }}
-                >{label}</button>
+                >{label}{disabled ? <span style={{ fontSize: 5, marginLeft: 6, color: "rgba(120,110,90,0.5)" }}>N/A IN STAGE</span> : null}</button>
               ))}
             </div>
           )}
