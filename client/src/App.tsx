@@ -88,6 +88,15 @@ function Game() {
 
   const { toast } = useToast();
 
+  // Black overlay that fades out when transitioning from intro → overworld
+  const [overworldReveal, setOverworldReveal] = useState<"off" | "black" | "fading">("off");
+  const handleIntroComplete = useCallback(() => {
+    setOverworldReveal("black");   // instant black (covers the swap)
+    completeIntro();               // switch screen to overworld
+    setTimeout(() => setOverworldReveal("fading"), 50);   // start 1.5s fade-out
+    setTimeout(() => setOverworldReveal("off"),    1600);  // remove when done
+  }, [completeIntro]);
+
   useEffect(() => {
     setSfxVolume(state.sfxVolume);
   }, [state.sfxVolume]);
@@ -304,7 +313,7 @@ function Game() {
         );
 
       case "intro":
-        return <ForestIntroScreen onComplete={completeIntro} />;
+        return <ForestIntroScreen onComplete={handleIntroComplete} />;
 
       case "overworld":
         if (!state.player) return null;
@@ -1560,11 +1569,35 @@ function Game() {
         >
           {renderScreen()}
         </div>
+        {overworldReveal !== "off" && (
+          <div
+            className="fixed inset-0 bg-black pointer-events-none"
+            style={{
+              zIndex: 500,
+              opacity: overworldReveal === "black" ? 1 : 0,
+              transition: overworldReveal === "fading" ? "opacity 1500ms ease" : "none",
+            }}
+          />
+        )}
       </div>
     );
   }
 
-  return <div className="w-full h-screen overflow-hidden bg-black">{renderScreen()}</div>;
+  return (
+    <div className="w-full h-screen overflow-hidden bg-black">
+      {renderScreen()}
+      {overworldReveal !== "off" && (
+        <div
+          className="fixed inset-0 bg-black pointer-events-none"
+          style={{
+            zIndex: 500,
+            opacity: overworldReveal === "black" ? 1 : 0,
+            transition: overworldReveal === "fading" ? "opacity 1500ms ease" : "none",
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
 function App() {

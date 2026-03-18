@@ -25,42 +25,52 @@ const STANZAS = [
   ],
 ];
 
-const SCENES = [scene1, scene2, scene3];
+const SCENES   = [scene1, scene2, scene3];
 const PAN_ANIM = ["introPanLR", "introPanRL", "introPanLR"];
 
-// Each fade direction is 1500ms  →  full transition (out + in) = 3000ms
-const FADE_DURATION  = 1500;
-// Scene slot: how long before the next scene starts its swap
-// Fade-out begins at SCENE_SLOT - FADE_DURATION, and completes exactly when the slot ends
-const SCENE_SLOT     = 13000;
-const FADE_OUT_AT    = SCENE_SLOT - FADE_DURATION; // 11500ms into scene
-// Lines appear after the fade-in settles
-const LINE_START     = 2400;
-const LINE_INTERVAL  = 2400;
+// Scene-transition crossfade: 1500ms out + 1500ms in = 3 seconds total
+const FADE_DURATION = 1500;
+
+// Lines arrive slowly so readers can follow comfortably
+const LINE_START    = 3500;  // first line appears 3.5 s after scene starts
+const LINE_INTERVAL = 4500;  // each subsequent line 4.5 s later
+
+// Last line lands at: LINE_START + 3 * LINE_INTERVAL = 3500 + 13500 = 17000ms
+// Give 3 s of reading time after the last line, then start fade-out
+const FADE_OUT_AT = 17000 + 3000; // 20000ms into scene
+const SCENE_SLOT  = FADE_OUT_AT + FADE_DURATION; // 21500ms per scene
 
 interface Props {
   onComplete: () => void;
 }
 
 export default function ForestIntroScreen({ onComplete }: Props) {
-  const [sceneIdx, setSceneIdx]           = useState(0);
-  const [sceneOpacity, setSceneOpacity]   = useState(0);
-  const [linesMask, setLinesMask]         = useState([false, false, false, false]);
-  const timersRef   = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const [sceneIdx, setSceneIdx]         = useState(0);
+  const [sceneOpacity, setSceneOpacity] = useState(0);
+  const [linesMask, setLinesMask]       = useState([false, false, false, false]);
+  // Overlay that fades to black when Skip is pressed
+  const [finalFade, setFinalFade]       = useState(false);
+  const timersRef    = useRef<ReturnType<typeof setTimeout>[]>([]);
   const completedRef = useRef(false);
 
-  const finish = () => {
+  // skipMode=true  → fade to black over FADE_DURATION, then call onComplete
+  // skipMode=false → screen already black (end of last scene); call onComplete immediately
+  const finish = (skipMode: boolean) => {
     if (completedRef.current) return;
     completedRef.current = true;
     timersRef.current.forEach(clearTimeout);
-    onComplete();
+    if (skipMode) {
+      setFinalFade(true);
+      setTimeout(() => onComplete(), FADE_DURATION);
+    } else {
+      onComplete();
+    }
   };
 
   useEffect(() => {
     playMusic("forest_region");
 
     const t = timersRef.current;
-
     const schedule = (fn: () => void, delay: number) => {
       t.push(setTimeout(fn, delay));
     };
@@ -68,16 +78,16 @@ export default function ForestIntroScreen({ onComplete }: Props) {
     for (let s = 0; s < 3; s++) {
       const base = s * SCENE_SLOT;
 
-      // 1) Swap scene while opacity is still 0 → new div mounts at opacity:0
+      // 1) Swap scene while opacity is 0 — new div mounts at opacity:0
       schedule(() => {
         setSceneIdx(s);
         setLinesMask([false, false, false, false]);
       }, base);
 
-      // 2) 50ms later: push opacity to 1 → CSS transition animates 0→1 over FADE_DURATION
+      // 2) 50ms later: animate opacity 0→1 (FADE_DURATION ms fade-in)
       schedule(() => setSceneOpacity(1), base + 50);
 
-      // 3) Lines appear one by one inside the visible window
+      // 3) Lines appear one by one in the visible window
       for (let l = 0; l < 4; l++) {
         const lineIndex = l;
         schedule(() => {
@@ -89,13 +99,13 @@ export default function ForestIntroScreen({ onComplete }: Props) {
         }, base + LINE_START + l * LINE_INTERVAL);
       }
 
-      // 4) Begin fade-out exactly FADE_DURATION before the next slot
+      // 4) Fade-out starts FADE_DURATION before the slot ends
       schedule(() => setSceneOpacity(0), base + FADE_OUT_AT);
     }
 
-    // After the last scene's fade-out completes, call onComplete
+    // After the last scene's fade-out completes, the screen is already black
     schedule(() => {
-      if (!completedRef.current) finish();
+      finish(false);
     }, 3 * SCENE_SLOT + 200);
 
     return () => t.forEach(clearTimeout);
@@ -106,7 +116,7 @@ export default function ForestIntroScreen({ onComplete }: Props) {
   return (
     <div className="fixed inset-0 z-[200] bg-black overflow-hidden select-none">
 
-      {/* Scene background with pan animation — remounts per scene via key */}
+      {/* Scene background — remounts per scene via key, pans during the slot */}
       <div
         key={sceneIdx}
         style={{
@@ -120,18 +130,18 @@ export default function ForestIntroScreen({ onComplete }: Props) {
         }}
       />
 
-      {/* Subtle vignette overlay for readability */}
+      {/* Radial vignette — aids readability without obscuring scenes */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse at center, rgba(0,0,0,0.08) 0%, rgba(0,0,0,0.52) 100%)",
+            "radial-gradient(ellipse at center, rgba(0,0,0,0.05) 0%, rgba(0,0,0,0.55) 100%)",
         }}
       />
 
       {/* Poem text — vertically and horizontally centered */}
       <div
-        className="absolute inset-0 flex flex-col items-center justify-center gap-4 px-10"
+        className="absolute inset-0 flex flex-col items-center justify-center gap-5 px-10"
         style={{
           opacity: sceneOpacity,
           transition: `opacity ${FADE_DURATION}ms ease`,
@@ -148,9 +158,9 @@ export default function ForestIntroScreen({ onComplete }: Props) {
               textShadow:
                 "0 2px 14px rgba(0,0,0,1), 0 0 6px rgba(0,0,0,0.9), 0 1px 3px rgba(0,0,0,0.8)",
               letterSpacing: "0.05em",
-              lineHeight: 2.2,
+              lineHeight: 2.4,
               opacity: linesMask[i] ? 1 : 0,
-              animation: linesMask[i] ? "introLineFadeIn 1s ease forwards" : "none",
+              animation: linesMask[i] ? "introLineFadeIn 1.2s ease forwards" : "none",
               margin: 0,
               textAlign: "center",
             }}
@@ -160,9 +170,18 @@ export default function ForestIntroScreen({ onComplete }: Props) {
         ))}
       </div>
 
+      {/* Skip-to-black overlay — fades in when SKIP is pressed */}
+      <div
+        className="absolute inset-0 bg-black pointer-events-none"
+        style={{
+          opacity: finalFade ? 1 : 0,
+          transition: finalFade ? `opacity ${FADE_DURATION}ms ease` : "none",
+        }}
+      />
+
       {/* Skip button */}
       <button
-        onClick={finish}
+        onClick={() => finish(true)}
         data-testid="button-intro-skip"
         style={{
           position: "absolute",
@@ -176,6 +195,7 @@ export default function ForestIntroScreen({ onComplete }: Props) {
           border: "none",
           cursor: "pointer",
           padding: "6px 10px",
+          zIndex: 10,
         }}
         onMouseEnter={e => (e.currentTarget.style.color = "rgba(255,255,255,0.85)")}
         onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.5)")}
@@ -193,6 +213,7 @@ export default function ForestIntroScreen({ onComplete }: Props) {
           fontSize: 8,
           letterSpacing: "0.22em",
           color: "rgba(255,255,255,0.28)",
+          zIndex: 10,
         }}
       >
         ELEMENTAL
