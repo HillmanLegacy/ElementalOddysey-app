@@ -2100,10 +2100,10 @@ export default function BattleScreen({
         let walkToX: number, walkToY: number;
         if (preTarget.type === "party" && preTarget.index >= 0) {
           const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
-          walkToX = tp.x + 8;
+          walkToX = tp.x + 5;
           walkToY = tp.y;
         } else {
-          walkToX = PLAYER_POS.x + 8;
+          walkToX = PLAYER_POS.x + 5;
           walkToY = PLAYER_POS.y;
         }
 
@@ -2415,10 +2415,10 @@ export default function BattleScreen({
         let walkToX: number, walkToY: number;
         if (preTarget.type === "party" && preTarget.index >= 0) {
           const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
-          walkToX = tp.x + 8;
+          walkToX = tp.x + 5;
           walkToY = tp.y;
         } else {
-          walkToX = PLAYER_POS.x + 8;
+          walkToX = PLAYER_POS.x + 5;
           walkToY = PLAYER_POS.y;
         }
 
@@ -2594,10 +2594,10 @@ export default function BattleScreen({
         let walkToX: number, walkToY: number;
         if (preTarget.type === "party" && preTarget.index >= 0) {
           const tp = PARTY_POSITIONS[preTarget.index % PARTY_POSITIONS.length];
-          walkToX = tp.x + 8;
+          walkToX = tp.x + 5;
           walkToY = tp.y;
         } else {
-          walkToX = PLAYER_POS.x + 8;
+          walkToX = PLAYER_POS.x + 5;
           walkToY = PLAYER_POS.y;
         }
 
@@ -2812,7 +2812,7 @@ export default function BattleScreen({
       const target = getEnemyGridPos(pendingTargetIdx);
       const targetEnemy = battle.enemies[pendingTargetIdx];
       const isBossTarget = targetEnemy && targetEnemy.isBoss;
-      return { x: target.x - (isBossTarget ? 16 : 8), y: PLAYER_POS.y };
+      return { x: target.x - (isBossTarget ? 12 : 5), y: PLAYER_POS.y };
     }
     if (animPhase === "hurt") {
       return getPlayerGridPos();
