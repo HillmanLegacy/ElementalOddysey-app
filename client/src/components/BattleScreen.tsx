@@ -314,10 +314,10 @@ const ENEMY_SLOTS: { x: number; y: number; z: number }[] = [
   { x: 75, y: 28, z: 1.0 },
 ];
 
-const ENEMY_GROUND_Y_OFFSET: Record<string, number> = {
-  minotaur_wind: 48,
-  cyclops_wind: -28,
-  harpy_wind: 0,
+const getEnemyGroundYShift = (enemy: { id: string; element: string; isBoss?: boolean }): number => {
+  const isFireDemon = enemy.element === "Fire" && !enemy.isBoss && enemy.id !== "demon_kin";
+  const isHarpy = enemy.id === "harpy_wind";
+  return (isFireDemon || isHarpy) ? -35 : 0;
 };
 
 const PLAYER_POS = ALLY_SLOTS[0];
@@ -558,6 +558,8 @@ export default function BattleScreen({
   };
 
   const getEnemyGridPos = (idx: number) => {
+    const enemy = battle.enemies[idx];
+    if (enemy?.isBoss) return ENEMY_SLOTS[0];
     const gp = battle.gridPositions;
     if (!gp || gp.enemies[idx] === undefined) return ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
     return ENEMY_SLOTS[gp.enemies[idx]] || ENEMY_POSITIONS[idx % ENEMY_POSITIONS.length];
@@ -4088,7 +4090,7 @@ export default function BattleScreen({
             const bossLeft = isBossMoving ? pos.x + enemyBossOffset.x : pos.x;
             const bossBottom = isBossMoving ? pos.y + enemyBossOffset.y : pos.y;
 
-            const groundYShift = ENEMY_GROUND_Y_OFFSET[enemy.id] ?? 0;
+            const groundYShift = getEnemyGroundYShift(enemy);
 
             return (
               <div
