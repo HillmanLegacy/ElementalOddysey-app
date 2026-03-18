@@ -8,8 +8,8 @@ import forestBgImg from "@assets/Forest_Region_Tree_Background_1773584096783.jpg
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
-import knightIdle from "@/assets/images/knight-idle-4f.png";
-import knightRun from "@/assets/images/knight-run.png";
+import slknightIdle from "@/assets/images/slknight-idle.png";
+import slknightRun from "@/assets/images/slknight-run.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 import baskenRun from "@/assets/images/basken-run.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
@@ -125,8 +125,8 @@ const CHAR_SPRITES: Record<string, {
   // groundOffset = measured transparent_bottom_px × scale (from pixel analysis of idle sheet)
   // hbXOff/hbYOff = body center as fraction of rendered W/H; hbHW/hbHH = half-extents as fraction
   samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   groundOffset: 30, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.19, hbHH: 0.27, stepFrames: [7, 15], jumpFrame: 7 },
-  // knight 86×49 scale=2.8 → 241×137; body fills ~55% width, ~80% height, tiny bottom gap
-  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6,  scale: 2.8, groundOffset: 6,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.27, hbHH: 0.37 },
+  // SL Knight 128×64 scale=2 → 256×128; multi-row sheets (2 cols × N rows)
+  knight:     { idle: slknightIdle,   run: slknightRun,   iW: 128, iH: 64,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 4,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.22, hbHH: 0.38, stepFrames: [2, 6], jumpFrame: 1 },
   // basken 56×56 scale=2.8 → 157×157; no bottom gap, body ~47% width, ~75% height
   basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8, groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.23, hbHH: 0.33 },
   // ranger 64×48 scale=2.8 → 179×134; no bottom gap, lean archer body

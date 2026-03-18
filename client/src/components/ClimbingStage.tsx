@@ -6,8 +6,8 @@ import { useColorMap } from "@/hooks/useColorMap";
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
-import knightIdle from "@/assets/images/knight-idle-4f.png";
-import knightRun from "@/assets/images/knight-run.png";
+import slknightIdle from "@/assets/images/slknight-idle.png";
+import slknightRun from "@/assets/images/slknight-run.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 import baskenRun from "@/assets/images/basken-run.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
@@ -56,7 +56,7 @@ const CHAR_SPRITES: Record<string, {
   stepFrames?: number[];
 }> = {
   samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   groundOffset: 30, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.19, hbHH: 0.27, stepFrames: [7, 15] },
-  knight:     { idle: knightIdle,     run: knightRun,     iW: 86,  iH: 49,  idleF: 4,  runF: 6,  scale: 2.8, groundOffset: 6,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.27, hbHH: 0.37 },
+  knight:     { idle: slknightIdle,   run: slknightRun,   iW: 128, iH: 64,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 4,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.22, hbHH: 0.38 },
   basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8, groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.23, hbHH: 0.33 },
   ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6,  scale: 2.8, groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.48, hbHW: 0.21, hbHH: 0.37 },
   knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 46, hbXOff: 0.50, hbYOff: 0.38, hbHW: 0.23, hbHH: 0.26 },
