@@ -2812,7 +2812,7 @@ export default function BattleScreen({
       const target = getEnemyGridPos(pendingTargetIdx);
       const targetEnemy = battle.enemies[pendingTargetIdx];
       const isBossTarget = targetEnemy && targetEnemy.isBoss;
-      return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
+      return { x: target.x - (isBossTarget ? 16 : 8), y: PLAYER_POS.y };
     }
     if (animPhase === "hurt") {
       return getPlayerGridPos();
