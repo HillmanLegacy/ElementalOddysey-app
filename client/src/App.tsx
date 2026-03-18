@@ -553,6 +553,9 @@ function Game() {
                 });
               }}
               onSave={handleSaveToSlot}
+              onStatus={() => setShowStatus(true)}
+              onOptions={() => setShowOptions(true)}
+              onExitToMenu={() => setExitToMenuTransition(true)}
             />
             {hutTransitionIn && (
               <BattleTransition
@@ -672,13 +675,10 @@ function Game() {
 
           const menuItems = [
             { label: "REST", desc: "Restore HP & MP", icon: Moon, action: () => { restAtNode(); playSfx('recover'); toast({ title: "Rested", description: "HP and MP fully restored!" }); } },
-            { label: "STATUS", desc: "View party stats & skills", icon: BarChart2, action: () => { setShowStatus(true); } },
             { label: "ITEMS", desc: "Use items, equip gear", icon: Package, action: () => { setShowHutInventory(true); setHutInventoryTab("items"); setHutTargetingItemId(null); } },
             ...(state.player!.party.length > 0 ? [{ label: "PARTY", desc: "Manage party members", icon: Users, action: () => { setShowPartyManagement(true); } }] : []),
             { label: "SAVE", desc: "Save your progress", icon: Save, action: () => { setShowSaveScreen(true); } },
-            { label: "OPTIONS", desc: "Game settings", icon: Sparkles, action: () => { setShowOptions(true); } },
             { label: "LEAVE", desc: "Return to overworld", icon: ArrowLeft, action: leaveHut },
-            { label: "MAIN MENU", desc: "Exit to title screen", icon: LogOut, action: () => { setExitToMenuTransition(true); } },
           ];
 
           return (

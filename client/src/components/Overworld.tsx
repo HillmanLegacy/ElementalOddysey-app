@@ -10,7 +10,7 @@ import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { useColorMap } from "@/hooks/useColorMap";
 import { playSfx } from "@/lib/sfx";
-import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap, Save } from "lucide-react";
+import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap, Save, BarChart2, LogOut } from "lucide-react";
 import { getSaves, type LocalSave } from "@/lib/localSaves";
 import { groupConsumables } from "@/lib/utils";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
@@ -148,9 +148,12 @@ interface OverworldProps {
   onUseItem: (itemId: string, targetPartyIndex?: number) => void;
   onArrowClick?: (fromNodeId: number, toNode: OverworldNode) => void;
   onSave: (slotNumber: number) => void;
+  onStatus: () => void;
+  onOptions: () => void;
+  onExitToMenu: () => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave, onStatus, onOptions, onExitToMenu }: OverworldProps) {
   const _owSpriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;
   const playerColorMap = useColorMap(_owSpriteConfig.idle.sheet, _owSpriteConfig.idle.frameWidth, _owSpriteConfig.idle.frameHeight, player.colorGroups);
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
@@ -1176,7 +1179,43 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               )}
             </div>
 
-            <div className="relative h-1" style={{ background: `linear-gradient(90deg, transparent, #c9a44a40, transparent)` }} />
+            <div className="relative h-1" style={{ background: `linear-gradient(90deg, transparent, #c9a44a20, transparent)` }} />
+
+            {/* System actions — always visible at the bottom */}
+            <div className="relative px-3 py-2 flex gap-2">
+              {[
+                { label: "STATUS", icon: BarChart2, action: () => { playSfx('menuSelect'); onStatus(); } },
+                { label: "OPTIONS", icon: Sparkles, action: () => { playSfx('menuSelect'); onOptions(); } },
+                { label: "MAIN MENU", icon: LogOut, action: () => { playSfx('menuSelect'); setMenuOpen(false); onExitToMenu(); } },
+              ].map(({ label, icon: Icon, action }) => (
+                <button
+                  key={label}
+                  onClick={action}
+                  style={{
+                    flex: 1,
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "7px",
+                    padding: "6px 4px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                    gap: "4px",
+                    border: "1px solid #c9a44a30",
+                    background: "#0d0b0bf0",
+                    color: label === "MAIN MENU" ? "#ef4444a0" : "#c9a44a80",
+                    cursor: "pointer",
+                    letterSpacing: "0.5px",
+                    transition: "all 0.15s",
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = "#1a1010f0"; e.currentTarget.style.color = label === "MAIN MENU" ? "#ef4444" : "#c9a44a"; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = "#0d0b0bf0"; e.currentTarget.style.color = label === "MAIN MENU" ? "#ef4444a0" : "#c9a44a80"; }}
+                  data-testid={`button-overworld-${label.toLowerCase().replace(" ", "-")}`}
+                >
+                  <Icon className="w-3 h-3" />
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
