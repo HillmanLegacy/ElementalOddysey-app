@@ -318,7 +318,7 @@ const getEnemyGroundYShift = (enemy: { id: string; element: string; isBoss?: boo
   const isFireDemon = enemy.element === "Fire" && !enemy.isBoss && enemy.id !== "demon_kin";
   if (isFireDemon || enemy.id === "harpy_wind") return -35;
   if (enemy.id === "minotaur_wind") return 48;
-  if (enemy.id === "cyclops_wind") return -28;
+  if (enemy.id === "cyclops_wind") return 34;
   return 0;
 };
 
