@@ -1315,8 +1315,6 @@ export default function BattleScreen({
           const id1 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id1 }]);
           playSfx("incinerationCleave", 1.2);
-          setShakeScreen(true);
-          scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);
           scheduleTimer(() => setEnemyHitIdx(null), 180);
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
@@ -1329,8 +1327,6 @@ export default function BattleScreen({
           const id2 = ++fireImpactId.current;
           setFireImpactVfx(prev => [...prev, { targetIdx, id: id2 }]);
           playSfx("incinerationCleave", 1.2);
-          setShakeScreen(true);
-          scheduleTimer(() => setShakeScreen(false), 300);
           setEnemyHitIdx(targetIdx);
           scheduleTimer(() => setEnemyHitIdx(null), 180);
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
@@ -3494,8 +3490,6 @@ export default function BattleScreen({
                             const id = ++fireImpactId.current;
                             setFireImpactVfx(prev => [...prev, { targetIdx: spellTarget, id }]);
                             playSfx("incinerationCleave", 1.2);
-                            setShakeScreen(true);
-                            scheduleTimer(() => setShakeScreen(false), 300);
                             setEnemyHitIdx(spellTarget);
                             scheduleTimer(() => setEnemyHitIdx(null), 180);
                           }, t);
