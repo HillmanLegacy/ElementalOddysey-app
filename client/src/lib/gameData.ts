@@ -110,7 +110,7 @@ export const PARTY_SPRITE_DATA: Record<string, PartySpriteData> = {
   },
   knight: {
     idle: { sheet: "slknight-idle.png", frameWidth: 128, frameHeight: 64, totalFrames: 8 },
-    attack: { sheet: "slknight-attack.png", frameWidth: 128, frameHeight: 64, totalFrames: 8 },
+    attack: { sheet: "slknight-attack.png", frameWidth: 128, frameHeight: 64, totalFrames: 9 },
     run: { sheet: "slknight-run.png", frameWidth: 128, frameHeight: 64, totalFrames: 8 },
     hurt: { sheet: "slknight-hurt.png", frameWidth: 128, frameHeight: 64, totalFrames: 4 },
   },

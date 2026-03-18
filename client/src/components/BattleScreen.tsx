@@ -210,7 +210,7 @@ const ENEMY_SPRITES: Record<string, string> = {
 
 const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; walk?: string; special?: string; death?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; walkFrames?: number; specialFrames?: number; deathFrames?: number; scale?: number }> = {
   samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 3, runFrames: 8, scale: 3.5 },
-  knight: { idle: slknightIdle, attack: slknightAttack, hurt: slknightHurt, run: slknightRun, walk: slknightRun, special: slknightSpecial, death: slknightDeath, frameWidth: 128, frameHeight: 64, idleFrames: 8, attackFrames: 8, hurtFrames: 4, runFrames: 8, walkFrames: 8, specialFrames: 12, deathFrames: 4, scale: 2 },
+  knight: { idle: slknightIdle, attack: slknightAttack, hurt: slknightHurt, run: slknightRun, walk: slknightRun, special: slknightSpecial, death: slknightDeath, frameWidth: 128, frameHeight: 64, idleFrames: 8, attackFrames: 9, hurtFrames: 4, runFrames: 8, walkFrames: 8, specialFrames: 12, deathFrames: 4, scale: 2 },
   basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, runFrames: 6, scale: 3.5 },
   ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6, scale: 3.5 },
   knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3, scale: 3.5 },
@@ -2646,6 +2646,9 @@ export default function BattleScreen({
         }
         return atk;
       case "incinerationSlash": {
+        if (player.spriteId === "knight") {
+          return { src: slknightAttack, frames: 20, fps: 14, loop: false, startAt: 9, pauseAt: 19, holdFrames: { 11: 200, 14: 200 }, w: 128, h: 64 };
+        }
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
         const incHoldFrames = { 2: 200, 5: 200 };
