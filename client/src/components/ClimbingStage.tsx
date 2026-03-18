@@ -201,6 +201,9 @@ interface ClimbingStageProps {
   onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number, patrol?: ClimbEnemySnapshot[]) => void;
   onComplete: () => void;
   onExit: () => void;
+  onStatus?: () => void;
+  onOptions?: () => void;
+  onExitToMenu?: () => void;
 }
 
 function touchBtnStyle(round = false): React.CSSProperties {
@@ -235,6 +238,9 @@ export default function ClimbingStage({
   onEnemyContact,
   onComplete,
   onExit,
+  onStatus,
+  onOptions,
+  onExitToMenu,
 }: ClimbingStageProps) {
   const isForest = regionTheme === "Wind";
   const stageKey = [Math.min(fromNodeId, toNodeId), Math.max(fromNodeId, toNodeId)].join("-");
@@ -318,6 +324,7 @@ export default function ClimbingStage({
   const [renderX, setRenderX] = useState(startX);
   const [renderY, setRenderY] = useState(initPlayerY);
   const [cameraY, setCameraY] = useState(initCamY);
+  const [menuOpen, setMenuOpen] = useState(false);
   const cameraYRef = useRef(initCamY);
   const [isRunning, setIsRunning] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
@@ -876,29 +883,96 @@ export default function ClimbingStage({
           {stageKey.toUpperCase()}
         </div>
 
-        <div style={{
-          background: "rgba(0,0,0,0.78)", border: "2px solid #555",
-          borderRadius: 4, padding: "6px 10px",
-          fontFamily: "'Press Start 2P', monospace",
-          display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
-        }}>
-          <div style={{ fontSize: 5, color: "#555", letterSpacing: 1 }}>↑ ALTITUDE</div>
-          <div style={{
-            width: 12, height: 90,
-            background: "rgba(0,0,0,0.5)", border: "1px solid #333",
-            borderRadius: 6, position: "relative", overflow: "hidden",
-          }}>
-            <div style={{
-              position: "absolute", bottom: 0, left: 0, right: 0,
-              height: `${altitudePct}%`,
-              background: altitudePct > 70
-                ? (isForest ? "linear-gradient(0deg,#22c55e,#86efac)" : "linear-gradient(0deg,#f59e0b,#fde047)")
-                : "linear-gradient(0deg,#c9a44a,#f0d060)",
-              transition: "height 0.3s",
-              boxShadow: "0 0 6px rgba(201,164,74,0.7)",
-            }} />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6 }}>
+          <div style={{ pointerEvents: "auto", position: "relative" }}>
+            <button
+              data-testid="button-stage-menu"
+              onClick={() => setMenuOpen(o => !o)}
+              style={{
+                background: "rgba(0,0,0,0.75)",
+                border: "2px solid #c9a44a",
+                borderRadius: 4,
+                padding: "4px 10px",
+                fontFamily: "'Press Start 2P', monospace",
+                fontSize: 16,
+                color: "#c9a44a",
+                cursor: "pointer",
+                lineHeight: 1,
+              }}
+            >≡</button>
+            {menuOpen && (
+              <div style={{
+                position: "absolute",
+                top: "calc(100% + 4px)",
+                right: 0,
+                background: "rgba(10,8,8,0.97)",
+                border: "2px solid #c9a44a",
+                borderRadius: 4,
+                minWidth: 150,
+                overflow: "hidden",
+                zIndex: 50,
+              }}>
+                {([
+                  { label: "STATUS", action: onStatus },
+                  { label: "OPTIONS", action: onOptions },
+                  { label: "MAIN MENU", action: onExitToMenu, danger: true },
+                ] as { label: string; action?: () => void; danger?: boolean }[]).map(({ label, action, danger }) => (
+                  <button
+                    key={label}
+                    data-testid={`button-stage-menu-${label.toLowerCase().replace(" ", "-")}`}
+                    onClick={() => { playSfx("menuSelect"); setMenuOpen(false); action?.(); }}
+                    style={{
+                      width: "100%",
+                      display: "block",
+                      padding: "10px 14px",
+                      fontFamily: "'Press Start 2P', monospace",
+                      fontSize: 7,
+                      color: danger ? "rgba(239,68,68,0.7)" : "#c9a44a",
+                      background: "transparent",
+                      border: "none",
+                      borderBottom: "1px solid rgba(201,164,74,0.15)",
+                      cursor: "pointer",
+                      textAlign: "left",
+                      letterSpacing: 1,
+                    }}
+                    onMouseEnter={e => {
+                      e.currentTarget.style.background = "#1a1010";
+                      e.currentTarget.style.color = danger ? "#ef4444" : "#e8d080";
+                    }}
+                    onMouseLeave={e => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.color = danger ? "rgba(239,68,68,0.7)" : "#c9a44a";
+                    }}
+                  >{label}</button>
+                ))}
+              </div>
+            )}
           </div>
-          <div style={{ fontSize: 7, color: "#c9a44a" }}>{altitudePct}%</div>
+
+          <div style={{
+            background: "rgba(0,0,0,0.78)", border: "2px solid #555",
+            borderRadius: 4, padding: "6px 10px",
+            fontFamily: "'Press Start 2P', monospace",
+            display: "flex", flexDirection: "column", alignItems: "center", gap: 4,
+          }}>
+            <div style={{ fontSize: 5, color: "#555", letterSpacing: 1 }}>↑ ALTITUDE</div>
+            <div style={{
+              width: 12, height: 90,
+              background: "rgba(0,0,0,0.5)", border: "1px solid #333",
+              borderRadius: 6, position: "relative", overflow: "hidden",
+            }}>
+              <div style={{
+                position: "absolute", bottom: 0, left: 0, right: 0,
+                height: `${altitudePct}%`,
+                background: altitudePct > 70
+                  ? (isForest ? "linear-gradient(0deg,#22c55e,#86efac)" : "linear-gradient(0deg,#f59e0b,#fde047)")
+                  : "linear-gradient(0deg,#c9a44a,#f0d060)",
+                transition: "height 0.3s",
+                boxShadow: "0 0 6px rgba(201,164,74,0.7)",
+              }} />
+            </div>
+            <div style={{ fontSize: 7, color: "#c9a44a" }}>{altitudePct}%</div>
+          </div>
         </div>
       </div>
 

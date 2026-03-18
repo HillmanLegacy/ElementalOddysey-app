@@ -323,6 +323,9 @@ interface SideScrollStageProps {
   onFireballContact: (enemyIndex: number, enemyId: string, playerX: number, patrol: SSEnemySnapshot[], demonStates: SSDemonSnapshot[]) => void;
   onComplete: () => void;
   onExit: () => void;
+  onStatus?: () => void;
+  onOptions?: () => void;
+  onExitToMenu?: () => void;
 }
 
 export default function SideScrollStage({
@@ -342,6 +345,9 @@ export default function SideScrollStage({
   onFireballContact,
   onComplete,
   onExit,
+  onStatus,
+  onOptions,
+  onExitToMenu,
 }: SideScrollStageProps) {
   const stageKey = [Math.min(fromNodeId, toNodeId), Math.max(fromNodeId, toNodeId)].join("-");
   const isForest = regionTheme === "Wind";
@@ -404,6 +410,7 @@ export default function SideScrollStage({
   // exitAnim.dist = px to translateX (negative = left, positive = right); activates on next rAF
   const [exitAnim, setExitAnim] = useState<{ dist: number; dur: number } | null>(null);
   const [exitTransformActive, setExitTransformActive] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const onEnemyContactRef = useRef(onEnemyContact);
   const onFireballContactRef = useRef(onFireballContact);
@@ -1375,6 +1382,71 @@ export default function SideScrollStage({
         }}>
           <div style={{ color: "#666", fontSize: 6, marginBottom: 2 }}>STAGE</div>
           {stageKey.toUpperCase()}
+        </div>
+
+        <div style={{ pointerEvents: "auto", position: "relative" }}>
+          <button
+            data-testid="button-stage-menu"
+            onClick={() => setMenuOpen(o => !o)}
+            style={{
+              background: "rgba(0,0,0,0.75)",
+              border: "2px solid #c9a44a",
+              borderRadius: 4,
+              padding: "4px 10px",
+              fontFamily: "'Press Start 2P', monospace",
+              fontSize: 16,
+              color: "#c9a44a",
+              cursor: "pointer",
+              lineHeight: 1,
+            }}
+          >≡</button>
+          {menuOpen && (
+            <div style={{
+              position: "absolute",
+              top: "calc(100% + 4px)",
+              right: 0,
+              background: "rgba(10,8,8,0.97)",
+              border: "2px solid #c9a44a",
+              borderRadius: 4,
+              minWidth: 150,
+              overflow: "hidden",
+              zIndex: 50,
+            }}>
+              {([
+                { label: "STATUS", action: onStatus },
+                { label: "OPTIONS", action: onOptions },
+                { label: "MAIN MENU", action: onExitToMenu, danger: true },
+              ] as { label: string; action?: () => void; danger?: boolean }[]).map(({ label, action, danger }) => (
+                <button
+                  key={label}
+                  data-testid={`button-stage-menu-${label.toLowerCase().replace(" ", "-")}`}
+                  onClick={() => { playSfx("menuSelect"); setMenuOpen(false); action?.(); }}
+                  style={{
+                    width: "100%",
+                    display: "block",
+                    padding: "10px 14px",
+                    fontFamily: "'Press Start 2P', monospace",
+                    fontSize: 7,
+                    color: danger ? "rgba(239,68,68,0.7)" : "#c9a44a",
+                    background: "transparent",
+                    border: "none",
+                    borderBottom: "1px solid rgba(201,164,74,0.15)",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    letterSpacing: 1,
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = "#1a1010";
+                    e.currentTarget.style.color = danger ? "#ef4444" : "#e8d080";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = danger ? "rgba(239,68,68,0.7)" : "#c9a44a";
+                  }}
+                >{label}</button>
+              ))}
+            </div>
+          )}
         </div>
 
       </div>

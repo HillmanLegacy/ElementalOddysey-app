@@ -347,6 +347,9 @@ function Game() {
                   onEnemyContact={(idx, eid, px, cv, py, patrol) => sharedEnemyContact(idx, eid, px, cv, py, patrol)}
                   onComplete={sharedComplete}
                   onExit={sharedExit}
+                  onStatus={() => setShowStatus(true)}
+                  onOptions={() => setShowOptions(true)}
+                  onExitToMenu={() => setExitToMenuTransition(true)}
                 />
               ) : (
                 <SideScrollStage
@@ -375,6 +378,9 @@ function Game() {
                   }}
                   onComplete={sharedComplete}
                   onExit={sharedExit}
+                  onStatus={() => setShowStatus(true)}
+                  onOptions={() => setShowOptions(true)}
+                  onExitToMenu={() => setExitToMenuTransition(true)}
                 />
               )}
               {sideScrollBattleTransition && (
