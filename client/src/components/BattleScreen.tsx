@@ -1041,9 +1041,9 @@ export default function BattleScreen({
       const midX = (PLAYER_POS.x + targetX) / 2;
       const groundY = PLAYER_POS.y;
       const highY = 60;
-      const runDur = 350;
-      const riseDur = Math.round(4 / 14 * 1000);
-      const fallDur = Math.round(4 / 14 * 1000);
+      const runDur = 403;
+      const riseDur = Math.round(4 / 12 * 1000);
+      const fallDur = Math.round(4 / 12 * 1000);
 
       setEruptionCleaveActive(true);
       setEruptionFrozenEnemy(targetIdx);
@@ -1284,8 +1284,8 @@ export default function BattleScreen({
         setIncinerationSlashActive(true);
         setIncinerationFrozenEnemy(targetIdx);
 
-        const frameDuration = 1000 / 14;
-        const hold = 200;
+        const frameDuration = 1000 / 12;
+        const hold = 230;
         const swing1Time = frameDuration * 1;
         const swing2Time = frameDuration * 4 + hold;
         const fire1Time = frameDuration * 2 + hold;
@@ -1448,7 +1448,7 @@ export default function BattleScreen({
         }, totalAnimTime + 800);
       } else {
         setAnimPhase("attacking");
-        const fd = 1000 / 14;
+        const fd = 1000 / 12;
         if (player.spriteId === "knight" && pendingTargetIdx !== null) {
           const tIdx = pendingTargetIdx;
           scheduleTimer(() => {
@@ -2729,10 +2729,10 @@ export default function BattleScreen({
 
   const getSpriteSheet = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number; startAt?: number; holdFrames?: Record<number, number>; w: number; h: number } => {
     const idle = { src: playerSprites.idle, frames: playerSprites.idleFrames, fps: 8, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
-    const atk = { src: playerSprites.attack, frames: playerSprites.attackFrames, fps: 14, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+    const atk = { src: playerSprites.attack, frames: playerSprites.attackFrames, fps: 12, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
     const hurt = { src: playerSprites.hurt, frames: playerSprites.hurtFrames, fps: 10, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
     const runSheet = playerSprites.run;
-    const runConfig = runSheet ? { src: runSheet, frames: playerSprites.runFrames || 6, fps: 14, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : idle;
+    const runConfig = runSheet ? { src: runSheet, frames: playerSprites.runFrames || 6, fps: 12, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : idle;
     const walkSheet = playerSprites.walk;
     const walkConfig = walkSheet ? { src: walkSheet, frames: playerSprites.walkFrames || 4, fps: 8, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : runConfig;
 
@@ -2750,38 +2750,38 @@ export default function BattleScreen({
         return atk;
       case "incinerationSlash": {
         if (player.spriteId === "knight") {
-          return { src: slknightAttack, frames: 20, fps: 14, loop: false, startAt: 9, pauseAt: 19, holdFrames: { 11: 200, 14: 200 }, w: 128, h: 64 };
+          return { src: slknightAttack, frames: 20, fps: 12, loop: false, startAt: 9, pauseAt: 19, holdFrames: { 11: 230, 14: 230 }, w: 128, h: 64 };
         }
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
-        const incHoldFrames = { 2: 200, 5: 200 };
+        const incHoldFrames = { 2: 230, 5: 230 };
         if (specialSheet) {
-          return { src: specialSheet, frames: specialFrames, fps: 14, loop: false, pauseAt: specialFrames - 1, holdFrames: incHoldFrames, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+          return { src: specialSheet, frames: specialFrames, fps: 12, loop: false, pauseAt: specialFrames - 1, holdFrames: incHoldFrames, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
-        return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
+        return { ...atk, fps: 12, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
       case "eruptionCleave": {
         if (eruptionSubPhase === "run") return runConfig;
         if (eruptionSubPhase === "jumpRise") {
-          return { src: slknightJump, frames: 4, fps: 14, loop: false, pauseAt: 3, w: 128, h: 64 };
+          return { src: slknightJump, frames: 4, fps: 12, loop: false, pauseAt: 3, w: 128, h: 64 };
         }
-        return { src: slknightAirAttack, frames: 8, fps: 14, loop: false, pauseAt: 7, w: 128, h: 64 };
+        return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, pauseAt: 7, w: 128, h: 64 };
       }
       case "thunderBolt": {
         if (player.element === "Lightning") {
-          return { src: baskenThunderCast, frames: 7, fps: 10, loop: false, pauseAt: 6, w: 56, h: 56 };
+          return { src: baskenThunderCast, frames: 7, fps: 9, loop: false, pauseAt: 6, w: 56, h: 56 };
         }
         return atk;
       }
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
-          return { ...atk, fps: 12, pauseAt: Math.min(3, atk.frames - 1) };
+          return { ...atk, fps: 10, pauseAt: Math.min(3, atk.frames - 1) };
         }
         if (fujinDashPhase === "dash") {
-          return { ...atk, fps: 12, pauseAt: Math.min(3, atk.frames - 1) };
+          return { ...atk, fps: 10, pauseAt: Math.min(3, atk.frames - 1) };
         }
         if (fujinDashPhase === "strike") {
-          return { ...atk, fps: 16, startAt: Math.min(3, atk.frames - 1) };
+          return { ...atk, fps: 14, startAt: Math.min(3, atk.frames - 1) };
         }
         return idle;
       case "hurt":
@@ -3206,16 +3206,16 @@ export default function BattleScreen({
                         ? "left 0s, bottom 0s, opacity 0.3s ease-in"
                         : "left 0.15s ease-out, bottom 0.15s ease-out, opacity 0.3s ease-in"
                 : animPhase === "runToEnemy"
-                  ? "left 0.35s ease-in, bottom 0.35s ease-in"
+                  ? "left 0.40s ease-in, bottom 0.40s ease-in"
                   : animPhase === "runBack"
-                    ? "left 0.35s ease-out, bottom 0.35s ease-out"
+                    ? "left 0.40s ease-out, bottom 0.40s ease-out"
                     : animPhase === "eruptionCleave"
                       ? eruptionSubPhase === "run"
-                        ? "left 0.35s ease-in, bottom 0s"
+                        ? "left 0.40s ease-in, bottom 0s"
                         : eruptionSubPhase === "jumpRise"
-                          ? "left 0.26s ease-out, bottom 0.26s ease-out"
+                          ? "left 0.30s ease-out, bottom 0.30s ease-out"
                           : eruptionSubPhase === "jumpFall"
-                            ? "bottom 0.286s ease-in, left 0s"
+                            ? "bottom 0.33s ease-in, left 0s"
                             : "none"
                       : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
@@ -3467,8 +3467,8 @@ export default function BattleScreen({
 
                       if (anim === "incinerationSlash") {
                         setIncinerationFrozenEnemy(spellTarget);
-                        const fd = 1000 / 14;
-                        const hold = 200;
+                        const fd = 1000 / 12;
+                        const hold = 230;
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd * 4 + hold);
                         [fd * 2 + hold, fd * 6 + hold * 2].forEach(t => {
@@ -3498,7 +3498,7 @@ export default function BattleScreen({
                       if (anim === "eruptionCleave") {
                         setEruptionFrozenEnemy(spellTarget);
                         playSfx("gruntAttack", 0.7);
-                        const fd = 1000 / 14;
+                        const fd = 1000 / 12;
                         const flamelashDur = Math.ceil(61 / 38 * 1000);
                         const flamelashStart = fd + 200;
                         const resumeAfter = flamelashStart + flamelashDur;
@@ -3594,8 +3594,8 @@ export default function BattleScreen({
                       if (partyTargetIdx !== null) {
                         const tidx = partyTargetIdx;
                         setIncinerationFrozenEnemy(tidx);
-                        const fd = 1000 / 14;
-                        const hold = 333;
+                        const fd = 1000 / 12;
+                        const hold = 383;
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd * 4 + hold);
                         [fd * 2, fd * 5 + hold].forEach(t => {
