@@ -31,7 +31,11 @@ export function useGameState() {
     const starterDef = STARTER_CHARACTERS.find(c => c.id === starterCharId);
     if (!starterDef) return;
     const player = createNewPlayer(starterDef, name, color, shape, colorVariant, colorGroups);
-    setState(s => ({ ...s, player, screen: "overworld" }));
+    setState(s => ({ ...s, player, screen: "intro" }));
+  }, []);
+
+  const completeIntro = useCallback(() => {
+    setState(s => ({ ...s, screen: "overworld" }));
   }, []);
 
   const updatePlayer = useCallback((updates: Partial<PlayerCharacter>) => {
@@ -1538,6 +1542,7 @@ export function useGameState() {
     setState,
     setScreen,
     createCharacter,
+    completeIntro,
     updatePlayer,
     startBattle,
     startBattleCustom,

@@ -360,6 +360,19 @@
   100% { opacity: 0; filter: brightness(0.3); }
 }
 
+@keyframes introPanLR {
+  0%   { background-position: 10% center; }
+  100% { background-position: 90% center; }
+}
+@keyframes introPanRL {
+  0%   { background-position: 90% center; }
+  100% { background-position: 10% center; }
+}
+@keyframes introLineFadeIn {
+  0%   { opacity: 0; transform: translateY(6px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
 html, body, #root {
   height: 100%;
 }

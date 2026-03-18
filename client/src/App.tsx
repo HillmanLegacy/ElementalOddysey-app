@@ -8,6 +8,7 @@ import { useGameState } from "@/lib/gameState";
 import { getRegionForTier, getRegionTier, ELEMENT_COLORS } from "@/lib/gameData";
 import MainMenu from "@/components/MainMenu";
 import CharacterCreation from "@/components/CharacterCreation";
+import ForestIntroScreen from "@/components/ForestIntroScreen";
 import Overworld from "@/components/Overworld";
 import BattleScreen from "@/components/BattleScreen";
 import LevelUpScreen from "@/components/LevelUpScreen";
@@ -73,7 +74,7 @@ function useViewportScale() {
 
 function Game() {
   const {
-    state, setState, setScreen, createCharacter, updatePlayer,
+    state, setState, setScreen, createCharacter, completeIntro, updatePlayer,
     startBattle, startBattleCustom, playerAttack, castSpell, playerDefend, useItem, useItemOverworld,
     partyMemberAttack, partyMemberDefend, partyMemberCastSpell, partyMemberUseItem, advancePartyTurn, finishPartyTurn,
     enemyAttack, enemyTurnEnd, endBattle, fleeBattle, allocateStat, selectPerk, openShop,
@@ -126,7 +127,7 @@ function Game() {
     } else if (state.screen === "menu") {
       stopAmbient();
       playMusic("main_menu");
-    } else {
+    } else if (state.screen !== "intro") {
       stopAll();
     }
   }, [state.screen, state.player?.currentRegion]);
@@ -301,6 +302,9 @@ function Game() {
             onBack={() => setScreen("menu")}
           />
         );
+
+      case "intro":
+        return <ForestIntroScreen onComplete={completeIntro} />;
 
       case "overworld":
         if (!state.player) return null;
