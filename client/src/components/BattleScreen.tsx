@@ -646,9 +646,10 @@ export default function BattleScreen({
     preTarget: { type: "player" | "party"; index: number };
     onDone: (() => void) | null;
   } | null>(null);
-  const [fireImpactVfx, setFireImpactVfx] = useState<{ targetIdx: number; id: number }[]>([]);
+  const [fireImpactVfx, setFireImpactVfx] = useState<{ targetIdx: number; id: number; isIncSlash?: boolean }[]>([]);
   const [incinerationSlashActive, setIncinerationSlashActive] = useState(false);
   const [incinerationFrozenEnemy, setIncinerationFrozenEnemy] = useState<number | null>(null);
+  const [incinerationCasterPos, setIncinerationCasterPos] = useState<{ x: number; y: number } | null>(null);
   const pendingIncinerationSlash = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const [eruptionCleaveActive, setEruptionCleaveActive] = useState(false);
   const [eruptionFlamelashActive, setEruptionFlamelashActive] = useState(false);
@@ -1295,6 +1296,8 @@ export default function BattleScreen({
         setAnimPhase("incinerationSlash");
         setIncinerationSlashActive(true);
         setIncinerationFrozenEnemy(targetIdx);
+        const isBossT = battle.enemies[targetIdx]?.isBoss;
+        setIncinerationCasterPos({ x: ENEMY_SLOTS[targetIdx].x - (isBossT ? 12 : 5), y: PLAYER_POS.y });
 
         const frameDuration = 1000 / 12;
         const hold = 230;
@@ -1313,7 +1316,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           const id1 = ++fireImpactId.current;
-          setFireImpactVfx(prev => [...prev, { targetIdx, id: id1 }]);
+          setFireImpactVfx(prev => [...prev, { targetIdx, id: id1, isIncSlash: true }]);
           playSfx("incinerationCleave", 1.2);
           setEnemyHitIdx(targetIdx);
           scheduleTimer(() => setEnemyHitIdx(null), 180);
@@ -1325,7 +1328,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           const id2 = ++fireImpactId.current;
-          setFireImpactVfx(prev => [...prev, { targetIdx, id: id2 }]);
+          setFireImpactVfx(prev => [...prev, { targetIdx, id: id2, isIncSlash: true }]);
           playSfx("incinerationCleave", 1.2);
           setEnemyHitIdx(targetIdx);
           scheduleTimer(() => setEnemyHitIdx(null), 180);
@@ -1339,6 +1342,7 @@ export default function BattleScreen({
 
         scheduleTimer(() => {
           setIncinerationSlashActive(false);
+          setIncinerationCasterPos(null);
           setFireImpactVfx([]);
           setMagicZoom(false);
           setMagicZoomTarget(null);
@@ -3344,6 +3348,26 @@ export default function BattleScreen({
             </div>
           </div>
 
+          {incinerationCasterPos && fireImpactVfx.filter(v => v.isIncSlash).map(v => (
+            <div key={v.id} className="absolute z-50 pointer-events-none" style={{
+              left: `calc(${incinerationCasterPos.x}% + 32px)`,
+              bottom: `calc(${incinerationCasterPos.y}% - 46px)`,
+              width: 192,
+              height: 192,
+              filter: "drop-shadow(0 0 12px rgba(255,120,0,0.8)) drop-shadow(0 0 24px rgba(255,60,0,0.4))",
+            }}>
+              <SpriteAnimator
+                spriteSheet={vfxFireImpact}
+                frameWidth={64}
+                frameHeight={64}
+                totalFrames={10}
+                fps={16}
+                scale={3}
+                loop={false}
+              />
+            </div>
+          ))}
+
           {eruptionNukeActive && (
             <div className="absolute pointer-events-none" style={{
               zIndex: 300,
@@ -3481,6 +3505,9 @@ export default function BattleScreen({
 
                       if (anim === "incinerationSlash") {
                         setIncinerationFrozenEnemy(spellTarget);
+                        const isBossT = battle.enemies[spellTarget]?.isBoss;
+                        const partySlot = PARTY_POSITIONS[pIdx % PARTY_POSITIONS.length];
+                        setIncinerationCasterPos({ x: ENEMY_SLOTS[spellTarget].x - (isBossT ? 16 : 8), y: partySlot.y - 4 });
                         const fd = 1000 / 12;
                         const hold = 230;
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
@@ -3488,7 +3515,7 @@ export default function BattleScreen({
                         [fd * 2 + hold, fd * 6 + hold * 2].forEach(t => {
                           scheduleTimer(() => {
                             const id = ++fireImpactId.current;
-                            setFireImpactVfx(prev => [...prev, { targetIdx: spellTarget, id }]);
+                            setFireImpactVfx(prev => [...prev, { targetIdx: spellTarget, id, isIncSlash: true }]);
                             playSfx("incinerationCleave", 1.2);
                             setEnemyHitIdx(spellTarget);
                             scheduleTimer(() => setEnemyHitIdx(null), 180);
@@ -3501,6 +3528,7 @@ export default function BattleScreen({
                         }, totalAnim + 200);
                         scheduleTimer(() => {
                           setFireImpactVfx([]);
+                          setIncinerationCasterPos(null);
                           setIncinerationFrozenEnemy(null);
                           doRunBack(0);
                         }, totalAnim + 600);
@@ -3609,6 +3637,9 @@ export default function BattleScreen({
                       if (partyTargetIdx !== null) {
                         const tidx = partyTargetIdx;
                         setIncinerationFrozenEnemy(tidx);
+                        const isBossT = battle.enemies[tidx]?.isBoss;
+                        const partySlot = PARTY_POSITIONS[battle.activePartyIndex % PARTY_POSITIONS.length];
+                        setIncinerationCasterPos({ x: ENEMY_SLOTS[tidx].x - (isBossT ? 16 : 8), y: partySlot.y - 4 });
                         const fd = 1000 / 12;
                         const hold = 383;
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
@@ -3616,10 +3647,8 @@ export default function BattleScreen({
                         [fd * 2, fd * 5 + hold].forEach(t => {
                           scheduleTimer(() => {
                             const id = ++fireImpactId.current;
-                            setFireImpactVfx(prev => [...prev, { targetIdx: tidx, id }]);
+                            setFireImpactVfx(prev => [...prev, { targetIdx: tidx, id, isIncSlash: true }]);
                             playSfx("incinerationCleave", 1.2);
-                            setShakeScreen(true);
-                            scheduleTimer(() => setShakeScreen(false), 300);
                             setEnemyHitIdx(tidx);
                             scheduleTimer(() => setEnemyHitIdx(null), 180);
                           }, t);
@@ -3628,6 +3657,7 @@ export default function BattleScreen({
                         scheduleTimer(() => onPartyMemberAttack(battle.activePartyIndex, tidx), fd * 2);
                         scheduleTimer(() => {
                           setFireImpactVfx([]);
+                          setIncinerationCasterPos(null);
                           setIncinerationFrozenEnemy(null);
                           doRunBack(0);
                         }, totalAnim + 200);
@@ -4197,7 +4227,7 @@ export default function BattleScreen({
                     </div>
                   )}
                   
-                  {fireImpactVfx.filter(v => v.targetIdx === idx).map(v => (
+                  {fireImpactVfx.filter(v => v.targetIdx === idx && !v.isIncSlash).map(v => (
                     <div key={v.id} className="absolute z-50 pointer-events-none" style={{
                       top: "50%",
                       left: "50%",
