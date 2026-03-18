@@ -1037,7 +1037,7 @@ export default function BattleScreen({
       setSelectedSpell(null);
       setShowSpells(false);
 
-      const target = ENEMY_POSITIONS[targetIdx % ENEMY_POSITIONS.length];
+      const target = getEnemyGridPos(targetIdx);
       const targetX = target.x;
       const targetY = target.y - 4;
       const midX = (PLAYER_POS.x + targetX) / 2;
@@ -2797,7 +2797,7 @@ export default function BattleScreen({
 
   const getPlayerPosition = (): { x: number; y: number } => {
     if (animPhase === "fujinSlice" && fujinTargetIdx !== null) {
-      const target = ENEMY_POSITIONS[fujinTargetIdx % ENEMY_POSITIONS.length];
+      const target = getEnemyGridPos(fujinTargetIdx);
       if (fujinDashPhase === "dash" || fujinDashPhase === "strike" || fujinDashPhase === "fadeout") {
         return { x: target.x + 12, y: target.y - 4 };
       }
@@ -2807,7 +2807,7 @@ export default function BattleScreen({
       return { x: eruptionKnightX, y: eruptionKnightY };
     }
     if ((animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "incinerationSlash" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
-      const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
+      const target = getEnemyGridPos(pendingTargetIdx);
       const targetEnemy = battle.enemies[pendingTargetIdx];
       const isBossTarget = targetEnemy && targetEnemy.isBoss;
       return { x: target.x - (isBossTarget ? 16 : 8), y: target.y - 4 };
