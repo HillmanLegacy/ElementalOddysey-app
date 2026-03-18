@@ -821,8 +821,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           <div
             className="relative overflow-hidden"
             style={{
-              width: "280px",
-              maxHeight: "580px",
+              width: "480px",
               background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
               border: `3px solid #c9a44a`,
               boxShadow: `0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)`,
@@ -834,6 +833,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               pointerEvents: "none",
             }} />
 
+            {/* Header */}
             <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid #c9a44a` }}>
               <div className="flex items-center gap-2">
                 <div className="flex items-center gap-1.5">
@@ -858,98 +858,98 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               </button>
             </div>
 
-            <div className="relative flex gap-0 px-4 pt-2" style={{ flexWrap: "wrap" }}>
-              {(["party", "items", "gear"] as const).map(tab => (
+            {/* Body: vertical tabs left + content right */}
+            <div className="relative flex" style={{ minHeight: "360px", maxHeight: "520px" }}>
+
+              {/* Vertical tab column */}
+              <div className="flex flex-col flex-shrink-0" style={{ width: "88px", borderRight: `2px solid #c9a44a30`, background: "#09070780" }}>
+                {(["party", "items", "gear", "save"] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => { playSfx('menuSelect'); setMenuTab(tab); setTargetingItemId(null); if (tab === "save") setSaves(getSaves()); }}
+                    style={{
+                      fontFamily: "'Press Start 2P', cursive",
+                      fontSize: "7px",
+                      padding: "10px 8px",
+                      textAlign: "left",
+                      borderBottom: `1px solid #c9a44a20`,
+                      borderRight: menuTab === tab ? `3px solid #c9a44a` : "3px solid transparent",
+                      background: menuTab === tab ? "#c9a44a18" : "transparent",
+                      color: menuTab === tab ? "#c9a44a" : "#c9a44a60",
+                      cursor: "pointer",
+                      letterSpacing: "1px",
+                      width: "100%",
+                    }}
+                    data-testid={`tab-overworld-${tab}`}
+                  >
+                    {tab.toUpperCase()}
+                  </button>
+                ))}
+
+                {/* Divider before action items */}
+                <div style={{ borderTop: `1px solid #c9a44a25`, margin: "6px 10px" }} />
+
                 <button
-                  key={tab}
-                  onClick={() => { playSfx('menuSelect'); setMenuTab(tab); setTargetingItemId(null); }}
+                  onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onStatus(); }}
                   style={{
                     fontFamily: "'Press Start 2P', cursive",
-                    fontSize: "8px",
-                    padding: "6px 10px",
-                    border: `1px solid #c9a44a`,
-                    borderBottom: menuTab === tab ? "none" : `1px solid #c9a44a`,
-                    background: menuTab === tab ? "#c9a44a" : "transparent",
-                    color: menuTab === tab ? "#0a0808" : "#c9a44a80",
+                    fontSize: "7px",
+                    padding: "10px 8px",
+                    textAlign: "left",
+                    borderBottom: `1px solid #c9a44a20`,
+                    borderRight: "3px solid transparent",
+                    background: "transparent",
+                    color: "#c9a44a60",
                     cursor: "pointer",
                     letterSpacing: "1px",
+                    width: "100%",
                   }}
-                  data-testid={`tab-overworld-${tab}`}
+                  data-testid="tab-overworld-status"
                 >
-                  {tab.toUpperCase()}
+                  STATUS
                 </button>
-              ))}
-              <button
-                onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onStatus(); }}
-                style={{
-                  fontFamily: "'Press Start 2P', cursive",
-                  fontSize: "8px",
-                  padding: "6px 10px",
-                  border: `1px solid #c9a44a`,
-                  borderBottom: `1px solid #c9a44a`,
-                  background: "transparent",
-                  color: "#c9a44a80",
-                  cursor: "pointer",
-                  letterSpacing: "1px",
-                }}
-                data-testid="tab-overworld-status"
-              >
-                STATUS
-              </button>
-              <button
-                onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onOptions(); }}
-                style={{
-                  fontFamily: "'Press Start 2P', cursive",
-                  fontSize: "8px",
-                  padding: "6px 10px",
-                  border: `1px solid #c9a44a`,
-                  borderBottom: `1px solid #c9a44a`,
-                  background: "transparent",
-                  color: "#c9a44a80",
-                  cursor: "pointer",
-                  letterSpacing: "1px",
-                }}
-                data-testid="tab-overworld-options"
-              >
-                OPTIONS
-              </button>
-              <button
-                onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onExitToMenu(); }}
-                style={{
-                  fontFamily: "'Press Start 2P', cursive",
-                  fontSize: "8px",
-                  padding: "6px 10px",
-                  border: `1px solid #c9a44a`,
-                  borderBottom: `1px solid #c9a44a`,
-                  background: "transparent",
-                  color: "#ef444480",
-                  cursor: "pointer",
-                  letterSpacing: "1px",
-                }}
-                data-testid="tab-overworld-main-menu"
-              >
-                MENU
-              </button>
-              <button
-                onClick={() => { playSfx('menuSelect'); setMenuTab("save"); setSaves(getSaves()); }}
-                style={{
-                  fontFamily: "'Press Start 2P', cursive",
-                  fontSize: "8px",
-                  padding: "6px 10px",
-                  border: `1px solid #c9a44a`,
-                  borderBottom: menuTab === "save" ? "none" : `1px solid #c9a44a`,
-                  background: menuTab === "save" ? "#c9a44a" : "transparent",
-                  color: menuTab === "save" ? "#0a0808" : "#c9a44a80",
-                  cursor: "pointer",
-                  letterSpacing: "1px",
-                }}
-                data-testid="tab-overworld-save"
-              >
-                SAVE
-              </button>
-            </div>
+                <button
+                  onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onOptions(); }}
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "7px",
+                    padding: "10px 8px",
+                    textAlign: "left",
+                    borderBottom: `1px solid #c9a44a20`,
+                    borderRight: "3px solid transparent",
+                    background: "transparent",
+                    color: "#c9a44a60",
+                    cursor: "pointer",
+                    letterSpacing: "1px",
+                    width: "100%",
+                  }}
+                  data-testid="tab-overworld-options"
+                >
+                  OPTIONS
+                </button>
+                <button
+                  onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onExitToMenu(); }}
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "7px",
+                    padding: "10px 8px",
+                    textAlign: "left",
+                    borderBottom: `1px solid #c9a44a20`,
+                    borderRight: "3px solid transparent",
+                    background: "transparent",
+                    color: "#ef444460",
+                    cursor: "pointer",
+                    letterSpacing: "1px",
+                    width: "100%",
+                  }}
+                  data-testid="tab-overworld-main-menu"
+                >
+                  MENU
+                </button>
+              </div>
 
-            <div className="relative px-4 py-3" style={{ maxHeight: "440px", overflowY: "auto" }}>
+              {/* Content pane */}
+              <div className="relative flex-1 overflow-y-auto px-4 py-3" style={{ maxHeight: "520px" }}>
               {menuTab === "party" && (
                 <div className="space-y-2">
                   {[{ name: player.name, stats: player.stats, level: player.level, element: player.element, xp: player.xp, xpToNext: player.xpToNext },
@@ -1245,7 +1245,8 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                   })}
                 </div>
               )}
-            </div>
+            </div>{/* end content pane */}
+            </div>{/* end flex body */}
 
           </div>
         </div>
