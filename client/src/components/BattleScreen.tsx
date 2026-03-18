@@ -131,6 +131,7 @@ import slknightHurt from "@/assets/images/slknight-hurt.png";
 import slknightRun from "@/assets/images/slknight-run.png";
 import slknightSpecial from "@/assets/images/slknight-special.png";
 import slknightDeath from "@/assets/images/slknight-death.png";
+import slknightJump from "@/assets/images/slknight-jump.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
 import rangerAttack from "@/assets/images/ranger-attack.png";
 import rangerHurt from "@/assets/images/ranger-hurt.png";
@@ -649,6 +650,9 @@ export default function BattleScreen({
   const [eruptionNukeActive, setEruptionNukeActive] = useState(false);
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
+  const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpFall">("idle");
+  const [eruptionKnightX, setEruptionKnightX] = useState(PLAYER_POS.x);
+  const [eruptionKnightY, setEruptionKnightY] = useState(PLAYER_POS.y);
   const pendingEruptionCleave = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const pendingPartySpellRef = useRef<{ spell: Spell; targetIdx: number; pIdx: number } | null>(null);
   const [thunderBoltActive, setThunderBoltActive] = useState(false);
@@ -1021,15 +1025,97 @@ export default function BattleScreen({
       return;
     }
     if (selectedSpell.animation === "eruptionCleave") {
-      pendingEruptionCleave.current = { targetIdx, spell: selectedSpell };
+      const spell = selectedSpell;
       setSelectedAction(null);
       setPendingTargetIdx(targetIdx);
       onSetAnimating();
       setMagicZoom(true);
       setMagicZoomTarget(targetIdx);
-      setAnimPhase("runToEnemy");
       setSelectedSpell(null);
       setShowSpells(false);
+
+      const target = ENEMY_POSITIONS[targetIdx % ENEMY_POSITIONS.length];
+      const isBoss = battle.enemies[targetIdx]?.isBoss;
+      const targetX = target.x - (isBoss ? 16 : 8);
+      const targetY = target.y - 4;
+      const midX = (PLAYER_POS.x + targetX) / 2;
+      const groundY = PLAYER_POS.y;
+      const highY = 60;
+      const runDur = 350;
+      const riseDur = Math.round(4 / 14 * 1000);
+      const fallDur = Math.round(4 / 14 * 1000);
+
+      setEruptionCleaveActive(true);
+      setEruptionFrozenEnemy(targetIdx);
+      setEruptionSubPhase("run");
+      setEruptionKnightX(PLAYER_POS.x);
+      setEruptionKnightY(groundY);
+      setAnimPhase("eruptionCleave");
+      playSfx("gruntAttack", 0.7);
+      scheduleTimer(() => setEruptionKnightX(midX), 16);
+
+      scheduleTimer(() => {
+        setEruptionSubPhase("jumpRise");
+        setEruptionKnightX(targetX);
+        setEruptionKnightY(highY);
+      }, runDur);
+
+      scheduleTimer(() => {
+        setEruptionSubPhase("jumpFall");
+        setEruptionKnightY(targetY);
+        playSfx("eruptionDownwardSlash", 0.9);
+      }, runDur + riseDur);
+
+      const nukeStart = runDur + riseDur + fallDur;
+      scheduleTimer(() => {
+        setEruptionNukeActive(true);
+        setEruptionNukeTargetIdx(targetIdx);
+        playSfx("eruptionCleave", 1.3);
+        setShakeScreen(true);
+        scheduleTimer(() => setShakeScreen(false), 500);
+        setEnemyHitIdx(targetIdx);
+        scheduleTimer(() => setEnemyHitIdx(null), 300);
+        setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+        scheduleTimer(() => {
+          setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
+        }, 500);
+      }, nukeStart);
+
+      const nukeDuration = 11 * (1000 / 18);
+      scheduleTimer(() => {
+        setEruptionNukeActive(false);
+        setEruptionNukeTargetIdx(null);
+      }, nukeStart + nukeDuration);
+
+      const totalAnimTime = nukeStart + nukeDuration + 400;
+      scheduleTimer(() => {
+        setEruptionCleaveActive(false);
+        setEruptionSubPhase("idle");
+        setMagicZoom(false);
+        setMagicZoomTarget(null);
+        castingNeedsRunBack.current = false;
+        runBackHandled.current = false;
+        setAnimPhase("runBack");
+        scheduleTimer(() => {
+          if (!runBackHandled.current) {
+            runBackHandled.current = true;
+            setAnimPhase("idle");
+            setPendingTargetIdx(null);
+          }
+        }, 600);
+      }, totalAnimTime);
+
+      scheduleTimer(() => {
+        onCastSpell(spell, targetIdx);
+        playSfx("magicRing", 0.4);
+      }, totalAnimTime + 200);
+
+      scheduleTimer(() => {
+        setEruptionFrozenEnemy(null);
+        if (battle.phase !== "victory" && battle.phase !== "defeat") {
+          setTimeout(() => onFinishPlayerTurn(), 1600);
+        }
+      }, totalAnimTime + 800);
       return;
     }
     if (selectedSpell.animation === "thunderBolt") {
@@ -1055,7 +1141,7 @@ export default function BattleScreen({
     onCastSpell(selectedSpell, targetIdx);
     setSelectedSpell(null);
     setShowSpells(false);
-  }, [selectedSpell, onSetAnimating, onCastSpell, scheduleTimer]);
+  }, [selectedSpell, onSetAnimating, onCastSpell, onFinishPlayerTurn, scheduleTimer, battle.enemies, battle.phase]);
 
   const handleSelfSpell = useCallback((spell: Spell) => {
     onSetAnimating();
@@ -2675,8 +2761,11 @@ export default function BattleScreen({
         return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
       }
       case "eruptionCleave": {
-        const ecHoldFrames: Record<number, number> = { 15: 1800 };
-        return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, holdFrames: ecHoldFrames, w: 86, h: 49 };
+        if (eruptionSubPhase === "run") return runConfig;
+        if (eruptionSubPhase === "jumpRise") {
+          return { src: slknightJump, frames: 4, fps: 14, loop: false, pauseAt: 3, w: 128, h: 64 };
+        }
+        return { src: knightEruptionSheet, frames: 19, fps: 14, loop: false, pauseAt: 18, startAt: 14, w: 86, h: 49 };
       }
       case "thunderBolt": {
         if (player.element === "Lightning") {
@@ -2712,7 +2801,10 @@ export default function BattleScreen({
       }
       return getPlayerGridPos();
     }
-    if ((animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "incinerationSlash" || animPhase === "eruptionCleave" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
+    if (animPhase === "eruptionCleave") {
+      return { x: eruptionKnightX, y: eruptionKnightY };
+    }
+    if ((animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "incinerationSlash" || (animPhase === "casting" && castingNeedsRunBack.current)) && pendingTargetIdx !== null) {
       const target = ENEMY_POSITIONS[pendingTargetIdx % ENEMY_POSITIONS.length];
       const targetEnemy = battle.enemies[pendingTargetIdx];
       const isBossTarget = targetEnemy && targetEnemy.isBoss;
@@ -3117,7 +3209,15 @@ export default function BattleScreen({
                   ? "left 0.35s ease-in, bottom 0.35s ease-in"
                   : animPhase === "runBack"
                     ? "left 0.35s ease-out, bottom 0.35s ease-out"
-                    : "left 0.15s ease-out, bottom 0.15s ease-out",
+                    : animPhase === "eruptionCleave"
+                      ? eruptionSubPhase === "run"
+                        ? "left 0.35s ease-in, bottom 0s"
+                        : eruptionSubPhase === "jumpRise"
+                          ? "left 0.26s ease-out, bottom 0.26s ease-out"
+                          : eruptionSubPhase === "jumpFall"
+                            ? "bottom 0.286s ease-in, left 0s"
+                            : "none"
+                      : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
             onTransitionEnd={onPlayerTransitionEnd}
             data-testid="img-player-character"
