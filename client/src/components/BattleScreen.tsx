@@ -138,6 +138,8 @@ import slknightIncSlash from "@assets/Attacks_1773895515346.png";
 import slknightDeath from "@/assets/images/slknight-death.png";
 import slknightJump from "@/assets/images/slknight-jump.png";
 import slknightAirAttack from "@/assets/images/slknight-airattack.png";
+import slknightPraySheet from "@assets/Pray_1773950669346.png";
+import tornadoFireSheet from "@assets/Tornado-Sheet_1773950600765.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
 import rangerAttack from "@/assets/images/ranger-attack.png";
 import rangerHurt from "@/assets/images/ranger-hurt.png";
@@ -305,7 +307,7 @@ interface BattleScreenProps {
   enemyColorVariant?: number;
 }
 
-type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt";
+type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt" | "infernosPrayer";
 
 const ALLY_SLOTS: { x: number; y: number }[] = [
   { x: 11, y: 28 },
@@ -678,6 +680,8 @@ export default function BattleScreen({
   const [thunderBoltFrame, setThunderBoltFrame] = useState(0);
   const [thunderFrozenEnemy, setThunderFrozenEnemy] = useState<number | null>(null);
   const pendingThunderBolt = useRef<{ targetIdx: number; spell: any } | null>(null);
+  const [tornadoVfxTargets, setTornadoVfxTargets] = useState<number[]>([]);
+  const pendingInfernosPrayer = useRef<{ targets: number[]; spell: Spell } | null>(null);
   const eruptionBuildupAudio = useRef<HTMLAudioElement | null>(null);
   const eruptionFirechargeAudio = useRef<HTMLAudioElement | null>(null);
   const eruptionFlamelashAudio = useRef<HTMLAudioElement | null>(null);
@@ -1222,6 +1226,14 @@ export default function BattleScreen({
     setMagicZoom(true);
     setMagicZoomTarget(null);
     playSfx("magicRing", 0.6);
+    if (spell.animation === "infernosPrayer") {
+      const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
+      pendingInfernosPrayer.current = { targets: aliveTargets, spell };
+      setSelectedSpell(null);
+      setShowSpells(false);
+      setSelectedAction(null);
+      return;
+    }
     if (spell.animation === "galeSlash") {
       const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
       setWindSpellVfx({ type: "galeSlash", targets: aliveTargets });
@@ -1804,6 +1816,42 @@ export default function BattleScreen({
         }, endTime);
         return;
       }
+      if (pendingInfernosPrayer.current) {
+        const { targets, spell } = pendingInfernosPrayer.current;
+        pendingInfernosPrayer.current = null;
+        setAnimPhase("infernosPrayer");
+        const prayFps = 8;
+        const frameDuration = 1000 / prayFps;
+        const tornadoDelay = 3 * frameDuration;
+        scheduleTimer(() => {
+          setTornadoVfxTargets(targets);
+          onCastSpell(spell);
+          setShakeScreen(true);
+          scheduleTimer(() => setShakeScreen(false), 400);
+          targets.forEach(idx => {
+            const hitEnemy = battle.enemies[idx];
+            if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
+              setEnemyAnimStates(prev => ({ ...prev, [idx]: "hurt" }));
+              scheduleTimer(() => {
+                setEnemyAnimStates(prev => prev[idx] === "death" ? prev : { ...prev, [idx]: ytrielRestAnim(idx) });
+              }, 500);
+            }
+          });
+        }, tornadoDelay);
+        const tornadoDur = 900;
+        scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + tornadoDur);
+        const totalDur = 12 * frameDuration + 300;
+        scheduleTimer(() => {
+          setMagicZoom(false);
+          setMagicZoomTarget(null);
+          setAnimPhase("idle");
+          setPendingTargetIdx(null);
+          if (battle.phase !== "victory" && battle.phase !== "defeat") {
+            setTimeout(() => onFinishPlayerTurn(), 1600);
+          }
+        }, totalDur);
+        return;
+      }
       setMagicZoom(false);
       setMagicZoomTarget(null);
       if (castingNeedsRunBack.current) {
@@ -1851,8 +1899,12 @@ export default function BattleScreen({
         setThunderBoltFrame(0);
         setThunderFrozenEnemy(null);
       }
+      if (tornadoVfxTargets.length > 0) {
+        setTornadoVfxTargets([]);
+        pendingInfernosPrayer.current = null;
+      }
     }
-  }, [battle.phase, windBladeActive, windBladeFrozenEnemy, windSparkleTarget, thunderBoltActive]);
+  }, [battle.phase, windBladeActive, windBladeFrozenEnemy, windSparkleTarget, thunderBoltActive, tornadoVfxTargets]);
 
   const startFujinSlice = useCallback((targetIdx: number, spell: Spell) => {
     setSelectedAction(null);
@@ -2855,6 +2907,12 @@ export default function BattleScreen({
         }
         return atk;
       }
+      case "infernosPrayer": {
+        if (player.spriteId === "knight") {
+          return { src: slknightPraySheet, frames: 12, fps: 8, loop: false, pauseAt: 11, w: 128, h: 64 };
+        }
+        return atk;
+      }
       case "fujinSlice":
         if (fujinDashPhase === "windup") {
           return { ...atk, fps: 10, pauseAt: Math.min(3, atk.frames - 1) };
@@ -3269,7 +3327,7 @@ export default function BattleScreen({
             ref={playerSpriteRef}
             className="absolute"
             style={{
-              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave" || animPhase === "thunderBolt" || animPhase === "incinerationSlash") ? 55 : 20,
+              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave" || animPhase === "thunderBolt" || animPhase === "incinerationSlash" || animPhase === "infernosPrayer") ? 55 : 20,
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               transform: `translateX(-50%)`,
@@ -4494,6 +4552,25 @@ export default function BattleScreen({
                       </div>
                     );
                   })()}
+                  {tornadoVfxTargets.includes(idx) && (
+                    <div className="absolute z-[65] pointer-events-none" style={{
+                      bottom: "-20%",
+                      left: "50%",
+                      transform: "translateX(-50%)",
+                      filter: "drop-shadow(0 0 14px rgba(255,140,0,0.8)) drop-shadow(0 0 6px rgba(255,60,0,0.6))",
+                    }}>
+                      <SpriteAnimator
+                        spriteSheet={tornadoFireSheet}
+                        frameWidth={147}
+                        frameHeight={100}
+                        totalFrames={30}
+                        startFrame={20}
+                        fps={12}
+                        scale={2}
+                        loop={false}
+                      />
+                    </div>
+                  )}
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>
                     <div
