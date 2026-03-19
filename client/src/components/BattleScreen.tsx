@@ -3335,11 +3335,11 @@ export default function BattleScreen({
                 }}>
                   <SpriteAnimator
                     spriteSheet={blockShieldVfx}
-                    frameWidth={160}
+                    frameWidth={220}
                     frameHeight={128}
-                    totalFrames={66}
+                    totalFrames={48}
                     fps={12}
-                    scale={1.5}
+                    scale={1.2}
                     loop={false}
                     startFrame={8}
                     pauseAtFrame={19}
@@ -3703,11 +3703,11 @@ export default function BattleScreen({
                     }}>
                       <SpriteAnimator
                         spriteSheet={blockShieldVfx}
-                        frameWidth={160}
+                        frameWidth={220}
                         frameHeight={128}
-                        totalFrames={66}
+                        totalFrames={48}
                         fps={12}
-                        scale={1.5}
+                        scale={1.2}
                         loop={false}
                         startFrame={8}
                         pauseAtFrame={19}
