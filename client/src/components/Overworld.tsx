@@ -10,9 +10,8 @@ import type { PlayerCharacter, OverworldNode } from "@shared/schema";
 import { REGIONS, ELEMENT_COLORS, COLOR_MAP } from "@/lib/gameData";
 import { useColorMap } from "@/hooks/useColorMap";
 import { playSfx } from "@/lib/sfx";
-import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap, Save } from "lucide-react";
-import { getSaves, type LocalSave } from "@/lib/localSaves";
-import { groupConsumables } from "@/lib/utils";
+import { ShoppingBag, Tent, Star, Crown, Heart, Droplets, Coins, ChevronLeft, ChevronRight, Check, Flame, X, Sparkles, Home, Shield, Package, Menu, Zap } from "lucide-react";
+import GameMenuPanel from "@/components/GameMenuPanel";
 import { isRegionUnlocked, getRegionTier, getRegionForTier } from "@/lib/gameData";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
@@ -148,12 +147,16 @@ interface OverworldProps {
   onUseItem: (itemId: string, targetPartyIndex?: number) => void;
   onArrowClick?: (fromNodeId: number, toNode: OverworldNode) => void;
   onSave: (slotNumber: number) => void;
-  onStatus: () => void;
-  onOptions: () => void;
   onExitToMenu: () => void;
+  textSpeed: "slow" | "medium" | "fast";
+  musicVolume: number;
+  sfxVolume: number;
+  onTextSpeedChange: (speed: "slow" | "medium" | "fast") => void;
+  onMusicVolumeChange: (volume: number) => void;
+  onSfxVolumeChange: (volume: number) => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave, onStatus, onOptions, onExitToMenu }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave, onExitToMenu, textSpeed, musicVolume, sfxVolume, onTextSpeedChange, onMusicVolumeChange, onSfxVolumeChange }: OverworldProps) {
   const _owSpriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;
   const playerColorMap = useColorMap(_owSpriteConfig.idle.sheet, _owSpriteConfig.idle.frameWidth, _owSpriteConfig.idle.frameHeight, player.colorGroups);
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
@@ -161,10 +164,6 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   const theme = REGION_THEMES[region.theme] || REGION_THEMES.Fire;
   const [hoveredNode, setHoveredNode] = useState<number | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  const [menuTab, setMenuTab] = useState<"party" | "items" | "gear" | "save">("party");
-  const [saves, setSaves] = useState<LocalSave[]>(() => getSaves());
-  const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
-  const [targetingItemId, setTargetingItemId] = useState<string | null>(null);
   const [charPos, setCharPos] = useState<{ x: number; y: number }>(() => {
     const currentNode = region.nodes.find(n => n.id === player.currentNode);
     return currentNode ? getNodePosition(currentNode) : { x: 8, y: 82 };
@@ -809,7 +808,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
             boxShadow: `0 0 15px #c9a44a40, 0 0 40px #c9a44a15`,
             imageRendering: "pixelated" as any,
           }}
-          onClick={() => { playSfx('menuSelect'); setMenuOpen(true); setMenuTab("party"); }}
+          onClick={() => { playSfx('menuSelect'); setMenuOpen(true); }}
           data-testid="button-overworld-menu"
         >
           <Menu className="w-5 h-5" style={{ color: "#c9a44a" }} />
@@ -817,440 +816,25 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
       )}
 
       {menuOpen && (
-        <div className="absolute top-3 left-3 z-[200]" style={{ fontFamily: "'Press Start 2P', cursive", imageRendering: "pixelated" as any }}>
-          <div
-            className="relative overflow-hidden"
-            style={{
-              width: "480px",
-              background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
-              border: `3px solid #c9a44a`,
-              boxShadow: `0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)`,
-            }}
-          >
-            <div style={{
-              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-              backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)`,
-              pointerEvents: "none",
-            }} />
-
-            {/* Header */}
-            <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid #c9a44a` }}>
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5">
-                  <Coins className="w-4 h-4" style={{ color: "#fbbf24" }} />
-                  <span style={{ fontSize: "10px", color: "#fbbf24", letterSpacing: "1px" }}>{player.gold}</span>
-                </div>
-                <span style={{ fontSize: "10px", color: "#c9a44a60" }}>|</span>
-                <span style={{ fontSize: "10px", color: ELEMENT_COLORS[region.theme], letterSpacing: "1px" }}>{region.name}</span>
-                <div className="flex items-center gap-0.5 ml-1">
-                  {[0, 1, 2].map(i => (
-                    <div key={i} className="w-1.5 h-1.5 rounded-full" style={{ background: i < tier ? "#4ade80" : "#ffffff20" }} />
-                  ))}
-                </div>
-              </div>
-              <button
-                className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
-                style={{ border: `1px solid #c9a44a50`, background: "transparent" }}
-                onClick={() => { playSfx('menuSelect'); setMenuOpen(false); setTargetingItemId(null); }}
-                data-testid="button-close-overworld-menu"
-              >
-                <X className="w-3 h-3" style={{ color: "#c9a44a" }} />
-              </button>
-            </div>
-
-            {/* Body: vertical tabs left + content right */}
-            <div className="relative flex" style={{ minHeight: "360px", maxHeight: "520px" }}>
-
-              {/* Vertical tab column */}
-              <div className="flex flex-col flex-shrink-0" style={{ width: "88px", borderRight: `2px solid #c9a44a30`, background: "#09070780" }}>
-                {(["party", "items", "gear", "save"] as const).map(tab => (
-                  <button
-                    key={tab}
-                    onClick={() => { playSfx('menuSelect'); setMenuTab(tab); setTargetingItemId(null); if (tab === "save") setSaves(getSaves()); }}
-                    style={{
-                      fontFamily: "'Press Start 2P', cursive",
-                      fontSize: "7px",
-                      padding: "10px 8px",
-                      textAlign: "left",
-                      borderBottom: `1px solid #c9a44a20`,
-                      borderRight: menuTab === tab ? `3px solid #c9a44a` : "3px solid transparent",
-                      background: menuTab === tab ? "#c9a44a18" : "transparent",
-                      color: menuTab === tab ? "#c9a44a" : "#c9a44a60",
-                      cursor: "pointer",
-                      letterSpacing: "1px",
-                      width: "100%",
-                    }}
-                    data-testid={`tab-overworld-${tab}`}
-                  >
-                    {tab.toUpperCase()}
-                  </button>
-                ))}
-
-                {/* Divider before action items */}
-                <div style={{ borderTop: `1px solid #c9a44a25`, margin: "6px 10px" }} />
-
-                <button
-                  onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onStatus(); }}
-                  style={{
-                    fontFamily: "'Press Start 2P', cursive",
-                    fontSize: "7px",
-                    padding: "10px 8px",
-                    textAlign: "left",
-                    borderBottom: `1px solid #c9a44a20`,
-                    borderRight: "3px solid transparent",
-                    background: "transparent",
-                    color: "#c9a44a60",
-                    cursor: "pointer",
-                    letterSpacing: "1px",
-                    width: "100%",
-                  }}
-                  data-testid="tab-overworld-status"
-                >
-                  STATUS
-                </button>
-                <button
-                  onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onOptions(); }}
-                  style={{
-                    fontFamily: "'Press Start 2P', cursive",
-                    fontSize: "7px",
-                    padding: "10px 8px",
-                    textAlign: "left",
-                    borderBottom: `1px solid #c9a44a20`,
-                    borderRight: "3px solid transparent",
-                    background: "transparent",
-                    color: "#c9a44a60",
-                    cursor: "pointer",
-                    letterSpacing: "1px",
-                    width: "100%",
-                  }}
-                  data-testid="tab-overworld-options"
-                >
-                  OPTIONS
-                </button>
-                <button
-                  onClick={() => { playSfx('menuSelect'); setMenuOpen(false); onExitToMenu(); }}
-                  style={{
-                    fontFamily: "'Press Start 2P', cursive",
-                    fontSize: "7px",
-                    padding: "10px 8px",
-                    textAlign: "left",
-                    borderBottom: `1px solid #c9a44a20`,
-                    borderRight: "3px solid transparent",
-                    background: "transparent",
-                    color: "#ef444460",
-                    cursor: "pointer",
-                    letterSpacing: "1px",
-                    width: "100%",
-                  }}
-                  data-testid="tab-overworld-main-menu"
-                >
-                  MENU
-                </button>
-              </div>
-
-              {/* Content pane */}
-              <div className="relative flex-1 overflow-y-auto px-4 py-3" style={{ maxHeight: "520px" }}>
-              {menuTab === "party" && (
-                <div className="space-y-2">
-                  {[{ name: player.name, stats: player.stats, level: player.level, element: player.element, xp: player.xp, xpToNext: player.xpToNext },
-                    ...player.party.map(m => ({ name: m.name, stats: m.stats, level: m.level, element: m.element, xp: m.xp || 0, xpToNext: m.xpToNext || 100 }))
-                  ].map((member, idx) => (
-                    <div key={idx} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{member.name}</span>
-                          <span style={{ fontSize: "8px", color: "#c9a44a60" }}>Lv.{member.level}</span>
-                        </div>
-                        <span style={{ fontSize: "8px", color: ELEMENT_COLORS[member.element] || "#c9a44a" }}>{member.element}</span>
-                      </div>
-                      <div className="space-y-1.5">
-                        <div className="flex items-center gap-1.5">
-                          <Heart className="w-3 h-3 text-red-500 flex-shrink-0" />
-                          <div className="flex-1 h-2.5 relative" style={{ background: "#1a0808", border: "1px solid #ef444440" }}>
-                            <div className="absolute inset-0" style={{ width: `${(member.stats.hp / member.stats.maxHp) * 100}%`, background: "linear-gradient(90deg, #dc2626, #ef4444)", transition: "width 0.3s" }} />
-                          </div>
-                          <span style={{ fontSize: "7px", color: "#fca5a5", minWidth: "48px", textAlign: "right" }}>{member.stats.hp}/{member.stats.maxHp}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Droplets className="w-3 h-3 text-blue-500 flex-shrink-0" />
-                          <div className="flex-1 h-2.5 relative" style={{ background: "#080818", border: "1px solid #3b82f640" }}>
-                            <div className="absolute inset-0" style={{ width: `${(member.stats.mp / member.stats.maxMp) * 100}%`, background: "linear-gradient(90deg, #2563eb, #3b82f6)", transition: "width 0.3s" }} />
-                          </div>
-                          <span style={{ fontSize: "7px", color: "#93c5fd", minWidth: "48px", textAlign: "right" }}>{member.stats.mp}/{member.stats.maxMp}</span>
-                        </div>
-                        <div className="flex items-center gap-1.5">
-                          <Zap className="w-3 h-3 text-yellow-500 flex-shrink-0" />
-                          <div className="flex-1 h-2.5 relative" style={{ background: "#181808", border: "1px solid #eab30840" }}>
-                            <div className="absolute inset-0" style={{ width: `${(member.xp / member.xpToNext) * 100}%`, background: "linear-gradient(90deg, #ca8a04, #eab308)", transition: "width 0.3s" }} />
-                          </div>
-                          <span style={{ fontSize: "7px", color: "#fde68a", minWidth: "48px", textAlign: "right" }}>{member.xp}/{member.xpToNext}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {menuTab === "items" && (() => {
-                const consumables = player.inventory.filter(i => i.type === "consumable");
-                return (
-                  <div className="space-y-1.5">
-                    {consumables.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "24px 0" }}>
-                        <p style={{ fontSize: "9px", color: "#c9a44a50" }}>No consumable items</p>
-                      </div>
-                    ) : (
-                      groupConsumables(consumables).map(({ item, count, ids }) => {
-                        const canUseOnPlayer = item.effect.type === "heal" && (
-                          (item.effect.stat === "hp" && player.stats.hp < player.stats.maxHp) ||
-                          (item.effect.stat === "mp" && player.stats.mp < player.stats.maxMp)
-                        );
-                        const canUseOnAny = canUseOnPlayer || player.party.some(m =>
-                          item.effect.type === "heal" && (
-                            (item.effect.stat === "hp" && m.stats.hp < m.stats.maxHp) ||
-                            (item.effect.stat === "mp" && m.stats.mp < m.stats.maxMp)
-                          )
-                        );
-                        const isTargeting = targetingItemId === item.name;
-                        return (
-                          <div key={item.name} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
-                            <div className="flex items-center justify-between gap-2">
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>
-                                  {item.name} <span style={{ color: "#c9a44acc" }}>x{count}</span>
-                                </p>
-                                <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
-                              </div>
-                              <button
-                                onClick={() => {
-                                  playSfx('menuSelect');
-                                  if (player.party.length > 0) {
-                                    setTargetingItemId(isTargeting ? null : item.name);
-                                  } else {
-                                    onUseItem(ids[0]);
-                                  }
-                                }}
-                                disabled={!canUseOnAny}
-                                style={{
-                                  fontFamily: "'Press Start 2P', cursive",
-                                  fontSize: "8px",
-                                  padding: "4px 8px",
-                                  border: `1px solid ${isTargeting ? "#e8c030" : "#c9a44a"}60`,
-                                  background: isTargeting ? "#e8c03020" : "transparent",
-                                  color: isTargeting ? "#e8c030" : "#c9a44a",
-                                  cursor: canUseOnAny ? "pointer" : "default",
-                                  opacity: canUseOnAny ? 1 : 0.4,
-                                }}
-                              >
-                                {isTargeting ? "CANCEL" : "USE"}
-                              </button>
-                            </div>
-                            {isTargeting && (
-                              <div style={{ marginTop: "4px", paddingTop: "4px", borderTop: `1px solid #c9a44a20` }}>
-                                <p style={{ fontSize: "7px", color: "#c9a44a50", marginBottom: "3px" }}>Select target:</p>
-                                <button
-                                  disabled={!canUseOnPlayer}
-                                  onClick={() => { playSfx('menuSelect'); onUseItem(ids[0]); setTargetingItemId(null); }}
-                                  style={{
-                                    width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                                    padding: "3px 6px", background: "#0a080820", border: `1px solid #c9a44a15`,
-                                    cursor: canUseOnPlayer ? "pointer" : "default", opacity: canUseOnPlayer ? 1 : 0.3,
-                                    marginBottom: "2px", fontFamily: "'Press Start 2P', cursive",
-                                  }}
-                                >
-                                  <div className="flex items-center gap-1.5">
-                                    <span style={{ fontSize: "7px", color: "#c9a44a" }}>{player.name}</span>
-                                    <span style={{ fontSize: "6px", color: "#c9a44a50" }}>(You)</span>
-                                  </div>
-                                  <div className="flex items-center gap-1.5">
-                                    {item.effect.stat === "hp" && (
-                                      <div className="flex items-center gap-1">
-                                        <Heart style={{ width: 8, height: 8, color: "#ef4444" }} />
-                                        <span style={{ fontSize: "6px", color: player.stats.hp < player.stats.maxHp ? "#fca5a5" : "#86efac" }}>
-                                          {player.stats.hp}/{player.stats.maxHp}
-                                        </span>
-                                      </div>
-                                    )}
-                                    {item.effect.stat === "mp" && (
-                                      <div className="flex items-center gap-1">
-                                        <Droplets style={{ width: 8, height: 8, color: "#60a5fa" }} />
-                                        <span style={{ fontSize: "6px", color: player.stats.mp < player.stats.maxMp ? "#93c5fd" : "#86efac" }}>
-                                          {player.stats.mp}/{player.stats.maxMp}
-                                        </span>
-                                      </div>
-                                    )}
-                                  </div>
-                                </button>
-                                {player.party.map((member, idx) => {
-                                  const canUseOnMember = item.effect.type === "heal" && (
-                                    (item.effect.stat === "hp" && member.stats.hp < member.stats.maxHp) ||
-                                    (item.effect.stat === "mp" && member.stats.mp < member.stats.maxMp)
-                                  );
-                                  return (
-                                    <button
-                                      key={member.id}
-                                      disabled={!canUseOnMember}
-                                      onClick={() => { playSfx('menuSelect'); onUseItem(ids[0], idx); setTargetingItemId(null); }}
-                                      style={{
-                                        width: "100%", display: "flex", alignItems: "center", justifyContent: "space-between",
-                                        padding: "3px 6px", background: "#0a080820", border: `1px solid #c9a44a15`,
-                                        cursor: canUseOnMember ? "pointer" : "default", opacity: canUseOnMember ? 1 : 0.3,
-                                        marginBottom: "2px", fontFamily: "'Press Start 2P', cursive",
-                                      }}
-                                    >
-                                      <span style={{ fontSize: "7px", color: "#e8e0d0" }}>{member.name}</span>
-                                      <div className="flex items-center gap-1.5">
-                                        {item.effect.stat === "hp" && (
-                                          <div className="flex items-center gap-1">
-                                            <Heart style={{ width: 8, height: 8, color: "#ef4444" }} />
-                                            <span style={{ fontSize: "6px", color: member.stats.hp < member.stats.maxHp ? "#fca5a5" : "#86efac" }}>
-                                              {member.stats.hp}/{member.stats.maxHp}
-                                            </span>
-                                          </div>
-                                        )}
-                                        {item.effect.stat === "mp" && (
-                                          <div className="flex items-center gap-1">
-                                            <Droplets style={{ width: 8, height: 8, color: "#60a5fa" }} />
-                                            <span style={{ fontSize: "6px", color: member.stats.mp < member.stats.maxMp ? "#93c5fd" : "#86efac" }}>
-                                              {member.stats.mp}/{member.stats.maxMp}
-                                            </span>
-                                          </div>
-                                        )}
-                                      </div>
-                                    </button>
-                                  );
-                                })}
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
-                  </div>
-                );
-              })()}
-
-              {menuTab === "gear" && (() => {
-                const equipables = player.inventory.filter(i => i.type === "weapon" || i.type === "armor" || i.type === "accessory");
-                return (
-                  <div className="space-y-1.5">
-                    <p style={{ fontSize: "8px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Equipped</p>
-                    {(["weapon", "armor", "accessory"] as const).map(slot => {
-                      const item = player.equipment[slot];
-                      return (
-                        <div key={slot} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
-                          <p style={{ fontSize: "7px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>{slot}</p>
-                          {item ? (
-                            <div className="flex items-center justify-between gap-2 mt-1">
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{item.name}</p>
-                                <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
-                              </div>
-                              <button
-                                onClick={() => { playSfx('menuSelect'); onUnequip(slot); }}
-                                style={{
-                                  fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "4px 8px",
-                                  border: `1px solid #c9a44a60`, background: "transparent", color: "#c9a44a", cursor: "pointer",
-                                }}
-                              >
-                                UNEQUIP
-                              </button>
-                            </div>
-                          ) : (
-                            <p style={{ fontSize: "8px", color: "#c9a44a40", fontStyle: "italic", marginTop: "2px" }}>Empty</p>
-                          )}
-                        </div>
-                      );
-                    })}
-                    {equipables.length > 0 && (
-                      <>
-                        <div style={{ borderTop: `1px solid #c9a44a20`, marginTop: "6px", paddingTop: "6px" }}>
-                          <p style={{ fontSize: "8px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px" }}>Unequipped</p>
-                        </div>
-                        {equipables.map(item => (
-                          <div key={item.id} style={{ padding: "8px 10px", background: "#0d0b0bf0", border: `1px solid #c9a44a30` }}>
-                            <div className="flex items-center justify-between gap-2">
-                              <div style={{ flex: 1, minWidth: 0 }}>
-                                <div className="flex items-center gap-1.5">
-                                  <p style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>{item.name}</p>
-                                  <span style={{ fontSize: "6px", padding: "1px 4px", border: `1px solid #c9a44a30`, color: "#c9a44a80", textTransform: "capitalize" }}>{item.type}</span>
-                                </div>
-                                <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "2px" }}>{item.description}</p>
-                              </div>
-                              <button
-                                onClick={() => { playSfx('menuSelect'); onEquip(item.id); }}
-                                style={{
-                                  fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "4px 8px",
-                                  border: `1px solid #c9a44a60`, background: "transparent", color: "#c9a44a", cursor: "pointer",
-                                }}
-                              >
-                                EQUIP
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </>
-                    )}
-                  </div>
-                );
-              })()}
-
-              {menuTab === "save" && (
-                <div className="space-y-2">
-                  <p style={{ fontSize: "8px", color: "#c9a44a60", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "6px" }}>Save to slot</p>
-                  {[1, 2, 3].map(slot => {
-                    const existing = saves.find(s => s.slotName === `Slot ${slot}`);
-                    const isSuccess = saveSuccessSlot === slot;
-                    return (
-                      <div key={slot} style={{ padding: "10px 10px", background: "#0d0b0bf0", border: `1px solid ${isSuccess ? "#4ade80" : "#c9a44a30"}`, transition: "border-color 0.3s" }}>
-                        <div className="flex items-center justify-between gap-2">
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div className="flex items-center gap-2">
-                              <Save className="w-3 h-3" style={{ color: isSuccess ? "#4ade80" : "#c9a44a80" }} />
-                              <span style={{ fontSize: "9px", color: isSuccess ? "#4ade80" : "#e8e0d0", letterSpacing: "1px" }}>
-                                {isSuccess ? "SAVED!" : `Slot ${slot}`}
-                              </span>
-                            </div>
-                            {existing && !isSuccess && (
-                              <p style={{ fontSize: "7px", color: "#c9a44a60", marginTop: "3px" }}>
-                                Lv.{existing.playerData.level} {existing.playerData.name} · {new Date(existing.updatedAt).toLocaleDateString()}
-                              </p>
-                            )}
-                            {!existing && !isSuccess && (
-                              <p style={{ fontSize: "7px", color: "#c9a44a30", marginTop: "3px", fontStyle: "italic" }}>Empty</p>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => {
-                              playSfx('menuSelect');
-                              onSave(slot);
-                              setSaves(getSaves());
-                              setSaveSuccessSlot(slot);
-                              setTimeout(() => setSaveSuccessSlot(null), 2000);
-                            }}
-                            style={{
-                              fontFamily: "'Press Start 2P', cursive", fontSize: "7px", padding: "5px 10px",
-                              border: `1px solid ${isSuccess ? "#4ade8060" : "#c9a44a60"}`,
-                              background: isSuccess ? "#4ade8015" : "transparent",
-                              color: isSuccess ? "#4ade80" : "#c9a44a",
-                              cursor: "pointer",
-                            }}
-                            data-testid={`button-save-slot-${slot}`}
-                          >
-                            {existing ? "OVERWRITE" : "SAVE"}
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>{/* end content pane */}
-            </div>{/* end flex body */}
-
-          </div>
-        </div>
-      )}
+          <GameMenuPanel
+            player={player}
+            onClose={() => { setMenuOpen(false); }}
+            onEquip={onEquip}
+            onUnequip={onUnequip}
+            onUseItem={onUseItem}
+            onSave={onSave}
+            onExitToMenu={onExitToMenu}
+            textSpeed={textSpeed}
+            musicVolume={musicVolume}
+            sfxVolume={sfxVolume}
+            onTextSpeedChange={onTextSpeedChange}
+            onMusicVolumeChange={onMusicVolumeChange}
+            onSfxVolumeChange={onSfxVolumeChange}
+            regionName={region.name}
+            regionTheme={region.theme}
+            tier={tier}
+          />
+        )}
 
       {hoveredNode !== null && (() => {
         const node = region.nodes.find(n => n.id === hoveredNode);

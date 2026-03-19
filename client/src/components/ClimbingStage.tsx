@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
+import GameMenuPanel from "@/components/GameMenuPanel";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
@@ -202,9 +203,17 @@ interface ClimbingStageProps {
   onEnemyContact: (enemyIndex: number, enemyId: string, playerX: number, colorVariant?: number, playerY?: number, patrol?: ClimbEnemySnapshot[]) => void;
   onComplete: () => void;
   onExit: () => void;
-  onStatus?: () => void;
-  onOptions?: () => void;
   onExitToMenu?: () => void;
+  onEquip?: (itemId: string) => void;
+  onUnequip?: (slot: "weapon" | "armor" | "accessory") => void;
+  onUseItem?: (itemId: string, targetPartyIndex?: number) => void;
+  onSave?: (slotNumber: number) => void;
+  textSpeed?: "slow" | "medium" | "fast";
+  musicVolume?: number;
+  sfxVolume?: number;
+  onTextSpeedChange?: (speed: "slow" | "medium" | "fast") => void;
+  onMusicVolumeChange?: (volume: number) => void;
+  onSfxVolumeChange?: (volume: number) => void;
 }
 
 function touchBtnStyle(round = false): React.CSSProperties {
@@ -239,9 +248,17 @@ export default function ClimbingStage({
   onEnemyContact,
   onComplete,
   onExit,
-  onStatus,
-  onOptions,
   onExitToMenu,
+  onEquip,
+  onUnequip,
+  onUseItem,
+  onSave,
+  textSpeed = "medium",
+  musicVolume = 50,
+  sfxVolume = 50,
+  onTextSpeedChange,
+  onMusicVolumeChange,
+  onSfxVolumeChange,
 }: ClimbingStageProps) {
   const isForest = regionTheme === "Wind";
   const stageKey = [Math.min(fromNodeId, toNodeId), Math.max(fromNodeId, toNodeId)].join("-");
@@ -869,95 +886,39 @@ export default function ClimbingStage({
       </div>
 
       {!menuOpen && (
-        <button
-          data-testid="button-stage-menu"
-          className="absolute top-3 left-3 z-[200] flex items-center justify-center w-10 h-10 transition-all hover:scale-110 active:scale-95"
-          style={{
-            fontFamily: "'Press Start 2P', cursive",
-            background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
-            border: "3px solid #c9a44a",
-            boxShadow: "0 0 15px #c9a44a40, 0 0 40px #c9a44a15",
-          }}
-          onClick={() => setMenuOpen(true)}
-        >
-          <Menu className="w-5 h-5" style={{ color: "#c9a44a" }} />
-        </button>
-      )}
+          <button
+            data-testid="button-climb-menu"
+            className="absolute top-3 left-3 z-[200] flex items-center justify-center w-10 h-10 transition-all hover:scale-110 active:scale-95"
+            style={{
+              fontFamily: "'Press Start 2P', cursive",
+              background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+              border: "3px solid #c9a44a",
+              boxShadow: "0 0 15px #c9a44a40, 0 0 40px #c9a44a15",
+            }}
+            onClick={() => setMenuOpen(true)}
+          >
+            <Menu className="w-5 h-5" style={{ color: "#c9a44a" }} />
+          </button>
+        )}
 
-      {menuOpen && (
-        <div className="absolute top-3 left-3 z-[200]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-          <div style={{
-            position: "relative",
-            background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
-            border: "3px solid #c9a44a",
-            boxShadow: "0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)",
-            minWidth: 180,
-            overflow: "hidden",
-          }}>
-            <div style={{
-              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-              backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)",
-              pointerEvents: "none",
-            }} />
-            <div style={{
-              position: "relative",
-              padding: "8px 12px",
-              background: "#0d0b0bf0",
-              borderBottom: "3px solid #c9a44a",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}>
-              <span style={{ fontSize: "8px", color: "#c9a44a", letterSpacing: "1px" }}>MENU</span>
-              <button
-                data-testid="button-close-stage-menu"
-                style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, border: "1px solid #c9a44a50", background: "transparent", cursor: "pointer" }}
-                onClick={() => setMenuOpen(false)}
-              >
-                <X style={{ width: 12, height: 12, color: "#c9a44a" }} />
-              </button>
-            </div>
-            <div style={{ position: "relative" }}>
-              {([
-                { label: "STATUS", action: onStatus },
-                { label: "OPTIONS", action: onOptions },
-                { label: "SAVE", disabled: true },
-                { label: "MAIN MENU", action: onExitToMenu, danger: true },
-              ] as { label: string; action?: () => void; danger?: boolean; disabled?: boolean }[]).map(({ label, action, danger, disabled }) => (
-                <button
-                  key={label}
-                  data-testid={`button-stage-menu-${label.toLowerCase().replace(" ", "-")}`}
-                  disabled={disabled}
-                  onClick={disabled ? undefined : () => { playSfx("menuSelect"); setMenuOpen(false); action?.(); }}
-                  style={{
-                    width: "100%",
-                    display: "block",
-                    padding: "10px 14px",
-                    fontFamily: "'Press Start 2P', monospace",
-                    fontSize: 7,
-                    color: disabled ? "rgba(120,110,90,0.45)" : danger ? "rgba(239,68,68,0.7)" : "#c9a44a",
-                    background: "transparent",
-                    border: "none",
-                    borderBottom: "1px solid rgba(201,164,74,0.15)",
-                    cursor: disabled ? "default" : "pointer",
-                    textAlign: "left",
-                    letterSpacing: 1,
-                    opacity: disabled ? 0.5 : 1,
-                  }}
-                  onMouseEnter={disabled ? undefined : e => {
-                    e.currentTarget.style.background = "#1a1010";
-                    e.currentTarget.style.color = danger ? "#ef4444" : "#e8d080";
-                  }}
-                  onMouseLeave={disabled ? undefined : e => {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = danger ? "rgba(239,68,68,0.7)" : "#c9a44a";
-                  }}
-                >{label}{disabled ? <span style={{ fontSize: 5, marginLeft: 6, color: "rgba(120,110,90,0.5)" }}>N/A IN STAGE</span> : null}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
+        {menuOpen && (
+          <GameMenuPanel
+            player={player}
+            onClose={() => setMenuOpen(false)}
+            onEquip={onEquip ?? (() => {})}
+            onUnequip={onUnequip ?? (() => {})}
+            onUseItem={onUseItem ?? (() => {})}
+            onSave={onSave ?? (() => {})}
+            onExitToMenu={onExitToMenu}
+            textSpeed={textSpeed}
+            musicVolume={musicVolume}
+            sfxVolume={sfxVolume}
+            onTextSpeedChange={onTextSpeedChange ?? (() => {})}
+            onMusicVolumeChange={onMusicVolumeChange ?? (() => {})}
+            onSfxVolumeChange={onSfxVolumeChange ?? (() => {})}
+            regionTheme={regionTheme}
+          />
+        )}
 
       <div style={{
         position: "absolute", top: 12, right: 14,

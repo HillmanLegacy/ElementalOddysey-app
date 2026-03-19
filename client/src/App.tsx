@@ -345,9 +345,17 @@ function Game() {
                   onEnemyContact={(idx, eid, px, cv, py, patrol) => sharedEnemyContact(idx, eid, px, cv, py, patrol)}
                   onComplete={sharedComplete}
                   onExit={sharedExit}
-                  onStatus={() => setShowStatus(true)}
-                  onOptions={() => setShowOptions(true)}
                   onExitToMenu={() => setExitToMenuTransition(true)}
+                  onEquip={equipItem}
+                  onUnequip={unequipItem}
+                  onUseItem={useItemOverworld}
+                  onSave={handleSaveToSlot}
+                  textSpeed={state.textSpeed}
+                  musicVolume={state.musicVolume}
+                  sfxVolume={state.sfxVolume}
+                  onTextSpeedChange={(sp) => setState(s => ({ ...s, textSpeed: sp }))}
+                  onMusicVolumeChange={(vol) => { setState(s => ({ ...s, musicVolume: vol })); setMusicVolume(vol / 100); }}
+                  onSfxVolumeChange={(vol) => { setState(s => ({ ...s, sfxVolume: vol })); setSfxVolume(vol / 100); }}
                 />
               ) : (
                 <SideScrollStage
@@ -376,9 +384,17 @@ function Game() {
                   }}
                   onComplete={sharedComplete}
                   onExit={sharedExit}
-                  onStatus={() => setShowStatus(true)}
-                  onOptions={() => setShowOptions(true)}
                   onExitToMenu={() => setExitToMenuTransition(true)}
+                  onEquip={equipItem}
+                  onUnequip={unequipItem}
+                  onUseItem={useItemOverworld}
+                  onSave={handleSaveToSlot}
+                  textSpeed={state.textSpeed}
+                  musicVolume={state.musicVolume}
+                  sfxVolume={state.sfxVolume}
+                  onTextSpeedChange={(sp) => setState(s => ({ ...s, textSpeed: sp }))}
+                  onMusicVolumeChange={(vol) => { setState(s => ({ ...s, musicVolume: vol })); setMusicVolume(vol / 100); }}
+                  onSfxVolumeChange={(vol) => { setState(s => ({ ...s, sfxVolume: vol })); setSfxVolume(vol / 100); }}
                 />
               )}
               {sideScrollBattleTransition && (
@@ -502,53 +518,6 @@ function Game() {
                   onComplete={() => setSideScrollEnterReveal(false)}
                 />
               )}
-              {showStatus && state.player && (
-                <div className="absolute inset-0 z-[300]">
-                  <StatusScreen
-                    player={state.player}
-                    onClose={() => setShowStatus(false)}
-                  />
-                </div>
-              )}
-              {showOptions && (
-                <div className="absolute inset-0 z-[400] flex items-center justify-center" style={{ background: "radial-gradient(ellipse at center, #c9a44a15 0%, rgba(0,0,0,0.85) 70%)" }}>
-                  <div className="w-80 overflow-hidden relative" style={{
-                    background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
-                    border: `3px solid #c9a44a`,
-                    boxShadow: `0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)`,
-                    fontFamily: "'Press Start 2P', cursive",
-                    imageRendering: "pixelated" as any,
-                  }}>
-                    <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)", pointerEvents: "none" }} />
-                    <div className="relative flex items-center justify-between" style={{ padding: "8px 12px", background: "#0d0b0bf0", borderBottom: "3px solid #c9a44a" }}>
-                      <h3 style={{ fontSize: "10px", color: "#c9a44a", letterSpacing: "2px" }}>OPTIONS</h3>
-                      <button onClick={() => { playSfx('menuSelect'); setShowOptions(false); }} className="flex items-center justify-center w-6 h-6" style={{ border: "1px solid #c9a44a50", background: "transparent", cursor: "pointer" }}>
-                        <X className="w-3 h-3" style={{ color: "#c9a44a" }} />
-                      </button>
-                    </div>
-                    <div className="relative space-y-6" style={{ padding: "16px 12px" }}>
-                      <div>
-                        <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>TEXT SPEED</label>
-                        <div className="flex gap-2">
-                          {(["slow", "medium", "fast"] as const).map(sp => (
-                            <button key={sp} className="flex-1 py-2 text-[7px]" style={{ fontFamily: "'Press Start 2P', cursive", border: state.textSpeed === sp ? `2px solid #c9a44a` : `1px solid #c9a44a30`, background: state.textSpeed === sp ? `#c9a44a25` : "#0d0b0bf0", color: state.textSpeed === sp ? "#c9a44a" : "#c9a44a60", cursor: "pointer" }} onClick={() => { playSfx('menuSelect'); setState(s => ({ ...s, textSpeed: sp })); }}>
-                              {sp.toUpperCase()}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                      <div>
-                        <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>MUSIC: {state.musicVolume}%</label>
-                        <input type="range" min={0} max={100} value={state.musicVolume} onChange={e => { setState(s => ({ ...s, musicVolume: Number(e.target.value) })); setMusicVolume(Number(e.target.value) / 100); }} style={{ width: "100%", accentColor: "#c9a44a" }} />
-                      </div>
-                      <div>
-                        <label style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px", display: "block", marginBottom: "10px" }}>SFX: {state.sfxVolume}%</label>
-                        <input type="range" min={0} max={100} value={state.sfxVolume} onChange={e => { setState(s => ({ ...s, sfxVolume: Number(e.target.value) })); setSfxVolume(Number(e.target.value) / 100); }} style={{ width: "100%", accentColor: "#c9a44a" }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
             </>
           );
         }
@@ -604,9 +573,13 @@ function Game() {
                 });
               }}
               onSave={handleSaveToSlot}
-              onStatus={() => setShowStatus(true)}
-              onOptions={() => setShowOptions(true)}
               onExitToMenu={() => setExitToMenuTransition(true)}
+              textSpeed={state.textSpeed}
+              musicVolume={state.musicVolume}
+              sfxVolume={state.sfxVolume}
+              onTextSpeedChange={(sp) => setState(s => ({ ...s, textSpeed: sp }))}
+              onMusicVolumeChange={(vol) => { setState(s => ({ ...s, musicVolume: vol })); setMusicVolume(vol / 100); }}
+              onSfxVolumeChange={(vol) => { setState(s => ({ ...s, sfxVolume: vol })); setSfxVolume(vol / 100); }}
             />
             {hutTransitionIn && (
               <BattleTransition

@@ -40,6 +40,7 @@ The application features a **React + Vite + Tailwind CSS** frontend using **shad
 -   **UI/UX**:
     -   **Responsive Design**: `useViewportScale` hook scales the game to fit a fixed 1024x640 resolution.
     -   **Theming**: Unified pixel-art theme with "Press Start 2P" font, amber accents, and sharp edges.
+    -   **Shared Game Menu**: `GameMenuPanel` component (`client/src/components/GameMenuPanel.tsx`) provides a unified tabbed popup used across Overworld, SideScrollStage, and ClimbingStage. Tabs: PARTY, ITEMS, GEAR, STATUS (inline stats/spells/perks), OPTIONS (text speed, music/sfx volume), SAVE. Stages also show an EXIT button. STATUS and OPTIONS are inline tabs, not separate screens.
 -   **Animation System**:
     -   **Battle Transition**: Pixel-dissolve fade to black for seamless transitions between overworld and battle.
     -   **Battle Animations**: Event-driven queue manages character actions (attack, run, hurt).
