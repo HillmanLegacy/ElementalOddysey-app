@@ -130,6 +130,7 @@ import slknightAttack from "@/assets/images/slknight-attack.png";
 import slknightHurt from "@/assets/images/slknight-hurt.png";
 import slknightRun from "@/assets/images/slknight-run.png";
 import slknightSpecial from "@/assets/images/slknight-special.png";
+import slknightIncSlash from "@assets/Attacks_1773895515346.png";
 import slknightDeath from "@/assets/images/slknight-death.png";
 import slknightJump from "@/assets/images/slknight-jump.png";
 import slknightAirAttack from "@/assets/images/slknight-airattack.png";
@@ -1300,11 +1301,10 @@ export default function BattleScreen({
         setIncinerationCasterPos({ x: ENEMY_SLOTS[targetIdx].x - (isBossT ? 12 : 5), y: PLAYER_POS.y });
 
         const frameDuration = 1000 / 12;
-        const hold = 0;
-        const swing1Time = frameDuration * 1;
-        const swing2Time = frameDuration * 4 + hold;
-        const fire1Time = frameDuration * 2 + hold;
-        const fire2Time = frameDuration * 6 + hold * 2;
+        const swing1Time = frameDuration * 0;
+        const swing2Time = frameDuration * 6;
+        const fire1Time = frameDuration * 1;
+        const fire2Time = frameDuration * 7;
 
         scheduleTimer(() => {
           playSfx("incinerationBladeSwings", 0.8);
@@ -1338,7 +1338,7 @@ export default function BattleScreen({
           }, 333);
         }, fire2Time);
 
-        const totalAnimTime = frameDuration * 11 + hold * 2;
+        const totalAnimTime = frameDuration * 12;
 
         scheduleTimer(() => {
           setIncinerationSlashActive(false);
@@ -2765,7 +2765,7 @@ export default function BattleScreen({
         return atk;
       case "incinerationSlash": {
         if (player.spriteId === "knight") {
-          return { src: slknightAttack, frames: 20, fps: 12, loop: false, startAt: 9, pauseAt: 19, holdFrames: { 11: 230, 14: 230 }, w: 128, h: 64 };
+          return { src: slknightIncSlash, frames: 40, fps: 12, loop: false, startAt: 8, pauseAt: 19, w: 128, h: 64 };
         }
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
