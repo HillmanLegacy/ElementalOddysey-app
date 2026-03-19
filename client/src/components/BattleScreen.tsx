@@ -3421,6 +3421,7 @@ export default function BattleScreen({
               width: 256,
               height: 256,
               transform: "translate(-50%, 64px)",
+              transition: eruptionSubPhase === "jumpFall" ? "bottom 0.50s ease-in" : "none",
               filter: "drop-shadow(0 0 16px rgba(255,80,0,0.9)) drop-shadow(0 0 32px rgba(255,40,0,0.5))",
             }}>
               <SpriteAnimator
