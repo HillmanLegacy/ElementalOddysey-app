@@ -46,6 +46,8 @@ import blockShieldVfx from "@assets/Spell_1-Sheet_1773896633775.png";
 import firespinSheet from "@assets/7_firespin_spritesheet_1771795176253.png";
 import nukeExplosionSheet from "@assets/Nuke_Explosion_1771631384679.png";
 import knightEruptionSheet from "@assets/knight_1771631932532.png";
+import eruptionBuildupSheet from "@assets/eruption_cleave_-_buildup_1773921740507.png";
+import eruptionAuraSheet from "@assets/Eruption_Cleave_Aura_1773921754594.png";
 
 import fireSlimeImg from "@/assets/images/enemy-fire-slime.png";
 import aquaSlimeImg from "@/assets/images/enemy-aqua-slime.png";
@@ -659,7 +661,9 @@ export default function BattleScreen({
   const [eruptionNukeActive, setEruptionNukeActive] = useState(false);
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
-  const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpFall">("idle");
+  const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpHold" | "jumpFall">("idle");
+  const [eruptionBuildupActive, setEruptionBuildupActive] = useState(false);
+  const [eruptionAuraActive, setEruptionAuraActive] = useState(false);
   const [eruptionKnightX, setEruptionKnightX] = useState(PLAYER_POS.x);
   const [eruptionKnightY, setEruptionKnightY] = useState(PLAYER_POS.y);
   const [eruptionAirAttackRestartKey, setEruptionAirAttackRestartKey] = useState(0);
@@ -1054,6 +1058,10 @@ export default function BattleScreen({
       const runDur = 403;
       const riseDur = Math.round(4 / 12 * 1000);
       const nukeAtMs = Math.round(6 / 12 * 1000);
+      const buildupFps = 8;
+      const buildupFd = 1000 / buildupFps;
+      const holdDur = 10 * buildupFd;
+      const auraStartOffset = 4 * buildupFd;
 
       setEruptionCleaveActive(true);
       setEruptionFrozenEnemy(targetIdx);
@@ -1072,13 +1080,24 @@ export default function BattleScreen({
       }, runDur);
 
       scheduleTimer(() => {
+        setEruptionSubPhase("jumpHold");
+        setEruptionBuildupActive(true);
+      }, runDur + riseDur);
+
+      scheduleTimer(() => {
+        setEruptionAuraActive(true);
+      }, runDur + riseDur + auraStartOffset);
+
+      scheduleTimer(() => {
+        setEruptionBuildupActive(false);
         setEruptionSubPhase("jumpFall");
         setEruptionKnightY(targetY);
         playSfx("eruptionDownwardSlash", 0.9);
-      }, runDur + riseDur);
+      }, runDur + riseDur + holdDur);
 
-      const nukeStart = runDur + riseDur + nukeAtMs;
+      const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
       scheduleTimer(() => {
+        setEruptionAuraActive(false);
         setEruptionNukeActive(true);
         setEruptionNukeTargetIdx(targetIdx);
         setEruptionAirAttackStartFrame(4);
@@ -1106,6 +1125,8 @@ export default function BattleScreen({
         setEruptionCleaveActive(false);
         setEruptionSubPhase("idle");
         setEruptionAirAttackStartFrame(0);
+        setEruptionBuildupActive(false);
+        setEruptionAuraActive(false);
         setMagicZoom(false);
         setMagicZoomTarget(null);
         castingNeedsRunBack.current = false;
@@ -2777,7 +2798,7 @@ export default function BattleScreen({
       }
       case "eruptionCleave": {
         if (eruptionSubPhase === "run") return runConfig;
-        if (eruptionSubPhase === "jumpRise") {
+        if (eruptionSubPhase === "jumpRise" || eruptionSubPhase === "jumpHold") {
           return { src: slknightJump, frames: 4, fps: 12, loop: false, pauseAt: 3, w: 128, h: 64 };
         }
         return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, pauseAt: 7, startAt: eruptionAirAttackStartFrame, w: 128, h: 64 };
@@ -3369,6 +3390,50 @@ export default function BattleScreen({
               />
             </div>
           ))}
+
+          {eruptionBuildupActive && (
+            <div className="absolute pointer-events-none" style={{
+              zIndex: 60,
+              left: `${eruptionKnightX}%`,
+              bottom: `${eruptionKnightY}%`,
+              width: 192,
+              height: 192,
+              transform: "translate(-50%, 50%)",
+              filter: "drop-shadow(0 0 10px rgba(255,160,0,0.9)) drop-shadow(0 0 20px rgba(255,80,0,0.6))",
+            }}>
+              <SpriteAnimator
+                spriteSheet={eruptionBuildupSheet}
+                frameWidth={64}
+                frameHeight={64}
+                totalFrames={10}
+                fps={8}
+                scale={3}
+                loop={false}
+              />
+            </div>
+          )}
+
+          {eruptionAuraActive && (
+            <div className="absolute pointer-events-none" style={{
+              zIndex: 58,
+              left: `${eruptionKnightX}%`,
+              bottom: `${eruptionKnightY}%`,
+              width: 256,
+              height: 256,
+              transform: "translate(-50%, 50%)",
+              filter: "drop-shadow(0 0 16px rgba(255,80,0,0.9)) drop-shadow(0 0 32px rgba(255,40,0,0.5))",
+            }}>
+              <SpriteAnimator
+                spriteSheet={eruptionAuraSheet}
+                frameWidth={128}
+                frameHeight={128}
+                totalFrames={8}
+                fps={10}
+                scale={2}
+                loop={true}
+              />
+            </div>
+          )}
 
           {eruptionNukeActive && (
             <div className="absolute pointer-events-none" style={{
