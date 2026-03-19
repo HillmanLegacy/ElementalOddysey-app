@@ -139,7 +139,7 @@ import slknightDeath from "@/assets/images/slknight-death.png";
 import slknightJump from "@/assets/images/slknight-jump.png";
 import slknightAirAttack from "@/assets/images/slknight-airattack.png";
 import slknightPraySheet from "@assets/Pray_1773950669346.png";
-import tornadoFireSheet from "@assets/Tornado-Sheet_1773951370631.png";
+import tornadoFireSheet from "@assets/Tornado-Sheet_1773950600765.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
 import rangerAttack from "@/assets/images/ranger-attack.png";
 import rangerHurt from "@/assets/images/ranger-hurt.png";
@@ -4549,18 +4549,14 @@ export default function BattleScreen({
                       left: "50%",
                       transform: "translateX(-50%)",
                       filter: "drop-shadow(0 0 14px rgba(255,140,0,0.8)) drop-shadow(0 0 6px rgba(255,60,0,0.6))",
-                    }}>
-                      <SpriteAnimator
-                        spriteSheet={tornadoFireSheet}
-                        frameWidth={105}
-                        frameHeight={100}
-                        totalFrames={42}
-                        startFrame={28}
-                        fps={12}
-                        scale={2}
-                        loop={false}
-                      />
-                    </div>
+                      width: 210,
+                      height: 200,
+                      backgroundImage: `url(${tornadoFireSheet})`,
+                      backgroundSize: "2940px 800px",
+                      backgroundRepeat: "no-repeat",
+                      imageRendering: "pixelated",
+                      animation: "tornado-orange-anim 1167ms steps(13, end) forwards",
+                    }} />
                   )}
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
                     <PixelDissolve active={pixelDissolving.has(idx)} onComplete={() => onPixelDissolveComplete(idx)} duration={1000} pixelSize={6}>

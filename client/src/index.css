@@ -360,6 +360,11 @@
   100% { opacity: 0; filter: brightness(0.3); }
 }
 
+@keyframes tornado-orange-anim {
+  from { background-position: 0px -400px; }
+  to   { background-position: -2730px -400px; }
+}
+
 @keyframes introPanLR {
   0%   { background-position: 10% center; }
   100% { background-position: 90% center; }
