@@ -1103,7 +1103,6 @@ export default function BattleScreen({
         setEruptionBuildupActive(false);
         setEruptionSubPhase("jumpFall");
         setEruptionKnightY(targetY);
-        playSfx("eruptionDownwardSlash", 0.9);
       }, runDur + riseDur + holdDur);
 
       const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
