@@ -139,7 +139,7 @@ import slknightDeath from "@/assets/images/slknight-death.png";
 import slknightJump from "@/assets/images/slknight-jump.png";
 import slknightAirAttack from "@/assets/images/slknight-airattack.png";
 import slknightPraySheet from "@assets/Pray_1773950669346.png";
-import tornadoFireSheet from "@assets/Tornado-Sheet_1773950600765.png";
+import tornadoFireSheet from "@assets/Tornado-Sheet_1773951370631.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
 import rangerAttack from "@/assets/images/ranger-attack.png";
 import rangerHurt from "@/assets/images/ranger-hurt.png";
@@ -1228,7 +1228,34 @@ export default function BattleScreen({
     playSfx("magicRing", 0.6);
     if (spell.animation === "infernosPrayer") {
       const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
-      pendingInfernosPrayer.current = { targets: aliveTargets, spell };
+      setAnimPhase("infernosPrayer");
+      const tornadoDelay = 375;
+      scheduleTimer(() => {
+        setTornadoVfxTargets(aliveTargets);
+        onCastSpell(spell);
+        setShakeScreen(true);
+        scheduleTimer(() => setShakeScreen(false), 400);
+        aliveTargets.forEach(idx => {
+          const hitEnemy = battle.enemies[idx];
+          if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
+            setEnemyAnimStates(prev => ({ ...prev, [idx]: "hurt" }));
+            scheduleTimer(() => {
+              setEnemyAnimStates(prev => prev[idx] === "death" ? prev : { ...prev, [idx]: ytrielRestAnim(idx) });
+            }, 500);
+          }
+        });
+      }, tornadoDelay);
+      scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 900);
+      const totalDur = 1800;
+      scheduleTimer(() => {
+        setMagicZoom(false);
+        setMagicZoomTarget(null);
+        setAnimPhase("idle");
+        setPendingTargetIdx(null);
+        if (battle.phase !== "victory" && battle.phase !== "defeat") {
+          setTimeout(() => onFinishPlayerTurn(), 1600);
+        }
+      }, totalDur);
       setSelectedSpell(null);
       setShowSpells(false);
       setSelectedAction(null);
@@ -1814,42 +1841,6 @@ export default function BattleScreen({
             setTimeout(() => onFinishPlayerTurn(), 1600);
           }
         }, endTime);
-        return;
-      }
-      if (pendingInfernosPrayer.current) {
-        const { targets, spell } = pendingInfernosPrayer.current;
-        pendingInfernosPrayer.current = null;
-        setAnimPhase("infernosPrayer");
-        const prayFps = 8;
-        const frameDuration = 1000 / prayFps;
-        const tornadoDelay = 3 * frameDuration;
-        scheduleTimer(() => {
-          setTornadoVfxTargets(targets);
-          onCastSpell(spell);
-          setShakeScreen(true);
-          scheduleTimer(() => setShakeScreen(false), 400);
-          targets.forEach(idx => {
-            const hitEnemy = battle.enemies[idx];
-            if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
-              setEnemyAnimStates(prev => ({ ...prev, [idx]: "hurt" }));
-              scheduleTimer(() => {
-                setEnemyAnimStates(prev => prev[idx] === "death" ? prev : { ...prev, [idx]: ytrielRestAnim(idx) });
-              }, 500);
-            }
-          });
-        }, tornadoDelay);
-        const tornadoDur = 900;
-        scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + tornadoDur);
-        const totalDur = 12 * frameDuration + 300;
-        scheduleTimer(() => {
-          setMagicZoom(false);
-          setMagicZoomTarget(null);
-          setAnimPhase("idle");
-          setPendingTargetIdx(null);
-          if (battle.phase !== "victory" && battle.phase !== "defeat") {
-            setTimeout(() => onFinishPlayerTurn(), 1600);
-          }
-        }, totalDur);
         return;
       }
       setMagicZoom(false);
