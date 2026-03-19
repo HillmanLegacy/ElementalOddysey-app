@@ -661,6 +661,8 @@ export default function BattleScreen({
   const [eruptionShakeIntensity, setEruptionShakeIntensity] = useState(0);
   const [eruptionNukeActive, setEruptionNukeActive] = useState(false);
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
+  const [eruptionNukeX, setEruptionNukeX] = useState(0);
+  const [eruptionNukeY, setEruptionNukeY] = useState(0);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
   const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpHold" | "jumpFall" | "returnJumpRise" | "returnJumpFall">("idle");
   const [eruptionBuildupActive, setEruptionBuildupActive] = useState(false);
@@ -1116,6 +1118,8 @@ export default function BattleScreen({
         eruptionDescentAudio.current = null;
         setEruptionNukeActive(true);
         setEruptionNukeTargetIdx(targetIdx);
+        setEruptionNukeX(targetX);
+        setEruptionNukeY(targetY);
         setEruptionAirAttackStartFrame(4);
         setEruptionAirAttackRestartKey(k => k + 1);
         playSfx("eruptionCleave", 1.3);
@@ -1137,9 +1141,9 @@ export default function BattleScreen({
         setEruptionNukeTargetIdx(null);
       }, nukeStart + nukeDuration);
 
-      const returnJumpDelay = 300;
-      const returnRiseDur = 280;
-      const returnFallDur = 370;
+      const returnJumpDelay = 60;
+      const returnRiseDur = 300;
+      const returnFallDur = 400;
 
       scheduleTimer(() => {
         setEruptionBuildupActive(false);
@@ -1152,12 +1156,13 @@ export default function BattleScreen({
         setMagicZoom(false);
         setMagicZoomTarget(null);
         setEruptionSubPhase("returnJumpRise");
-        setEruptionKnightX(PLAYER_POS.x);
+        setEruptionKnightX(midX);
         setEruptionKnightY(highY);
       }, nukeStart + returnJumpDelay);
 
       scheduleTimer(() => {
         setEruptionSubPhase("returnJumpFall");
+        setEruptionKnightX(PLAYER_POS.x);
         setEruptionKnightY(groundY);
       }, nukeStart + returnJumpDelay + returnRiseDur);
 
@@ -3292,9 +3297,9 @@ export default function BattleScreen({
                           : eruptionSubPhase === "jumpFall"
                             ? "bottom 0.70s ease-in, left 0s"
                             : eruptionSubPhase === "returnJumpRise"
-                              ? "left 0.28s ease-out, bottom 0.28s ease-out"
+                              ? "left 0.30s linear, bottom 0.30s ease-out"
                               : eruptionSubPhase === "returnJumpFall"
-                                ? "bottom 0.37s ease-in, left 0s"
+                                ? "left 0.40s linear, bottom 0.40s ease-in"
                                 : "none"
                       : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
@@ -3504,8 +3509,8 @@ export default function BattleScreen({
           {eruptionNukeActive && (
             <div className="absolute pointer-events-none" style={{
               zIndex: 300,
-              left: `${eruptionKnightX}%`,
-              bottom: `${eruptionKnightY}%`,
+              left: `${eruptionNukeX}%`,
+              bottom: `${eruptionNukeY}%`,
               width: 576,
               height: 576,
               transform: "translate(-50%, 30%)",
