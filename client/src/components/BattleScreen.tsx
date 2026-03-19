@@ -3201,7 +3201,7 @@ export default function BattleScreen({
             ref={playerSpriteRef}
             className="absolute"
             style={{
-              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave" || animPhase === "thunderBolt") ? 55 : 20,
+              zIndex: (animPhase === "runToEnemy" || animPhase === "attacking" || animPhase === "runBack" || animPhase === "fujinSlice" || animPhase === "casting" || animPhase === "eruptionCleave" || animPhase === "thunderBolt" || animPhase === "incinerationSlash") ? 55 : 20,
               left: `${playerPos.x}%`,
               bottom: `${playerPos.y}%`,
               transform: `translateX(-50%)`,
@@ -4142,7 +4142,7 @@ export default function BattleScreen({
                   left: `${bossLeft}%`,
                   bottom: `${bossBottom}%`,
                   transform: groundYShift !== 0 ? `translateX(-50%) translateY(${groundYShift}px)` : "translateX(-50%)",
-                  zIndex: Math.floor(pos.y),
+                  zIndex: isBossMoving ? 55 : Math.floor(pos.y),
                   transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy) || isResk(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
                   cursor: isSpriteTargetable ? "pointer" : "default",
                 }}
