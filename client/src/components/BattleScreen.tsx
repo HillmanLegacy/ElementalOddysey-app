@@ -1230,7 +1230,7 @@ export default function BattleScreen({
           }
         });
       }, tornadoDelay + 900);
-      scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 1200);
+      scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 1300);
       scheduleTimer(() => {
         setMagicZoom(false);
         setMagicZoomTarget(null);
@@ -4567,7 +4567,7 @@ export default function BattleScreen({
                       backgroundSize: "3528px 960px",
                       backgroundRepeat: "no-repeat",
                       imageRendering: "pixelated",
-                      animation: "tornado-orange-anim 1167ms steps(13, end) forwards",
+                      animation: "tornado-orange-anim 1260ms steps(14, end) forwards",
                     }} />
                   )}
                   {enemy.id === "dragon_lord" && enemy.isBoss ? (
