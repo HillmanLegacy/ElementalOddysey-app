@@ -1112,8 +1112,8 @@ export default function BattleScreen({
       const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
       scheduleTimer(() => {
         setEruptionTransitionActive(true);
-      }, nukeStart - 200);
-      scheduleTimer(() => setEruptionTransitionActive(false), nukeStart + 800);
+      }, nukeStart - 500);
+      scheduleTimer(() => setEruptionTransitionActive(false), nukeStart + 500);
 
       scheduleTimer(() => {
         setEruptionAuraActive(false);
