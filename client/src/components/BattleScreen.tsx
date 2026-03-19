@@ -1195,6 +1195,53 @@ export default function BattleScreen({
       }, totalAnimTime + 800);
       return;
     }
+    if (selectedSpell.animation === "infernosPrayer") {
+      const spell = selectedSpell;
+      const otherAliveTargets = battle.enemies
+        .map((_, i) => i)
+        .filter(i => i !== targetIdx && battle.enemies[i].currentHp > 0);
+      setSelectedAction(null);
+      setPendingTargetIdx(targetIdx);
+      onSetAnimating();
+      setMagicZoom(true);
+      setMagicZoomTarget(targetIdx);
+      setSelectedSpell(null);
+      setShowSpells(false);
+      setAnimPhase("infernosPrayer");
+      playSfx("magicRing", 0.6);
+      const tornadoDelay = 375;
+      scheduleTimer(() => {
+        setTornadoVfxTargets([targetIdx]);
+        playSfx("flamePrayer", 0.9);
+      }, tornadoDelay);
+      scheduleTimer(() => {
+        onCastSpell(spell, targetIdx);
+        const splashSpell = { ...spell, mpCost: 0, effect: { ...spell.effect, damageMultiplier: (spell.effect.damageMultiplier ?? 1) * 0.45 } };
+        otherAliveTargets.forEach(i => onCastSpell(splashSpell, i));
+        setShakeScreen(true);
+        scheduleTimer(() => setShakeScreen(false), 400);
+        [targetIdx, ...otherAliveTargets].forEach(idx => {
+          const hitEnemy = battle.enemies[idx];
+          if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
+            setEnemyAnimStates(prev => ({ ...prev, [idx]: "hurt" }));
+            scheduleTimer(() => {
+              setEnemyAnimStates(prev => prev[idx] === "death" ? prev : { ...prev, [idx]: ytrielRestAnim(idx) });
+            }, 500);
+          }
+        });
+      }, tornadoDelay + 900);
+      scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 1200);
+      scheduleTimer(() => {
+        setMagicZoom(false);
+        setMagicZoomTarget(null);
+        setAnimPhase("idle");
+        setPendingTargetIdx(null);
+        if (battle.phase !== "victory" && battle.phase !== "defeat") {
+          setTimeout(() => onFinishPlayerTurn(), 1600);
+        }
+      }, 1800);
+      return;
+    }
     if (selectedSpell.animation === "thunderBolt") {
       pendingThunderBolt.current = { targetIdx, spell: selectedSpell };
       setSelectedAction(null);
@@ -1226,44 +1273,6 @@ export default function BattleScreen({
     setMagicZoom(true);
     setMagicZoomTarget(null);
     playSfx("magicRing", 0.6);
-    if (spell.animation === "infernosPrayer") {
-      const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
-      setAnimPhase("infernosPrayer");
-      const tornadoDelay = 375;
-      scheduleTimer(() => {
-        setTornadoVfxTargets(aliveTargets);
-        playSfx("flamePrayer", 0.9);
-      }, tornadoDelay);
-      scheduleTimer(() => {
-        onCastSpell(spell);
-        setShakeScreen(true);
-        scheduleTimer(() => setShakeScreen(false), 400);
-        aliveTargets.forEach(idx => {
-          const hitEnemy = battle.enemies[idx];
-          if (hitEnemy && isAnimatedEnemyCheck(hitEnemy)) {
-            setEnemyAnimStates(prev => ({ ...prev, [idx]: "hurt" }));
-            scheduleTimer(() => {
-              setEnemyAnimStates(prev => prev[idx] === "death" ? prev : { ...prev, [idx]: ytrielRestAnim(idx) });
-            }, 500);
-          }
-        });
-      }, tornadoDelay + 900);
-      scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 1200);
-      const totalDur = 1800;
-      scheduleTimer(() => {
-        setMagicZoom(false);
-        setMagicZoomTarget(null);
-        setAnimPhase("idle");
-        setPendingTargetIdx(null);
-        if (battle.phase !== "victory" && battle.phase !== "defeat") {
-          setTimeout(() => onFinishPlayerTurn(), 1600);
-        }
-      }, totalDur);
-      setSelectedSpell(null);
-      setShowSpells(false);
-      setSelectedAction(null);
-      return;
-    }
     if (spell.animation === "galeSlash") {
       const aliveTargets = battle.enemies.map((_, i) => i).filter(i => battle.enemies[i].currentHp > 0);
       setWindSpellVfx({ type: "galeSlash", targets: aliveTargets });
