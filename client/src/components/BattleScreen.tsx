@@ -1232,6 +1232,8 @@ export default function BattleScreen({
       const tornadoDelay = 375;
       scheduleTimer(() => {
         setTornadoVfxTargets(aliveTargets);
+      }, tornadoDelay);
+      scheduleTimer(() => {
         onCastSpell(spell);
         setShakeScreen(true);
         scheduleTimer(() => setShakeScreen(false), 400);
@@ -1244,7 +1246,7 @@ export default function BattleScreen({
             }, 500);
           }
         });
-      }, tornadoDelay);
+      }, tornadoDelay + 900);
       scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 1200);
       const totalDur = 1800;
       scheduleTimer(() => {
