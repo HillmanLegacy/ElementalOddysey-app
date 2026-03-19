@@ -3341,8 +3341,8 @@ export default function BattleScreen({
                     fps={12}
                     scale={1.5}
                     loop={false}
-                    startFrame={11}
-                    pauseAtFrame={22}
+                    startFrame={8}
+                    pauseAtFrame={19}
                     onComplete={onSpriteComplete}
                   />
                 </div>
@@ -3709,8 +3709,8 @@ export default function BattleScreen({
                         fps={12}
                         scale={1.5}
                         loop={false}
-                        startFrame={11}
-                        pauseAtFrame={22}
+                        startFrame={8}
+                        pauseAtFrame={19}
                         onComplete={() => setPartyGuardIndex(-1)}
                       />
                     </div>
