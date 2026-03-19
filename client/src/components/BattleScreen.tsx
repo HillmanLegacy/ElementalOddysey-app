@@ -42,6 +42,7 @@ import vfxFireBurst from "@/assets/images/vfx-fire-burst.png";
 import vfxFirePillar from "@/assets/images/vfx-fire-pillar.png";
 import forestBattleBg from "@assets/A_pixel_art_forest__upscayl_2x_digital-art-4x_1773689565858.png";
 import guardSpriteSheet from "@assets/10_weaponhit_spritesheet_1771628904150.png";
+import blockShieldVfx from "@assets/Spell_1-Sheet_1773896633775.png";
 import firespinSheet from "@assets/7_firespin_spritesheet_1771795176253.png";
 import nukeExplosionSheet from "@assets/Nuke_Explosion_1771631384679.png";
 import knightEruptionSheet from "@assets/knight_1771631932532.png";
@@ -3333,13 +3334,15 @@ export default function BattleScreen({
                   transform: "translate(-50%, -50%)",
                 }}>
                   <SpriteAnimator
-                    spriteSheet={guardSpriteSheet}
-                    frameWidth={100}
-                    frameHeight={100}
-                    totalFrames={31}
-                    fps={38}
-                    scale={2.5}
+                    spriteSheet={blockShieldVfx}
+                    frameWidth={160}
+                    frameHeight={128}
+                    totalFrames={66}
+                    fps={12}
+                    scale={1.5}
                     loop={false}
+                    startFrame={11}
+                    pauseAtFrame={22}
                     onComplete={onSpriteComplete}
                   />
                 </div>
@@ -3699,13 +3702,15 @@ export default function BattleScreen({
                       transform: "translate(-50%, -50%)",
                     }}>
                       <SpriteAnimator
-                        spriteSheet={guardSpriteSheet}
-                        frameWidth={100}
-                        frameHeight={100}
-                        totalFrames={31}
-                        fps={38}
-                        scale={2.5}
+                        spriteSheet={blockShieldVfx}
+                        frameWidth={160}
+                        frameHeight={128}
+                        totalFrames={66}
+                        fps={12}
+                        scale={1.5}
                         loop={false}
+                        startFrame={11}
+                        pauseAtFrame={22}
                         onComplete={() => setPartyGuardIndex(-1)}
                       />
                     </div>
