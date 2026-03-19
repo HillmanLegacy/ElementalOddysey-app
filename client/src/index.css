@@ -361,8 +361,8 @@
 }
 
 @keyframes tornado-orange-anim {
-  from { background-position: 0px -400px; }
-  to   { background-position: -2730px -400px; }
+  from { background-position: 0px -480px; }
+  to   { background-position: -3276px -480px; }
 }
 
 @keyframes introPanLR {

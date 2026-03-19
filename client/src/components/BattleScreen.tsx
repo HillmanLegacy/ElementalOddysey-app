@@ -1232,6 +1232,7 @@ export default function BattleScreen({
       const tornadoDelay = 375;
       scheduleTimer(() => {
         setTornadoVfxTargets(aliveTargets);
+        playSfx("flamePrayer", 0.9);
       }, tornadoDelay);
       scheduleTimer(() => {
         onCastSpell(spell);
@@ -4551,10 +4552,10 @@ export default function BattleScreen({
                       left: "50%",
                       transform: "translateX(-50%)",
                       filter: "drop-shadow(0 0 14px rgba(255,140,0,0.8)) drop-shadow(0 0 6px rgba(255,60,0,0.6))",
-                      width: 210,
-                      height: 200,
+                      width: 252,
+                      height: 240,
                       backgroundImage: `url(${tornadoFireSheet})`,
-                      backgroundSize: "2940px 800px",
+                      backgroundSize: "3528px 960px",
                       backgroundRepeat: "no-repeat",
                       imageRendering: "pixelated",
                       animation: "tornado-orange-anim 1167ms steps(13, end) forwards",
