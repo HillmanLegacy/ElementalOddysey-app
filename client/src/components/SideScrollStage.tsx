@@ -1066,7 +1066,6 @@ export default function SideScrollStage({
         }
       } else {
         jumpStartTimeRef.current = 0;
-        setIsRising(false);
         setJumpSubPhase("start");
       }
       setFacingRight(facingRightRef.current);

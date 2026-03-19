@@ -1389,17 +1389,6 @@ function Game() {
                   onComplete={() => setHutTransitionOut(false)}
                 />
               )}
-              {exitToMenuTransition && (
-                <BattleTransition
-                  direction="in"
-                  onComplete={() => {
-                    setExitToMenuTransition(false);
-                    stopAll();
-                    setMenuReveal(true);
-                    setScreen("menu");
-                  }}
-                />
-              )}
             </>
           );
         })();
@@ -1646,6 +1635,17 @@ function Game() {
             }}
           />
         )}
+        {exitToMenuTransition && (
+          <BattleTransition
+            direction="in"
+            onComplete={() => {
+              setExitToMenuTransition(false);
+              stopAll();
+              setMenuReveal(true);
+              setScreen("menu");
+            }}
+          />
+        )}
       </div>
     );
   }
@@ -1660,6 +1660,17 @@ function Game() {
             zIndex: 500,
             opacity: overworldReveal === "black" ? 1 : 0,
             transition: overworldReveal === "fading" ? "opacity 1500ms ease" : "none",
+          }}
+        />
+      )}
+      {exitToMenuTransition && (
+        <BattleTransition
+          direction="in"
+          onComplete={() => {
+            setExitToMenuTransition(false);
+            stopAll();
+            setMenuReveal(true);
+            setScreen("menu");
           }}
         />
       )}
