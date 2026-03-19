@@ -975,7 +975,7 @@ export default function BattleScreen({
     newEvents.forEach((evt, idx) => {
       setTimeout(() => {
         let posX: number, posY: number;
-        let color = "#ef4444";
+        let color = evt.isCrit ? "#fbbf24" : "#ef4444";
 
         if (evt.targetType === "enemy") {
           const ep = getEnemyGridPos(evt.targetIndex);
@@ -3273,7 +3273,7 @@ export default function BattleScreen({
 
       {damageNumbers.map(d => {
         const numColor = d.color;
-        const numSize = d.text === "DODGE" ? "26px" : "24px";
+        const numSize = d.text === "DODGE" ? "22px" : d.isCrit ? "28px" : "24px";
         const labelColor = d.label === "Super effective!" ? "#fbbf24" : d.label === "BLOCKED!" ? "#ef4444" : "#b0bec5";
         return (
           <div
@@ -3281,6 +3281,18 @@ export default function BattleScreen({
             className="absolute pointer-events-none z-50 animate-[dmgFloat_1.2s_ease-out_forwards] flex flex-col items-center"
             style={{ left: `${d.x}%`, top: `${d.y}%` }}
           >
+            {d.isCrit && !d.isHeal && d.text !== "DODGE" && (
+              <div style={{
+                fontSize: "9px",
+                fontFamily: "'Press Start 2P', cursive",
+                color: "#fbbf24",
+                WebkitTextStroke: "1.5px rgba(0,0,0,0.9)",
+                paintOrder: "stroke fill",
+                textShadow: "0 0 8px #fbbf24, 0 0 16px #fbbf2480",
+                letterSpacing: "1px",
+                marginBottom: "2px",
+              }}>CRIT!</div>
+            )}
             <div className="flex items-center gap-1" style={{
               fontSize: numSize,
               fontWeight: 900,
