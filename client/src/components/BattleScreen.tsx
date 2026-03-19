@@ -1112,8 +1112,8 @@ export default function BattleScreen({
       const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
       scheduleTimer(() => {
         setEruptionTransitionActive(true);
-      }, runDur + riseDur - 200);
-      scheduleTimer(() => setEruptionTransitionActive(false), runDur + riseDur + 800);
+      }, runDur + riseDur - 400);
+      scheduleTimer(() => setEruptionTransitionActive(false), runDur + riseDur + 600);
 
       scheduleTimer(() => {
         setEruptionAuraActive(false);
@@ -3449,6 +3449,11 @@ export default function BattleScreen({
               width: 336,
               height: 336,
               transform: "translate(-50%, 104px)",
+              transition: eruptionSubPhase === "jumpRise"
+                ? "left 0.30s ease-out, bottom 0.30s ease-out"
+                : eruptionSubPhase === "jumpFall"
+                  ? "bottom 0.70s ease-in, left 0s"
+                  : "none",
               filter: "drop-shadow(0 0 12px rgba(255,120,0,0.9)) drop-shadow(0 0 24px rgba(255,60,0,0.5))",
             }}>
               <SpriteAnimator
