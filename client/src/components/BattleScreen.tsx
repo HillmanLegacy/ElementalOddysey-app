@@ -662,7 +662,7 @@ export default function BattleScreen({
   const [eruptionNukeActive, setEruptionNukeActive] = useState(false);
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
-  const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpHold" | "jumpFall">("idle");
+  const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpHold" | "jumpFall" | "returnRun">("idle");
   const [eruptionBuildupActive, setEruptionBuildupActive] = useState(false);
   const [eruptionAuraActive, setEruptionAuraActive] = useState(false);
   const [eruptionTransitionActive, setEruptionTransitionActive] = useState(false);
@@ -1137,12 +1137,9 @@ export default function BattleScreen({
         setEruptionNukeTargetIdx(null);
       }, nukeStart + nukeDuration);
 
-      const airAttackRemainingMs = Math.round(4 / 12 * 1000);
-      const totalAnimTime = nukeStart + airAttackRemainingMs + 150;
+      const totalAnimTime = nukeStart + nukeDuration + 150;
+      const returnDur = 600;
       scheduleTimer(() => {
-        setEruptionCleaveActive(false);
-        setEruptionSubPhase("idle");
-        setEruptionAirAttackStartFrame(0);
         setEruptionBuildupActive(false);
         setEruptionAuraActive(false);
         setEruptionTransitionActive(false);
@@ -1152,16 +1149,17 @@ export default function BattleScreen({
         stopSfx(eruptionDescentAudio.current); eruptionDescentAudio.current = null;
         setMagicZoom(false);
         setMagicZoomTarget(null);
-        castingNeedsRunBack.current = false;
-        runBackHandled.current = false;
-        setAnimPhase("runBack");
+        setEruptionSubPhase("returnRun");
+        setEruptionKnightX(PLAYER_POS.x);
+        setEruptionKnightY(PLAYER_POS.y);
         scheduleTimer(() => {
-          if (!runBackHandled.current) {
-            runBackHandled.current = true;
-            setAnimPhase("idle");
-            setPendingTargetIdx(null);
-          }
-        }, 600);
+          setEruptionCleaveActive(false);
+          setEruptionSubPhase("idle");
+          setEruptionAirAttackStartFrame(0);
+          castingNeedsRunBack.current = false;
+          setAnimPhase("idle");
+          setPendingTargetIdx(null);
+        }, returnDur);
       }, totalAnimTime);
 
       scheduleTimer(() => {
@@ -2827,6 +2825,9 @@ export default function BattleScreen({
         if (eruptionSubPhase === "jumpHold") {
           return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, startAt: 0, pauseAt: 0, w: 128, h: 64 };
         }
+        if (eruptionSubPhase === "returnRun") {
+          return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, startAt: 7, pauseAt: 7, w: 128, h: 64 };
+        }
         return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, pauseAt: 7, startAt: eruptionAirAttackStartFrame, w: 128, h: 64 };
       }
       case "thunderBolt": {
@@ -3277,8 +3278,10 @@ export default function BattleScreen({
                         : eruptionSubPhase === "jumpRise"
                           ? "left 0.30s ease-out, bottom 0.30s ease-out"
                           : eruptionSubPhase === "jumpFall"
-                            ? "bottom 0.50s ease-in, left 0s"
-                            : "none"
+                            ? "bottom 0.70s ease-in, left 0s"
+                            : eruptionSubPhase === "returnRun"
+                              ? "left 0.50s ease-out, bottom 0.50s ease-out"
+                              : "none"
                       : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
             onTransitionEnd={onPlayerTransitionEnd}
