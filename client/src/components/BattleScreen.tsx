@@ -3398,7 +3398,7 @@ export default function BattleScreen({
               bottom: `${eruptionKnightY}%`,
               width: 192,
               height: 192,
-              transform: "translate(-50%, 50%)",
+              transform: "translate(-50%, 32px)",
               filter: "drop-shadow(0 0 10px rgba(255,160,0,0.9)) drop-shadow(0 0 20px rgba(255,80,0,0.6))",
             }}>
               <SpriteAnimator
@@ -3420,7 +3420,7 @@ export default function BattleScreen({
               bottom: `${eruptionKnightY}%`,
               width: 256,
               height: 256,
-              transform: "translate(-50%, 50%)",
+              transform: "translate(-50%, 64px)",
               filter: "drop-shadow(0 0 16px rgba(255,80,0,0.9)) drop-shadow(0 0 32px rgba(255,40,0,0.5))",
             }}>
               <SpriteAnimator
