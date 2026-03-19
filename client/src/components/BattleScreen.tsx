@@ -662,7 +662,7 @@ export default function BattleScreen({
   const [eruptionNukeActive, setEruptionNukeActive] = useState(false);
   const [eruptionNukeTargetIdx, setEruptionNukeTargetIdx] = useState<number | null>(null);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
-  const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpHold" | "jumpFall" | "returnRun">("idle");
+  const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpHold" | "jumpFall" | "returnJumpRise" | "returnJumpFall">("idle");
   const [eruptionBuildupActive, setEruptionBuildupActive] = useState(false);
   const [eruptionAuraActive, setEruptionAuraActive] = useState(false);
   const [eruptionTransitionActive, setEruptionTransitionActive] = useState(false);
@@ -1137,8 +1137,10 @@ export default function BattleScreen({
         setEruptionNukeTargetIdx(null);
       }, nukeStart + nukeDuration);
 
-      const totalAnimTime = nukeStart + nukeDuration + 150;
-      const returnDur = 600;
+      const returnJumpDelay = 300;
+      const returnRiseDur = 280;
+      const returnFallDur = 370;
+
       scheduleTimer(() => {
         setEruptionBuildupActive(false);
         setEruptionAuraActive(false);
@@ -1149,17 +1151,24 @@ export default function BattleScreen({
         stopSfx(eruptionDescentAudio.current); eruptionDescentAudio.current = null;
         setMagicZoom(false);
         setMagicZoomTarget(null);
-        setEruptionSubPhase("returnRun");
+        setEruptionSubPhase("returnJumpRise");
         setEruptionKnightX(PLAYER_POS.x);
-        setEruptionKnightY(PLAYER_POS.y);
-        scheduleTimer(() => {
-          setEruptionCleaveActive(false);
-          setEruptionSubPhase("idle");
-          setEruptionAirAttackStartFrame(0);
-          castingNeedsRunBack.current = false;
-          setAnimPhase("idle");
-          setPendingTargetIdx(null);
-        }, returnDur);
+        setEruptionKnightY(highY);
+      }, nukeStart + returnJumpDelay);
+
+      scheduleTimer(() => {
+        setEruptionSubPhase("returnJumpFall");
+        setEruptionKnightY(groundY);
+      }, nukeStart + returnJumpDelay + returnRiseDur);
+
+      const totalAnimTime = nukeStart + returnJumpDelay + returnRiseDur + returnFallDur + 80;
+      scheduleTimer(() => {
+        setEruptionCleaveActive(false);
+        setEruptionSubPhase("idle");
+        setEruptionAirAttackStartFrame(0);
+        castingNeedsRunBack.current = false;
+        setAnimPhase("idle");
+        setPendingTargetIdx(null);
       }, totalAnimTime);
 
       scheduleTimer(() => {
@@ -2825,8 +2834,11 @@ export default function BattleScreen({
         if (eruptionSubPhase === "jumpHold") {
           return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, startAt: 0, pauseAt: 0, w: 128, h: 64 };
         }
-        if (eruptionSubPhase === "returnRun") {
-          return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, startAt: 7, pauseAt: 7, w: 128, h: 64 };
+        if (eruptionSubPhase === "returnJumpRise") {
+          return { src: slknightJump, frames: 4, fps: 14, loop: false, pauseAt: 3, w: 128, h: 64 };
+        }
+        if (eruptionSubPhase === "returnJumpFall") {
+          return { src: slknightJump, frames: 4, fps: 14, loop: false, startAt: 3, pauseAt: 3, w: 128, h: 64 };
         }
         return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, pauseAt: 7, startAt: eruptionAirAttackStartFrame, w: 128, h: 64 };
       }
@@ -3279,9 +3291,11 @@ export default function BattleScreen({
                           ? "left 0.30s ease-out, bottom 0.30s ease-out"
                           : eruptionSubPhase === "jumpFall"
                             ? "bottom 0.70s ease-in, left 0s"
-                            : eruptionSubPhase === "returnRun"
-                              ? "left 0.50s ease-out, bottom 0.50s ease-out"
-                              : "none"
+                            : eruptionSubPhase === "returnJumpRise"
+                              ? "left 0.28s ease-out, bottom 0.28s ease-out"
+                              : eruptionSubPhase === "returnJumpFall"
+                                ? "bottom 0.37s ease-in, left 0s"
+                                : "none"
                       : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
             onTransitionEnd={onPlayerTransitionEnd}
