@@ -1083,11 +1083,11 @@ export default function BattleScreen({
       scheduleTimer(() => {
         setEruptionSubPhase("jumpHold");
         setEruptionBuildupActive(true);
-        eruptionBuildupAudio.current = playSfx("eruptionBuildup", 1.0);
+        eruptionBuildupAudio.current = playSfx("eruptionBuildup", 1.5);
         scheduleTimer(() => {
           fadeSfxOut(eruptionBuildupAudio.current, 400);
           eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0);
-          fadeSfxIn(eruptionFirechargeAudio.current, 0.9, 400);
+          fadeSfxIn(eruptionFirechargeAudio.current, 1.5, 400);
         }, 750);
       }, runDur + riseDur);
 
@@ -1112,7 +1112,7 @@ export default function BattleScreen({
         setEruptionAirAttackStartFrame(4);
         setEruptionAirAttackRestartKey(k => k + 1);
         playSfx("eruptionCleave", 1.3);
-        eruptionFlamelashAudio.current = playSfx("eruptionFlamelash", 0.9);
+        eruptionFlamelashAudio.current = playSfx("eruptionFlamelash", 1.5);
         scheduleTimer(() => fadeSfxOut(eruptionFlamelashAudio.current, 700), 300);
         setShakeScreen(true);
         scheduleTimer(() => setShakeScreen(false), 500);
