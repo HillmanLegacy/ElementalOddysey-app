@@ -154,9 +154,14 @@ interface OverworldProps {
   onTextSpeedChange: (speed: "slow" | "medium" | "fast") => void;
   onMusicVolumeChange: (volume: number) => void;
   onSfxVolumeChange: (volume: number) => void;
+  devInvincible?: boolean;
+  onDevSetLevel?: (level: number) => void;
+  onDevUnlockSpells?: () => void;
+  onDevToggleInvincibility?: () => void;
+  onDevTeleportBoss?: () => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave, onExitToMenu, textSpeed, musicVolume, sfxVolume, onTextSpeedChange, onMusicVolumeChange, onSfxVolumeChange }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave, onExitToMenu, textSpeed, musicVolume, sfxVolume, onTextSpeedChange, onMusicVolumeChange, onSfxVolumeChange, devInvincible, onDevSetLevel, onDevUnlockSpells, onDevToggleInvincibility, onDevTeleportBoss }: OverworldProps) {
   const _owSpriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;
   const playerColorMap = useColorMap(_owSpriteConfig.idle.sheet, _owSpriteConfig.idle.frameWidth, _owSpriteConfig.idle.frameHeight, player.colorGroups);
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
@@ -170,11 +175,27 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   });
   const [isMoving, setIsMoving] = useState(false);
   const [facingRight, setFacingRight] = useState(true);
+  const [devMenuOpen, setDevMenuOpen] = useState(false);
+  const [devLevelInput, setDevLevelInput] = useState<number>(player.level);
   const animFrameRef = useRef<number>(0);
   const moveCallbackRef = useRef<(() => void) | null>(null);
   const charPosRef = useRef(charPos);
 
   useEffect(() => { charPosRef.current = charPos; }, [charPos]);
+
+  useEffect(() => { setDevLevelInput(player.level); }, [player.level]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "d" || e.key === "D") {
+        if ((e.target as HTMLElement).tagName === "INPUT") return;
+        setDevMenuOpen(prev => !prev);
+      }
+      if (e.key === "Escape") setDevMenuOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const prevRegionRef = useRef(player.currentRegion);
   const prevNodeRef = useRef(player.currentNode);
@@ -862,6 +883,96 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           </div>
         );
       })()}
+
+      {devMenuOpen && (
+        <div
+          className="absolute inset-0 z-50 flex items-center justify-center"
+          style={{ background: "rgba(0,0,0,0.72)" }}
+          onClick={(e) => { if (e.target === e.currentTarget) setDevMenuOpen(false); }}
+        >
+          <div
+            className="rounded-xl border border-yellow-400/40 shadow-2xl p-6 flex flex-col gap-4"
+            style={{ background: "#0f0f1a", minWidth: 320, maxWidth: 380 }}
+          >
+            <div className="flex items-center justify-between mb-1">
+              <span className="text-yellow-400 font-bold text-base tracking-widest uppercase" style={{ fontFamily: "monospace", letterSpacing: "0.15em" }}>
+                ⚙ Developer Menu
+              </span>
+              <button
+                data-testid="dev-menu-close"
+                onClick={() => setDevMenuOpen(false)}
+                className="text-white/40 hover:text-white text-lg leading-none px-1"
+              >✕</button>
+            </div>
+
+            <div className="border-t border-white/10 pt-3 flex flex-col gap-1">
+              <span className="text-white/50 text-[10px] uppercase tracking-widest mb-1">Player Level</span>
+              <div className="flex items-center gap-2">
+                <button
+                  data-testid="dev-level-minus"
+                  onClick={() => setDevLevelInput(v => Math.max(1, v - 1))}
+                  className="w-8 h-8 rounded bg-white/10 hover:bg-white/20 text-white font-bold text-lg flex items-center justify-center"
+                >−</button>
+                <input
+                  data-testid="dev-level-input"
+                  type="number"
+                  min={1}
+                  max={30}
+                  value={devLevelInput}
+                  onChange={e => setDevLevelInput(Math.max(1, Math.min(30, Number(e.target.value))))}
+                  className="flex-1 text-center bg-black/40 border border-white/20 rounded text-white text-sm py-1 outline-none focus:border-yellow-400/60"
+                  style={{ fontFamily: "monospace" }}
+                />
+                <button
+                  data-testid="dev-level-plus"
+                  onClick={() => setDevLevelInput(v => Math.min(30, v + 1))}
+                  className="w-8 h-8 rounded bg-white/10 hover:bg-white/20 text-white font-bold text-lg flex items-center justify-center"
+                >+</button>
+                <button
+                  data-testid="dev-level-set"
+                  onClick={() => { onDevSetLevel?.(devLevelInput); }}
+                  className="px-3 py-1 rounded text-xs font-bold text-black"
+                  style={{ background: "#facc15" }}
+                >SET</button>
+              </div>
+              <span className="text-white/30 text-[9px] mt-0.5">Current: Lv {player.level}</span>
+            </div>
+
+            <div className="border-t border-white/10 pt-3 flex flex-col gap-2">
+              <button
+                data-testid="dev-unlock-spells"
+                onClick={() => { onDevUnlockSpells?.(); }}
+                className="w-full py-2 rounded-lg text-sm font-bold text-black"
+                style={{ background: "#818cf8" }}
+              >
+                Unlock All Magic
+              </button>
+
+              <button
+                data-testid="dev-invincibility"
+                onClick={() => { onDevToggleInvincibility?.(); }}
+                className="w-full py-2 rounded-lg text-sm font-bold border"
+                style={devInvincible
+                  ? { background: "#22c55e", color: "#000", borderColor: "#16a34a" }
+                  : { background: "transparent", color: "#22c55e", borderColor: "#22c55e80" }}
+              >
+                {devInvincible ? "✓ Invincibility ON" : "Invincibility OFF"}
+              </button>
+
+              <button
+                data-testid="dev-teleport-boss"
+                onClick={() => { onDevTeleportBoss?.(); setDevMenuOpen(false); }}
+                className="w-full py-2 rounded-lg text-sm font-bold text-black"
+                style={{ background: "#f87171" }}
+              >
+                Teleport to Boss
+              </button>
+            </div>
+
+            <p className="text-white/20 text-[9px] text-center mt-1" style={{ fontFamily: "monospace" }}>Press D to toggle • ESC to close</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

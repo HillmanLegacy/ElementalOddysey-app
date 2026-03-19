@@ -28,6 +28,10 @@ export function useGameState() {
     setState(s => ({ ...s, screen }));
   }, []);
 
+  const setDevInvincible = useCallback((val: boolean) => {
+    setState(s => ({ ...s, devInvincible: val }));
+  }, []);
+
   const createCharacter = useCallback((starterCharId: string, name: string, color: EnergyColor, shape: EnergyShape, colorVariant: string = "default", colorGroups: Record<string, string> = {}) => {
     const starterDef = STARTER_CHARACTERS.find(c => c.id === starterCharId);
     if (!starterDef) return;
@@ -813,6 +817,7 @@ export function useGameState() {
             const resistEl = playerAcc.effect.special === "windResist" ? "Wind" : playerAcc.effect.special === "fireResist" ? "Fire" : null;
             if (resistEl === enemy.element) actualDamage = Math.max(1, Math.floor(actualDamage * (1 - (playerAcc.effect.specialValue || 0))));
           }
+          if (s.devInvincible) actualDamage = 0;
           battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
           battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
           battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -839,6 +844,7 @@ export function useGameState() {
               const resistEl2 = playerAcc2.effect.special === "windResist" ? "Wind" : playerAcc2.effect.special === "fireResist" ? "Fire" : null;
               if (resistEl2 === enemy.element) actualDamage = Math.max(1, Math.floor(actualDamage * (1 - (playerAcc2.effect.specialValue || 0))));
             }
+            if (s.devInvincible) actualDamage = 0;
             battle.playerHp = Math.max(0, battle.playerHp - actualDamage);
             battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "player", targetIndex: -1, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: battle.defending };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${battle.defending ? " (blocked)" : ""}${isCrit ? " CRIT" : ""} damage!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -855,6 +861,7 @@ export function useGameState() {
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedPartyStats, enemyUseMagic, enemy.element, partyTarget.element);
             let actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, partyTarget.perks || []);
+            if (s.devInvincible) actualDamage = 0;
             battle.party[partyIdx].currentHp = Math.max(0, battle.party[partyIdx].currentHp - actualDamage);
             battle.lastDamageEvent = { id: ++damageEventCounter, amount: actualDamage, targetType: "party", targetIndex: partyIdx, isCrit, element: enemy.element, label: elementLabel || undefined, isBlocked: partyTarget.defending };
             battle.log = [...battle.log, `${enemy.name} deals ${actualDamage}${isCrit ? " CRIT" : ""} to ${partyTarget.name}!${elementLabel ? ` ${elementLabel}` : ""}`];
@@ -1652,6 +1659,7 @@ export function useGameState() {
     spawnEnemy,
     openShaman,
     learnShamanSpell,
+    setDevInvincible,
   };
 }
 

@@ -296,4 +296,5 @@ export interface GameState {
   musicVolume: number;
   sfxVolume: number;
   showDamageNumbers: boolean;
+  devInvincible?: boolean;
 }

@@ -5,7 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Slider } from "@/components/ui/slider";
 import { useGameState } from "@/lib/gameState";
-import { getRegionForTier, getRegionTier, ELEMENT_COLORS } from "@/lib/gameData";
+import { getRegionForTier, getRegionTier, ELEMENT_COLORS, ELEMENT_SPELL_UNLOCKS, STARTER_CHARACTERS, getPartyMemberForLevel, SHAMAN_SPELLS, xpForLevel } from "@/lib/gameData";
 import MainMenu from "@/components/MainMenu";
 import CharacterCreation from "@/components/CharacterCreation";
 import ForestIntroScreen from "@/components/ForestIntroScreen";
@@ -72,6 +72,8 @@ function useViewportScale() {
   return info;
 }
 
+const BOSS_NODES: Record<number, number> = { 0: 12, 1: 112, 2: 213, 3: 313, 4: 413 };
+
 function Game() {
   const {
     state, setState, setScreen, createCharacter, completeIntro, updatePlayer,
@@ -84,9 +86,43 @@ function Game() {
     spawnEnemy,
     openShaman, learnShamanSpell,
     applyFireballDamage,
+    setDevInvincible,
   } = useGameState();
 
   const { toast } = useToast();
+
+  // --- Developer Menu Handlers ---
+
+  const handleDevSetLevel = useCallback((newLevel: number) => {
+    if (!state.player) return;
+    const starterDef = STARTER_CHARACTERS.find(c => c.id === state.player!.starterCharacterId);
+    if (!starterDef) return;
+    const scaled = getPartyMemberForLevel(starterDef, newLevel).scaledStats;
+    updatePlayer({
+      level: newLevel,
+      xp: 0,
+      xpToNext: xpForLevel(newLevel),
+      stats: { ...state.player.stats, ...scaled, hp: state.player.stats.hp, mp: state.player.stats.mp },
+    });
+  }, [state.player, updatePlayer]);
+
+  const handleDevUnlockSpells = useCallback(() => {
+    if (!state.player) return;
+    const elementUnlocks = (ELEMENT_SPELL_UNLOCKS[state.player.element] || []).map(u => u.spellId);
+    const shamanUnlocks = SHAMAN_SPELLS[state.player.starterCharacterId] || [];
+    const allSpellIds = Array.from(new Set([...elementUnlocks, ...shamanUnlocks]));
+    updatePlayer({ learnedSpells: allSpellIds });
+    toast({ title: "Spells Unlocked", description: "All magic spells are now available." });
+  }, [state.player, updatePlayer, toast]);
+
+  const handleDevTeleportBoss = useCallback(() => {
+    if (!state.player) return;
+    const bossNodeId = BOSS_NODES[state.player.currentRegion];
+    if (bossNodeId !== undefined) {
+      updatePlayer({ currentNode: bossNodeId });
+      toast({ title: "Teleported", description: "Moved to boss node." });
+    }
+  }, [state.player, updatePlayer, toast]);
 
   // Black overlay that fades out when transitioning from intro → overworld
   const [overworldReveal, setOverworldReveal] = useState<"off" | "black" | "fading">("off");
@@ -574,6 +610,11 @@ function Game() {
               }}
               onSave={handleSaveToSlot}
               onExitToMenu={() => setExitToMenuTransition(true)}
+              devInvincible={!!state.devInvincible}
+              onDevSetLevel={handleDevSetLevel}
+              onDevUnlockSpells={handleDevUnlockSpells}
+              onDevToggleInvincibility={() => setDevInvincible(!state.devInvincible)}
+              onDevTeleportBoss={handleDevTeleportBoss}
               textSpeed={state.textSpeed}
               musicVolume={state.musicVolume}
               sfxVolume={state.sfxVolume}
