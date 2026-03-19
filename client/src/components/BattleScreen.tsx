@@ -4557,8 +4557,8 @@ export default function BattleScreen({
                   })()}
                   {tornadoVfxTargets.includes(idx) && (
                     <div className="absolute z-[65] pointer-events-none" style={{
-                      bottom: "-20%",
-                      left: "50%",
+                      bottom: isResk(enemy) ? -160 : "-20%",
+                      left: isResk(enemy) ? "calc(50% - 40px)" : "50%",
                       transform: "translateX(-50%)",
                       filter: "drop-shadow(0 0 14px rgba(255,140,0,0.8)) drop-shadow(0 0 6px rgba(255,60,0,0.6))",
                       width: 252,
