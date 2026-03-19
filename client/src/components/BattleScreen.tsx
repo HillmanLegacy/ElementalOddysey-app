@@ -1088,8 +1088,6 @@ export default function BattleScreen({
       scheduleTimer(() => {
         setEruptionSubPhase("jumpHold");
         setEruptionBuildupActive(true);
-        setEruptionTransitionActive(true);
-        scheduleTimer(() => setEruptionTransitionActive(false), Math.round(14 / 14 * 1000));
         eruptionBuildupAudio.current = playSfx("eruptionBuildup", 1.05);
         scheduleTimer(() => {
           fadeSfxOut(eruptionBuildupAudio.current, 400);
@@ -1106,10 +1104,17 @@ export default function BattleScreen({
         setEruptionBuildupActive(false);
         setEruptionSubPhase("jumpFall");
         setEruptionKnightY(targetY);
+        setEruptionNukeX(targetX);
+        setEruptionNukeY(targetY);
         eruptionDescentAudio.current = playSfx("eruptionDescent", 1.05);
       }, runDur + riseDur + holdDur);
 
       const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
+      scheduleTimer(() => {
+        setEruptionTransitionActive(true);
+      }, nukeStart - 200);
+      scheduleTimer(() => setEruptionTransitionActive(false), nukeStart + 800);
+
       scheduleTimer(() => {
         setEruptionAuraActive(false);
         fadeSfxOut(eruptionFirechargeAudio.current, 300);
@@ -1118,8 +1123,6 @@ export default function BattleScreen({
         eruptionDescentAudio.current = null;
         setEruptionNukeActive(true);
         setEruptionNukeTargetIdx(targetIdx);
-        setEruptionNukeX(targetX);
-        setEruptionNukeY(targetY);
         setEruptionAirAttackStartFrame(4);
         setEruptionAirAttackRestartKey(k => k + 1);
         playSfx("eruptionCleave", 1.3);
@@ -1148,7 +1151,6 @@ export default function BattleScreen({
       scheduleTimer(() => {
         setEruptionBuildupActive(false);
         setEruptionAuraActive(false);
-        setEruptionTransitionActive(false);
         stopSfx(eruptionBuildupAudio.current); eruptionBuildupAudio.current = null;
         stopSfx(eruptionFirechargeAudio.current); eruptionFirechargeAudio.current = null;
         stopSfx(eruptionFlamelashAudio.current); eruptionFlamelashAudio.current = null;
@@ -3442,8 +3444,8 @@ export default function BattleScreen({
           {eruptionTransitionActive && (
             <div className="absolute pointer-events-none" style={{
               zIndex: 70,
-              left: `${eruptionKnightX}%`,
-              bottom: `${eruptionKnightY}%`,
+              left: `${eruptionNukeX}%`,
+              bottom: `${eruptionNukeY}%`,
               width: 336,
               height: 336,
               transform: "translate(-50%, 104px)",
@@ -3491,7 +3493,7 @@ export default function BattleScreen({
               width: 256,
               height: 256,
               transform: "translate(-50%, 64px)",
-              transition: eruptionSubPhase === "jumpFall" ? "bottom 0.50s ease-in" : "none",
+              transition: eruptionSubPhase === "jumpFall" ? "bottom 0.70s ease-in" : "none",
               filter: "drop-shadow(0 0 16px rgba(255,80,0,0.9)) drop-shadow(0 0 32px rgba(255,40,0,0.5))",
             }}>
               <SpriteAnimator
