@@ -56,6 +56,7 @@ export default function GameMenuPanel({
   const [saveSuccessSlot, setSaveSuccessSlot] = useState<number | null>(null);
   const [targetingItemId, setTargetingItemId] = useState<string | null>(null);
   const [statusCharIdx, setStatusCharIdx] = useState(0);
+  const [confirmExit, setConfirmExit] = useState(false);
 
   const accentColor = regionTheme ? (ELEMENT_COLORS[regionTheme] || "#c9a44a") : "#c9a44a";
 
@@ -157,16 +158,16 @@ export default function GameMenuPanel({
               <>
                 <div style={{ borderTop: `1px solid #c9a44a25`, margin: "6px 10px" }} />
                 <button
-                  onClick={() => { playSfx("menuSelect"); onClose(); onExitToMenu(); }}
+                  onClick={() => { playSfx("menuSelect"); setConfirmExit(true); }}
                   style={{
                     fontFamily: "'Press Start 2P', cursive",
                     fontSize: "7px",
                     padding: "10px 8px",
                     textAlign: "left",
                     borderBottom: `1px solid #c9a44a20`,
-                    borderRight: "3px solid transparent",
-                    background: "transparent",
-                    color: "#ef444460",
+                    borderRight: confirmExit ? "3px solid #ef4444" : "3px solid transparent",
+                    background: confirmExit ? "#ef444412" : "transparent",
+                    color: "#ef444480",
                     cursor: "pointer",
                     letterSpacing: "1px",
                     width: "100%",
@@ -609,6 +610,52 @@ export default function GameMenuPanel({
 
           </div>
         </div>
+
+        {/* Exit confirmation overlay */}
+        {confirmExit && (
+          <div
+            className="absolute inset-0 flex flex-col items-center justify-center z-10"
+            style={{ background: "rgba(8,5,5,0.92)", backdropFilter: "blur(1px)" }}
+          >
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #ef444408 3px, #ef444408 4px)`, pointerEvents: "none" }} />
+            <div className="relative flex flex-col items-center gap-6" style={{ padding: "32px 24px" }}>
+              <div style={{ textAlign: "center" }}>
+                <p style={{ fontSize: "11px", color: "#ef4444", letterSpacing: "2px", marginBottom: "10px" }}>EXIT TO MENU?</p>
+                <p style={{ fontSize: "7px", color: "#c9a44a60", letterSpacing: "1px" }}>Unsaved progress will be lost.</p>
+              </div>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => { playSfx("menuSelect"); onExitToMenu!(); }}
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "8px",
+                    padding: "10px 20px",
+                    border: "2px solid #ef4444",
+                    background: "#ef444420",
+                    color: "#ef4444",
+                    cursor: "pointer",
+                    letterSpacing: "1px",
+                  }}
+                  data-testid="button-confirm-exit-yes"
+                >YES</button>
+                <button
+                  onClick={() => { playSfx("menuSelect"); setConfirmExit(false); }}
+                  style={{
+                    fontFamily: "'Press Start 2P', cursive",
+                    fontSize: "8px",
+                    padding: "10px 20px",
+                    border: "2px solid #c9a44a",
+                    background: "#c9a44a20",
+                    color: "#c9a44a",
+                    cursor: "pointer",
+                    letterSpacing: "1px",
+                  }}
+                  data-testid="button-confirm-exit-no"
+                >NO</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
