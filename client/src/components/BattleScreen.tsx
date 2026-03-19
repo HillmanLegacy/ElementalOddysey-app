@@ -1300,7 +1300,7 @@ export default function BattleScreen({
         setIncinerationCasterPos({ x: ENEMY_SLOTS[targetIdx].x - (isBossT ? 12 : 5), y: PLAYER_POS.y });
 
         const frameDuration = 1000 / 12;
-        const hold = 230;
+        const hold = 0;
         const swing1Time = frameDuration * 1;
         const swing2Time = frameDuration * 4 + hold;
         const fire1Time = frameDuration * 2 + hold;
@@ -2769,11 +2769,10 @@ export default function BattleScreen({
         }
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
-        const incHoldFrames = { 2: 230, 5: 230 };
         if (specialSheet) {
-          return { src: specialSheet, frames: specialFrames, fps: 12, loop: false, pauseAt: specialFrames - 1, holdFrames: incHoldFrames, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+          return { src: specialSheet, frames: specialFrames, fps: 12, loop: false, pauseAt: specialFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
-        return { ...atk, fps: 12, loop: false, pauseAt: atk.frames - 1, holdFrames: incHoldFrames };
+        return { ...atk, fps: 12, loop: false, pauseAt: atk.frames - 1 };
       }
       case "eruptionCleave": {
         if (eruptionSubPhase === "run") return runConfig;
@@ -3509,7 +3508,7 @@ export default function BattleScreen({
                         const partySlot = PARTY_POSITIONS[pIdx % PARTY_POSITIONS.length];
                         setIncinerationCasterPos({ x: ENEMY_SLOTS[spellTarget].x - (isBossT ? 16 : 8), y: partySlot.y - 4 });
                         const fd = 1000 / 12;
-                        const hold = 230;
+                        const hold = 0;
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd * 4 + hold);
                         [fd * 2 + hold, fd * 6 + hold * 2].forEach(t => {
@@ -3641,7 +3640,7 @@ export default function BattleScreen({
                         const partySlot = PARTY_POSITIONS[battle.activePartyIndex % PARTY_POSITIONS.length];
                         setIncinerationCasterPos({ x: ENEMY_SLOTS[tidx].x - (isBossT ? 16 : 8), y: partySlot.y - 4 });
                         const fd = 1000 / 12;
-                        const hold = 383;
+                        const hold = 0;
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd);
                         scheduleTimer(() => playSfx("incinerationBladeSwings", 0.8), fd * 4 + hold);
                         [fd * 2, fd * 5 + hold].forEach(t => {
