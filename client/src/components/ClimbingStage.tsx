@@ -28,13 +28,13 @@ import harpyMoveSheet from "@assets/MOVE_1773579631533.png";
 import forestClimbBg from "@assets/A_pixel__upscayl_2x_digital-art-4x_1773704775371.png";
 
 const MAX_SPEED = 480;
-const GROUND_ACCEL = 2200;
-const AIR_ACCEL = 1100;
-const GROUND_FRICTION = 2400;
-const AIR_DRAG = 80;
-const GRAVITY = 1500;
-const GRAVITY_HOLD = 700;
-const JUMP_VELOCITY = -490;
+const GROUND_ACCEL = 1600;
+const AIR_ACCEL = 800;
+const GROUND_FRICTION = 1500;
+const AIR_DRAG = 25;
+const GRAVITY = 2500;
+const GRAVITY_HOLD = 1170;
+const JUMP_VELOCITY = -635;
 const COYOTE_TIME = 0.10;
 const JUMP_BUFFER = 0.12;
 
