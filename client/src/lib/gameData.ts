@@ -571,6 +571,7 @@ export const SPELLS: Spell[] = [
   { id: "gale_slash", name: "Gale Slash", description: "Wind blades slash all enemies", mpCost: 15, type: "damage", element: "Wind", targetType: "allEnemies", animation: "galeSlash", effect: { damageMultiplier: 0.75 } },
   { id: "tempest", name: "Tempest", description: "Devastating wind vortex on all enemies", mpCost: 22, type: "damage", element: "Wind", targetType: "allEnemies", animation: "tempest", effect: { damageMultiplier: 1.8 } },
   { id: "fujin_slice", name: "Fujin's Slice", description: "Wind blade barrage on one enemy", mpCost: 14, type: "damage", element: "Wind", targetType: "enemy", animation: "fujinSlice", effect: { damageMultiplier: 1.5 } },
+  { id: "storm_release", name: "Storm Release", description: "Unleash raw wind force — a focused storm of blades on one enemy", mpCost: 18, type: "damage", element: "Wind", targetType: "enemy", animation: "samuraiWindMagic", effect: { damageMultiplier: 1.8 } },
   { id: "earth_quake", name: "Earthquake", description: "Earth damage to all enemies", mpCost: 15, type: "damage", element: "Earth", targetType: "allEnemies", effect: { damageMultiplier: 1.2 } },
   { id: "holy_light", name: "Holy Light", description: "Light damage + heal 15 HP", mpCost: 14, type: "damage", element: "Light", targetType: "enemy", effect: { damageMultiplier: 1.5 } },
   { id: "aqua_wave", name: "Aqua Wave", description: "Water damage to all enemies", mpCost: 15, type: "damage", element: "Water", targetType: "allEnemies", effect: { damageMultiplier: 1.2 } },
@@ -599,6 +600,7 @@ export const ELEMENT_SPELL_UNLOCKS: Record<Element, SpellUnlock[]> = {
     { spellId: "wind_blade", level: 1 },
     { spellId: "gale_slash", level: 3 },
     { spellId: "fujin_slice", level: 5 },
+    { spellId: "storm_release", level: 6 },
     { spellId: "tempest", level: 7 },
   ],
   Earth: [

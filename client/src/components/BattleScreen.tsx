@@ -18,6 +18,10 @@ import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
 import samuraiHurt from "@/assets/images/samurai-hurt.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
+import samuraiDeath from "@/assets/images/samurai-death.png";
+import samuraiDefend from "@/assets/images/samurai-defend.png";
+import samuraiHeal from "@/assets/images/samurai-heal.png";
+import samuraiSpecial from "@/assets/images/samurai-special.png";
 import vfxFireImpact from "@/assets/images/vfx-fire-impact.png";
 import baskenRun from "@/assets/images/basken-run.png";
 import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
@@ -217,8 +221,8 @@ const ENEMY_SPRITES: Record<string, string> = {
   crystal_titan: crystalTitanImg,
 };
 
-const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; walk?: string; special?: string; death?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; walkFrames?: number; specialFrames?: number; deathFrames?: number; scale?: number }> = {
-  samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 3, runFrames: 8, scale: 3.5 },
+const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; walk?: string; special?: string; death?: string; defend?: string; heal?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; walkFrames?: number; specialFrames?: number; deathFrames?: number; defendFrames?: number; healFrames?: number; scale?: number }> = {
+  samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, death: samuraiDeath, defend: samuraiDefend, heal: samuraiHeal, special: samuraiSpecial, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 4, runFrames: 16, specialFrames: 14, deathFrames: 9, defendFrames: 6, healFrames: 15, scale: 3.5 },
   knight: { idle: slknightIdle, attack: slknightAttack, hurt: slknightHurt, run: slknightRun, walk: slknightRun, special: slknightSpecial, death: slknightDeath, frameWidth: 128, frameHeight: 64, idleFrames: 8, attackFrames: 9, hurtFrames: 4, runFrames: 8, walkFrames: 8, specialFrames: 12, deathFrames: 4, scale: 2 },
   basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, runFrames: 6, scale: 3.5 },
   ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6, scale: 3.5 },
@@ -307,7 +311,7 @@ interface BattleScreenProps {
   enemyColorVariant?: number;
 }
 
-type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt" | "infernosPrayer";
+type AnimPhase = "idle" | "runToEnemy" | "attacking" | "runBack" | "casting" | "hurt" | "defending" | "fujinSlice" | "incinerationSlash" | "eruptionCleave" | "thunderBolt" | "infernosPrayer" | "playerDeath" | "healing" | "samuraiWindMagic";
 
 const ALLY_SLOTS: { x: number; y: number }[] = [
   { x: 11, y: 28 },
@@ -1017,6 +1021,7 @@ export default function BattleScreen({
 
   const pendingWindBlade = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const windBladeAnimPending = useRef(false);
+  const pendingSamuraiWindMagic = useRef<{ targetIdx: number; spell: Spell } | null>(null);
   const castingNeedsRunBack = useRef(false);
 
   const handleSpellTarget = useCallback((targetIdx: number) => {
@@ -1251,6 +1256,20 @@ export default function BattleScreen({
       setMagicZoomTarget(targetIdx);
       setAnimPhase("casting");
       playSfx("magicRing", 0.6);
+      setSelectedSpell(null);
+      setShowSpells(false);
+      return;
+    }
+    if (selectedSpell.animation === "samuraiWindMagic") {
+      pendingSamuraiWindMagic.current = { targetIdx, spell: selectedSpell };
+      setSelectedAction(null);
+      setPendingTargetIdx(targetIdx);
+      onSetAnimating();
+      setMagicZoom(true);
+      setMagicZoomTarget(targetIdx);
+      setAnimPhase("samuraiWindMagic");
+      playSfx("mifuneSlice", 0.9);
+      playSfx("gruntAttack", 0.7);
       setSelectedSpell(null);
       setShowSpells(false);
       return;
@@ -1885,6 +1904,81 @@ export default function BattleScreen({
       }
     }
   }, [animPhase, battle.phase, onFinishPlayerTurn, windBladeActive]);
+
+  useEffect(() => {
+    if (animPhase !== "samuraiWindMagic") return;
+    if (!pendingSamuraiWindMagic.current) return;
+    const { targetIdx, spell } = pendingSamuraiWindMagic.current;
+    pendingSamuraiWindMagic.current = null;
+    const FPS = 12;
+    const FRAMES = 14;
+    const frameDur = 1000 / FPS;
+    const windLaunchAt = frameDur * 6;
+    const damageAt = frameDur * 9;
+    const endAt = frameDur * FRAMES + 200;
+    const slashCount = 3;
+    const slashAngles = [-15, 0, 15];
+    const slashOffsets = [-20, 0, 20];
+    scheduleTimer(() => {
+      playSfx("windBladeStart", 0.9);
+      const slashes = slashAngles.map((rot, i) => ({
+        id: i, rotation: rot, offsetX: slashOffsets[i], offsetY: -10 + i * 10, scale: 1.1 + i * 0.05, active: false,
+      }));
+      setWindBladeActive(true);
+      setWindBladeFrozenEnemy(targetIdx);
+      setWindBladeSlashes(slashes);
+      for (let si = 0; si < slashCount; si++) {
+        scheduleTimer(() => {
+          setWindBladeSlashes(prev => prev.map((s, idx2) => idx2 === si ? { ...s, active: true } : s));
+        }, si * 80);
+      }
+    }, windLaunchAt);
+    scheduleTimer(() => {
+      playSfx("mifuneSlice", 0.7);
+      setEnemyHitIdx(targetIdx);
+      scheduleTimer(() => setEnemyHitIdx(null), 180);
+      setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
+      scheduleTimer(() => {
+        setEnemyAnimStates(prev => prev[targetIdx] === "death" ? prev : { ...prev, [targetIdx]: ytrielRestAnim(targetIdx) });
+      }, 333);
+      onCastSpell(spell, targetIdx);
+      playSfx("magicRing", 0.4);
+    }, damageAt);
+    scheduleTimer(() => {
+      setWindBladeSlashes([]);
+      setWindBladeActive(false);
+      setWindBladeFrozenEnemy(null);
+      setMagicZoom(false);
+      setMagicZoomTarget(null);
+      setAnimPhase("idle");
+      setPendingTargetIdx(null);
+      if (battle.phase !== "victory" && battle.phase !== "defeat") {
+        setTimeout(() => onFinishPlayerTurn(), 1200);
+      }
+    }, endAt);
+  }, [animPhase, battle.phase, onCastSpell, onFinishPlayerTurn, scheduleTimer]);
+
+  useEffect(() => {
+    if (animPhase !== "healing") return;
+    const sprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
+    if (!sprites.heal) {
+      setAnimPhase("idle");
+      return;
+    }
+    const healFrames = sprites.healFrames || 15;
+    const healDur = (healFrames / 10) * 1000 + 200;
+    scheduleTimer(() => {
+      setAnimPhase("idle");
+    }, healDur);
+  }, [animPhase, player.spriteId, scheduleTimer]);
+
+  useEffect(() => {
+    if (battle.phase !== "defeat") return;
+    const sprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
+    if (sprites.death) {
+      setAnimPhase("playerDeath");
+    }
+  }, [battle.phase, player.spriteId]);
 
   useEffect(() => {
     if (battle.phase === "victory" || battle.phase === "defeat") {
@@ -2929,6 +3023,38 @@ export default function BattleScreen({
         return idle;
       case "hurt":
         return hurt;
+      case "defending": {
+        const defendSheet = playerSprites.defend;
+        const defendFrames = playerSprites.defendFrames || 6;
+        if (defendSheet) {
+          return { src: defendSheet, frames: defendFrames, fps: 12, loop: false, pauseAt: defendFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+        }
+        return idle;
+      }
+      case "playerDeath": {
+        const deathSheet = playerSprites.death;
+        const deathFrames = playerSprites.deathFrames || 4;
+        if (deathSheet) {
+          return { src: deathSheet, frames: deathFrames, fps: 8, loop: false, pauseAt: deathFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+        }
+        return idle;
+      }
+      case "healing": {
+        const healSheet = playerSprites.heal;
+        const healFrames = playerSprites.healFrames || 15;
+        if (healSheet) {
+          return { src: healSheet, frames: healFrames, fps: 10, loop: false, pauseAt: healFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+        }
+        return idle;
+      }
+      case "samuraiWindMagic": {
+        const specialSheet = playerSprites.special;
+        const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
+        if (specialSheet) {
+          return { src: specialSheet, frames: specialFrames, fps: 12, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+        }
+        return atk;
+      }
       default:
         return idle;
     }
@@ -5464,7 +5590,17 @@ export default function BattleScreen({
                       border: "1px solid rgba(34,197,94,0.15)",
                       color: "#bbf7d0",
                     }}
-                    onClick={() => { playSfx('menuSelect'); onUseItem(ids[0]); setShowItems(false); }}
+                    onClick={() => {
+                      playSfx('menuSelect');
+                      setShowItems(false);
+                      if (playerSprites.heal) {
+                        onSetAnimating();
+                        setAnimPhase("healing");
+                        onUseItem(ids[0]);
+                      } else {
+                        onUseItem(ids[0]);
+                      }
+                    }}
                     data-testid={`button-use-item-${item.id}`}
                   >
                     <Heart className="w-3 h-3 text-red-400 flex-shrink-0" />

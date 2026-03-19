@@ -10,6 +10,10 @@ import forestBgImg from "@assets/Forest_Region_Tree_Background_1773584096783.jpg
 
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiRun from "@/assets/images/samurai-run.png";
+import samuraiJumpStart from "@/assets/images/samurai-jump-start.png";
+import samuraiJumpTrans from "@/assets/images/samurai-jump-trans.png";
+import samuraiJumpLoop from "@/assets/images/samurai-jump.png";
+import samuraiJumpFall from "@/assets/images/samurai-jump-fall.png";
 import slknightIdle from "@/assets/images/slknight-idle.png";
 import slknightRun from "@/assets/images/slknight-run.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
@@ -123,10 +127,11 @@ const CHAR_SPRITES: Record<string, {
   hbXOff: number; hbYOff: number; hbHW: number; hbHH: number;
   stepFrames?: number[];
   jumpFrame?: number;
+  jumpStart?: string; jumpTrans?: string; jumpLoop?: string; jumpFall?: string;
 }> = {
   // groundOffset = measured transparent_bottom_px × scale (from pixel analysis of idle sheet)
   // hbXOff/hbYOff = body center as fraction of rendered W/H; hbHW/hbHH = half-extents as fraction
-  samurai:    { idle: samuraiIdle,    run: samuraiRun,    iW: 96,  iH: 96,  idleF: 10, runF: 16, scale: 2,   groundOffset: 30, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.19, hbHH: 0.27, stepFrames: [7, 15], jumpFrame: 7 },
+  samurai:    { idle: samuraiIdle, run: samuraiRun, jumpStart: samuraiJumpStart, jumpTrans: samuraiJumpTrans, jumpLoop: samuraiJumpLoop, jumpFall: samuraiJumpFall, iW: 96, iH: 96, idleF: 10, runF: 16, scale: 2, groundOffset: 30, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.19, hbHH: 0.27, stepFrames: [7, 15] },
   // SL Knight 128×64 scale=2 → 256×128; multi-row sheets (2 cols × N rows)
   knight:     { idle: slknightIdle,   run: slknightRun,   iW: 128, iH: 64,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 4,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.22, hbHH: 0.38, stepFrames: [2, 6], jumpFrame: 1 },
   // basken 56×56 scale=2.8 → 157×157; no bottom gap, body ~47% width, ~75% height
@@ -513,6 +518,8 @@ export default function SideScrollStage({
   const [cameraX, setCameraX] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
+  const [jumpSubPhase, setJumpSubPhase] = useState<"start" | "loop" | "fall">("start");
+  const jumpStartTimeRef = useRef<number>(0);
   const footstepTimerRef = useRef(0);
   const playerFrameIdxRef = useRef(0);
   const playerFrameAccRef = useRef(0);
@@ -1045,7 +1052,23 @@ export default function SideScrollStage({
       setRenderY(p.y);
       setCameraX(newCamX);
       setIsRunning(p.onGround && Math.abs(p.vx) > 20);
-      setIsJumping(jumpActiveRef.current);
+      const wasJumping = jumpActiveRef.current;
+      setIsJumping(wasJumping);
+      if (wasJumping) {
+        if (jumpStartTimeRef.current === 0) jumpStartTimeRef.current = ts;
+        const airTime = ts - jumpStartTimeRef.current;
+        if (p.vy >= 0) {
+          setJumpSubPhase("fall");
+        } else if (airTime > 250) {
+          setJumpSubPhase("loop");
+        } else {
+          setJumpSubPhase("start");
+        }
+      } else {
+        jumpStartTimeRef.current = 0;
+        setIsRising(false);
+        setJumpSubPhase("start");
+      }
       setFacingRight(facingRightRef.current);
       setEnemyRenderPositions(newEnemyX);
       setEnemyRenderY(newEnemyY);
@@ -1102,11 +1125,23 @@ export default function SideScrollStage({
   }, []);
 
 
-  // Jump: freeze on first frame of run sheet (totalFrames=1 = naturally frozen).
+  // Jump: use dedicated jump sheets when available (samurai), fallback to run freeze.
   // Ground: run or idle based on velocity.
-  const spriteSrc    = (isJumping || isRunning) ? charSprite.run : charSprite.idle;
-  const spriteFrames = isJumping ? 1 : (isRunning ? charSprite.runF : charSprite.idleF);
-  const spriteFps    = isRunning ? 14 : 8;
+  const getJumpSprite = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number } => {
+    if (charSprite.jumpStart && charSprite.jumpTrans && charSprite.jumpLoop && charSprite.jumpFall) {
+      if (jumpSubPhase === "start") return { src: charSprite.jumpStart, frames: 3, fps: 10, loop: false, pauseAt: 2 };
+      if (jumpSubPhase === "loop") return { src: charSprite.jumpLoop, frames: 3, fps: 8, loop: true };
+      if (jumpSubPhase === "fall") return { src: charSprite.jumpFall, frames: 3, fps: 10, loop: false, pauseAt: 2 };
+      return { src: charSprite.jumpLoop, frames: 3, fps: 8, loop: true };
+    }
+    return { src: charSprite.run, frames: 1, fps: 8, loop: false, pauseAt: 0 };
+  };
+  const jumpSpriteConfig = isJumping ? getJumpSprite() : null;
+  const spriteSrc    = isJumping ? jumpSpriteConfig!.src : (isRunning ? charSprite.run : charSprite.idle);
+  const spriteFrames = isJumping ? jumpSpriteConfig!.frames : (isRunning ? charSprite.runF : charSprite.idleF);
+  const spriteFps    = isJumping ? jumpSpriteConfig!.fps : (isRunning ? 14 : 8);
+  const spriteLoop   = isJumping ? jumpSpriteConfig!.loop : true;
+  const spritePauseAt = isJumping ? jumpSpriteConfig!.pauseAt : undefined;
 
   const touchBtn = useCallback((active: boolean): React.CSSProperties => ({
     width: 56,
@@ -1350,11 +1385,11 @@ export default function SideScrollStage({
             totalFrames={spriteFrames}
             fps={spriteFps}
             scale={charSprite.scale}
-            loop={true}
+            loop={spriteLoop}
+            pauseAtFrame={spritePauseAt}
             flipX={!facingRight}
             paused={battleFreezing}
             anchor="top-left"
-            startFrame={isJumping ? (charSprite.jumpFrame ?? 0) : undefined}
             colorMap={playerColorMap}
           />
         </div>
