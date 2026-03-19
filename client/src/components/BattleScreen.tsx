@@ -1105,7 +1105,7 @@ export default function BattleScreen({
       const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
       scheduleTimer(() => {
         setEruptionAuraActive(false);
-        stopSfx(eruptionFirechargeAudio.current);
+        fadeSfxOut(eruptionFirechargeAudio.current, 300);
         eruptionFirechargeAudio.current = null;
         setEruptionNukeActive(true);
         setEruptionNukeTargetIdx(targetIdx);
