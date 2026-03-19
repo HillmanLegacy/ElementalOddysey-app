@@ -1245,7 +1245,7 @@ export default function BattleScreen({
           }
         });
       }, tornadoDelay);
-      scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 900);
+      scheduleTimer(() => setTornadoVfxTargets([]), tornadoDelay + 1200);
       const totalDur = 1800;
       scheduleTimer(() => {
         setMagicZoom(false);
@@ -4552,10 +4552,10 @@ export default function BattleScreen({
                     }}>
                       <SpriteAnimator
                         spriteSheet={tornadoFireSheet}
-                        frameWidth={147}
+                        frameWidth={105}
                         frameHeight={100}
-                        totalFrames={30}
-                        startFrame={20}
+                        totalFrames={42}
+                        startFrame={28}
                         fps={12}
                         scale={2}
                         loop={false}
