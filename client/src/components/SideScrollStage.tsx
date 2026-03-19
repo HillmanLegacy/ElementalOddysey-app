@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Menu, X } from "lucide-react";
 import SpriteAnimator from "./SpriteAnimator";
 import type { PlayerCharacter } from "@shared/schema";
 import { playSfx } from "@/lib/sfx";
@@ -1357,61 +1358,56 @@ export default function SideScrollStage({
         />
       )}
 
-      <div style={{
-        position: "absolute",
-        top: 0,
-        left: 0,
-        right: 0,
-        padding: "10px 14px",
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        pointerEvents: "none",
-        zIndex: 10,
-      }}>
-        <div style={{
-          background: "rgba(0,0,0,0.75)",
-          border: "2px solid #c9a44a",
-          borderRadius: 4,
-          padding: "6px 12px",
-          fontFamily: "'Press Start 2P', monospace",
-          fontSize: 8,
-          color: "#c9a44a",
-          letterSpacing: 1,
-          lineHeight: "1.6",
-        }}>
-          <div style={{ color: "#666", fontSize: 6, marginBottom: 2 }}>STAGE</div>
-          {stageKey.toUpperCase()}
-        </div>
+      {!menuOpen && (
+        <button
+          data-testid="button-stage-menu"
+          className="absolute top-3 left-3 z-[200] flex items-center justify-center w-10 h-10 transition-all hover:scale-110 active:scale-95"
+          style={{
+            fontFamily: "'Press Start 2P', cursive",
+            background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+            border: "3px solid #c9a44a",
+            boxShadow: "0 0 15px #c9a44a40, 0 0 40px #c9a44a15",
+          }}
+          onClick={() => setMenuOpen(true)}
+        >
+          <Menu className="w-5 h-5" style={{ color: "#c9a44a" }} />
+        </button>
+      )}
 
-        <div style={{ pointerEvents: "auto", position: "relative" }}>
-          <button
-            data-testid="button-stage-menu"
-            onClick={() => setMenuOpen(o => !o)}
-            style={{
-              background: "rgba(0,0,0,0.75)",
-              border: "2px solid #c9a44a",
-              borderRadius: 4,
-              padding: "4px 10px",
-              fontFamily: "'Press Start 2P', monospace",
-              fontSize: 16,
-              color: "#c9a44a",
-              cursor: "pointer",
-              lineHeight: 1,
-            }}
-          >≡</button>
-          {menuOpen && (
+      {menuOpen && (
+        <div className="absolute top-3 left-3 z-[200]" style={{ fontFamily: "'Press Start 2P', cursive" }}>
+          <div style={{
+            position: "relative",
+            background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+            border: "3px solid #c9a44a",
+            boxShadow: "0 0 20px #c9a44a40, 0 0 60px #c9a44a15, inset 0 0 30px rgba(0,0,0,0.5)",
+            minWidth: 180,
+            overflow: "hidden",
+          }}>
             <div style={{
-              position: "absolute",
-              top: "calc(100% + 4px)",
-              right: 0,
-              background: "rgba(10,8,8,0.97)",
-              border: "2px solid #c9a44a",
-              borderRadius: 4,
-              minWidth: 150,
-              overflow: "hidden",
-              zIndex: 50,
+              position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+              backgroundImage: "repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a08 3px, #c9a44a08 4px)",
+              pointerEvents: "none",
+            }} />
+            <div style={{
+              position: "relative",
+              padding: "8px 12px",
+              background: "#0d0b0bf0",
+              borderBottom: "3px solid #c9a44a",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}>
+              <span style={{ fontSize: "8px", color: "#c9a44a", letterSpacing: "1px" }}>MENU</span>
+              <button
+                data-testid="button-close-stage-menu"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 24, height: 24, border: "1px solid #c9a44a50", background: "transparent", cursor: "pointer" }}
+                onClick={() => setMenuOpen(false)}
+              >
+                <X style={{ width: 12, height: 12, color: "#c9a44a" }} />
+              </button>
+            </div>
+            <div style={{ position: "relative" }}>
               {([
                 { label: "STATUS", action: onStatus },
                 { label: "OPTIONS", action: onOptions },
@@ -1449,10 +1445,9 @@ export default function SideScrollStage({
                 >{label}{disabled ? <span style={{ fontSize: 5, marginLeft: 6, color: "rgba(120,110,90,0.5)" }}>N/A IN STAGE</span> : null}</button>
               ))}
             </div>
-          )}
+          </div>
         </div>
-
-      </div>
+      )}
 
       <div style={{
         position: "absolute",
