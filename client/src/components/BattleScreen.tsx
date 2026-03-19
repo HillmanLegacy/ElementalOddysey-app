@@ -12,7 +12,7 @@ import LavaBattleBg from "./LavaBattleBg";
 import BattleEffectsLayer from "./BattleEffectsLayer";
 import { Swords, Shield, Sparkles, Package, Heart, Droplets, Trophy, Skull, Target, ArrowLeft, Zap, LogOut, Feather, Axe, Eye, Flame } from "lucide-react";
 
-import { playSfx, playSfxPitched, stopSfx } from "@/lib/sfx";
+import { playSfx, playSfxPitched, stopSfx, fadeSfxOut, fadeSfxIn } from "@/lib/sfx";
 import { playAmbient, playAmbientWithFade, stopAll, fadeMusicTo, fadeOutMusic, playJingle } from "@/lib/music";
 import samuraiIdle from "@/assets/images/samurai-idle.png";
 import samuraiAttack from "@/assets/images/samurai-attack.png";
@@ -674,6 +674,7 @@ export default function BattleScreen({
   const [thunderBoltFrame, setThunderBoltFrame] = useState(0);
   const [thunderFrozenEnemy, setThunderFrozenEnemy] = useState<number | null>(null);
   const pendingThunderBolt = useRef<{ targetIdx: number; spell: any } | null>(null);
+  const eruptionBuildupAudio = useRef<HTMLAudioElement | null>(null);
   const eruptionFirechargeAudio = useRef<HTMLAudioElement | null>(null);
   const eruptionFlamelashAudio = useRef<HTMLAudioElement | null>(null);
   const fireImpactId = useRef(0);
@@ -1082,6 +1083,12 @@ export default function BattleScreen({
       scheduleTimer(() => {
         setEruptionSubPhase("jumpHold");
         setEruptionBuildupActive(true);
+        eruptionBuildupAudio.current = playSfx("eruptionBuildup", 1.0);
+        scheduleTimer(() => {
+          fadeSfxOut(eruptionBuildupAudio.current, 400);
+          eruptionFirechargeAudio.current = playSfx("eruptionFirecharge", 0);
+          fadeSfxIn(eruptionFirechargeAudio.current, 0.9, 400);
+        }, 750);
       }, runDur + riseDur);
 
       scheduleTimer(() => {
@@ -1098,11 +1105,15 @@ export default function BattleScreen({
       const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
       scheduleTimer(() => {
         setEruptionAuraActive(false);
+        stopSfx(eruptionFirechargeAudio.current);
+        eruptionFirechargeAudio.current = null;
         setEruptionNukeActive(true);
         setEruptionNukeTargetIdx(targetIdx);
         setEruptionAirAttackStartFrame(4);
         setEruptionAirAttackRestartKey(k => k + 1);
         playSfx("eruptionCleave", 1.3);
+        eruptionFlamelashAudio.current = playSfx("eruptionFlamelash", 0.9);
+        scheduleTimer(() => fadeSfxOut(eruptionFlamelashAudio.current, 700), 300);
         setShakeScreen(true);
         scheduleTimer(() => setShakeScreen(false), 500);
         setEnemyHitIdx(targetIdx);
@@ -1127,6 +1138,9 @@ export default function BattleScreen({
         setEruptionAirAttackStartFrame(0);
         setEruptionBuildupActive(false);
         setEruptionAuraActive(false);
+        stopSfx(eruptionBuildupAudio.current); eruptionBuildupAudio.current = null;
+        stopSfx(eruptionFirechargeAudio.current); eruptionFirechargeAudio.current = null;
+        stopSfx(eruptionFlamelashAudio.current); eruptionFlamelashAudio.current = null;
         setMagicZoom(false);
         setMagicZoomTarget(null);
         castingNeedsRunBack.current = false;

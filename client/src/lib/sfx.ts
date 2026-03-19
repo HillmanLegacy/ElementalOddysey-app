@@ -36,9 +36,10 @@ import mifuneSlice1 from "@assets/mifune_slice_1_1771803157515.mp3";
 import mifuneSlice2 from "@assets/mifune_slice_2_1771803157515.mp3";
 import mifuneSlice3 from "@assets/mifune_slice_3_1771803157515.mp3";
 import mifuneSwordSlice2 from "@assets/mifune_sword_slice_1771803157516.mp3";
-import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1771634677180.wav";
+import eruptionBuildup from "@assets/Eruption_Cleave_Buildup_Animation_SFX_1773945014497.wav";
+import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1773945037824.wav";
 import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771800952507.mp3";
-import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1771793599519.wav";
+import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1773945076347.wav";
 import eruptionDownwardSlash from "@assets/eruption_cleave_downward_slash_sfx_1771794785560.mp3";
 import incinerationCleave from "@assets/incineration_slash_flame_swings_1771801484016.mp3";
 import incinerationBladeSwings from "@assets/incineration_slash_blade_swings_1771793878417.mp3";
@@ -75,6 +76,7 @@ const SFX_GROUPS = {
 
   potionHeal: [healthPotionSfx],
   potionMana: [healthPotionSfx],
+  eruptionBuildup: [eruptionBuildup],
   eruptionFirecharge: [eruptionFirecharge],
   eruptionCleave: [eruptionCleave],
   eruptionFlamelash: [eruptionFlamelash],
@@ -147,6 +149,36 @@ export function stopSfx(el: HTMLAudioElement | null): void {
   if (!el) return;
   el.pause();
   el.currentTime = 0;
+}
+
+export function fadeSfxOut(el: HTMLAudioElement | null, durationMs: number): void {
+  if (!el) return;
+  const startVol = el.volume;
+  const steps = 30;
+  const stepMs = durationMs / steps;
+  let step = 0;
+  const id = setInterval(() => {
+    step++;
+    el.volume = Math.max(0, startVol * (1 - step / steps));
+    if (step >= steps) {
+      clearInterval(id);
+      el.pause();
+      el.currentTime = 0;
+    }
+  }, stepMs);
+}
+
+export function fadeSfxIn(el: HTMLAudioElement | null, targetVolScale: number, durationMs: number): void {
+  if (!el) return;
+  const targetVol = Math.min(1, globalVolume * targetVolScale);
+  const steps = 30;
+  const stepMs = durationMs / steps;
+  let step = 0;
+  const id = setInterval(() => {
+    step++;
+    el.volume = Math.min(targetVol, targetVol * (step / steps));
+    if (step >= steps) clearInterval(id);
+  }, stepMs);
 }
 
 export function playSfxPitched(name: SfxName, pitchMin = 0.8, pitchMax = 1.3, volumeScale = 1.0): void {
