@@ -2812,8 +2812,11 @@ export default function BattleScreen({
       }
       case "eruptionCleave": {
         if (eruptionSubPhase === "run") return runConfig;
-        if (eruptionSubPhase === "jumpRise" || eruptionSubPhase === "jumpHold") {
+        if (eruptionSubPhase === "jumpRise") {
           return { src: slknightJump, frames: 4, fps: 12, loop: false, pauseAt: 3, w: 128, h: 64 };
+        }
+        if (eruptionSubPhase === "jumpHold") {
+          return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, startAt: 0, pauseAt: 0, w: 128, h: 64 };
         }
         return { src: slknightAirAttack, frames: 8, fps: 12, loop: false, pauseAt: 7, startAt: eruptionAirAttackStartFrame, w: 128, h: 64 };
       }
