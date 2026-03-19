@@ -443,7 +443,7 @@ export function useGameState() {
           if (elementLabel) lastLabel = elementLabel;
         }
         if (damageEventsCollector.length > 0) {
-          battle.lastDamageEvents = damageEventsCollector;
+          battle.lastDamageEvents = [...(s.battle.lastDamageEvents || []), ...damageEventsCollector];
         }
         battle.lastElementLabel = lastLabel || undefined;
 
@@ -471,7 +471,7 @@ export function useGameState() {
       const mpRestore = Math.floor(s.player.stats.maxMp * 0.1);
       battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + mpRestore);
       battle.log = [...battle.log, `You raise your guard! Restored ${mpRestore} MP.`];
-      battle.lastDamageEvent = { id: ++damageEventCounter, amount: mpRestore, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
+      battle.lastDamageEvent = { id: ++damageEventCounter, amount: mpRestore, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true, isMp: true };
       battle.animation = "defend";
       return { ...s, battle };
     });
@@ -649,7 +649,7 @@ export function useGameState() {
             if (elementLabel) lastLabel = elementLabel;
           });
           if (damageEventsCollector.length > 0) {
-            battle.lastDamageEvents = damageEventsCollector;
+            battle.lastDamageEvents = [...(s.battle.lastDamageEvents || []), ...damageEventsCollector];
           }
         } else if (targetIndex !== undefined) {
           const target = battle.enemies[targetIndex];

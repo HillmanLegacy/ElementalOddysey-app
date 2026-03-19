@@ -593,7 +593,7 @@ export default function BattleScreen({
   const [darkMagicSfx, setDarkMagicSfx] = useState(false);
   const [frostBreathAnim, setFrostBreathAnim] = useState<{ fromX: number; fromY: number; active: boolean } | null>(null);
   const [frostHitSfx, setFrostHitSfx] = useState(false);
-  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string; isBlocked?: boolean; isHeal?: boolean; element?: string; isCrit?: boolean; label?: string }[]>([]);
+  const [damageNumbers, setDamageNumbers] = useState<{ id: number; text: string; x: number; y: number; color: string; isBlocked?: boolean; isHeal?: boolean; isMp?: boolean; element?: string; isCrit?: boolean; label?: string }[]>([]);
   const [pendingTargetIdx, setPendingTargetIdx] = useState<number | null>(null);
   const [fujinSliceActive, setFujinSliceActive] = useState(false);
   const [fujinSlashes, setFujinSlashes] = useState<{ id: number; x: number; y: number; rotation: number; delay: number; sheet: string; frames: number; fw: number }[]>([]);
@@ -945,15 +945,15 @@ export default function BattleScreen({
     }
 
     if (evt.isHeal) {
-      color = "#22c55e";
+      color = (evt as any).isMp ? "#60a5fa" : "#22c55e";
     }
     if (evt.isBlocked) {
-      color = "#60a5fa";
+      color = "#ef4444";
     }
     const text = evt.isHeal ? `+${evt.amount}` : String(evt.amount);
     const label = evt.isHeal ? undefined : evt.isBlocked ? "BLOCKED!" : evt.label || undefined;
     const id = damageIdRef.current++;
-    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked, isHeal: evt.isHeal, element: evt.element, isCrit: evt.isCrit, label }]);
+    setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isBlocked: evt.isBlocked, isHeal: evt.isHeal, isMp: (evt as any).isMp, element: evt.element, isCrit: evt.isCrit, label }]);
     setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1800);
     if (evt.label && !evt.isHeal) {
       setResultLabel(evt.label);
@@ -967,18 +967,18 @@ export default function BattleScreen({
   useEffect(() => {
     const events = battle.lastDamageEvents;
     if (!events || events.length === 0 || !showDamageNumbers) return;
-    const lastEvt = events[events.length - 1];
-    const batchId = lastEvt ? lastEvt.id : 0;
-    if (batchId <= lastDmgEventsIdRef.current) return;
-    lastDmgEventsIdRef.current = batchId;
 
-    events.forEach((evt, idx) => {
+    const newEvents = events.filter(e => e.id > lastDmgEventsIdRef.current);
+    if (newEvents.length === 0) return;
+    lastDmgEventsIdRef.current = events[events.length - 1].id;
+
+    newEvents.forEach((evt, idx) => {
       setTimeout(() => {
         let posX: number, posY: number;
-        let color = evt.isCrit ? "#fbbf24" : "#ef4444";
+        let color = "#ef4444";
 
         if (evt.targetType === "enemy") {
-          const ep = ENEMY_SLOTS[evt.targetIndex % ENEMY_SLOTS.length];
+          const ep = getEnemyGridPos(evt.targetIndex);
           posX = ep.x + (Math.random() * 6 - 3);
           posY = 100 - ep.y - 15 + (Math.random() * 4 - 2);
         } else if (evt.targetType === "player") {
@@ -995,12 +995,12 @@ export default function BattleScreen({
           posY = 100 - pp.y - dmgOff;
         }
 
-        if (evt.isHeal) color = "#22c55e";
-        if (evt.isBlocked) color = "#60a5fa";
+        if (evt.isHeal) color = (evt as any).isMp ? "#60a5fa" : "#22c55e";
+        if (evt.isBlocked) color = "#ef4444";
         const text = evt.isHeal ? `+${evt.amount}` : String(evt.amount);
         const label = evt.isHeal ? undefined : evt.isBlocked ? "BLOCKED!" : evt.label || undefined;
         const id = damageIdRef.current++;
-        setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isHeal: evt.isHeal, isBlocked: evt.isBlocked, element: evt.element, isCrit: evt.isCrit, label }]);
+        setDamageNumbers(prev => [...prev, { id, text, x: posX, y: posY, color, isHeal: evt.isHeal, isMp: (evt as any).isMp, isBlocked: evt.isBlocked, element: evt.element, isCrit: evt.isCrit, label }]);
         setTimeout(() => setDamageNumbers(prev => prev.filter(d => d.id !== id)), 1800);
       }, idx * 50);
     });
@@ -3272,9 +3272,9 @@ export default function BattleScreen({
       />
 
       {damageNumbers.map(d => {
-        const numColor = d.isCrit ? "#fbbf24" : d.color;
-        const numSize = d.text === "DODGE" ? "26px" : d.isCrit ? "30px" : "24px";
-        const labelColor = d.label === "Super effective!" ? "#fbbf24" : d.label === "BLOCKED!" ? "#60a5fa" : "#b0bec5";
+        const numColor = d.color;
+        const numSize = d.text === "DODGE" ? "26px" : "24px";
+        const labelColor = d.label === "Super effective!" ? "#fbbf24" : d.label === "BLOCKED!" ? "#ef4444" : "#b0bec5";
         return (
           <div
             key={d.id}
@@ -3291,17 +3291,8 @@ export default function BattleScreen({
               textShadow: `0 0 8px ${numColor}, 0 0 16px ${numColor}80, 0 2px 0 #000, 0 -2px 0 #000, 2px 0 0 #000, -2px 0 0 #000`,
               letterSpacing: "1px",
             }}>
-              {d.isHeal && (
-                <img src={healingIcon} alt="" style={{ width: 22, height: 22, imageRendering: "pixelated", flexShrink: 0, filter: "drop-shadow(0 0 4px #22c55e)" }} />
-              )}
-              {!d.isHeal && d.element && (
-                <ElementPixelIcon element={d.element} pixelSize={d.isCrit ? 4 : 3} />
-              )}
               {d.isBlocked && (
-                <Shield className="w-6 h-6 flex-shrink-0" style={{ color: d.color, filter: `drop-shadow(0 0 6px ${d.color}) drop-shadow(0 0 12px ${d.color}80)`, WebkitTextStroke: "0", stroke: d.color, strokeWidth: 2.5 }} />
-              )}
-              {d.isCrit && !d.isHeal && (
-                <span style={{ fontSize: "13px", fontFamily: "'Press Start 2P', cursive", color: "#fbbf24", WebkitTextStroke: "1.5px #000", paintOrder: "stroke fill", textShadow: "0 0 8px #fbbf24" }}>CRIT!</span>
+                <Shield className="w-6 h-6 flex-shrink-0" style={{ color: "#ef4444", filter: `drop-shadow(0 0 6px #ef4444) drop-shadow(0 0 12px #ef444480)`, WebkitTextStroke: "0", stroke: "#ef4444", strokeWidth: 2.5 }} />
               )}
               {d.text}
             </div>
@@ -3312,7 +3303,7 @@ export default function BattleScreen({
                 color: labelColor,
                 WebkitTextStroke: "1px rgba(0,0,0,0.9)",
                 paintOrder: "stroke fill",
-                textShadow: d.label === "Super effective!" ? "0 0 6px #fbbf24" : d.label === "BLOCKED!" ? "0 0 6px #60a5fa" : "none",
+                textShadow: d.label === "Super effective!" ? "0 0 6px #fbbf24" : d.label === "BLOCKED!" ? "0 0 6px #ef4444" : "none",
                 whiteSpace: "nowrap",
                 marginTop: "2px",
               }}>
