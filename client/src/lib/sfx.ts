@@ -37,6 +37,7 @@ import mifuneSlice2 from "@assets/mifune_slice_2_1771803157515.mp3";
 import mifuneSlice3 from "@assets/mifune_slice_3_1771803157515.mp3";
 import mifuneSwordSlice2 from "@assets/mifune_sword_slice_1771803157516.mp3";
 import eruptionBuildup from "@assets/Eruption_Cleave_Buildup_Animation_SFX_1773945014497.wav";
+import eruptionDescent from "@assets/Eruption_Cleve_Descent_1773946434727.wav";
 import eruptionFirecharge from "@assets/Eruption_Cleave_firecharge_1773945037824.wav";
 import eruptionCleave from "@assets/Eruption_Cleave_explosion_1771800952507.mp3";
 import eruptionFlamelash from "@assets/Eruption_Cleave_flamelash_sfx_1773945076347.wav";
@@ -77,6 +78,7 @@ const SFX_GROUPS = {
   potionHeal: [healthPotionSfx],
   potionMana: [healthPotionSfx],
   eruptionBuildup: [eruptionBuildup],
+  eruptionDescent: [eruptionDescent],
   eruptionFirecharge: [eruptionFirecharge],
   eruptionCleave: [eruptionCleave],
   eruptionFlamelash: [eruptionFlamelash],

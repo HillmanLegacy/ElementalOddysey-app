@@ -679,6 +679,7 @@ export default function BattleScreen({
   const eruptionBuildupAudio = useRef<HTMLAudioElement | null>(null);
   const eruptionFirechargeAudio = useRef<HTMLAudioElement | null>(null);
   const eruptionFlamelashAudio = useRef<HTMLAudioElement | null>(null);
+  const eruptionDescentAudio = useRef<HTMLAudioElement | null>(null);
   const fireImpactId = useRef(0);
   const fujinSlashId = useRef(0);
   const ytrielHasFlown = useRef(false);
@@ -1060,7 +1061,7 @@ export default function BattleScreen({
       const highY = 60;
       const runDur = 403;
       const riseDur = Math.round(4 / 12 * 1000);
-      const nukeAtMs = Math.round(6 / 12 * 1000);
+      const nukeAtMs = 700;
       const buildupFps = 8;
       const buildupFd = 1000 / buildupFps;
       const holdDur = 10 * buildupFd;
@@ -1103,6 +1104,7 @@ export default function BattleScreen({
         setEruptionBuildupActive(false);
         setEruptionSubPhase("jumpFall");
         setEruptionKnightY(targetY);
+        eruptionDescentAudio.current = playSfx("eruptionDescent", 1.05);
       }, runDur + riseDur + holdDur);
 
       const nukeStart = runDur + riseDur + holdDur + nukeAtMs;
@@ -1110,6 +1112,8 @@ export default function BattleScreen({
         setEruptionAuraActive(false);
         fadeSfxOut(eruptionFirechargeAudio.current, 300);
         eruptionFirechargeAudio.current = null;
+        fadeSfxOut(eruptionDescentAudio.current, 200);
+        eruptionDescentAudio.current = null;
         setEruptionNukeActive(true);
         setEruptionNukeTargetIdx(targetIdx);
         setEruptionAirAttackStartFrame(4);
@@ -1145,6 +1149,7 @@ export default function BattleScreen({
         stopSfx(eruptionBuildupAudio.current); eruptionBuildupAudio.current = null;
         stopSfx(eruptionFirechargeAudio.current); eruptionFirechargeAudio.current = null;
         stopSfx(eruptionFlamelashAudio.current); eruptionFlamelashAudio.current = null;
+        stopSfx(eruptionDescentAudio.current); eruptionDescentAudio.current = null;
         setMagicZoom(false);
         setMagicZoomTarget(null);
         castingNeedsRunBack.current = false;
