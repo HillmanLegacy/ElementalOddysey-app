@@ -56,7 +56,7 @@ const NODE_ICONS: Record<string, any> = {
 
 const WIND_EDGE_NAMES: Record<string, string> = {
   "0-1":  "Old Forest Road",
-  "1-2":  "Canopy Walk",
+  "1-2":  "Whisperroot Trail",
   "1-3":  "Verdant Trail",
   "3-4":  "Mossy Descent",
   "3-5":  "Amber Road",
