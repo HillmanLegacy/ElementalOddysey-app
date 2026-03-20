@@ -2,12 +2,15 @@ import { useState } from "react";
 import { Menu, ArrowLeft, ShoppingBag, Hammer, Beer, X } from "lucide-react";
 import GameMenuPanel from "@/components/GameMenuPanel";
 import ShopScreen from "@/components/ShopScreen";
+import SpriteAnimator from "@/components/SpriteAnimator";
 import { playSfx } from "@/lib/sfx";
 import type { PlayerCharacter, ShopItem } from "@shared/schema";
 import villageBg from "@assets/forest_region_village_1774010989526.jpg";
 import blacksmithBg from "@assets/village_blacksmith_1774017365247.jpg";
 import tavernBg from "@assets/village_tavern_1774017365247.jpg";
 import tradeBg from "@assets/village_trade_shop_1774017365248.jpg";
+import blacksmithSprite from "@assets/BLACKSMITH_1774022241288.png";
+import alchemistSprite from "@assets/ALCHEMIST_1774022241288.png";
 
 const ac = "#c9a44a";
 
@@ -63,13 +66,13 @@ interface VillageScreenProps {
 }
 
 const ARROWS: { id: Panel & string; label: string; icon: typeof ShoppingBag; left: string; top: string; labelAbove?: boolean }[] = [
-  { id: "shop",       label: "Trade Shop",  icon: ShoppingBag, left: "calc(79% + 20px)", top: "calc(21% + 200px)", labelAbove: true },
+  { id: "shop",       label: "Alchemist",   icon: ShoppingBag, left: "calc(79% + 20px)", top: "calc(21% + 200px)", labelAbove: true },
   { id: "blacksmith", label: "Blacksmith",  icon: Hammer,      left: "51%",              top: "calc(11% + 210px)", labelAbove: true },
   { id: "tavern",     label: "Tavern",      icon: Beer,        left: "calc(18% + 201px)", top: "calc(35% + 112px)", labelAbove: true },
 ];
 
 const LOCATION_TITLES: Record<string, string> = {
-  shop: "✦ TRADE SHOP ✦",
+  shop: "✦ ALCHEMIST ✦",
   blacksmith: "✦ BLACKSMITH ✦",
   tavern: "✦ THE BRAMBLE INN ✦",
 };
@@ -251,6 +254,34 @@ export default function VillageScreen({
           100% { transform: translateX(1110px) translateY(-8px) rotate(-330deg); opacity: 0; }
         }
       `}</style>
+
+      {activePanel === "blacksmith" && (
+        <div style={{ position: "absolute", left: "5%", top: "65%", transform: "translateY(-50%)", zIndex: 4, pointerEvents: "none" }}>
+          <SpriteAnimator
+            spriteSheet={blacksmithSprite}
+            frameWidth={112}
+            frameHeight={96}
+            totalFrames={6}
+            fps={8}
+            scale={3}
+            loop={true}
+          />
+        </div>
+      )}
+
+      {activePanel === "shop" && (
+        <div style={{ position: "absolute", left: "5%", top: "65%", transform: "translateY(-50%)", zIndex: 4, pointerEvents: "none" }}>
+          <SpriteAnimator
+            spriteSheet={alchemistSprite}
+            frameWidth={128}
+            frameHeight={96}
+            totalFrames={6}
+            fps={8}
+            scale={3}
+            loop={true}
+          />
+        </div>
+      )}
 
       {activePanel && activePanel !== "tavern" && (
         <div
