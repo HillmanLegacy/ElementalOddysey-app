@@ -5,7 +5,7 @@ import ShopScreen from "@/components/ShopScreen";
 import BattleTransition from "@/components/BattleTransition";
 import { playSfx } from "@/lib/sfx";
 import type { PlayerCharacter, ShopItem, BountyData } from "@shared/schema";
-import { BOUNTY_POOLS, HUNT_POOLS, REGION_TALK_LINES } from "@/lib/gameData";
+import { BOUNTY_POOLS, HUNT_POOLS, NICOLAS_QUEST_DIALOGUE } from "@/lib/gameData";
 import villageBg from "@assets/forest_region_village_1774010989526.jpg";
 import blacksmithBg from "@assets/village_blacksmith_1774017365247.jpg";
 import tavernBg from "@assets/village_tavern_1774017365247.jpg";
@@ -102,30 +102,33 @@ export default function VillageScreen({
   const [activePanel, setActivePanel] = useState<Panel>(null);
   const [restedMsg, setRestedMsg] = useState(false);
   const [tavernTab, setTavernTab] = useState<TavernTab>("rest");
-  const [talkLineIdx, setTalkLineIdx] = useState(0);
   const [typedText, setTypedText] = useState("");
-  const [nextReady, setNextReady] = useState(false);
+  const [typingDone, setTypingDone] = useState(false);
   const [bountyCollected, setBountyCollected] = useState(false);
   const [huntCollected, setHuntCollected] = useState<Set<string>>(new Set());
 
-  const talkLines = REGION_TALK_LINES[regionTheme] || ["Nicolas has nothing to say."];
-  const currentLine = talkLines[talkLineIdx % talkLines.length];
+  const bossDefeated = (player.regionBossDefeats?.[String(regionTheme === "Wind" ? 0 : 1)] ?? 0) >= 1;
+  const bounties = player.collectedBountiesCount ?? 0;
+  const hunts = player.collectedHuntsCount ?? 0;
+  const nicolasStage = bossDefeated ? 3 : bounties >= 1 && hunts >= 1 ? 2 : bounties >= 1 ? 1 : 0;
+  const stageDialogue = NICOLAS_QUEST_DIALOGUE[regionTheme]?.[nicolasStage] ?? { lines: ["Nicolas has nothing to say."] };
+  const fullDialogue = stageDialogue.lines.join("\n\n");
 
   useEffect(() => {
     if (tavernTab !== "talk") return;
     setTypedText("");
-    setNextReady(false);
+    setTypingDone(false);
     let i = 0;
     const interval = setInterval(() => {
       i++;
-      setTypedText(currentLine.slice(0, i));
-      if (i >= currentLine.length) {
+      setTypedText(fullDialogue.slice(0, i));
+      if (i >= fullDialogue.length) {
         clearInterval(interval);
-        setTimeout(() => setNextReady(true), 1500);
+        setTimeout(() => setTypingDone(true), 1500);
       }
     }, 28);
     return () => clearInterval(interval);
-  }, [talkLineIdx, tavernTab, currentLine]);
+  }, [tavernTab, nicolasStage, fullDialogue]);
   const [transitionIn, setTransitionIn] = useState(false);
   const [transitionOut, setTransitionOut] = useState(false);
   const transitionTargetRef = useRef<Panel | "close" | null>(null);
@@ -448,23 +451,20 @@ export default function VillageScreen({
               {/* TALK */}
               {tavernTab === "talk" && (
                 <div className="space-y-3">
-                  <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "12px", minHeight: "80px" }}>
-                    <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.2" }}>
-                      "{typedText}<span style={{ opacity: nextReady ? 0 : 1 }}>▌</span>"
+                  <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "14px", minHeight: "100px" }}>
+                    <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.2", whiteSpace: "pre-line" }}>
+                      "{typedText}<span style={{ opacity: typingDone ? 0 : 1 }}>▌</span>"
                     </p>
                   </div>
                   <div className="flex items-center justify-between">
                     <span style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
-                    {nextReady && (
-                      <button
-                        className="px-3 py-1"
-                        style={{ border: `1px solid ${ac}60`, background: "transparent", color: ac, fontSize: "7px", letterSpacing: "1px" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
-                        onClick={() => { playSfx("menuSelect"); setTalkLineIdx(i => i + 1); }}
-                      >
-                        {talkLineIdx < talkLines.length - 1 ? "NEXT ›" : "AGAIN ›"}
-                      </button>
+                    {typingDone && nicolasStage < 3 && (
+                      <span style={{ fontSize: "6px", color: `${ac}40`, letterSpacing: "1px", fontStyle: "italic" }}>
+                        {nicolasStage === 0 ? "Check the bounty board." : nicolasStage === 1 ? "Check the hunt board." : "Face what waits at the peak."}
+                      </span>
+                    )}
+                    {typingDone && nicolasStage === 3 && (
+                      <span style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px" }}>✦</span>
                     )}
                   </div>
                 </div>

@@ -1474,7 +1474,7 @@ function Game() {
               onCollectBounty={() => setState(s => {
                 if (!s.player?.activeBounty?.completed) return s;
                 const reward = s.player.activeBounty.goldReward;
-                return { ...s, player: { ...s.player, gold: s.player.gold + reward, activeBounty: null } };
+                return { ...s, player: { ...s.player, gold: s.player.gold + reward, activeBounty: null, collectedBountiesCount: (s.player.collectedBountiesCount ?? 0) + 1 } };
               })}
               onCollectHunt={(huntId, lootItemId, required, goldReward) => setState(s => {
                 if (!s.player) return s;
@@ -1484,7 +1484,7 @@ function Game() {
                   if (match && remaining > 0) { remaining--; return false; }
                   return true;
                 });
-                return { ...s, player: { ...s.player, gold: s.player.gold + goldReward, inventory: newInventory } };
+                return { ...s, player: { ...s.player, gold: s.player.gold + goldReward, inventory: newInventory, collectedHuntsCount: (s.player.collectedHuntsCount ?? 0) + 1 } };
               })}
             />)}
             {villageTransitionIn && (

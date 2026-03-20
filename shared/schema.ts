@@ -81,6 +81,8 @@ export interface PlayerCharacter {
   villageIntroSeen?: boolean;
   activeBounty?: BountyData | null;
   activeHunts?: HuntData[];
+  collectedBountiesCount?: number;
+  collectedHuntsCount?: number;
 }
 
 export interface BountyData {

@@ -855,21 +855,71 @@ export const HUNT_POOLS: Record<string, HuntDef[]> = {
   ],
 };
 
-export const REGION_TALK_LINES: Record<string, string[]> = {
+export interface NicolasDialogueStage {
+  stage: number;
+  lines: string[];
+}
+
+export const NICOLAS_QUEST_DIALOGUE: Record<string, NicolasDialogueStage[]> = {
   Wind: [
-    "Harpies have been raiding the eastern paths again. Bold creatures.",
-    "A cyclops was spotted near Storm Pass. The merchants are nervous.",
-    "They say Resk still prowls the peak. Anyone who's gone up... hasn't come back.",
-    "Minotaur horns sell well at market. The alchemist across the way pays fair.",
-    "The wind's been strange lately. Something's stirring in the deep thicket.",
-    "Old Thorn spotted tracks beneath the Hollow Thicket. Big ones.",
+    {
+      stage: 0,
+      lines: [
+        "The harpies have gotten bold this season. A merchant came in last night, hands still shaking — said one tore his cart apart on Breeze Path.",
+        "If you're heading east, keep your blade ready. And if one of them doesn't make it back... I won't ask questions.",
+      ],
+    },
+    {
+      stage: 1,
+      lines: [
+        "I heard what you did out there. Good work. But there's more — there's a cyclops at Storm Pass. Calls it a toll.",
+        "No merchant's crossed in three days. You understand what I'm asking.",
+      ],
+    },
+    {
+      stage: 2,
+      lines: [
+        "You've done more for this valley than I had any right to ask. One last thing — and I won't pretend it's nothing.",
+        "Resk. The dragon at the peak. While it roosts up there, no road stays safe for long.",
+      ],
+    },
+    {
+      stage: 3,
+      lines: [
+        "...You actually came back. And the roads are quiet.",
+        "I didn't think I'd live to see it. Whatever you want from the bar — it's on me.",
+      ],
+    },
   ],
   Fire: [
-    "Fire demons have been pushing further up the Scorched Path. Troubling.",
-    "The demon kin grow bolder each season. The ember hut's barely standing.",
-    "Ytriel hasn't been seen in months. That's either very good news or very bad.",
-    "Merchants won't travel past the Cinder Trail anymore. Can't blame them.",
-    "Demonic cinders are worth a fortune if you can pry them loose intact.",
+    {
+      stage: 0,
+      lines: [
+        "The fire demons have been pushing up from the Scorched Path. Closer every week.",
+        "A trader lost two guards last night. I need someone who doesn't flinch at smoke.",
+      ],
+    },
+    {
+      stage: 1,
+      lines: [
+        "Word travels. Whatever you did down the Cinder Trail — the merchants noticed.",
+        "But the demon kin are still out there, bolder than ever. I don't think they'll stop on their own.",
+      ],
+    },
+    {
+      stage: 2,
+      lines: [
+        "You've held this region together longer than it deserved. There's one thing left.",
+        "Ytriel. The fire dragon. Hasn't been seen in months — but it's still up there. Until it isn't, nothing's truly settled.",
+      ],
+    },
+    {
+      stage: 3,
+      lines: [
+        "Ytriel. Gone. I've been keeping this inn running for twenty years waiting for that news.",
+        "You've earned every drink in the house. Don't be a stranger.",
+      ],
+    },
   ],
 };
 
