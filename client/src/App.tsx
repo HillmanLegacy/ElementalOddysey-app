@@ -15,6 +15,7 @@ import LevelUpScreen from "@/components/LevelUpScreen";
 import PerkSelectScreen from "@/components/PerkSelectScreen";
 import ShopScreen from "@/components/ShopScreen";
 import VillageScreen from "@/components/VillageScreen";
+import VillageIntroScreen from "@/components/VillageIntroScreen";
 import InventoryScreen from "@/components/InventoryScreen";
 import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
@@ -195,6 +196,7 @@ function Game() {
   const [hutTransitionOut, setHutTransitionOut] = useState(false);
   const [villageTransitionIn, setVillageTransitionIn] = useState(false);
   const [villageTransitionOut, setVillageTransitionOut] = useState(false);
+  const [showVillageIntro, setShowVillageIntro] = useState(false);
   const [exitToMenuTransition, setExitToMenuTransition] = useState(false);
 
   useEffect(() => {
@@ -1470,7 +1472,20 @@ function Game() {
             {villageTransitionOut && (
               <BattleTransition
                 direction="out"
-                onComplete={() => setVillageTransitionOut(false)}
+                onComplete={() => {
+                  setVillageTransitionOut(false);
+                  if (!state.player?.villageIntroSeen) {
+                    setShowVillageIntro(true);
+                  }
+                }}
+              />
+            )}
+            {showVillageIntro && (
+              <VillageIntroScreen
+                onComplete={() => {
+                  setShowVillageIntro(false);
+                  setState(s => s.player ? { ...s, player: { ...s.player, villageIntroSeen: true } } : s);
+                }}
               />
             )}
           </>

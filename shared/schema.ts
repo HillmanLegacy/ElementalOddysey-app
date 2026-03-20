@@ -78,6 +78,7 @@ export interface PlayerCharacter {
   merchantLastRegion: number;
   merchantLastTier: number;
   merchantSavedStock: ShopItem[] | null;
+  villageIntroSeen?: boolean;
 }
 
 export interface InventoryItem {
