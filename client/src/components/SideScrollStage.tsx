@@ -18,6 +18,7 @@ import slknightIdle from "@/assets/images/slknight-idle.png";
 import slknightRun from "@/assets/images/slknight-run.png";
 import baskenIdle from "@/assets/images/basken-idle.png";
 import baskenRun from "@/assets/images/basken-run.png";
+import rogueSheet from "@/assets/images/rogue-sheet.png";
 import rangerIdle from "@/assets/images/ranger-idle.png";
 import rangerRun from "@/assets/images/ranger-run.png";
 import knight2dIdle from "@/assets/images/knight2d-idle.png";
@@ -122,26 +123,32 @@ const CHAR_SPRITES: Record<string, {
   iW: number; iH: number;
   idleF: number; runF: number;
   scale: number;
-  groundOffset: number; // transparent bottom px × scale → pushes div down so visual feet = PHYS_GROUND_Y
-  // Hitbox as fractions of rendered (playerW, playerH): center offsets and half-extents
+  groundOffset: number;
   hbXOff: number; hbYOff: number; hbHW: number; hbHH: number;
   stepFrames?: number[];
   jumpFrame?: number;
   jumpStart?: string; jumpTrans?: string; jumpLoop?: string; jumpFall?: string;
+  // Single-sheet row offsets (for sprites with all anims in one file)
+  idleStart?: number; runStart?: number;
+  jumpStartAt?: number; jumpStartFrames?: number;
+  jumpMidAt?: number;  jumpMidFrames?: number;
+  jumpDownAt?: number; jumpDownFrames?: number;
 }> = {
-  // groundOffset = measured transparent_bottom_px × scale (from pixel analysis of idle sheet)
-  // hbXOff/hbYOff = body center as fraction of rendered W/H; hbHW/hbHH = half-extents as fraction
   samurai:    { idle: samuraiIdle, run: samuraiRun, jumpStart: samuraiJumpStart, jumpTrans: samuraiJumpTrans, jumpLoop: samuraiJumpLoop, jumpFall: samuraiJumpFall, iW: 96, iH: 96, idleF: 10, runF: 16, scale: 2, groundOffset: 30, hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.19, hbHH: 0.27, stepFrames: [7, 15] },
-  // SL Knight 128×64 scale=2 → 256×128; multi-row sheets (2 cols × N rows)
   knight:     { idle: slknightIdle,   run: slknightRun,   iW: 128, iH: 64,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 4,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.22, hbHH: 0.38, stepFrames: [2, 6], jumpFrame: 1 },
-  // basken 56×56 scale=2.8 → 157×157; no bottom gap, body ~47% width, ~75% height
   basken:     { idle: baskenIdle,     run: baskenRun,     iW: 56,  iH: 56,  idleF: 5,  runF: 6,  scale: 2.8, groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.23, hbHH: 0.33 },
-  // ranger 64×48 scale=2.8 → 179×134; no bottom gap, lean archer body
   ranger:     { idle: rangerIdle,     run: rangerRun,     iW: 64,  iH: 48,  idleF: 6,  runF: 6,  scale: 2.8, groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.48, hbHW: 0.21, hbHH: 0.37 },
-  // knight2d 84×84 scale=2 → 168×168; large 46px bottom gap shifts body into upper portion
   knight2d:   { idle: knight2dIdle,   run: knight2dRun,   iW: 84,  iH: 84,  idleF: 8,  runF: 8,  scale: 2,   groundOffset: 46, hbXOff: 0.50, hbYOff: 0.38, hbHW: 0.23, hbHH: 0.26 },
-  // axewarrior 94×91 scale=2 → 188×182; no bottom gap, broad burly frame
   axewarrior: { idle: axewarriorIdle, run: axewarriorRun, iW: 94,  iH: 91,  idleF: 6,  runF: 6,  scale: 2,   groundOffset: 0,  hbXOff: 0.50, hbYOff: 0.45, hbHW: 0.24, hbHH: 0.32 },
+  // rogue 56×56 single-sheet: row 0=idle, row 2=run, rows 3-4=jump
+  rogue: {
+    idle: rogueSheet, run: rogueSheet, iW: 56, iH: 56, idleF: 6, runF: 8, scale: 2.8, groundOffset: 0,
+    hbXOff: 0.50, hbYOff: 0.50, hbHW: 0.23, hbHH: 0.33,
+    idleStart: 0, runStart: 16,
+    jumpStartAt: 24, jumpStartFrames: 6,   // startup(2)+up(4) = frames 24-29
+    jumpMidAt:   30, jumpMidFrames:   3,   // mid-air hover    = frames 30-32
+    jumpDownAt:  33, jumpDownFrames:  4,   // fall             = frames 33-36
+  },
 };
 
 type DemonMode = "patrol" | "aiming" | "cooldown" | "chase";
@@ -1124,23 +1131,40 @@ export default function SideScrollStage({
   }, []);
 
 
-  // Jump: use dedicated jump sheets when available (samurai), fallback to run freeze.
-  // Ground: run or idle based on velocity.
-  const getJumpSprite = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number } => {
+  // Jump: use dedicated jump sheets when available (samurai), single-sheet row offsets (rogue), fallback to run freeze.
+  const getJumpSprite = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number; startAt?: number } => {
     if (charSprite.jumpStart && charSprite.jumpTrans && charSprite.jumpLoop && charSprite.jumpFall) {
       if (jumpSubPhase === "start") return { src: charSprite.jumpStart, frames: 3, fps: 10, loop: false, pauseAt: 2 };
       if (jumpSubPhase === "loop") return { src: charSprite.jumpLoop, frames: 3, fps: 8, loop: true };
       if (jumpSubPhase === "fall") return { src: charSprite.jumpFall, frames: 3, fps: 10, loop: false, pauseAt: 2 };
       return { src: charSprite.jumpLoop, frames: 3, fps: 8, loop: true };
     }
+    if (charSprite.jumpStartAt !== undefined) {
+      const sheet = charSprite.idle;
+      if (jumpSubPhase === "start") {
+        const at = charSprite.jumpStartAt, n = charSprite.jumpStartFrames ?? 2;
+        return { src: sheet, frames: at + n, fps: 12, loop: false, startAt: at, pauseAt: at + n - 1 };
+      }
+      if (jumpSubPhase === "loop") {
+        const at = charSprite.jumpMidAt ?? charSprite.jumpStartAt, n = charSprite.jumpMidFrames ?? 3;
+        return { src: sheet, frames: at + n, fps: 8, loop: true, startAt: at };
+      }
+      if (jumpSubPhase === "fall") {
+        const at = charSprite.jumpDownAt ?? charSprite.jumpStartAt, n = charSprite.jumpDownFrames ?? 3;
+        return { src: sheet, frames: at + n, fps: 10, loop: false, startAt: at, pauseAt: at + n - 1 };
+      }
+    }
     return { src: charSprite.run, frames: 1, fps: 8, loop: false, pauseAt: 0 };
   };
   const jumpSpriteConfig = isJumping ? getJumpSprite() : null;
-  const spriteSrc    = isJumping ? jumpSpriteConfig!.src : (isRunning ? charSprite.run : charSprite.idle);
-  const spriteFrames = isJumping ? jumpSpriteConfig!.frames : (isRunning ? charSprite.runF : charSprite.idleF);
-  const spriteFps    = isJumping ? jumpSpriteConfig!.fps : (isRunning ? 14 : 8);
-  const spriteLoop   = isJumping ? jumpSpriteConfig!.loop : true;
+  const idleStart = charSprite.idleStart ?? 0;
+  const runStart  = charSprite.runStart  ?? 0;
+  const spriteSrc     = isJumping ? jumpSpriteConfig!.src : (isRunning ? charSprite.run : charSprite.idle);
+  const spriteFrames  = isJumping ? jumpSpriteConfig!.frames : (isRunning ? runStart + charSprite.runF : idleStart + charSprite.idleF);
+  const spriteFps     = isJumping ? jumpSpriteConfig!.fps : (isRunning ? 14 : 8);
+  const spriteLoop    = isJumping ? jumpSpriteConfig!.loop : true;
   const spritePauseAt = isJumping ? jumpSpriteConfig!.pauseAt : undefined;
+  const spriteStartAt = isJumping ? jumpSpriteConfig!.startAt : (isRunning ? (runStart || undefined) : (idleStart || undefined));
 
   const touchBtn = useCallback((active: boolean): React.CSSProperties => ({
     width: 56,
@@ -1386,6 +1410,7 @@ export default function SideScrollStage({
             scale={charSprite.scale}
             loop={spriteLoop}
             pauseAtFrame={spritePauseAt}
+            startFrame={spriteStartAt}
             flipX={!facingRight}
             paused={battleFreezing}
             anchor="top-left"
