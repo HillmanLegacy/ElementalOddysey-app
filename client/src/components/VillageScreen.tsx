@@ -46,6 +46,33 @@ const BLACKSMITH_ITEMS: ShopItem[] = [
   { id: "bk_he1",  name: "Ranger's Hood",         type: "armor",      description: "+3 DEF, +1 LUCK",        effect: { type: "equip", stat: "def", amount: 3 }, icon: "shield",  value: 30, price: 58, stock: 1 },
 ];
 
+const NICOLAS_TALK_RESPONSES: Record<string, { accept: string; reject: string }> = {
+  Wind_0: {
+    accept: "Good. The harpy nests are east of Breeze Path — follow the feathers, and watch the sky.",
+    reject: "...Fair enough. Not everyone wants that kind of trouble. The offer stands if you change your mind.",
+  },
+  Wind_1: {
+    accept: "Didn't think I'd need to ask twice. You already know what you're doing.",
+    reject: "Can't say I blame you. But if nobody deals with it, eventually the trouble finds us right here.",
+  },
+  Wind_2: {
+    accept: "...I knew you would. Just — take care of yourself up there. Come back.",
+    reject: "I understand. Something like Resk... I wouldn't ask a person twice.",
+  },
+  Fire_0: {
+    accept: "Stay sharp on the Scorched Path. The heat alone will wear you down before the demons do.",
+    reject: "...Understood. It's not a road for everyone. The offer stays open.",
+  },
+  Fire_1: {
+    accept: "You've already proved yourself out there. Whatever's waiting won't surprise you.",
+    reject: "Can't fault you for that. But it won't fix itself.",
+  },
+  Fire_2: {
+    accept: "...You're walking into the mountain. Just come back.",
+    reject: "I understand. There's no shame in knowing your limits.",
+  },
+};
+
 type Panel = null | "shop" | "blacksmith" | "tavern";
 
 type TavernTab = "rest" | "talk" | "bounty" | "hunt";
@@ -108,7 +135,8 @@ export default function VillageScreen({
   const [tavernTab, setTavernTab] = useState<TavernTab>("rest");
   const [typedText, setTypedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
-  const [talkPopupOpen, setTalkPopupOpen] = useState(false);
+  const [dialoguePhase, setDialoguePhase] = useState<"main" | "accept" | "reject" | null>(null);
+  const [currentTopicKey, setCurrentTopicKey] = useState<string | null>(null);
   const dialogueScrollRef = useRef<HTMLDivElement>(null);
   const [popupLine, setPopupLine] = useState("");
   const [popupIsCompletion, setPopupIsCompletion] = useState(false);
@@ -139,36 +167,53 @@ export default function VillageScreen({
   const currentStageQuestAccepted = !!(player.activeQuests ?? []).find(q => q.id === questForCurrentStage?.id);
   const currentStageQuestCompleted = (player.completedQuestIds ?? []).includes(questForCurrentStage?.id ?? "");
 
-  const openTalkPopup = () => {
-    let line: string;
+  const startLine = (line: string) => {
+    setPopupLine(line);
+    setTypedText("");
+    setTypingDone(false);
+  };
+
+  const selectTopic = (key: string) => {
+    let line = "";
     let isCompletion = false;
     let qid: string | null = null;
     let gold = 0;
-    if (pendingCompletionQuest) {
+    if (key === "completion" && pendingCompletionQuest) {
       const def = Object.values(NICOLAS_QUESTS).flat().find(d => d.id === pendingCompletionQuest.id);
       line = def ? def.completionLines.join("\n\n") : "Well done, traveller.";
       isCompletion = true;
       qid = pendingCompletionQuest.id;
       gold = def?.goldReward ?? 0;
-    } else if (nicolasStage === 3) {
-      const stageD = NICOLAS_QUEST_DIALOGUE[regionTheme]?.[3];
-      line = stageD ? stageD.lines.join("\n\n") : "The roads are safe. Thank you.";
-    } else {
+    } else if (key === "quest") {
       const stageD = NICOLAS_QUEST_DIALOGUE[regionTheme]?.[nicolasStage];
       line = stageD ? stageD.lines.join("\n\n") : "...";
       qid = questForCurrentStage?.id ?? null;
+    } else if (key === "done") {
+      const stageD = NICOLAS_QUEST_DIALOGUE[regionTheme]?.[3];
+      line = stageD ? stageD.lines.join("\n\n") : "The roads are safe now. Thank you.";
+    } else if (key === "inprogress") {
+      line = "You took the contract. That's more than most. Just... come back in one piece. This inn doesn't need another name carved in the door frame.";
+    } else if (key === "rumours") {
+      line = "Heard tell of a merchant who paid a storm wolf in silver coins to let him pass. Don't know if I believe it. But I'm not one to argue with a man who made it here with his cart intact.";
+    } else if (key === "theinn") {
+      line = "Built this place with my father twenty-two years ago. He said put it at the crossroads — always at the crossroads. Busiest thing in the valley now. He'd have loved it.";
     }
-    setPopupLine(line);
     setPopupIsCompletion(isCompletion);
     setPopupQuestId(qid);
     setPopupGoldReward(gold);
-    setTypedText("");
-    setTypingDone(false);
-    setTalkPopupOpen(true);
+    setCurrentTopicKey(key);
+    setDialoguePhase("main");
+    startLine(line);
+  };
+
+  const finishDialogue = () => {
+    setDialoguePhase(null);
+    setCurrentTopicKey(null);
+    setTavernTab("talk");
   };
 
   useEffect(() => {
-    if (!talkPopupOpen || !popupLine) return;
+    if (!dialoguePhase || !popupLine) return;
     setTypedText("");
     setTypingDone(false);
     let i = 0;
@@ -181,7 +226,7 @@ export default function VillageScreen({
       }
     }, 28);
     return () => clearInterval(interval);
-  }, [talkPopupOpen, popupLine]);
+  }, [popupLine, dialoguePhase]);
 
   useEffect(() => {
     if (dialogueScrollRef.current) {
@@ -413,7 +458,7 @@ export default function VillageScreen({
         </>
       )}
 
-      {activePanel === "tavern" && (
+      {activePanel === "tavern" && dialoguePhase === null && (
         <>
         <div
           style={{
@@ -468,7 +513,7 @@ export default function VillageScreen({
                     fontSize: "6px",
                     letterSpacing: "0.5px",
                   }}
-                  onClick={() => { playSfx("menuSelect"); if (id === "talk") { openTalkPopup(); } else { setTavernTab(id as Exclude<TavernTab, "talk">); } }}
+                  onClick={() => { playSfx("menuSelect"); setTavernTab(id); }}
                 >
                   <Icon className="w-3 h-3" />
                   {label}
@@ -508,7 +553,46 @@ export default function VillageScreen({
                 </div>
               )}
 
-              {/* TALK — popup triggered, no inline content */}
+              {/* TALK — topic selection */}
+              {tavernTab === "talk" && (() => {
+                const topics: Array<{ key: string; label: string; hint: string; highlight?: boolean }> = [];
+                if (pendingCompletionQuest) {
+                  topics.push({ key: "completion", label: "You wanted to see me?", hint: "...he looks up from behind the bar", highlight: true });
+                }
+                if (!currentStageQuestAccepted && !currentStageQuestCompleted && questForCurrentStage && nicolasStage < 3) {
+                  topics.push({ key: "quest", label: "Anything troubling you lately?", hint: "...Nicolas sets down his glass", highlight: true });
+                }
+                if (currentStageQuestAccepted && !currentStageQuestCompleted) {
+                  topics.push({ key: "inprogress", label: "How's the road situation?", hint: "...you remember the contract" });
+                }
+                if (nicolasStage === 3) {
+                  topics.push({ key: "done", label: "How are things now?", hint: "...a rare quiet in the valley" });
+                }
+                topics.push({ key: "rumours", label: "Heard any rumours lately?", hint: "...the innkeeper leans in" });
+                topics.push({ key: "theinn", label: "This place has history.", hint: "...he glances around the room" });
+                return (
+                  <div className="space-y-2 py-1">
+                    <div style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1.5px", marginBottom: "6px" }}>SELECT A TOPIC</div>
+                    {topics.map(t => (
+                      <button
+                        key={t.key}
+                        className="w-full text-left px-3 py-2.5 transition-all"
+                        style={{
+                          background: t.highlight ? `${ac}12` : "#0d0b0bf0",
+                          border: `1px solid ${t.highlight ? ac + "60" : ac + "20"}`,
+                          display: "flex", flexDirection: "column", gap: "3px",
+                        }}
+                        onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${ac}22`; (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`; }}
+                        onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = t.highlight ? `${ac}12` : "#0d0b0bf0"; (e.currentTarget as HTMLElement).style.borderColor = t.highlight ? `${ac}60` : `${ac}20`; }}
+                        onClick={() => { playSfx("menuSelect"); selectTopic(t.key); }}
+                      >
+                        <span style={{ fontSize: "8px", color: t.highlight ? ac : "#e8e0d0", letterSpacing: "1px" }}>› {t.label}</span>
+                        <span style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "0.5px", fontStyle: "italic" }}>{t.hint}</span>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })()}
 
               {/* BOUNTY */}
               {tavernTab === "bounty" && (() => {
@@ -713,7 +797,7 @@ export default function VillageScreen({
       )}
 
       {/* Full-width dialogue bar at bottom of screen */}
-      {talkPopupOpen && (
+      {dialoguePhase !== null && (
         <div
           className="absolute left-0 right-0 bottom-0 flex"
           style={{
@@ -734,12 +818,15 @@ export default function VillageScreen({
               <MessageSquare className="w-3 h-3 flex-shrink-0" style={{ color: ac }} />
               <span style={{ fontSize: "6px", color: ac, letterSpacing: "1.5px", lineHeight: "1.4" }}>NICOLAS{"\n"}FERNAL</span>
             </div>
-            <button
-              onClick={() => setTalkPopupOpen(false)}
-              style={{ background: "transparent", border: `1px solid ${ac}30`, color: `${ac}60`, cursor: "pointer", fontSize: "8px", padding: "4px 8px", letterSpacing: "1px", alignSelf: "flex-start" }}
-              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = ac}
-              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = `${ac}60`}
-            >✕ CLOSE</button>
+            {/* Only show close button when in response phase */}
+            {(dialoguePhase === "accept" || dialoguePhase === "reject") && typingDone && (
+              <button
+                onClick={() => { playSfx("menuSelect"); finishDialogue(); }}
+                style={{ background: "transparent", border: `1px solid ${ac}30`, color: `${ac}60`, cursor: "pointer", fontSize: "8px", padding: "4px 8px", letterSpacing: "1px", alignSelf: "flex-start" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = ac}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = `${ac}60`}
+              >✕ CLOSE</button>
+            )}
           </div>
 
           {/* Scrollable text column */}
@@ -759,28 +846,75 @@ export default function VillageScreen({
           >
             <span style={{ fontSize: "6px", color: `${ac}40`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
             <div className="flex flex-col gap-2">
-              {typingDone && popupIsCompletion && (
-                <button
-                  style={{ border: `1px solid #6ee7b760`, background: "#6ee7b715", color: "#6ee7b7", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b730"}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b715"}
-                  onClick={() => { playSfx("menuSelect"); if (popupQuestId) onCompleteQuest(popupQuestId, popupGoldReward); setTalkPopupOpen(false); }}
-                >
-                  CLAIM {popupGoldReward}G ›
-                </button>
+
+              {/* Response phase: just a CLOSE in the NPC column — no extra buttons here */}
+              {(dialoguePhase === "accept" || dialoguePhase === "reject") && typingDone && (
+                <span style={{ fontSize: "6px", color: `${ac}30`, letterSpacing: "1px", fontStyle: "italic" }}>
+                  {dialoguePhase === "accept" ? "Quest accepted." : "Understood."}
+                </span>
               )}
-              {typingDone && !popupIsCompletion && nicolasStage < 3 && !currentStageQuestAccepted && !currentStageQuestCompleted && popupQuestId && (
-                <button
-                  style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
-                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
-                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
-                  onClick={() => { playSfx("menuSelect"); const def = questForCurrentStage!; onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" }); setTalkPopupOpen(false); }}
-                >
-                  ACCEPT ›
-                </button>
-              )}
-              {typingDone && !popupIsCompletion && currentStageQuestAccepted && !currentStageQuestCompleted && (
-                <span style={{ fontSize: "6px", color: `${ac}40`, letterSpacing: "1px", fontStyle: "italic" }}>Quest in progress...</span>
+
+              {/* Main phase buttons */}
+              {dialoguePhase === "main" && typingDone && (
+                <>
+                  {/* Completion: CLAIM */}
+                  {popupIsCompletion && (
+                    <button
+                      style={{ border: `1px solid #6ee7b760`, background: "#6ee7b715", color: "#6ee7b7", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b730"}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b715"}
+                      onClick={() => { playSfx("menuSelect"); if (popupQuestId) onCompleteQuest(popupQuestId, popupGoldReward); finishDialogue(); }}
+                    >
+                      CLAIM {popupGoldReward}G ›
+                    </button>
+                  )}
+
+                  {/* Quest offer: ACCEPT + REJECT */}
+                  {!popupIsCompletion && currentTopicKey === "quest" && !currentStageQuestAccepted && !currentStageQuestCompleted && popupQuestId && (
+                    <>
+                      <button
+                        style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
+                        onClick={() => {
+                          playSfx("menuSelect");
+                          const def = questForCurrentStage!;
+                          onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" });
+                          const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
+                          setDialoguePhase("accept");
+                          startLine(resp?.accept ?? "Good. Be safe out there.");
+                        }}
+                      >
+                        ACCEPT ›
+                      </button>
+                      <button
+                        style={{ border: `1px solid #e07060a0`, background: "#e0706015", color: "#e07060", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e0706030"}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#e0706015"}
+                        onClick={() => {
+                          playSfx("menuSelect");
+                          const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
+                          setDialoguePhase("reject");
+                          startLine(resp?.reject ?? "...Understood. The offer stays open.");
+                        }}
+                      >
+                        DECLINE ›
+                      </button>
+                    </>
+                  )}
+
+                  {/* General topic or in-progress: CLOSE */}
+                  {!popupIsCompletion && currentTopicKey !== "quest" && (
+                    <button
+                      style={{ border: `1px solid ${ac}30`, background: "transparent", color: `${ac}60`, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
+                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = ac}
+                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = `${ac}60`}
+                      onClick={() => { playSfx("menuSelect"); finishDialogue(); }}
+                    >
+                      ✕ CLOSE
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
