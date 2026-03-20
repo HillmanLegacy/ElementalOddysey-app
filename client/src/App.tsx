@@ -1484,7 +1484,13 @@ function Game() {
                   if (match && remaining > 0) { remaining--; return false; }
                   return true;
                 });
-                return { ...s, player: { ...s.player, gold: s.player.gold + goldReward, inventory: newInventory, collectedHuntsCount: (s.player.collectedHuntsCount ?? 0) + 1 } };
+                return { ...s, player: { ...s.player, gold: s.player.gold + goldReward, inventory: newInventory, activeHunts: (s.player.activeHunts ?? []).filter(h => h.id !== huntId), collectedHuntsCount: (s.player.collectedHuntsCount ?? 0) + 1 } };
+              })}
+              onAcceptHunt={(hunt) => setState(s => {
+                if (!s.player) return s;
+                const existing = s.player.activeHunts ?? [];
+                if (existing.find(h => h.id === hunt.id)) return s;
+                return { ...s, player: { ...s.player, activeHunts: [...existing, hunt] } };
               })}
               onAcceptQuest={(quest) => setState(s => {
                 if (!s.player) return s;

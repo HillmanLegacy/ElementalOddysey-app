@@ -73,6 +73,7 @@ interface VillageScreenProps {
   onCollectHunt: (huntId: string, lootItemId: string, required: number, goldReward: number) => void;
   onAcceptQuest: (quest: Quest) => void;
   onCompleteQuest: (questId: string, goldReward: number) => void;
+  onAcceptHunt: (hunt: import("@shared/schema").HuntData) => void;
 }
 
 const ARROWS: { id: Panel & string; label: string; icon: typeof ShoppingBag; left: string; top: string; labelAbove?: boolean }[] = [
@@ -99,7 +100,7 @@ export default function VillageScreen({
   textSpeed, musicVolume, sfxVolume,
   onTextSpeedChange, onMusicVolumeChange, onSfxVolumeChange,
   onSetBounty, onCollectBounty, onCollectHunt,
-  onAcceptQuest, onCompleteQuest,
+  onAcceptQuest, onCompleteQuest, onAcceptHunt,
 }: VillageScreenProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<Panel>(null);
@@ -505,116 +506,189 @@ export default function VillageScreen({
               {tavernTab === "bounty" && (() => {
                 const bounty = player.activeBounty;
                 const pool = BOUNTY_POOLS[regionTheme] || [];
-                if (!bounty) {
+                const unlocked = pool.filter(d => player.level >= d.minLevel);
+                const locked   = pool.filter(d => player.level < d.minLevel);
+
+                if (bounty && bounty.completed) {
                   return (
                     <div className="space-y-3">
-                      <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", textAlign: "center" }}>
-                        "I've got a target for you,<br />if you're up to it."
-                      </p>
-                      {pool.length > 0 ? (
+                      <div style={{ background: "#0d0b0bf0", border: `1px solid #6ee7b740`, padding: "10px" }}>
+                        <div style={{ fontSize: "6px", color: "#6ee7b780", letterSpacing: "1px", marginBottom: "4px" }}>✓ BOUNTY COMPLETE</div>
+                        <div style={{ fontSize: "10px", color: "#e8e0d0", letterSpacing: "1px", marginBottom: "4px" }}>{bounty.enemyName}</div>
+                        <div style={{ fontSize: "7px", color: "#6ee7b7", letterSpacing: "1px" }}>⬡ {bounty.goldReward} GOLD</div>
+                      </div>
+                      {bountyCollected ? (
+                        <div className="text-center py-1" style={{ fontSize: "8px", color: "#6ee7b7", letterSpacing: "1px" }}>✓ +{bounty.goldReward} GOLD COLLECTED</div>
+                      ) : (
                         <button
                           className="w-full py-2.5"
-                          style={{ background: "#0d0b0bf0", border: `1px solid ${ac}50`, color: ac, fontSize: "8px", letterSpacing: "2px" }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}25`}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0"}
-                          onClick={() => {
-                            playSfx("menuSelect");
-                            const def = pool[Math.floor(Math.random() * pool.length)];
-                            onSetBounty({ enemyId: def.enemyId, enemyName: def.enemyName, goldReward: def.goldReward, region: 0, completed: false });
-                          }}
+                          style={{ background: `${ac}20`, border: `2px solid ${ac}`, color: ac, fontSize: "8px", letterSpacing: "2px", cursor: "pointer" }}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}40`}
+                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
+                          onClick={() => { playSfx("recover"); onCollectBounty(); setBountyCollected(true); setTimeout(() => setBountyCollected(false), 3000); }}
                         >
-                          NEW BOUNTY
+                          COLLECT {bounty.goldReward} GOLD
                         </button>
-                      ) : (
-                        <p style={{ fontSize: "7px", color: `${ac}50`, textAlign: "center" }}>No bounties available.</p>
                       )}
                     </div>
                   );
                 }
-                if (!bounty.completed) {
+
+                if (bounty && !bounty.completed) {
                   return (
                     <div className="space-y-3">
-                      <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", textAlign: "center" }}>
-                        "Don't come back empty-handed."
-                      </p>
-                      <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "10px" }}>
-                        <div style={{ fontSize: "6px", color: `${ac}80`, letterSpacing: "1px", marginBottom: "4px" }}>TARGET</div>
-                        <div style={{ fontSize: "10px", color: "#e8e0d0", letterSpacing: "1px", marginBottom: "6px" }}>{bounty.enemyName}</div>
-                        <div style={{ fontSize: "7px", color: "#6ee7b7", letterSpacing: "1px" }}>⬡ {bounty.goldReward} GOLD REWARD</div>
+                      <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}40`, padding: "10px" }}>
+                        <div style={{ fontSize: "6px", color: `${ac}80`, letterSpacing: "1px", marginBottom: "4px" }}>ACTIVE BOUNTY</div>
+                        <div style={{ fontSize: "10px", color: "#e8e0d0", letterSpacing: "1px", marginBottom: "4px" }}>{bounty.enemyName}</div>
+                        <div style={{ fontSize: "7px", color: "#6ee7b7", letterSpacing: "1px" }}>⬡ {bounty.goldReward} GOLD</div>
                       </div>
-                      <div className="text-center py-1" style={{ fontSize: "7px", color: `${ac}60`, letterSpacing: "2px" }}>◈ IN PROGRESS ◈</div>
+                      <div className="text-center py-1" style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "2px" }}>◈ DEFEAT TARGET TO COMPLETE ◈</div>
                     </div>
                   );
                 }
+
                 return (
-                  <div className="space-y-3">
-                    <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", textAlign: "center" }}>
-                      "Well done. A deal's a deal."
-                    </p>
-                    <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "10px" }}>
-                      <div style={{ fontSize: "6px", color: `${ac}80`, letterSpacing: "1px", marginBottom: "4px" }}>BOUNTY COMPLETE</div>
-                      <div style={{ fontSize: "10px", color: "#e8e0d0", letterSpacing: "1px", marginBottom: "6px" }}>{bounty.enemyName}</div>
-                    </div>
-                    {bountyCollected ? (
-                      <div className="text-center py-1" style={{ fontSize: "8px", color: "#6ee7b7", letterSpacing: "1px" }}>✓ +{bounty.goldReward} GOLD COLLECTED</div>
-                    ) : (
-                      <button
-                        className="w-full py-2.5"
-                        style={{ background: `${ac}20`, border: `2px solid ${ac}`, color: ac, fontSize: "8px", letterSpacing: "2px" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}40`}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
-                        onClick={() => { playSfx("recover"); onCollectBounty(); setBountyCollected(true); setTimeout(() => setBountyCollected(false), 3000); }}
-                      >
-                        COLLECT {bounty.goldReward} GOLD
-                      </button>
-                    )}
+                  <div className="space-y-2">
+                    <div style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px", marginBottom: "2px" }}>BOUNTY BOARD — select a target</div>
+                    {unlocked.map(def => (
+                      <div key={def.enemyId} style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "8px 10px" }}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "8px", color: "#e8e0d0", letterSpacing: "1px", marginBottom: "3px" }}>{def.enemyName}</div>
+                            <div style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "0.5px", lineHeight: "1.8" }}>{def.description}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <span style={{ fontSize: "7px", color: "#6ee7b7", letterSpacing: "1px" }}>⬡ {def.goldReward}g</span>
+                            <button
+                              style={{ border: `1px solid ${ac}60`, background: "transparent", color: ac, fontSize: "6px", letterSpacing: "1px", padding: "3px 8px", cursor: "pointer" }}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
+                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+                              onClick={() => { playSfx("menuSelect"); onSetBounty({ enemyId: def.enemyId, enemyName: def.enemyName, goldReward: def.goldReward, region: 0, completed: false }); }}
+                            >
+                              ACCEPT
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                    {locked.map(def => (
+                      <div key={def.enemyId} style={{ background: "#0a0808c0", border: `1px solid ${ac}15`, padding: "8px 10px", opacity: 0.5 }}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "8px", color: "#887070", letterSpacing: "1px", marginBottom: "3px" }}>{def.enemyName}</div>
+                            <div style={{ fontSize: "6px", color: `${ac}30`, letterSpacing: "0.5px", lineHeight: "1.8" }}>{def.description}</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <span style={{ fontSize: "7px", color: "#887070", letterSpacing: "1px" }}>⬡ {def.goldReward}g</span>
+                            <span style={{ fontSize: "6px", color: "#887070", letterSpacing: "1px", padding: "3px 8px", border: `1px solid #88707040` }}>Lv.{def.minLevel}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 );
               })()}
 
               {/* HUNT */}
               {tavernTab === "hunt" && (() => {
-                const hunts = HUNT_POOLS[regionTheme] || [];
-                if (hunts.length === 0) return <p style={{ fontSize: "7px", color: `${ac}50`, textAlign: "center", marginTop: "20px" }}>No hunts available.</p>;
+                const pool = HUNT_POOLS[regionTheme] || [];
+                const activeHunts = (player.activeHunts ?? []);
+                const activeIds = new Set(activeHunts.map(h => h.id));
+                const unlocked = pool.filter(d => player.level >= d.minLevel && !activeIds.has(d.id));
+                const locked   = pool.filter(d => player.level < d.minLevel);
+
                 return (
                   <div className="space-y-2">
-                    {hunts.map(hunt => {
-                      const count = player.inventory.filter(i => i.id === hunt.lootItemId || i.id.startsWith(hunt.lootItemId + "_")).length;
-                      const ready = count >= hunt.required;
-                      const collected = huntCollected.has(hunt.id);
-                      return (
-                        <div key={hunt.id} style={{ background: "#0d0b0bf0", border: `1px solid ${ready ? ac : ac + "30"}`, padding: "8px" }}>
-                          <div className="flex items-center justify-between" style={{ marginBottom: "4px" }}>
-                            <div>
-                              <div style={{ fontSize: "7px", color: "#e8e0d0", letterSpacing: "0.5px" }}>{hunt.lootName}</div>
-                              <div style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "0.5px" }}>from {hunt.enemyName}</div>
+                    {activeHunts.length > 0 && (
+                      <>
+                        <div style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px" }}>ACTIVE CONTRACTS</div>
+                        {activeHunts.map(hunt => {
+                          const count = player.inventory.filter(i => i.id === hunt.lootItemId || i.id.startsWith(hunt.lootItemId + "_")).length;
+                          const ready = count >= hunt.required;
+                          const collected = huntCollected.has(hunt.id);
+                          return (
+                            <div key={hunt.id} style={{ background: "#0d0b0bf0", border: `1px solid ${ready ? "#6ee7b760" : ac + "40"}`, padding: "8px 10px" }}>
+                              <div className="flex items-start justify-between gap-2">
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontSize: "7px", color: "#e8e0d0", letterSpacing: "1px" }}>{hunt.lootName}</div>
+                                  <div style={{ fontSize: "6px", color: `${ac}50`, marginTop: "2px" }}>from {hunt.enemyName}</div>
+                                </div>
+                                <div style={{ textAlign: "right", flexShrink: 0 }}>
+                                  <div style={{ fontSize: "8px", color: ready ? "#6ee7b7" : `${ac}80` }}>{Math.min(count, hunt.required)}/{hunt.required}</div>
+                                  <div style={{ fontSize: "6px", color: `${ac}50` }}>⬡ {hunt.goldReward}g</div>
+                                </div>
+                              </div>
+                              <div className="mt-2">
+                                {collected ? (
+                                  <div style={{ fontSize: "6px", color: "#6ee7b7", letterSpacing: "1px", textAlign: "center" }}>✓ COLLECTED</div>
+                                ) : ready ? (
+                                  <button
+                                    className="w-full py-1"
+                                    style={{ background: "#6ee7b715", border: `1px solid #6ee7b760`, color: "#6ee7b7", fontSize: "6px", letterSpacing: "1px", cursor: "pointer" }}
+                                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b730"}
+                                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b715"}
+                                    onClick={() => { playSfx("recover"); onCollectHunt(hunt.id, hunt.lootItemId, hunt.required, hunt.goldReward); setHuntCollected(s => new Set([...s, hunt.id])); setTimeout(() => setHuntCollected(s => { const n = new Set(s); n.delete(hunt.id); return n; }), 3000); }}
+                                  >
+                                    COLLECT {hunt.goldReward} GOLD
+                                  </button>
+                                ) : (
+                                  <div className="w-full" style={{ height: "4px", background: "#1a1208", position: "relative" }}>
+                                    <div style={{ position: "absolute", inset: 0, width: `${(count / hunt.required) * 100}%`, background: `linear-gradient(90deg, ${ac}80, ${ac})`, transition: "width 0.3s" }} />
+                                  </div>
+                                )}
+                              </div>
                             </div>
-                            <div style={{ textAlign: "right" }}>
-                              <div style={{ fontSize: "7px", color: ready ? "#6ee7b7" : `${ac}80` }}>{Math.min(count, hunt.required)}/{hunt.required}</div>
-                              <div style={{ fontSize: "6px", color: `${ac}60` }}>⬡ {hunt.goldReward}g</div>
-                            </div>
+                          );
+                        })}
+                        {(unlocked.length > 0 || locked.length > 0) && <div style={{ borderTop: `1px solid ${ac}15`, margin: "4px 0" }} />}
+                      </>
+                    )}
+
+                    {unlocked.length === 0 && locked.length === 0 && activeHunts.length === 0 && (
+                      <p style={{ fontSize: "7px", color: `${ac}40`, textAlign: "center", marginTop: "20px" }}>No hunt contracts available.</p>
+                    )}
+
+                    {(unlocked.length > 0 || locked.length > 0) && (
+                      <div style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px" }}>HUNT BOARD</div>
+                    )}
+
+                    {unlocked.map(def => (
+                      <div key={def.id} style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "8px 10px" }}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "7px", color: "#e8e0d0", letterSpacing: "1px" }}>{def.lootName}</div>
+                            <div style={{ fontSize: "6px", color: `${ac}50`, marginTop: "1px" }}>from {def.enemyName} · x{def.required} needed</div>
+                            <div style={{ fontSize: "6px", color: `${ac}35`, marginTop: "3px", lineHeight: "1.6" }}>{def.description}</div>
                           </div>
-                          {collected ? (
-                            <div style={{ fontSize: "6px", color: "#6ee7b7", letterSpacing: "1px", textAlign: "center" }}>✓ COLLECTED</div>
-                          ) : ready ? (
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <span style={{ fontSize: "7px", color: "#6ee7b7", letterSpacing: "1px" }}>⬡ {def.goldReward}g</span>
                             <button
-                              className="w-full py-1 mt-1"
-                              style={{ background: `${ac}20`, border: `1px solid ${ac}`, color: ac, fontSize: "6px", letterSpacing: "1px" }}
-                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}40`}
-                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
-                              onClick={() => {
-                                playSfx("recover");
-                                onCollectHunt(hunt.id, hunt.lootItemId, hunt.required, hunt.goldReward);
-                                setHuntCollected(s => new Set([...s, hunt.id]));
-                                setTimeout(() => setHuntCollected(s => { const n = new Set(s); n.delete(hunt.id); return n; }), 3000);
-                              }}
+                              style={{ border: `1px solid ${ac}60`, background: "transparent", color: ac, fontSize: "6px", letterSpacing: "1px", padding: "3px 8px", cursor: "pointer" }}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
+                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+                              onClick={() => { playSfx("menuSelect"); onAcceptHunt({ id: def.id, region: 0, enemyName: def.enemyName, lootItemId: def.lootItemId, lootName: def.lootName, required: def.required, goldReward: def.goldReward }); }}
                             >
-                              COLLECT {hunt.goldReward} GOLD
+                              ACCEPT
                             </button>
-                          ) : null}
+                          </div>
                         </div>
-                      );
-                    })}
+                      </div>
+                    ))}
+
+                    {locked.map(def => (
+                      <div key={def.id} style={{ background: "#0a0808c0", border: `1px solid ${ac}15`, padding: "8px 10px", opacity: 0.5 }}>
+                        <div className="flex items-start justify-between gap-2">
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontSize: "7px", color: "#887070", letterSpacing: "1px" }}>{def.lootName}</div>
+                            <div style={{ fontSize: "6px", color: `${ac}30`, marginTop: "1px" }}>from {def.enemyName} · x{def.required} needed</div>
+                          </div>
+                          <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
+                            <span style={{ fontSize: "7px", color: "#887070" }}>⬡ {def.goldReward}g</span>
+                            <span style={{ fontSize: "6px", color: "#887070", padding: "3px 8px", border: `1px solid #88707040` }}>Lv.{def.minLevel}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 );
               })()}

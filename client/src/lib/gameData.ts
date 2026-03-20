@@ -817,6 +817,8 @@ export interface BountyDef {
   enemyId: string;
   enemyName: string;
   goldReward: number;
+  minLevel: number;
+  description: string;
 }
 
 export interface HuntDef {
@@ -826,32 +828,34 @@ export interface HuntDef {
   lootName: string;
   required: number;
   goldReward: number;
+  minLevel: number;
+  description: string;
 }
 
 export const BOUNTY_POOLS: Record<string, BountyDef[]> = {
   Wind: [
-    { enemyId: "wolf_wind",     enemyName: "Storm Wolf", goldReward: 35 },
-    { enemyId: "harpy_wind",    enemyName: "Harpy",      goldReward: 45 },
-    { enemyId: "minotaur_wind", enemyName: "Minotaur",   goldReward: 55 },
-    { enemyId: "cyclops_wind",  enemyName: "Cyclops",    goldReward: 65 },
+    { enemyId: "wolf_wind",     enemyName: "Storm Wolf", goldReward: 35, minLevel: 1, description: "Spotted near the valley edge. Travels in packs." },
+    { enemyId: "harpy_wind",    enemyName: "Harpy",      goldReward: 45, minLevel: 3, description: "Raiding Breeze Path. Fast and dangerous in open air." },
+    { enemyId: "minotaur_wind", enemyName: "Minotaur",   goldReward: 60, minLevel: 5, description: "Wandering the Hollow Thicket. Don't engage in enclosed spaces." },
+    { enemyId: "cyclops_wind",  enemyName: "Cyclops",    goldReward: 80, minLevel: 8, description: "Holding Storm Pass. Merchants cannot cross." },
   ],
   Fire: [
-    { enemyId: "slime_fire", enemyName: "Fire Demon", goldReward: 50 },
-    { enemyId: "demon_kin",  enemyName: "Demon Kin",  goldReward: 65 },
+    { enemyId: "slime_fire", enemyName: "Fire Demon", goldReward: 50, minLevel: 1, description: "Encroaching from the Scorched Path. Volatile and aggressive." },
+    { enemyId: "demon_kin",  enemyName: "Demon Kin",  goldReward: 70, minLevel: 5, description: "A larger threat pushing through the Cinder Trail." },
   ],
 };
 
 export const HUNT_POOLS: Record<string, HuntDef[]> = {
   Wind: [
-    { id: "hunt_harpy_feather_r0",  enemyName: "Harpy",    lootItemId: "harpy_feather",  lootName: "Harpy Feather",  required: 5, goldReward: 90  },
-    { id: "hunt_harpy_claw_r0",     enemyName: "Harpy",    lootItemId: "harpy_claw",     lootName: "Harpy Claw",     required: 3, goldReward: 100 },
-    { id: "hunt_minotaur_horn_r0",  enemyName: "Minotaur", lootItemId: "minotaur_horn",  lootName: "Minotaur Horn",  required: 3, goldReward: 80  },
-    { id: "hunt_tuft_of_fur_r0",    enemyName: "Minotaur", lootItemId: "tuft_of_fur",    lootName: "Tuft of Fur",    required: 5, goldReward: 70  },
-    { id: "hunt_cyclops_eye_r0",    enemyName: "Cyclops",  lootItemId: "cyclops_eye",    lootName: "Cyclops Eye",    required: 2, goldReward: 110 },
+    { id: "hunt_harpy_feather_r0",  enemyName: "Harpy",    lootItemId: "harpy_feather",  lootName: "Harpy Feather",  required: 5, goldReward: 90,  minLevel: 3, description: "Collect feathers from harpy kills. The alchemist pays well." },
+    { id: "hunt_harpy_claw_r0",     enemyName: "Harpy",    lootItemId: "harpy_claw",     lootName: "Harpy Claw",     required: 3, goldReward: 100, minLevel: 4, description: "Razor sharp. Rare drop from wind harpies." },
+    { id: "hunt_tuft_of_fur_r0",    enemyName: "Minotaur", lootItemId: "tuft_of_fur",    lootName: "Tuft of Fur",    required: 5, goldReward: 70,  minLevel: 5, description: "From minotaur hides. Warm and durable — traders want these." },
+    { id: "hunt_minotaur_horn_r0",  enemyName: "Minotaur", lootItemId: "minotaur_horn",  lootName: "Minotaur Horn",  required: 3, goldReward: 85,  minLevel: 6, description: "Only found on mature minotaurs deeper in the thicket." },
+    { id: "hunt_cyclops_eye_r0",    enemyName: "Cyclops",  lootItemId: "cyclops_eye",    lootName: "Cyclops Eye",    required: 2, goldReward: 120, minLevel: 8, description: "Rare and valuable. Only the bravest attempt this." },
   ],
   Fire: [
-    { id: "hunt_demon_hide_r1",     enemyName: "Fire Demon", lootItemId: "fire_demon_hide", lootName: "Fire Demon Hide", required: 5, goldReward: 100 },
-    { id: "hunt_demonic_cinder_r1", enemyName: "Fire Demon", lootItemId: "demonic_cinder",  lootName: "Demonic Cinder",  required: 3, goldReward: 120 },
+    { id: "hunt_demon_hide_r1",     enemyName: "Fire Demon", lootItemId: "fire_demon_hide", lootName: "Demon Hide",      required: 5, goldReward: 100, minLevel: 1, description: "Hardened hide from fire demons. Burns to the touch." },
+    { id: "hunt_demonic_cinder_r1", enemyName: "Fire Demon", lootItemId: "demonic_cinder",  lootName: "Demonic Cinder",  required: 3, goldReward: 130, minLevel: 5, description: "Crystallised ember from stronger demon kin. Volatile — handle with care." },
   ],
 };
 
