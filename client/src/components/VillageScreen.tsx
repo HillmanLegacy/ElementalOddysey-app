@@ -506,8 +506,7 @@ export default function VillageScreen({
         </>
       )}
 
-      {activePanel === "tavern" && dialoguePhase === null && (
-        <>
+      {activePanel === "tavern" && (
         <div
           style={{
             position: "fixed", right: "calc(6% + 135px)", bottom: 115, zIndex: 40,
@@ -521,6 +520,10 @@ export default function VillageScreen({
             animation: "nicolasIdleAnim 1s steps(6) infinite",
           }}
         />
+      )}
+
+      {activePanel === "tavern" && dialoguePhase === null && (
+        <>
         <div className="absolute inset-0 z-[50] flex items-center justify-center" style={{ paddingTop: "60px", paddingBottom: "60px" }}>
           <div
             className="relative w-[310px] overflow-hidden"
