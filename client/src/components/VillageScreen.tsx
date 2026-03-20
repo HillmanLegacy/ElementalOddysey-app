@@ -70,8 +70,7 @@ export default function VillageScreen({
         position: "fixed",
         inset: 0,
         backgroundImage: `url(${villageBg})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
+        backgroundSize: "100% 100%",
         fontFamily: "'Press Start 2P', cursive",
         overflow: "hidden",
       }}
