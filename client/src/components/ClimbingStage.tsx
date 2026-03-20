@@ -161,7 +161,7 @@ function generatePlatforms(seed: number, vw: number, centerConstrained = false):
   return plats;
 }
 
-function generateEnemies(seed: number, plats: ClimbPlatform[], isForest: boolean, vw: number): ClimbEnemy[] {
+function generateEnemies(seed: number, plats: ClimbPlatform[], isForest: boolean, vw: number, soloHarpy = false): ClimbEnemy[] {
   const r = rng(seed + 999);
   const candidates = plats.filter(p => !p.isGround && !p.isGoal);
   const count = 4 + Math.floor(r() * 3);
@@ -178,7 +178,7 @@ function generateEnemies(seed: number, plats: ClimbPlatform[], isForest: boolean
     const maxOff = Math.max(0, plat.w - eW - 10);
     const xOffset = 5 + r() * maxOff;
     const enemyId = isForest
-      ? (type === "harpy" ? "harpy_wind" : type === "cyclops" ? "cyclops_wind" : "minotaur_wind")
+      ? (soloHarpy ? "harpy_wind_solo" : type === "harpy" ? "harpy_wind" : type === "cyclops" ? "cyclops_wind" : "minotaur_wind")
       : (type === "demonKin" ? "demon_kin" : "slime_fire");
     const colorVariant = type === "harpy" ? Math.floor(r() * HARPY_COLOR_VARIANTS.length) : undefined;
     return { type, enemyId, platformIdx: idx, xOffset, colorVariant };
@@ -285,8 +285,9 @@ export default function ClimbingStage({
   }, []);
 
   const stageHash = fromNodeId * 137 + toNodeId * 31;
+  const isSoloHarpyStage = isForest && (stageKey === "0-1" || stageKey === "1-2");
   const platformsRef = useRef<ClimbPlatform[]>(generatePlatforms(stageHash, VIEWPORT_W_DEFAULT, isForest));
-  const enemiesRef = useRef<ClimbEnemy[]>(generateEnemies(stageHash, platformsRef.current, isForest, VIEWPORT_W_DEFAULT));
+  const enemiesRef = useRef<ClimbEnemy[]>(generateEnemies(stageHash, platformsRef.current, isForest, VIEWPORT_W_DEFAULT, isSoloHarpyStage));
 
   const platforms = platformsRef.current;
   const enemies = enemiesRef.current;
