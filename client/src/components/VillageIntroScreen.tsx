@@ -13,21 +13,23 @@ const DIALOGUE: { speaker: string; text: string; color: string }[] = [
   { speaker: "Mira",   text: "Someone will seek her out. Someone always does...", color: "#c8d8a0" },
 ];
 
-const CHAR_MS      = 38;
-const FADE_IN_MS   = 1600;
-const PAN_MS       = 20000;
-const LINE_HOLD    = 3800;
-const FIRST_LINE   = FADE_IN_MS + 500;
-const LAST_LINE_T  = FIRST_LINE + (DIALOGUE.length - 1) * LINE_HOLD;
-const ZOOM_OUT_AT  = PAN_MS + 600;
-const ZOOM_OUT_MS  = 2000;
-const FADE_OUT_AT  = Math.max(ZOOM_OUT_AT + ZOOM_OUT_MS + 400, LAST_LINE_T + 3200);
-const COMPLETE_AT  = FADE_OUT_AT + 950;
+const CHAR_MS     = 38;
+const FADE_IN_MS  = 1500;
+const LINE_HOLD   = 5300;
+const FIRST_LINE  = FADE_IN_MS + 500;
+
+const LAST_LINE_T      = FIRST_LINE + (DIALOGUE.length - 1) * LINE_HOLD;
+const LAST_LINE_CHARS  = DIALOGUE[DIALOGUE.length - 1].text.length;
+const LAST_TYPING_MS   = LAST_LINE_CHARS * CHAR_MS;
+const FADE_OUT_AT      = LAST_LINE_T + LAST_TYPING_MS + 1500;
+const PAN_MS           = FADE_OUT_AT;
+const COMPLETE_AT      = FADE_OUT_AT + 950;
 
 interface Props { onComplete: () => void; }
 
 export default function VillageIntroScreen({ onComplete }: Props) {
-  const [phase, setPhase]             = useState<"pan" | "zoomOut">("pan");
+  const [bgPosY, setBgPosY]           = useState(0);
+  const [panActive, setPanActive]     = useState(false);
   const [blackOpacity, setBlackOpacity] = useState(1);
   const [lineIdx, setLineIdx]         = useState(0);
   const [lineVisible, setLineVisible] = useState(false);
@@ -39,6 +41,7 @@ export default function VillageIntroScreen({ onComplete }: Props) {
   const schedule = (fn: () => void, ms: number) => {
     const t = setTimeout(fn, ms);
     timers.current.push(t);
+    return t;
   };
 
   const stopTyper = () => {
@@ -68,6 +71,8 @@ export default function VillageIntroScreen({ onComplete }: Props) {
 
   useEffect(() => {
     schedule(() => setBlackOpacity(0), 50);
+    schedule(() => { setPanActive(true); setBgPosY(100); }, 80);
+
     schedule(() => { setLineVisible(true); startTyper(DIALOGUE[0].text); }, FIRST_LINE);
 
     for (let i = 1; i < DIALOGUE.length; i++) {
@@ -84,7 +89,6 @@ export default function VillageIntroScreen({ onComplete }: Props) {
       }, t);
     }
 
-    schedule(() => setPhase("zoomOut"), ZOOM_OUT_AT);
     schedule(() => { setLineVisible(false); setBlackOpacity(1); }, FADE_OUT_AT);
     schedule(() => finish(false), COMPLETE_AT);
 
@@ -93,10 +97,10 @@ export default function VillageIntroScreen({ onComplete }: Props) {
 
   const handleClick = () => {
     if (done.current) return;
-    const line = DIALOGUE[lineIdx];
-    if (typedChars < line.text.length) {
+    const fullText = DIALOGUE[lineIdx].text;
+    if (typedChars < fullText.length) {
       stopTyper();
-      setTypedChars(line.text.length);
+      setTypedChars(fullText.length);
     } else if (lineIdx < DIALOGUE.length - 1) {
       setLineVisible(false);
       stopTyper();
@@ -114,14 +118,6 @@ export default function VillageIntroScreen({ onComplete }: Props) {
   const displayText = line.text.slice(0, typedChars);
   const isTyping = typedChars < line.text.length;
 
-  const bgTransform = phase === "pan"
-    ? "scale(1.35) translateY(8%)"
-    : "scale(1.0) translateY(0%)";
-
-  const bgTransition = phase === "zoomOut"
-    ? `transform ${ZOOM_OUT_MS}ms ease-out`
-    : "none";
-
   return (
     <div
       className="fixed inset-0 z-[300] overflow-hidden select-none"
@@ -133,11 +129,9 @@ export default function VillageIntroScreen({ onComplete }: Props) {
           position: "absolute",
           inset: 0,
           backgroundImage: `url(${villageBg})`,
-          backgroundSize: "100% 100%",
-          transform: bgTransform,
-          transition: bgTransition,
-          transformOrigin: "center top",
-          animation: phase === "pan" ? `villageCamPan ${PAN_MS}ms linear forwards` : "none",
+          backgroundSize: "120% 120%",
+          backgroundPosition: `50% ${bgPosY}%`,
+          transition: panActive ? `background-position ${PAN_MS}ms linear` : "none",
         }}
       />
 
@@ -227,10 +221,6 @@ export default function VillageIntroScreen({ onComplete }: Props) {
       </button>
 
       <style>{`
-        @keyframes villageCamPan {
-          0%   { transform: scale(1.35) translateY(-8%); }
-          100% { transform: scale(1.35) translateY(8%); }
-        }
         @keyframes villageIntroPulse {
           0%, 100% { opacity: 0.4; transform: translateY(0); }
           50%       { opacity: 1;   transform: translateY(3px); }

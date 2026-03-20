@@ -103,10 +103,10 @@ export default function VillageScreen({
         position: "fixed",
         inset: 0,
         backgroundImage: `url(${currentBg})`,
-        backgroundSize: "100% 100%",
+        backgroundSize: isSubScreen ? "100% 100%" : "120% 120%",
+        backgroundPosition: isSubScreen ? "center center" : "center bottom",
         fontFamily: "'Press Start 2P', cursive",
         overflow: "hidden",
-        transition: "background-image 0.1s",
       }}
     >
       <div className="absolute inset-0" style={{ background: isSubScreen ? "rgba(0,0,0,0.30)" : "rgba(0,0,0,0.18)" }} />
