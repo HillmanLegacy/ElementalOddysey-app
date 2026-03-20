@@ -13,36 +13,54 @@ const DIALOGUE: { speaker: string; text: string; color: string }[] = [
   { speaker: "Mira",   text: "Someone will seek her out. Someone always does...", color: "#c8d8a0" },
 ];
 
-const FADE_IN_MS  = 1500;
-const PAN_MS      = 11000;
-const LINE_HOLD   = 2800;
-
-const PAN_START   = FADE_IN_MS + 200;
-const FIRST_LINE  = FADE_IN_MS + 600;
-const ZOOM_OUT_AT = PAN_START + PAN_MS + 400;
-const ZOOM_OUT_MS = 2000;
-const FADE_OUT_AT = ZOOM_OUT_AT + ZOOM_OUT_MS + 300;
-const COMPLETE_AT = FADE_OUT_AT + 950;
+const CHAR_MS      = 38;
+const FADE_IN_MS   = 1600;
+const PAN_MS       = 20000;
+const LINE_HOLD    = 3800;
+const FIRST_LINE   = FADE_IN_MS + 500;
+const LAST_LINE_T  = FIRST_LINE + (DIALOGUE.length - 1) * LINE_HOLD;
+const ZOOM_OUT_AT  = PAN_MS + 600;
+const ZOOM_OUT_MS  = 2000;
+const FADE_OUT_AT  = Math.max(ZOOM_OUT_AT + ZOOM_OUT_MS + 400, LAST_LINE_T + 3200);
+const COMPLETE_AT  = FADE_OUT_AT + 950;
 
 interface Props { onComplete: () => void; }
 
 export default function VillageIntroScreen({ onComplete }: Props) {
-  const [bgPhase, setBgPhase]         = useState<"init" | "pan" | "zoomOut">("init");
+  const [phase, setPhase]             = useState<"pan" | "zoomOut">("pan");
   const [blackOpacity, setBlackOpacity] = useState(1);
   const [lineIdx, setLineIdx]         = useState(0);
   const [lineVisible, setLineVisible] = useState(false);
-  const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
-  const done   = useRef(false);
+  const [typedChars, setTypedChars]   = useState(0);
+  const timers   = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const typerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const done     = useRef(false);
 
   const schedule = (fn: () => void, ms: number) => {
     const t = setTimeout(fn, ms);
     timers.current.push(t);
   };
 
+  const stopTyper = () => {
+    if (typerRef.current) { clearInterval(typerRef.current); typerRef.current = null; }
+  };
+
+  const startTyper = (text: string) => {
+    stopTyper();
+    setTypedChars(0);
+    let count = 0;
+    typerRef.current = setInterval(() => {
+      count++;
+      setTypedChars(count);
+      if (count >= text.length) stopTyper();
+    }, CHAR_MS);
+  };
+
   const finish = useCallback((skip = false) => {
     if (done.current) return;
     done.current = true;
     timers.current.forEach(clearTimeout);
+    stopTyper();
     setLineVisible(false);
     setBlackOpacity(1);
     setTimeout(onComplete, skip ? 800 : 100);
@@ -50,44 +68,59 @@ export default function VillageIntroScreen({ onComplete }: Props) {
 
   useEffect(() => {
     schedule(() => setBlackOpacity(0), 50);
-    schedule(() => setBgPhase("pan"), PAN_START);
-    schedule(() => setLineVisible(true), FIRST_LINE);
+    schedule(() => { setLineVisible(true); startTyper(DIALOGUE[0].text); }, FIRST_LINE);
 
     for (let i = 1; i < DIALOGUE.length; i++) {
       const t = FIRST_LINE + i * LINE_HOLD;
       schedule(() => {
         setLineVisible(false);
-        schedule(() => { setLineIdx(i); setLineVisible(true); }, 320);
+        stopTyper();
+        schedule(() => {
+          setLineIdx(i);
+          setTypedChars(0);
+          setLineVisible(true);
+          startTyper(DIALOGUE[i].text);
+        }, 350);
       }, t);
     }
 
-    schedule(() => setBgPhase("zoomOut"), ZOOM_OUT_AT);
+    schedule(() => setPhase("zoomOut"), ZOOM_OUT_AT);
     schedule(() => { setLineVisible(false); setBlackOpacity(1); }, FADE_OUT_AT);
     schedule(() => finish(false), COMPLETE_AT);
 
-    return () => timers.current.forEach(clearTimeout);
+    return () => { timers.current.forEach(clearTimeout); stopTyper(); };
   }, []);
 
   const handleClick = () => {
     if (done.current) return;
-    if (lineIdx < DIALOGUE.length - 1) {
+    const line = DIALOGUE[lineIdx];
+    if (typedChars < line.text.length) {
+      stopTyper();
+      setTypedChars(line.text.length);
+    } else if (lineIdx < DIALOGUE.length - 1) {
       setLineVisible(false);
+      stopTyper();
       const next = lineIdx + 1;
-      schedule(() => { setLineIdx(next); setLineVisible(true); }, 300);
+      schedule(() => {
+        setLineIdx(next);
+        setTypedChars(0);
+        setLineVisible(true);
+        startTyper(DIALOGUE[next].text);
+      }, 300);
     }
   };
 
-  const bgTransform =
-    bgPhase === "init"    ? "scale(1.35) translateY(-8%)" :
-    bgPhase === "pan"     ? "scale(1.35) translateY(8%)"  :
-                            "scale(1.0) translateY(0%)";
-
-  const bgTransition =
-    bgPhase === "pan"     ? `transform ${PAN_MS}ms cubic-bezier(0.25, 0.1, 0.25, 1.0)` :
-    bgPhase === "zoomOut" ? `transform ${ZOOM_OUT_MS}ms ease-out` :
-                            "none";
-
   const line = DIALOGUE[lineIdx];
+  const displayText = line.text.slice(0, typedChars);
+  const isTyping = typedChars < line.text.length;
+
+  const bgTransform = phase === "pan"
+    ? "scale(1.35) translateY(8%)"
+    : "scale(1.0) translateY(0%)";
+
+  const bgTransition = phase === "zoomOut"
+    ? `transform ${ZOOM_OUT_MS}ms ease-out`
+    : "none";
 
   return (
     <div
@@ -104,6 +137,7 @@ export default function VillageIntroScreen({ onComplete }: Props) {
           transform: bgTransform,
           transition: bgTransition,
           transformOrigin: "center top",
+          animation: phase === "pan" ? `villageCamPan ${PAN_MS}ms linear forwards` : "none",
         }}
       />
 
@@ -129,10 +163,10 @@ export default function VillageIntroScreen({ onComplete }: Props) {
             background: "linear-gradient(180deg, #080606f8 0%, #100e0efa 100%)",
             border: `2px solid ${ac}`,
             boxShadow: `0 0 24px ${ac}50, 0 4px 40px rgba(0,0,0,0.9)`,
-            padding: "14px 20px 12px",
+            padding: "16px 22px 14px",
             fontFamily: "'Press Start 2P', cursive",
             position: "relative",
-            maxWidth: 640,
+            maxWidth: 700,
             margin: "0 auto",
           }}
         >
@@ -143,17 +177,20 @@ export default function VillageIntroScreen({ onComplete }: Props) {
             }}
           />
           <div style={{ position: "relative" }}>
-            <div style={{ fontSize: "9px", color: ac, marginBottom: "10px", letterSpacing: "2px" }}>
+            <div style={{ fontSize: "10px", color: ac, marginBottom: "12px", letterSpacing: "2px" }}>
               ▸ {line.speaker}
             </div>
-            <div style={{ fontSize: "8px", color: line.color, lineHeight: "2.3", letterSpacing: "0.5px" }}>
-              {line.text}
+            <div style={{ fontSize: "10px", color: line.color, lineHeight: "2.2", letterSpacing: "1px", minHeight: "2.2em" }}>
+              {displayText}
+              {isTyping && (
+                <span style={{ animation: "villageIntroCursor 0.7s step-end infinite", color: ac }}>▌</span>
+              )}
             </div>
-            {lineIdx < DIALOGUE.length - 1 && (
+            {!isTyping && lineIdx < DIALOGUE.length - 1 && (
               <div
                 style={{
                   position: "absolute", bottom: 0, right: 0,
-                  fontSize: "8px", color: `${ac}70`,
+                  fontSize: "10px", color: `${ac}80`,
                   animation: "villageIntroPulse 1.1s ease-in-out infinite",
                 }}
               >
@@ -190,9 +227,17 @@ export default function VillageIntroScreen({ onComplete }: Props) {
       </button>
 
       <style>{`
+        @keyframes villageCamPan {
+          0%   { transform: scale(1.35) translateY(-8%); }
+          100% { transform: scale(1.35) translateY(8%); }
+        }
         @keyframes villageIntroPulse {
           0%, 100% { opacity: 0.4; transform: translateY(0); }
-          50% { opacity: 1; transform: translateY(3px); }
+          50%       { opacity: 1;   transform: translateY(3px); }
+        }
+        @keyframes villageIntroCursor {
+          0%, 100% { opacity: 1; }
+          50%      { opacity: 0; }
         }
       `}</style>
     </div>
