@@ -203,7 +203,7 @@ function Game() {
   const showQuestNotif = (name: string, description: string) => {
     if (questNotifTimerRef.current) clearTimeout(questNotifTimerRef.current);
     setQuestNotif({ name, description });
-    questNotifTimerRef.current = setTimeout(() => setQuestNotif(null), 2000);
+    questNotifTimerRef.current = setTimeout(() => setQuestNotif(null), 5000);
   };
 
   useEffect(() => {
