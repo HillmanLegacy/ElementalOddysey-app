@@ -683,10 +683,6 @@ export default function BattleScreen({
   const [eruptionNukeX, setEruptionNukeX] = useState(0);
   const [eruptionNukeY, setEruptionNukeY] = useState(0);
   const [eruptionBoomShake, setEruptionBoomShake] = useState(false);
-  const [eruptionShockwaveActive, setEruptionShockwaveActive] = useState(false);
-  const [eruptionShockwaveKey, setEruptionShockwaveKey] = useState(0);
-  const [eruptionShockwaveX, setEruptionShockwaveX] = useState(50);
-  const [eruptionShockwaveY, setEruptionShockwaveY] = useState(30);
   const [eruptionFrozenEnemy, setEruptionFrozenEnemy] = useState<number | null>(null);
   const [eruptionSubPhase, setEruptionSubPhase] = useState<"idle" | "run" | "jumpRise" | "jumpHold" | "jumpFall" | "returnJumpRise" | "returnJumpFall">("idle");
   const [eruptionBuildupActive, setEruptionBuildupActive] = useState(false);
@@ -1159,11 +1155,6 @@ export default function BattleScreen({
         scheduleTimer(() => fadeSfxOut(eruptionFlamelashAudio.current, 700), 300);
         setEruptionBoomShake(true);
         scheduleTimer(() => setEruptionBoomShake(false), 700);
-        setEruptionShockwaveX(targetX);
-        setEruptionShockwaveY(targetY);
-        setEruptionShockwaveActive(true);
-        setEruptionShockwaveKey(k => k + 1);
-        scheduleTimer(() => setEruptionShockwaveActive(false), 900);
         setEnemyHitIdx(targetIdx);
         scheduleTimer(() => setEnemyHitIdx(null), 300);
         setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
@@ -1572,12 +1563,6 @@ export default function BattleScreen({
           playSfx("eruptionCleave", 1.3);
           setEruptionBoomShake(true);
           scheduleTimer(() => setEruptionBoomShake(false), 700);
-          const _sw2 = ENEMY_POSITIONS[targetIdx % ENEMY_POSITIONS.length];
-          setEruptionShockwaveX(_sw2.x);
-          setEruptionShockwaveY(_sw2.y);
-          setEruptionShockwaveActive(true);
-          setEruptionShockwaveKey(k => k + 1);
-          scheduleTimer(() => setEruptionShockwaveActive(false), 900);
           setEnemyHitIdx(targetIdx);
           scheduleTimer(() => setEnemyHitIdx(null), 300);
           setEnemyAnimStates(prev => ({ ...prev, [targetIdx]: "hurt" }));
@@ -2247,11 +2232,6 @@ export default function BattleScreen({
       }
       setEruptionBoomShake(true);
       scheduleTimer(() => setEruptionBoomShake(false), 700);
-      setEruptionShockwaveX(infernoBallAnim.toX);
-      setEruptionShockwaveY(infernoBallAnim.toY);
-      setEruptionShockwaveActive(true);
-      setEruptionShockwaveKey(k => k + 1);
-      scheduleTimer(() => setEruptionShockwaveActive(false), 900);
     } else {
       setDodgeBlur(result.target);
       scheduleTimer(() => setDodgeBlur(null), 600);
@@ -2296,11 +2276,6 @@ export default function BattleScreen({
       }
       setEruptionBoomShake(true);
       scheduleTimer(() => setEruptionBoomShake(false), 700);
-      setEruptionShockwaveX(ytrielSlashAnim.toX);
-      setEruptionShockwaveY(ytrielSlashAnim.toY);
-      setEruptionShockwaveActive(true);
-      setEruptionShockwaveKey(k => k + 1);
-      scheduleTimer(() => setEruptionShockwaveActive(false), 900);
     } else {
       setDodgeBlur(result.target);
       scheduleTimer(() => setDodgeBlur(null), 600);
@@ -3797,27 +3772,6 @@ export default function BattleScreen({
               />
             </div>
           )}
-
-          {eruptionShockwaveActive && [0, 1, 2].map(i => (
-            <div
-              key={`sw-${eruptionShockwaveKey}-${i}`}
-              className="absolute pointer-events-none rounded-full"
-              style={{
-                zIndex: 302,
-                left: `${eruptionShockwaveX}%`,
-                bottom: `${eruptionShockwaveY}%`,
-                width: 24,
-                height: 24,
-                border: `${Math.max(1, 3 - i)}px solid rgba(255, ${150 - i * 40}, ${i * 20}, ${0.95 - i * 0.15})`,
-                boxShadow: `0 0 ${18 + i * 14}px ${6 + i * 6}px rgba(255, ${120 - i * 30}, 0, ${0.55 - i * 0.1}), inset 0 0 ${10 + i * 8}px rgba(255, 60, 0, ${0.3 - i * 0.06})`,
-                animationName: "eruptionRingExpand",
-                animationDuration: `${0.52 + i * 0.14}s`,
-                animationTimingFunction: "ease-out",
-                animationFillMode: "forwards",
-                animationDelay: `${i * 90}ms`,
-              }}
-            />
-          ))}
 
           {battle.party.length > 0 && battle.party.map((member, idx) => {
             const spriteInfo = PARTY_SPRITE_MAP[member.spriteId];
@@ -6108,12 +6062,6 @@ export default function BattleScreen({
           70%  { transform: translate(4px, -4px); }
           84%  { transform: translate(-2px, 3px); }
           100% { transform: translate(0, 0); }
-        }
-        @keyframes eruptionRingExpand {
-          0%   { transform: translate(-50%, -50%) scale(0.05); opacity: 1; }
-          40%  { opacity: 0.75; }
-          75%  { opacity: 0.35; }
-          100% { transform: translate(-50%, -50%) scale(7); opacity: 0; }
         }
         @keyframes eruptionChargeShake {
           0% { transform: translateX(-50%) translate(calc(var(--shake-px) * -1), calc(var(--shake-px) * 0.5)); }
