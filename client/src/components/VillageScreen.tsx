@@ -292,12 +292,11 @@ export default function VillageScreen({
 
           {activePanel === "shop" && (
             <div
-              className="absolute z-[50]"
-              style={{ right: "6%", bottom: 0, width: 288, height: 288, overflow: "hidden", imageRendering: "pixelated" }}
+              style={{ position: "fixed", right: "calc(6% + 150px)", bottom: -75, zIndex: 50, width: 576, height: 576, overflow: "hidden", imageRendering: "pixelated" }}
             >
               <img
                 src={alchemistSprite}
-                style={{ height: 288, width: "auto", maxWidth: "none", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 1s steps(8) infinite" }}
+                style={{ height: 576, width: "auto", maxWidth: "none", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 1s steps(8) infinite" }}
               />
             </div>
           )}
