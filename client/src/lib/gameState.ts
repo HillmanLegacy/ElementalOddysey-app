@@ -124,7 +124,8 @@ export function useGameState() {
       const enemies: Enemy[] = enemyIds.map(id => {
         const base = ENEMY_POOL.find(e => e.id === id);
         if (!base) return null;
-        return generateEnemyStats(base, baseScale, levelBonus);
+        const ebonus = id === "harpy_wind_solo" ? 0 : levelBonus;
+        return generateEnemyStats(base, baseScale, ebonus);
       }).filter(Boolean) as Enemy[];
 
       if (enemies.length === 0) return s;
