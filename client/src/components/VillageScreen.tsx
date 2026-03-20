@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Menu, ArrowLeft, ShoppingBag, Hammer, Beer, X } from "lucide-react";
 import GameMenuPanel from "@/components/GameMenuPanel";
 import ShopScreen from "@/components/ShopScreen";
-import SpriteAnimator from "@/components/SpriteAnimator";
 import { playSfx } from "@/lib/sfx";
 import type { PlayerCharacter, ShopItem } from "@shared/schema";
 import villageBg from "@assets/forest_region_village_1774010989526.jpg";
@@ -253,6 +252,9 @@ export default function VillageScreen({
           93%  { opacity: 0.68; }
           100% { transform: translateX(1110px) translateY(-8px) rotate(-330deg); opacity: 0; }
         }
+        @keyframes npcSpriteAnim {
+          to { transform: translateX(-100%); }
+        }
       `}</style>
 
       {activePanel && activePanel !== "tavern" && (
@@ -278,26 +280,20 @@ export default function VillageScreen({
             />
           </div>
           {activePanel === "blacksmith" && (
-            <SpriteAnimator
-              spriteSheet={blacksmithSprite}
-              frameWidth={112}
-              frameHeight={96}
-              totalFrames={6}
-              fps={8}
-              scale={3}
-              loop={true}
-            />
+            <div style={{ width: 336, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
+              <img
+                src={blacksmithSprite}
+                style={{ height: 288, width: "auto", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 0.75s steps(6) infinite" }}
+              />
+            </div>
           )}
           {activePanel === "shop" && (
-            <SpriteAnimator
-              spriteSheet={alchemistSprite}
-              frameWidth={128}
-              frameHeight={96}
-              totalFrames={6}
-              fps={8}
-              scale={3}
-              loop={true}
-            />
+            <div style={{ width: 384, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
+              <img
+                src={alchemistSprite}
+                style={{ height: 288, width: "auto", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 0.75s steps(6) infinite" }}
+              />
+            </div>
           )}
         </div>
       )}
