@@ -1070,7 +1070,7 @@ export default function BattleScreen({
       const midX = (PLAYER_POS.x + targetX) / 2;
       const groundY = PLAYER_POS.y;
       const highY = 60;
-      const runDur = 403;
+      const runDur = 564;
       const riseDur = Math.round(4 / 12 * 1000);
       const nukeAtMs = 700;
       const buildupFps = 8;
@@ -1154,8 +1154,8 @@ export default function BattleScreen({
       }, nukeStart + nukeDuration);
 
       const returnJumpDelay = 60;
-      const returnRiseDur = 300;
-      const returnFallDur = 400;
+      const returnRiseDur = 420;
+      const returnFallDur = 560;
 
       scheduleTimer(() => {
         setEruptionBuildupActive(false);
@@ -3478,20 +3478,20 @@ export default function BattleScreen({
                         ? "left 0s, bottom 0s, opacity 0.3s ease-in"
                         : "left 0.15s ease-out, bottom 0.15s ease-out, opacity 0.3s ease-in"
                 : animPhase === "runToEnemy"
-                  ? "left 0.40s ease-in, bottom 0.40s ease-in"
+                  ? "left 0.56s ease-in, bottom 0.56s ease-in"
                   : animPhase === "runBack"
-                    ? "left 0.40s ease-out, bottom 0.40s ease-out"
+                    ? "left 0.56s ease-out, bottom 0.56s ease-out"
                     : animPhase === "eruptionCleave"
                       ? eruptionSubPhase === "run"
-                        ? "left 0.40s ease-in, bottom 0s"
+                        ? "left 0.56s ease-in, bottom 0s"
                         : eruptionSubPhase === "jumpRise"
                           ? "left 0.30s ease-out, bottom 0.30s ease-out"
                           : eruptionSubPhase === "jumpFall"
                             ? "bottom 0.70s ease-in, left 0s"
                             : eruptionSubPhase === "returnJumpRise"
-                              ? "left 0.30s linear, bottom 0.30s ease-out"
+                              ? "left 0.42s linear, bottom 0.42s ease-out"
                               : eruptionSubPhase === "returnJumpFall"
-                                ? "left 0.40s linear, bottom 0.40s ease-in"
+                                ? "left 0.56s linear, bottom 0.56s ease-in"
                                 : "none"
                       : "left 0.15s ease-out, bottom 0.15s ease-out",
             }}
@@ -3769,8 +3769,8 @@ export default function BattleScreen({
                   transform: "translateX(-50%)",
                   filter: dodgeBlur && dodgeBlur.type === "party" && dodgeBlur.index === idx ? "blur(3px) opacity(0.6)" : "none",
                   transition: isRunning
-                    ? "left 0.35s ease-in, bottom 0.35s ease-in, filter 0.2s ease"
-                    : "left 0.35s ease-out, bottom 0.35s ease-out, filter 0.2s ease",
+                    ? "left 0.49s ease-in, bottom 0.49s ease-in, filter 0.2s ease"
+                    : "left 0.49s ease-out, bottom 0.49s ease-out, filter 0.2s ease",
                 }}
                 onTransitionEnd={(e) => {
                   if (e.propertyName !== "left") return;
@@ -4481,7 +4481,7 @@ export default function BattleScreen({
                   bottom: `${bossBottom}%`,
                   transform: groundYShift !== 0 ? `translateX(-50%) translateY(${groundYShift}px)` : "translateX(-50%)",
                   zIndex: isBossMoving ? 55 : Math.floor(pos.y),
-                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy) || isResk(enemy)) ? "left 0.5s ease, bottom 0.5s ease" : "none",
+                  transition: isBossMoving || (isDragonLord(enemy) || isJotem(enemy) || isDemonKin(enemy) || isMinotaur(enemy) || isCyclops(enemy) || isHarpy(enemy) || isResk(enemy)) ? "left 0.70s ease, bottom 0.70s ease" : "none",
                   cursor: isSpriteTargetable ? "pointer" : "default",
                 }}
                 onClick={() => isSpriteTargetable && handleEnemyClick(idx)}
