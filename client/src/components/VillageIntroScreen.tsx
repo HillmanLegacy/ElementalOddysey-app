@@ -3,6 +3,20 @@ import villageBg from "@assets/forest_region_village_1774010989526.jpg";
 
 const ac = "#c9a44a";
 
+const LEAF_COLORS = ["#5aaa2a", "#7bc840", "#a8d858", "#c4d040", "#8fc050", "#b8c028"];
+const LEAF_STROKE = ["#3a7a1a", "#4a9828", "#6a9828", "#8a9020", "#5a8030", "#7a9010"];
+const LEAVES = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  top: 3 + ((i * 67 + 13) % 82),
+  size: 9 + ((i * 11 + 3) % 8),
+  color: LEAF_COLORS[(i * 3 + 1) % LEAF_COLORS.length],
+  stroke: LEAF_STROKE[(i * 5 + 2) % LEAF_STROKE.length],
+  duration: 9 + ((i * 37 + 7) % 10),
+  delay: -((i * 2.3 + 1.1) % 18),
+  flipX: i % 3 === 1 ? -1 : 1,
+  variant: i % 2 === 0 ? "A" : "B",
+}));
+
 const DIALOGUE: { speaker: string; text: string; color: string }[] = [
   { speaker: "Mira",   text: "Something stirs in the deep forest... The animals haven't gone near the old grove in days.", color: "#c8d8a0" },
   { speaker: "Gareth", text: "Aye. Three hunters ventured in at dawn yesterday. None have returned.", color: "#d0c090" },
@@ -140,6 +154,30 @@ export default function VillageIntroScreen({ onComplete }: Props) {
         style={{ background: "radial-gradient(ellipse at center, rgba(0,0,0,0.0) 40%, rgba(0,0,0,0.6) 100%)" }}
       />
 
+      {LEAVES.map((leaf) => (
+        <div
+          key={leaf.id}
+          className="absolute pointer-events-none"
+          style={{
+            top: `${leaf.top}%`,
+            left: 0,
+            zIndex: 3,
+            animation: `leafDrift${leaf.variant} ${leaf.duration}s linear ${leaf.delay}s infinite`,
+          }}
+        >
+          <svg
+            width={leaf.size * 1.6}
+            height={leaf.size}
+            viewBox="0 0 16 9"
+            style={{ transform: `scaleX(${leaf.flipX})` }}
+          >
+            <ellipse cx="7.5" cy="4.5" rx="7" ry="3.8" fill={leaf.color} opacity="0.84" />
+            <path d="M1,4.5 Q7.5,1.2 15,4.5" stroke={leaf.stroke} strokeWidth="0.8" fill="none" opacity="0.65" />
+            <path d="M7.5,1 L7.5,8" stroke={leaf.stroke} strokeWidth="0.5" fill="none" opacity="0.4" />
+          </svg>
+        </div>
+      ))}
+
       <div
         className="absolute"
         style={{
@@ -228,6 +266,24 @@ export default function VillageIntroScreen({ onComplete }: Props) {
         @keyframes villageIntroCursor {
           0%, 100% { opacity: 1; }
           50%      { opacity: 0; }
+        }
+        @keyframes leafDriftA {
+          0%   { transform: translateX(-30px) translateY(0px) rotate(0deg);   opacity: 0; }
+          7%   { opacity: 0.82; }
+          25%  { transform: translateX(270px) translateY(-24px) rotate(88deg); }
+          50%  { transform: translateX(540px) translateY(16px)  rotate(178deg); }
+          75%  { transform: translateX(810px) translateY(-14px) rotate(265deg); }
+          93%  { opacity: 0.72; }
+          100% { transform: translateX(1110px) translateY(6px)  rotate(345deg); opacity: 0; }
+        }
+        @keyframes leafDriftB {
+          0%   { transform: translateX(-30px) translateY(0px) rotate(0deg);    opacity: 0; }
+          7%   { opacity: 0.78; }
+          25%  { transform: translateX(260px) translateY(22px)  rotate(-82deg); }
+          50%  { transform: translateX(530px) translateY(-20px) rotate(-168deg); }
+          75%  { transform: translateX(800px) translateY(12px)  rotate(-252deg); }
+          93%  { opacity: 0.68; }
+          100% { transform: translateX(1110px) translateY(-8px) rotate(-330deg); opacity: 0; }
         }
       `}</style>
     </div>

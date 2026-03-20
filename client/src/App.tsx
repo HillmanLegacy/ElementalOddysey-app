@@ -643,8 +643,14 @@ function Game() {
                 direction="in"
                 onComplete={() => {
                   setVillageTransitionIn(false);
-                  setVillageTransitionOut(true);
-                  setScreen("village");
+                  const isFirstVisit = !state.player?.villageIntroSeen;
+                  if (isFirstVisit) {
+                    setShowVillageIntro(true);
+                    setScreen("village");
+                  } else {
+                    setVillageTransitionOut(true);
+                    setScreen("village");
+                  }
                 }}
               />
             )}
@@ -1419,6 +1425,7 @@ function Game() {
         if (!state.player) return null;
         return (
           <>
+            {!showVillageIntro && (
             <VillageScreen
               player={state.player}
               onLeave={() => setVillageTransitionIn(true)}
@@ -1458,7 +1465,7 @@ function Game() {
               onTextSpeedChange={(sp) => setState(s => ({ ...s, textSpeed: sp }))}
               onMusicVolumeChange={(vol) => { setState(s => ({ ...s, musicVolume: vol })); setMusicVolume(vol / 100); }}
               onSfxVolumeChange={(vol) => { setState(s => ({ ...s, sfxVolume: vol })); setSfxVolume(vol / 100); }}
-            />
+            />)}
             {villageTransitionIn && (
               <BattleTransition
                 direction="in"
@@ -1474,9 +1481,6 @@ function Game() {
                 direction="out"
                 onComplete={() => {
                   setVillageTransitionOut(false);
-                  if (!state.player?.villageIntroSeen) {
-                    setShowVillageIntro(true);
-                  }
                 }}
               />
             )}
