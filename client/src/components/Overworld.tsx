@@ -54,6 +54,21 @@ const NODE_ICONS: Record<string, any> = {
   hut: Home,
 };
 
+const WIND_EDGE_NAMES: Record<string, string> = {
+  "0-1":  "Old Forest Road",
+  "1-2":  "Canopy Walk",
+  "1-3":  "Verdant Trail",
+  "3-4":  "Mossy Descent",
+  "3-5":  "Amber Road",
+  "5-6":  "Grove Ascent",
+  "5-7":  "Pilgrim's Way",
+  "7-8":  "Glade Path",
+  "7-9":  "Thunder Road",
+  "9-10": "Windcrest Trail",
+  "9-11": "Merchant's Steps",
+  "9-12": "Dragon's Ascent",
+};
+
 const REGION_PARTICLES: Record<string, string[]> = {
   Fire: ["#ef4444", "#f97316", "#fbbf24", "#dc2626"],
   Ice: ["#67e8f9", "#3b82f6", "#93c5fd", "#e0f2fe"],
@@ -556,6 +571,50 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
           })}
         </svg>
       </div>
+
+      {/* Path name labels — Forest/Wind region only */}
+      {isWindRegion && edges.map((edge, i) => {
+        const edgeKey = [Math.min(edge.from.id, edge.to.id), Math.max(edge.from.id, edge.to.id)].join("-");
+        const label = WIND_EDGE_NAMES[edgeKey];
+        if (!label) return null;
+
+        const dx = edge.to.x - edge.from.x;
+        const dy = edge.to.y - edge.from.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        const perpX = -dy / dist * 2;
+        const perpY = dx / dist * 2;
+        const cx = (edge.from.x + edge.to.x) / 2 + perpX * ((i % 3 === 0) ? 1 : (i % 3 === 1) ? -0.5 : 0.3);
+        const cy = (edge.from.y + edge.to.y) / 2 + perpY * ((i % 3 === 0) ? 1 : (i % 3 === 1) ? -0.5 : 0.3);
+        const bx = 0.25 * edge.from.x + 0.5 * cx + 0.25 * edge.to.x;
+        const by = 0.25 * edge.from.y + 0.5 * cy + 0.25 * edge.to.y;
+        const angle = Math.atan2(dy, dx) * 180 / Math.PI;
+        const flippedAngle = Math.abs(angle) > 90 ? angle + 180 : angle;
+
+        return (
+          <div
+            key={`label-${edgeKey}`}
+            className="absolute pointer-events-none"
+            style={{
+              left: `${bx}%`,
+              top: `${by}%`,
+              transform: `translate(-50%, -50%) rotate(${flippedAngle}deg)`,
+              zIndex: 15,
+              whiteSpace: "nowrap",
+            }}
+          >
+            <span style={{
+              fontFamily: "'Press Start 2P', cursive",
+              fontSize: "5px",
+              color: "rgba(210, 195, 155, 0.75)",
+              letterSpacing: "0.5px",
+              textShadow: "0 1px 3px rgba(0,0,0,0.9), 0 0 8px rgba(0,0,0,0.7)",
+              display: "block",
+            }}>
+              {label}
+            </span>
+          </div>
+        );
+      })}
 
       {menuFadeOut.current && (
         <div className="absolute inset-0 z-[500] pointer-events-none">
