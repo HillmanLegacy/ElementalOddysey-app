@@ -65,13 +65,17 @@ export default function VillageScreen({
   const closePanel = () => { playSfx("menuSelect"); setActivePanel(null); setRestedMsg(false); };
 
   return (
-    <div className="absolute inset-0 overflow-hidden" style={{ fontFamily: "'Press Start 2P', cursive" }}>
-
-      <img
-        src={villageBg}
-        alt="Thornveil Village"
-        className="w-full h-full object-cover"
-      />
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        backgroundImage: `url(${villageBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        fontFamily: "'Press Start 2P', cursive",
+        overflow: "hidden",
+      }}
+    >
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.18)" }} />
 
       <div
