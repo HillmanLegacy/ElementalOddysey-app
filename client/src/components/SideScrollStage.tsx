@@ -397,7 +397,11 @@ export default function SideScrollStage({
       pool.sort((a, b) => reversed ? b.x - a.x : a.x - b.x);
       return pool.map(e => {
         if (isForest) {
-          // 40% harpy, 40% minotaur, 20% cyclops
+          // Harpy-only stages: honour the stage data directly
+          if (e.enemyId === "harpy_wind_solo") {
+            return { ...e, type: "harpy" as EnemyType, enemyId: "harpy_wind_solo" };
+          }
+          // General forest enemy mix: 40% harpy, 40% minotaur, 20% cyclops
           const r = Math.random();
           const pick: { type: EnemyType; enemyId: string } =
             r < 0.40 ? { type: "harpy",    enemyId: "harpy_wind"    } :
