@@ -260,11 +260,12 @@ export default function VillageScreen({
       {activePanel && activePanel !== "tavern" && (
         <>
           <div
-            className="absolute z-[50]"
             style={{
-              left: "5%",
-              top: "65%",
-              transform: "translateY(-50%)",
+              position: "fixed",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              zIndex: 50,
             }}
           >
             <div style={{ width: 460, height: 440 }}>
