@@ -135,7 +135,7 @@ export default function VillageScreen({
   const [tavernTab, setTavernTab] = useState<TavernTab>("rest");
   const [typedText, setTypedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
-  const [dialoguePhase, setDialoguePhase] = useState<"main" | "accept" | "reject" | null>(null);
+  const [dialoguePhase, setDialoguePhase] = useState<"main" | "choice" | "accept" | "reject" | null>(null);
   const [currentTopicKey, setCurrentTopicKey] = useState<string | null>(null);
   const dialogueScrollRef = useRef<HTMLDivElement>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -239,9 +239,10 @@ export default function VillageScreen({
     return () => { clearInterval(interval); typingIntervalRef.current = null; };
   }, [popupLine, dialoguePhase]);
 
-  const isChoiceRequired = dialoguePhase === "main" && !popupIsCompletion
-    && currentTopicKey === "quest" && !currentStageQuestAccepted && !currentStageQuestCompleted && !!popupQuestId
-    && remainingPages.length === 0 && typingDone;
+  const isQuestOfferTopic = !popupIsCompletion && currentTopicKey === "quest"
+    && !currentStageQuestAccepted && !currentStageQuestCompleted && !!popupQuestId;
+
+  const isChoiceRequired = dialoguePhase === "choice";
 
   const advancePage = () => {
     if (remainingPages.length > 0) {
@@ -269,13 +270,18 @@ export default function VillageScreen({
       finishDialogue();
       return;
     }
+    if (dialoguePhase === "main" && isQuestOfferTopic) {
+      playSfx("menuSelect");
+      setDialoguePhase("choice");
+      return;
+    }
     if (dialoguePhase === "main" && popupIsCompletion) {
       playSfx("menuSelect");
       if (popupQuestId) onCompleteQuest(popupQuestId, popupGoldReward);
       finishDialogue();
       return;
     }
-    if (dialoguePhase === "main" && currentTopicKey !== "quest") {
+    if (dialoguePhase === "main") {
       playSfx("menuSelect");
       finishDialogue();
     }
@@ -876,60 +882,65 @@ export default function VillageScreen({
             </span>
           </div>
 
-          {/* Scrollable text column */}
+          {/* Text / choice column */}
           <div
             ref={dialogueScrollRef}
             style={{ flex: 1, overflow: "hidden", padding: "14px 20px", position: "relative" }}
+            onClick={isChoiceRequired ? e => e.stopPropagation() : undefined}
           >
-            <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.4", whiteSpace: "pre-line", margin: 0 }}>
-              "{typedText}<span style={{ opacity: typingDone ? 0 : 1 }}>▌</span>"
-            </p>
-            {/* Click-to-advance hint */}
-            {typingDone && !isChoiceRequired && (
-              <span
-                className="animate-pulse"
-                style={{ position: "absolute", bottom: "10px", right: "14px", fontSize: "8px", color: `${ac}60` }}
-              >▼</span>
+            {/* Choice phase — inline prompt + buttons */}
+            {dialoguePhase === "choice" ? (
+              <div className="flex flex-col gap-3">
+                <p style={{ fontSize: "9px", color: `${ac}80`, letterSpacing: "1px", margin: 0 }}>
+                  Will you take on this task?
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "8px", letterSpacing: "1px", cursor: "pointer", padding: "8px 18px" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
+                    onClick={e => {
+                      e.stopPropagation();
+                      playSfx("menuSelect");
+                      const def = questForCurrentStage!;
+                      onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" });
+                      const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
+                      setDialoguePhase("accept");
+                      startLine(resp?.accept ?? "Good. Be safe out there.");
+                    }}
+                  >
+                    ACCEPT ›
+                  </button>
+                  <button
+                    style={{ border: `1px solid #e07060a0`, background: "#e0706015", color: "#e07060", fontSize: "8px", letterSpacing: "1px", cursor: "pointer", padding: "8px 18px" }}
+                    onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e0706030"}
+                    onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#e0706015"}
+                    onClick={e => {
+                      e.stopPropagation();
+                      playSfx("menuSelect");
+                      const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
+                      setDialoguePhase("reject");
+                      startLine(resp?.reject ?? "...Understood. The offer stays open.");
+                    }}
+                  >
+                    DECLINE ›
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.4", whiteSpace: "pre-line", margin: 0 }}>
+                  "{typedText}<span style={{ opacity: typingDone ? 0 : 1 }}>▌</span>"
+                </p>
+                {typingDone && (
+                  <span
+                    className="animate-pulse"
+                    style={{ position: "absolute", bottom: "10px", right: "14px", fontSize: "8px", color: `${ac}60` }}
+                  >▼</span>
+                )}
+              </>
             )}
           </div>
-
-          {/* Action column — only shown when a choice is required */}
-          {isChoiceRequired && typingDone && (
-            <div
-              className="flex flex-col justify-end flex-shrink-0 gap-2"
-              style={{ width: "140px", borderLeft: `1px solid ${ac}25`, padding: "12px 14px" }}
-              onClick={e => e.stopPropagation()}
-            >
-              <button
-                style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "7px 10px" }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
-                onClick={() => {
-                  playSfx("menuSelect");
-                  const def = questForCurrentStage!;
-                  onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" });
-                  const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
-                  setDialoguePhase("accept");
-                  startLine(resp?.accept ?? "Good. Be safe out there.");
-                }}
-              >
-                ACCEPT ›
-              </button>
-              <button
-                style={{ border: `1px solid #e07060a0`, background: "#e0706015", color: "#e07060", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "7px 10px" }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e0706030"}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#e0706015"}
-                onClick={() => {
-                  playSfx("menuSelect");
-                  const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
-                  setDialoguePhase("reject");
-                  startLine(resp?.reject ?? "...Understood. The offer stays open.");
-                }}
-              >
-                DECLINE ›
-              </button>
-            </div>
-          )}
         </div>
       )}
 
