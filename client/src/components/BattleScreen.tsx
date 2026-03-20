@@ -3309,7 +3309,7 @@ export default function BattleScreen({
         style={{
           position: "absolute",
           inset: 0,
-          transform: eruptionCleaveActive ? eruptionCameraTransform : fujinZoom ? "scale(1.45)" : magicZoom ? "scale(1.45)" : tempestVortexActive ? "scale(1.3)" : "scale(1)",
+          transform: eruptionCleaveActive ? eruptionCameraTransform : fujinZoom ? "translate(0%, 0%) scale(1.45)" : magicZoom ? "translate(0%, 0%) scale(1.45)" : tempestVortexActive ? "translate(0%, 0%) scale(1.3)" : "translate(0%, 0%) scale(1)",
           transformOrigin: eruptionCleaveActive ? "0 0" : fujinZoom ? fujinOrigin : magicZoom ? magicZoomOrigin : tempestVortexActive ? "70% 55%" : "50% 50%",
           transition: eruptionCleaveActive ? eruptionCameraTransition : (fujinZoom || magicZoom) ? "transform 0.6s cubic-bezier(0.25,0.1,0.25,1)" : "transform 0.5s cubic-bezier(0.25,0.1,0.25,1)",
           filter: fujinSliceActive ? "contrast(1.1) saturate(1.15)" : (eruptionZoomActive || magicZoom || tempestVortexActive) ? "contrast(1.1) saturate(1.15)" : "saturate(1.25) contrast(1.05)",
