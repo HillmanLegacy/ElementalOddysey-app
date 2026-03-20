@@ -140,6 +140,7 @@ export default function VillageScreen({
   const dialogueScrollRef = useRef<HTMLDivElement>(null);
   const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [popupLine, setPopupLine] = useState("");
+  const [remainingPages, setRemainingPages] = useState<string[]>([]);
   const [popupIsCompletion, setPopupIsCompletion] = useState(false);
   const [popupQuestId, setPopupQuestId] = useState<string | null>(null);
   const [popupGoldReward, setPopupGoldReward] = useState(0);
@@ -168,48 +169,55 @@ export default function VillageScreen({
   const currentStageQuestAccepted = !!(player.activeQuests ?? []).find(q => q.id === questForCurrentStage?.id);
   const currentStageQuestCompleted = (player.completedQuestIds ?? []).includes(questForCurrentStage?.id ?? "");
 
-  const startLine = (line: string) => {
+  const startLine = (line: string, rest: string[] = []) => {
     setPopupLine(line);
+    setRemainingPages(rest);
     setTypedText("");
     setTypingDone(false);
   };
 
+  const queuePages = (fullText: string) => {
+    const pages = fullText.split("\n\n").map(s => s.trim()).filter(Boolean);
+    startLine(pages[0] ?? "", pages.slice(1));
+  };
+
   const selectTopic = (key: string) => {
-    let line = "";
+    let fullText = "";
     let isCompletion = false;
     let qid: string | null = null;
     let gold = 0;
     if (key === "completion" && pendingCompletionQuest) {
       const def = Object.values(NICOLAS_QUESTS).flat().find(d => d.id === pendingCompletionQuest.id);
-      line = def ? def.completionLines.join("\n\n") : "Well done, traveller.";
+      fullText = def ? def.completionLines.join("\n\n") : "Well done, traveller.";
       isCompletion = true;
       qid = pendingCompletionQuest.id;
       gold = def?.goldReward ?? 0;
     } else if (key === "quest") {
       const stageD = NICOLAS_QUEST_DIALOGUE[regionTheme]?.[nicolasStage];
-      line = stageD ? stageD.lines.join("\n\n") : "...";
+      fullText = stageD ? stageD.lines.join("\n\n") : "...";
       qid = questForCurrentStage?.id ?? null;
     } else if (key === "done") {
       const stageD = NICOLAS_QUEST_DIALOGUE[regionTheme]?.[3];
-      line = stageD ? stageD.lines.join("\n\n") : "The roads are safe now. Thank you.";
+      fullText = stageD ? stageD.lines.join("\n\n") : "The roads are safe now. Thank you.";
     } else if (key === "inprogress") {
-      line = "You took the contract. That's more than most. Just... come back in one piece. This inn doesn't need another name carved in the door frame.";
+      fullText = "You took the contract. That's more than most. Just... come back in one piece. This inn doesn't need another name carved in the door frame.";
     } else if (key === "rumours") {
-      line = "Heard tell of a merchant who paid a storm wolf in silver coins to let him pass. Don't know if I believe it. But I'm not one to argue with a man who made it here with his cart intact.";
+      fullText = "Heard tell of a merchant who paid a storm wolf in silver coins to let him pass. Don't know if I believe it. But I'm not one to argue with a man who made it here with his cart intact.";
     } else if (key === "theinn") {
-      line = "Built this place with my father twenty-two years ago. He said put it at the crossroads — always at the crossroads. Busiest thing in the valley now. He'd have loved it.";
+      fullText = "Built this place with my father twenty-two years ago. He said put it at the crossroads — always at the crossroads. Busiest thing in the valley now. He'd have loved it.";
     }
     setPopupIsCompletion(isCompletion);
     setPopupQuestId(qid);
     setPopupGoldReward(gold);
     setCurrentTopicKey(key);
     setDialoguePhase("main");
-    startLine(line);
+    queuePages(fullText);
   };
 
   const finishDialogue = () => {
     setDialoguePhase(null);
     setCurrentTopicKey(null);
+    setRemainingPages([]);
     setTavernTab("talk");
   };
 
@@ -232,7 +240,17 @@ export default function VillageScreen({
   }, [popupLine, dialoguePhase]);
 
   const isChoiceRequired = dialoguePhase === "main" && !popupIsCompletion
-    && currentTopicKey === "quest" && !currentStageQuestAccepted && !currentStageQuestCompleted && !!popupQuestId;
+    && currentTopicKey === "quest" && !currentStageQuestAccepted && !currentStageQuestCompleted && !!popupQuestId
+    && remainingPages.length === 0 && typingDone;
+
+  const advancePage = () => {
+    if (remainingPages.length > 0) {
+      playSfx("menuSelect");
+      startLine(remainingPages[0], remainingPages.slice(1));
+      return true;
+    }
+    return false;
+  };
 
   const handleBarClick = () => {
     if (isChoiceRequired) return;
@@ -245,6 +263,7 @@ export default function VillageScreen({
       setTypingDone(true);
       return;
     }
+    if (advancePage()) return;
     if (dialoguePhase === "accept" || dialoguePhase === "reject") {
       playSfx("menuSelect");
       finishDialogue();
@@ -262,11 +281,6 @@ export default function VillageScreen({
     }
   };
 
-  useEffect(() => {
-    if (dialogueScrollRef.current) {
-      dialogueScrollRef.current.scrollTop = dialogueScrollRef.current.scrollHeight;
-    }
-  }, [typedText]);
   const [transitionIn, setTransitionIn] = useState(false);
   const [transitionOut, setTransitionOut] = useState(false);
   const transitionTargetRef = useRef<Panel | "close" | null>(null);
@@ -836,7 +850,7 @@ export default function VillageScreen({
           className="absolute left-0 right-0 bottom-0 flex"
           style={{
             zIndex: 400,
-            height: "140px",
+            height: "155px",
             background: "linear-gradient(180deg, #0a0808f4 0%, #0d0b0bfa 100%)",
             borderTop: `2px solid ${ac}`,
             boxShadow: `0 -4px 30px #000000a0`,
@@ -862,7 +876,7 @@ export default function VillageScreen({
           {/* Scrollable text column */}
           <div
             ref={dialogueScrollRef}
-            style={{ flex: 1, overflowY: "auto", padding: "14px 20px", scrollBehavior: "smooth", position: "relative" }}
+            style={{ flex: 1, overflow: "hidden", padding: "14px 20px", position: "relative" }}
           >
             <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.4", whiteSpace: "pre-line", margin: 0 }}>
               "{typedText}<span style={{ opacity: typingDone ? 0 : 1 }}>▌</span>"
