@@ -62,7 +62,7 @@ interface VillageScreenProps {
 const ARROWS: { id: Panel & string; label: string; icon: typeof ShoppingBag; left: string; top: string; labelAbove?: boolean }[] = [
   { id: "shop",       label: "Trade Shop",  icon: ShoppingBag, left: "calc(74% + 20px)", top: "calc(29% + 200px)", labelAbove: true },
   { id: "blacksmith", label: "Blacksmith",  icon: Hammer,      left: "51%",             top: "calc(20% + 210px)", labelAbove: true },
-  { id: "tavern",     label: "Tavern",      icon: Beer,        left: "calc(20% + 186px)", top: "calc(43% + 102px)", labelAbove: true },
+  { id: "tavern",     label: "Tavern",      icon: Beer,        left: "calc(20% + 201px)", top: "calc(43% + 112px)", labelAbove: true },
 ];
 
 export default function VillageScreen({
