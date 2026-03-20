@@ -255,57 +255,20 @@ export default function VillageScreen({
         }
       `}</style>
 
-      {activePanel === "blacksmith" && (
-        <div style={{ position: "absolute", left: "5%", top: "65%", transform: "translateY(-50%)", zIndex: 4, pointerEvents: "none" }}>
-          <SpriteAnimator
-            spriteSheet={blacksmithSprite}
-            frameWidth={112}
-            frameHeight={96}
-            totalFrames={6}
-            fps={8}
-            scale={3}
-            loop={true}
-          />
-        </div>
-      )}
-
-      {activePanel === "shop" && (
-        <div style={{ position: "absolute", left: "5%", top: "65%", transform: "translateY(-50%)", zIndex: 4, pointerEvents: "none" }}>
-          <SpriteAnimator
-            spriteSheet={alchemistSprite}
-            frameWidth={128}
-            frameHeight={96}
-            totalFrames={6}
-            fps={8}
-            scale={3}
-            loop={true}
-          />
-        </div>
-      )}
-
       {activePanel && activePanel !== "tavern" && (
         <div
           className="absolute z-[50]"
           style={{
-            inset: 0,
+            left: "5%",
+            top: "65%",
+            transform: "translateY(-50%)",
             display: "flex",
+            flexDirection: "row",
             alignItems: "center",
-            justifyContent: "center",
-            paddingTop: "60px",
-            paddingBottom: "60px",
-            paddingLeft: "48px",
-            paddingRight: "48px",
+            gap: 24,
           }}
         >
-          <div
-            style={{
-              width: "100%",
-              maxWidth: "520px",
-              height: "100%",
-              maxHeight: "480px",
-              borderRadius: 0,
-            }}
-          >
+          <div style={{ width: 460, height: 440, flexShrink: 0 }}>
             <ShopScreen
               player={player}
               items={activePanel === "shop" ? TRADE_SHOP_ITEMS : BLACKSMITH_ITEMS}
@@ -314,6 +277,28 @@ export default function VillageScreen({
               onBack={closePanel}
             />
           </div>
+          {activePanel === "blacksmith" && (
+            <SpriteAnimator
+              spriteSheet={blacksmithSprite}
+              frameWidth={112}
+              frameHeight={96}
+              totalFrames={6}
+              fps={8}
+              scale={3}
+              loop={true}
+            />
+          )}
+          {activePanel === "shop" && (
+            <SpriteAnimator
+              spriteSheet={alchemistSprite}
+              frameWidth={128}
+              frameHeight={96}
+              totalFrames={6}
+              fps={8}
+              scale={3}
+              loop={true}
+            />
+          )}
         </div>
       )}
 
