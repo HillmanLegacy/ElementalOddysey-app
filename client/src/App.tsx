@@ -457,7 +457,9 @@ function Game() {
                     setBattleEntryReveal(true);
                     let battleEnemies: string[];
                     const roll = Math.random();
-                    if (enemyId === "harpy_wind") {
+                    if (enemyId === "harpy_wind_solo") {
+                      battleEnemies = ["harpy_wind"];
+                    } else if (enemyId === "harpy_wind") {
                       // 50% single, 35% two, 15% three harpies
                       if (roll < 0.15)      battleEnemies = ["harpy_wind", "harpy_wind", "harpy_wind"];
                       else if (roll < 0.50) battleEnemies = ["harpy_wind", "harpy_wind"];

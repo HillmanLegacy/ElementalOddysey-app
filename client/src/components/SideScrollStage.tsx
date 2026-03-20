@@ -200,8 +200,8 @@ const LAVA_STAGES: Record<string, { enemies: StageEnemy[] }> = {
 };
 
 const FOREST_STAGES: Record<string, { enemies: StageEnemy[] }> = {
-  "0-1":  { enemies: [{ x: 900,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1800, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3100, type: "fireDemon", enemyId: "wolf_wind" }, { x: 4000, type: "fireDemon", enemyId: "wolf_wind" }] },
-  "1-2":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1700, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2800, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3800, type: "fireDemon", enemyId: "wolf_wind" }] },
+  "0-1":  { enemies: [{ x: 900,  type: "harpy", enemyId: "harpy_wind_solo" }, { x: 1800, type: "harpy", enemyId: "harpy_wind_solo" }, { x: 3100, type: "harpy", enemyId: "harpy_wind_solo" }, { x: 4000, type: "harpy", enemyId: "harpy_wind_solo" }] },
+  "1-2":  { enemies: [{ x: 800,  type: "harpy", enemyId: "harpy_wind_solo" }, { x: 1700, type: "harpy", enemyId: "harpy_wind_solo" }, { x: 2800, type: "harpy", enemyId: "harpy_wind_solo" }, { x: 3800, type: "harpy", enemyId: "harpy_wind_solo" }] },
   "1-3":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1600, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3500, type: "fireDemon", enemyId: "wolf_wind" }] },
   "3-4":  { enemies: [{ x: 800,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1700, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2800, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3600, type: "fireDemon", enemyId: "wolf_wind" }] },
   "3-5":  { enemies: [{ x: 700,  type: "fireDemon", enemyId: "wolf_wind" }, { x: 1500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 2500, type: "fireDemon", enemyId: "wolf_wind" }, { x: 3600, type: "fireDemon", enemyId: "wolf_wind" }] },
