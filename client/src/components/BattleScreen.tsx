@@ -1125,6 +1125,8 @@ export default function BattleScreen({
       scheduleTimer(() => setEruptionTransitionActive(false), runDur + riseDur + 600);
 
       scheduleTimer(() => {
+        setMagicZoom(false);
+        setMagicZoomTarget(null);
         setEruptionAuraActive(false);
         fadeSfxOut(eruptionFirechargeAudio.current, 300);
         eruptionFirechargeAudio.current = null;
@@ -1164,8 +1166,6 @@ export default function BattleScreen({
         stopSfx(eruptionFirechargeAudio.current); eruptionFirechargeAudio.current = null;
         stopSfx(eruptionFlamelashAudio.current); eruptionFlamelashAudio.current = null;
         stopSfx(eruptionDescentAudio.current); eruptionDescentAudio.current = null;
-        setMagicZoom(false);
-        setMagicZoomTarget(null);
         setEruptionSubPhase("returnJumpRise");
         setEruptionKnightX(midX);
         setEruptionKnightY(highY);
@@ -3202,6 +3202,12 @@ export default function BattleScreen({
   })();
 
   const magicZoomOrigin = (() => {
+    if (animPhase === "eruptionCleave" && eruptionFrozenEnemy !== null) {
+      const tgt = getEnemyGridPos(eruptionFrozenEnemy);
+      const midX = (PLAYER_POS.x + tgt.x) / 2;
+      const midY = (PLAYER_POS.y + tgt.y) / 2;
+      return `${midX}% ${100 - midY}%`;
+    }
     if (battle.phase === "partyTurn" && battle.activePartyIndex >= 0) {
       const pp = PARTY_POSITIONS[battle.activePartyIndex % PARTY_POSITIONS.length];
       return `${pp.x}% ${100 - pp.y}%`;
