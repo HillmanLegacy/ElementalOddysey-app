@@ -257,7 +257,7 @@ export default function VillageScreen({
           to { transform: translateX(-100%); }
         }
         @keyframes nicolasIdleAnim {
-          to { background-position-x: -4608px; }
+          to { background-position-x: -3456px; }
         }
       `}</style>
 
@@ -316,10 +316,10 @@ export default function VillageScreen({
             backgroundImage: `url(${nicolasSprite})`,
             backgroundSize: "6912px 6912px",
             backgroundRepeat: "no-repeat",
-            backgroundPositionY: "-576px",
+            backgroundPositionY: "0px",
             backgroundPositionX: "0px",
             imageRendering: "pixelated",
-            animation: "nicolasIdleAnim 1s steps(8) infinite",
+            animation: "nicolasIdleAnim 1s steps(6) infinite",
           }}
         />
         <div className="absolute inset-0 z-[50] flex items-center justify-center" style={{ paddingTop: "60px", paddingBottom: "60px" }}>
