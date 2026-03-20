@@ -195,6 +195,7 @@ interface ClimbingStageProps {
   player: PlayerCharacter;
   fromNodeId: number;
   toNodeId: number;
+  descending?: boolean;
   defeatedEnemyIndices: number[];
   fleeEnemyIndex?: number | null;
   savedPlayerY?: number;
@@ -240,6 +241,7 @@ export default function ClimbingStage({
   player,
   fromNodeId,
   toNodeId,
+  descending = false,
   defeatedEnemyIndices,
   fleeEnemyIndex = null,
   savedPlayerY,
@@ -284,7 +286,7 @@ export default function ClimbingStage({
     return () => ro.disconnect();
   }, []);
 
-  const stageHash = fromNodeId * 137 + toNodeId * 31;
+  const stageHash = Math.min(fromNodeId, toNodeId) * 137 + Math.max(fromNodeId, toNodeId) * 31;
   const isSoloHarpyStage = isForest && (stageKey === "0-1" || stageKey === "1-2");
   const platConstraintRadius = isForest ? (stageKey === "1-2" ? 220 : 100) : 0;
   const platformsRef = useRef<ClimbPlatform[]>(generatePlatforms(stageHash, VIEWPORT_W_DEFAULT, platConstraintRadius));
@@ -294,7 +296,10 @@ export default function ClimbingStage({
   const enemies = enemiesRef.current;
 
   const groundPlat = platforms.find(p => p.isGround)!;
-  const startY = groundPlat.y - playerH + charGroundOffset;
+  const goalPlat = platforms.find(p => p.isGoal)!;
+  const startY = descending
+    ? goalPlat.y - playerH + charGroundOffset
+    : groundPlat.y - playerH + charGroundOffset;
   const startX = VIEWPORT_W_DEFAULT / 2 - playerW / 2;
 
   const physRef = useRef({ x: startX, y: savedPlayerY ?? startY, vx: 0, vy: 0, onGround: savedPlayerY === undefined, coyoteTimer: 0, jumpBufferTimer: 0 });
@@ -547,14 +552,30 @@ export default function ClimbingStage({
         jumpActiveRef.current = false;
       }
 
-      if (p.onGround && p.y + playerH - charGroundOffset <= GOAL_Y + PLAT_THICK + 8 && !stageCompleteRef.current) {
+      const playerBottom = p.y + playerH - charGroundOffset;
+      const atTop = p.onGround && playerBottom <= GOAL_Y + PLAT_THICK + 8;
+      const atGround = p.onGround && playerBottom >= groundPlat.y - 4;
+
+      if (!descending && atTop && !stageCompleteRef.current) {
+        stageCompleteRef.current = true;
+        cancelAnimationFrame(rafRef.current);
+        onCompleteRef.current();
+        return;
+      }
+      if (descending && atGround && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
         cancelAnimationFrame(rafRef.current);
         onCompleteRef.current();
         return;
       }
 
-      if (p.x <= EXIT_TRIGGER_X && p.onGround && p.y + playerH - charGroundOffset >= groundPlat.y - 4 && !stageCompleteRef.current) {
+      if (!descending && p.x <= EXIT_TRIGGER_X && atGround && !stageCompleteRef.current) {
+        stageCompleteRef.current = true;
+        cancelAnimationFrame(rafRef.current);
+        onExitRef.current();
+        return;
+      }
+      if (descending && p.x <= EXIT_TRIGGER_X && atTop && !stageCompleteRef.current) {
         stageCompleteRef.current = true;
         cancelAnimationFrame(rafRef.current);
         onExitRef.current();

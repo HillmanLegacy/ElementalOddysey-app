@@ -226,6 +226,7 @@ function Game() {
     savedPlayerY?: number;
     reversed: boolean;
     isClimbing: boolean;
+    descending: boolean;
     fleeEnemyIndex: number | null;
     savedEnemyPatrol?: SSEnemySnapshot[] | ClimbEnemySnapshot[];
     savedDemonStates?: SSDemonSnapshot[];
@@ -248,6 +249,7 @@ function Game() {
     savedPlayerY?: number;
     reversed: boolean;
     isClimbing: boolean;
+    descending: boolean;
     fleeEnemyIndex: number | null;
   } | null>(null);
   const sideScrollBattleActiveRef = useRef(false);
@@ -385,6 +387,7 @@ function Game() {
                   player={ssPlayer}
                   fromNodeId={sideScrollCtx.fromNodeId}
                   toNodeId={sideScrollCtx.toNodeId}
+                  descending={sideScrollCtx.descending}
                   defeatedEnemyIndices={sideScrollCtx.defeatedEnemyIndices}
                   fleeEnemyIndex={sideScrollCtx.fleeEnemyIndex}
                   savedPlayerY={sideScrollCtx.savedPlayerY}
@@ -609,7 +612,10 @@ function Game() {
                 const r = getRegionForTier(state.player.currentRegion, t);
                 const fromNode = r.nodes.find(n => n.id === fromNodeId);
                 const reversed = fromNode ? fromNode.x > toNode.x : false;
-                const isClimbing = fromNode ? toNode.y < fromNode.y : false;
+                const dy = fromNode ? Math.abs(fromNode.y - toNode.y) : 0;
+                const dx = fromNode ? Math.abs(fromNode.x - toNode.x) : 0;
+                const isClimbing = dy > dx;
+                const descending = fromNode ? fromNode.y < toNode.y : false;
                 stopAmbient();
                 fadeOutMusic(400);
                 setSideScrollEnterPending({
@@ -620,6 +626,7 @@ function Game() {
                   savedPlayerX: reversed ? 4300 : 150,
                   reversed,
                   isClimbing,
+                  descending,
                   fleeEnemyIndex: null,
                 });
               }}
