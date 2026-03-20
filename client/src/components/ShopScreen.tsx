@@ -65,7 +65,7 @@ export default function ShopScreen({ player, items, onBuy, onSell, onBack }: Sho
         width: "100%",
         height: "100%",
         overflow: "hidden",
-        background: "linear-gradient(180deg, #0a0808f0 0%, #151010f5 100%)",
+        background: "linear-gradient(180deg, #0a080899 0%, #151010aa 100%)",
         border: `3px solid ${ACCENT}`,
         boxShadow: `0 0 20px ${ACCENT}40, 0 0 60px ${ACCENT}15, inset 0 0 30px rgba(0,0,0,0.5)`,
         fontFamily: "'Press Start 2P', cursive",
@@ -90,7 +90,7 @@ export default function ShopScreen({ player, items, onBuy, onSell, onBack }: Sho
             alignItems: "center",
             justifyContent: "space-between",
             padding: "8px 12px",
-            background: "#0d0b0bf0",
+            background: "#0d0b0b99",
             borderBottom: `3px solid ${ACCENT}`,
           }}
         >
@@ -153,7 +153,7 @@ export default function ShopScreen({ player, items, onBuy, onSell, onBack }: Sho
                     data-testid={`card-shop-item-${item.id}`}
                     style={{
                       padding: "8px",
-                      background: "#0d0b0bf0",
+                      background: "#0d0b0b99",
                       border: `1px solid ${ACCENT}30`,
                     }}
                   >
@@ -227,7 +227,7 @@ export default function ShopScreen({ player, items, onBuy, onSell, onBack }: Sho
                     data-testid={`card-sell-item-${item.id}`}
                     style={{
                       padding: "8px",
-                      background: "#0d0b0bf0",
+                      background: "#0d0b0b99",
                       border: `1px solid ${rc}20`,
                     }}
                   >

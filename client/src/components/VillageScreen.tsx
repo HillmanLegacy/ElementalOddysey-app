@@ -308,7 +308,7 @@ export default function VillageScreen({
           <div
             className="relative w-[280px] overflow-hidden"
             style={{
-              background: "linear-gradient(180deg,#0a0808f0 0%,#151010f5 100%)",
+              background: "linear-gradient(180deg,#0a080899 0%,#151010aa 100%)",
               border: `3px solid ${ac}`,
               boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15`,
             }}
@@ -320,7 +320,7 @@ export default function VillageScreen({
                 pointerEvents: "none",
               }}
             />
-            <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0bf0", borderBottom: `3px solid ${ac}` }}>
+            <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0b99", borderBottom: `3px solid ${ac}` }}>
               <div className="flex items-center gap-2">
                 <Beer className="w-4 h-4" style={{ color: ac }} />
                 <span style={{ fontSize: "9px", color: ac, letterSpacing: "2px" }}>THE BRAMBLE INN</span>
