@@ -11,8 +11,9 @@ import baskenIdle from "@/assets/images/basken-idle.png";
 
 const STARTER_SPRITES: Record<string, { sheet: string; frameWidth: number; frameHeight: number; totalFrames: number; displayScale: number }> = {
   knight:  { sheet: slknightIdle, frameWidth: 128, frameHeight: 64, totalFrames: 8, displayScale: 1.2 },
-  samurai: { sheet: samuraiIdle, frameWidth: 96, frameHeight: 96, totalFrames: 10, displayScale: 0.9 },
-  basken:  { sheet: baskenIdle,  frameWidth: 56, frameHeight: 56, totalFrames: 5,  displayScale: 1.5 },
+  samurai: { sheet: samuraiIdle,  frameWidth: 96,  frameHeight: 96, totalFrames: 10, displayScale: 0.9 },
+  basken:  { sheet: baskenIdle,   frameWidth: 56,  frameHeight: 56, totalFrames: 5,  displayScale: 1.5 },
+  rogue:   { sheet: baskenIdle,   frameWidth: 56,  frameHeight: 56, totalFrames: 5,  displayScale: 1.5 },
 };
 
 const STARTER_DESCRIPTIONS: Record<string, string> = {
