@@ -115,7 +115,7 @@ function rng(seed: number): () => number {
   };
 }
 
-function generatePlatforms(seed: number, vw: number, centerConstrained = false): ClimbPlatform[] {
+function generatePlatforms(seed: number, vw: number, constraintRadius = 0): ClimbPlatform[] {
   const r = rng(seed);
   const plats: ClimbPlatform[] = [];
 
@@ -129,9 +129,9 @@ function generatePlatforms(seed: number, vw: number, centerConstrained = false):
   let y = CLIMB_H - 170;
   let lastCenter = vw / 2;
 
-  // Forest stages constrain platforms to within 100px of screen centre (tree trunk area)
-  const screenCenterMin = centerConstrained ? vw / 2 - 100 : 0;
-  const screenCenterMax = centerConstrained ? vw / 2 + 100 : vw;
+  const centerConstrained = constraintRadius > 0;
+  const screenCenterMin = centerConstrained ? vw / 2 - constraintRadius : 0;
+  const screenCenterMax = centerConstrained ? vw / 2 + constraintRadius : vw;
 
   while (y > GOAL_Y + PLAT_THICK + STEP_MAX) {
     const w = 95 + r() * 125;
@@ -150,8 +150,8 @@ function generatePlatforms(seed: number, vw: number, centerConstrained = false):
   // so the final hop is never larger than STEP_MAX.
   while (y > GOAL_Y + PLAT_THICK + 10) {
     const w = 110 + r() * 100;
-    const xMin = centerConstrained ? Math.max(10, vw / 2 - 100 - w / 2) : 10;
-    const xMax = centerConstrained ? Math.min(vw - w - 10, vw / 2 + 100 - w / 2) : vw - w - 10;
+    const xMin = centerConstrained ? Math.max(10, screenCenterMin - w / 2) : 10;
+    const xMax = centerConstrained ? Math.min(vw - w - 10, screenCenterMax - w / 2) : vw - w - 10;
     const x = xMin + r() * Math.max(0, xMax - xMin);
     plats.push({ x, y, w });
     y -= STEP_MIN + r() * (STEP_MAX - STEP_MIN);
@@ -286,7 +286,8 @@ export default function ClimbingStage({
 
   const stageHash = fromNodeId * 137 + toNodeId * 31;
   const isSoloHarpyStage = isForest && (stageKey === "0-1" || stageKey === "1-2");
-  const platformsRef = useRef<ClimbPlatform[]>(generatePlatforms(stageHash, VIEWPORT_W_DEFAULT, isForest));
+  const platConstraintRadius = isForest ? (stageKey === "1-2" ? 220 : 100) : 0;
+  const platformsRef = useRef<ClimbPlatform[]>(generatePlatforms(stageHash, VIEWPORT_W_DEFAULT, platConstraintRadius));
   const enemiesRef = useRef<ClimbEnemy[]>(generateEnemies(stageHash, platformsRef.current, isForest, VIEWPORT_W_DEFAULT, isSoloHarpyStage));
 
   const platforms = platformsRef.current;
