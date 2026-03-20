@@ -804,7 +804,7 @@ export function useGameState() {
           battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
           lastEnemyDodgedRef.current = true;
         } else {
-          const enemyUseMagic = forceMagic !== undefined ? forceMagic : enemy.stats.int > enemy.stats.atk;
+          const enemyUseMagic = forceMagic !== undefined ? forceMagic : (enemy.physicalAttack ? false : enemy.stats.int > enemy.stats.atk);
           const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
           let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
           actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
@@ -832,7 +832,7 @@ export function useGameState() {
             battle.log = [...battle.log, `You dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
-            const enemyUseMagic = forceMagic !== undefined ? forceMagic : enemy.stats.int > enemy.stats.atk;
+            const enemyUseMagic = forceMagic !== undefined ? forceMagic : (enemy.physicalAttack ? false : enemy.stats.int > enemy.stats.atk);
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedStats, enemyUseMagic, enemy.element, s.player?.element);
             let actualDamage = battle.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, s.player.perks);
@@ -854,7 +854,7 @@ export function useGameState() {
             battle.log = [...battle.log, `${partyTarget.name} dodged ${enemy.name}'s attack!`];
             lastEnemyDodgedRef.current = true;
           } else {
-            const enemyUseMagic = forceMagic !== undefined ? forceMagic : enemy.stats.int > enemy.stats.atk;
+            const enemyUseMagic = forceMagic !== undefined ? forceMagic : (enemy.physicalAttack ? false : enemy.stats.int > enemy.stats.atk);
             const { damage, isCrit, elementLabel } = calculateDamage(enemy.stats, buffedPartyStats, enemyUseMagic, enemy.element, partyTarget.element);
             let actualDamage = partyTarget.defending ? Math.floor(damage * 0.5) : damage;
             actualDamage = applyPhysDamageReduction(actualDamage, partyTarget.perks || []);

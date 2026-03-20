@@ -162,6 +162,7 @@ export interface Enemy {
   goldReward: number;
   isBoss: boolean;
   sprite: string;
+  physicalAttack?: boolean;
 }
 
 export interface OverworldNode {

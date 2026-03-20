@@ -215,7 +215,7 @@ export const ENEMY_POOL: Omit<Enemy, "stats">[] = [
   { id: "wolf_wind", name: "Storm Wolf", element: "Wind", level: 1, xpReward: 20, goldReward: 9, isBoss: false, sprite: "wind" },
   { id: "minotaur_wind", name: "Minotaur", element: "Wind", level: 2, levelRange: [2, 4], xpReward: 26, goldReward: 12, isBoss: false, sprite: "wind" },
   { id: "cyclops_wind", name: "Cyclops", element: "Wind", level: 3, levelRange: [3, 5], xpReward: 28, goldReward: 13, isBoss: false, sprite: "wind" },
-  { id: "harpy_wind", name: "Harpy", element: "Wind", level: 1, levelRange: [1, 3], xpReward: 22, goldReward: 10, isBoss: false, sprite: "wind" },
+  { id: "harpy_wind", name: "Harpy", element: "Wind", level: 1, levelRange: [1, 3], xpReward: 22, goldReward: 10, isBoss: false, sprite: "wind", physicalAttack: true },
   { id: "golem_earth", name: "Stone Golem", element: "Earth", level: 2, xpReward: 28, goldReward: 12, isBoss: false, sprite: "mountain" },
   { id: "wisp_light", name: "Light Wisp", element: "Light", level: 1, xpReward: 16, goldReward: 7, isBoss: false, sprite: "sun" },
   { id: "shade", name: "Dark Shade", element: "Shadow", level: 2, xpReward: 25, goldReward: 11, isBoss: false, sprite: "ghost" },
