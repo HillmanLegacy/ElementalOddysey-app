@@ -539,6 +539,7 @@ export default function GameMenuPanel({
               const allVisible = [...inProgress, ...completedDefs.map(d => ({ id: d.id, name: d.name, description: d.description, goal: d.goal, goldReward: d.goldReward, regionTheme: Object.keys(NICOLAS_QUESTS).find(k => NICOLAS_QUESTS[k].some(q => q.id === d.id)) ?? "", stage: d.stage, status: "complete" as const }))];
               const selDef = selectedQuestId ? allDefs.find(d => d.id === selectedQuestId) ?? null : null;
               const selQuest = selectedQuestId ? allVisible.find(q => q.id === selectedQuestId) ?? null : null;
+              const effectiveDef = selDef ?? (selQuest ? { id: selQuest.id, name: selQuest.name, description: selQuest.description, goal: selQuest.goal, goldReward: selQuest.goldReward, stage: selQuest.stage, completionLines: [] } : null);
               if (allVisible.length === 0) {
                 return (
                   <div className="flex flex-col items-center justify-center" style={{ minHeight: "200px" }}>
@@ -548,29 +549,32 @@ export default function GameMenuPanel({
                   </div>
                 );
               }
-              if (selDef && selQuest) {
-                const isComplete = (player.completedQuestIds ?? []).includes(selDef.id);
+              if (effectiveDef && selQuest) {
+                const isComplete = (player.completedQuestIds ?? []).includes(effectiveDef.id);
+                const isIntroQuest = effectiveDef.id === "intro_q0";
                 return (
                   <div className="space-y-3">
                     <button onClick={() => { playSfx("menuSelect"); setSelectedQuestId(null); }} style={{ fontFamily: "'Press Start 2P', cursive", fontSize: "6px", color: `${ac}70`, background: "transparent", border: `1px solid ${ac}30`, padding: "4px 8px", cursor: "pointer", letterSpacing: "1px" }}>‹ BACK</button>
                     <div style={{ background: "#0d0b0bf0", border: `1px solid ${isComplete ? "#6ee7b740" : `${ac}30`}`, padding: "12px" }}>
                       <div className="flex items-start justify-between gap-2 mb-3">
-                        <span style={{ fontSize: "9px", color: isComplete ? "#6ee7b7" : "#e8e0d0", letterSpacing: "1px" }}>{selDef.name}</span>
+                        <span style={{ fontSize: "9px", color: isComplete ? "#6ee7b7" : "#e8e0d0", letterSpacing: "1px" }}>{effectiveDef.name}</span>
                         <span style={{ fontSize: "6px", padding: "2px 6px", border: `1px solid ${isComplete ? "#6ee7b760" : `${ac}40`}`, color: isComplete ? "#6ee7b7" : ac, whiteSpace: "nowrap", flexShrink: 0 }}>{isComplete ? "COMPLETE" : "IN PROGRESS"}</span>
                       </div>
-                      <p style={{ fontSize: "7px", color: "#9a9080", letterSpacing: "1px", lineHeight: "2", marginBottom: "10px" }}>{selDef.description}</p>
+                      <p style={{ fontSize: "7px", color: "#9a9080", letterSpacing: "1px", lineHeight: "2", marginBottom: "10px" }}>{effectiveDef.description}</p>
                       <div style={{ borderTop: `1px solid ${ac}20`, paddingTop: "8px" }} className="space-y-1.5">
                         <div className="flex gap-2">
                           <span style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px", minWidth: "36px" }}>GOAL</span>
-                          <span style={{ fontSize: "6px", color: "#c8c0a8", letterSpacing: "1px" }}>{selDef.goal}</span>
+                          <span style={{ fontSize: "6px", color: "#c8c0a8", letterSpacing: "1px" }}>{effectiveDef.goal}</span>
                         </div>
-                        <div className="flex gap-2">
-                          <span style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px", minWidth: "36px" }}>REWARD</span>
-                          <span style={{ fontSize: "6px", color: "#fbbf24", letterSpacing: "1px" }}>{selDef.goldReward} Gold</span>
-                        </div>
+                        {effectiveDef.goldReward > 0 && (
+                          <div className="flex gap-2">
+                            <span style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px", minWidth: "36px" }}>REWARD</span>
+                            <span style={{ fontSize: "6px", color: "#fbbf24", letterSpacing: "1px" }}>{effectiveDef.goldReward} Gold</span>
+                          </div>
+                        )}
                         <div className="flex gap-2">
                           <span style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "1px", minWidth: "36px" }}>FROM</span>
-                          <span style={{ fontSize: "6px", color: "#9a9080", letterSpacing: "1px" }}>Nicolas Fernal · The Bramble Inn</span>
+                          <span style={{ fontSize: "6px", color: "#9a9080", letterSpacing: "1px" }}>{isIntroQuest ? "Village of Briarhold" : "Nicolas Fernal · The Bramble Inn"}</span>
                         </div>
                       </div>
                     </div>
@@ -587,10 +591,10 @@ export default function GameMenuPanel({
                         onMouseEnter={e => (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`}
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`}>
                         <div className="flex items-center justify-between">
-                          <span style={{ fontSize: "8px", color: "#e8e0d0", letterSpacing: "1px" }}>{def?.name ?? q.id}</span>
+                          <span style={{ fontSize: "8px", color: "#e8e0d0", letterSpacing: "1px" }}>{def?.name ?? q.name}</span>
                           <span style={{ fontSize: "6px", color: ac, letterSpacing: "1px" }}>›</span>
                         </div>
-                        <p style={{ fontSize: "6px", color: `${ac}50`, marginTop: "4px", letterSpacing: "1px" }}>{def?.goal}</p>
+                        <p style={{ fontSize: "6px", color: `${ac}50`, marginTop: "4px", letterSpacing: "1px" }}>{def?.goal ?? q.goal}</p>
                       </button>
                     );
                   })}
