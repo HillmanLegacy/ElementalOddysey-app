@@ -258,44 +258,50 @@ export default function VillageScreen({
       `}</style>
 
       {activePanel && activePanel !== "tavern" && (
-        <div
-          className="absolute z-[50]"
-          style={{
-            left: "5%",
-            top: "65%",
-            transform: "translateY(-50%)",
-            display: "flex",
-            flexDirection: "row",
-            alignItems: "center",
-            gap: 24,
-          }}
-        >
-          <div style={{ width: 460, height: 440, flexShrink: 0 }}>
-            <ShopScreen
-              player={player}
-              items={activePanel === "shop" ? TRADE_SHOP_ITEMS : BLACKSMITH_ITEMS}
-              onBuy={onBuy}
-              onSell={onSell}
-              onBack={closePanel}
-            />
+        <>
+          <div
+            className="absolute z-[50]"
+            style={{
+              left: "5%",
+              top: "65%",
+              transform: "translateY(-50%)",
+            }}
+          >
+            <div style={{ width: 460, height: 440 }}>
+              <ShopScreen
+                player={player}
+                items={activePanel === "shop" ? TRADE_SHOP_ITEMS : BLACKSMITH_ITEMS}
+                onBuy={onBuy}
+                onSell={onSell}
+                onBack={closePanel}
+              />
+            </div>
           </div>
+
           {activePanel === "blacksmith" && (
-            <div style={{ width: 288, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
+            <div
+              className="absolute z-[50]"
+              style={{ right: "6%", bottom: 0, width: 576, height: 576, overflow: "hidden", imageRendering: "pixelated" }}
+            >
               <img
                 src={blacksmithSprite}
-                style={{ height: 288, width: "auto", maxWidth: "none", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 0.875s steps(7) infinite" }}
+                style={{ height: 576, width: "auto", maxWidth: "none", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 0.875s steps(7) infinite" }}
               />
             </div>
           )}
+
           {activePanel === "shop" && (
-            <div style={{ width: 288, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
+            <div
+              className="absolute z-[50]"
+              style={{ right: "6%", bottom: 0, width: 288, height: 288, overflow: "hidden", imageRendering: "pixelated" }}
+            >
               <img
                 src={alchemistSprite}
                 style={{ height: 288, width: "auto", maxWidth: "none", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 1s steps(8) infinite" }}
               />
             </div>
           )}
-        </div>
+        </>
       )}
 
       {activePanel === "tavern" && (
