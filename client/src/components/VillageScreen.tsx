@@ -171,7 +171,7 @@ export default function VillageScreen({
           key={id}
           data-testid={`button-village-${id}`}
           className="absolute flex flex-col items-center gap-1 group"
-          style={{ left, top, transform: "translate(-50%, -100%)", zIndex: 15 }}
+          style={{ left, top, transform: "translate(-50%, -100%) scale(2.1)", transformOrigin: "center bottom", zIndex: 15 }}
           onClick={() => openPanel(id)}
         >
           <div
