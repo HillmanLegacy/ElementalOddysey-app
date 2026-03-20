@@ -509,7 +509,6 @@ export function useGameState() {
           battle.log = [...battle.log, `Used ${item.name}! Restored ${item.effect.amount} MP.`];
         }
         battle.lastItemUsed = { stat, amount: item.effect.amount || 0, targetType: "player", targetIndex: -1 };
-        battle.lastDamageEvent = { id: ++damageEventCounter, amount: item.effect.amount || 0, targetType: "player", targetIndex: -1, isCrit: false, isHeal: true };
       }
 
       battle.phase = "enemyTurn";
@@ -728,11 +727,9 @@ export function useGameState() {
           }
           member.currentHp = Math.min(member.stats.maxHp, member.currentHp + heal);
           battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${heal} HP!`];
-          battle.lastDamageEvent = { id: ++damageEventCounter, amount: heal, targetType: "party", targetIndex: partyIndex, isCrit: false, isHeal: true };
         } else {
           battle.playerMp = Math.min(s.player.stats.maxMp, battle.playerMp + (item.effect.amount || 0));
           battle.log = [...battle.log, `${member.name} uses ${item.name}, restores ${item.effect.amount} MP!`];
-          battle.lastDamageEvent = { id: ++damageEventCounter, amount: item.effect.amount || 0, targetType: "party", targetIndex: partyIndex, isCrit: false, isHeal: true };
         }
         battle.lastItemUsed = { stat, amount: item.effect.amount || 0, targetType: "party", targetIndex: partyIndex };
       }
