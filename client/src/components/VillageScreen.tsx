@@ -10,6 +10,7 @@ import tavernBg from "@assets/village_tavern_1774017365247.jpg";
 import tradeBg from "@assets/village_trade_shop_1774017365248.jpg";
 import blacksmithSprite from "@assets/BLACKSMITH_1774022241288.png";
 import alchemistSprite from "@assets/ALCHEMIST_1774022241288.png";
+import nicolasSprite from "@assets/Nicolas_Fernal_spritesheet_1774029304284.png";
 
 const ac = "#c9a44a";
 
@@ -255,6 +256,9 @@ export default function VillageScreen({
         @keyframes npcSpriteAnim {
           to { transform: translateX(-100%); }
         }
+        @keyframes nicolasIdleAnim {
+          to { background-position-x: -4608px; }
+        }
       `}</style>
 
       {activePanel && activePanel !== "tavern" && (
@@ -304,6 +308,20 @@ export default function VillageScreen({
       )}
 
       {activePanel === "tavern" && (
+        <>
+        <div
+          style={{
+            position: "fixed", right: "calc(6% + 200px)", bottom: -75, zIndex: 40,
+            width: 576, height: 576,
+            backgroundImage: `url(${nicolasSprite})`,
+            backgroundSize: "6912px 6912px",
+            backgroundRepeat: "no-repeat",
+            backgroundPositionY: "-576px",
+            backgroundPositionX: "0px",
+            imageRendering: "pixelated",
+            animation: "nicolasIdleAnim 1s steps(8) infinite",
+          }}
+        />
         <div className="absolute inset-0 z-[50] flex items-center justify-center" style={{ paddingTop: "60px", paddingBottom: "60px" }}>
           <div
             className="relative w-[280px] overflow-hidden"
@@ -383,6 +401,7 @@ export default function VillageScreen({
             <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
           </div>
         </div>
+        </>
       )}
 
       {menuOpen && (
