@@ -5,6 +5,9 @@ import ShopScreen from "@/components/ShopScreen";
 import { playSfx } from "@/lib/sfx";
 import type { PlayerCharacter, ShopItem } from "@shared/schema";
 import villageBg from "@assets/forest_region_village_1774010989526.jpg";
+import blacksmithBg from "@assets/village_blacksmith_1774017365247.jpg";
+import tavernBg from "@assets/village_tavern_1774017365247.jpg";
+import tradeBg from "@assets/village_trade_shop_1774017365248.jpg";
 
 const ac = "#c9a44a";
 
@@ -65,6 +68,18 @@ const ARROWS: { id: Panel & string; label: string; icon: typeof ShoppingBag; lef
   { id: "tavern",     label: "Tavern",      icon: Beer,        left: "calc(20% + 201px)", top: "calc(43% + 112px)", labelAbove: true },
 ];
 
+const LOCATION_TITLES: Record<string, string> = {
+  shop: "✦ TRADE SHOP ✦",
+  blacksmith: "✦ BLACKSMITH ✦",
+  tavern: "✦ THE BRAMBLE INN ✦",
+};
+
+const LOCATION_BG: Record<string, string> = {
+  shop: tradeBg,
+  blacksmith: blacksmithBg,
+  tavern: tavernBg,
+};
+
 export default function VillageScreen({
   player, onLeave, onBuy, onSell, onRest,
   onEquip, onUnequip, onUseItem, onSave, onExitToMenu,
@@ -78,20 +93,25 @@ export default function VillageScreen({
   const openPanel = (p: Panel) => { playSfx("menuSelect"); setActivePanel(p); };
   const closePanel = () => { playSfx("menuSelect"); setActivePanel(null); setRestedMsg(false); };
 
+  const currentBg = activePanel ? LOCATION_BG[activePanel] : villageBg;
+  const currentTitle = activePanel ? LOCATION_TITLES[activePanel] : "✦ THORNVEIL VILLAGE ✦";
+  const isSubScreen = activePanel !== null;
+
   return (
     <div
       style={{
         position: "fixed",
         inset: 0,
-        backgroundImage: `url(${villageBg})`,
+        backgroundImage: `url(${currentBg})`,
         backgroundSize: "100% 100%",
         fontFamily: "'Press Start 2P', cursive",
         overflow: "hidden",
+        transition: "background-image 0.1s",
       }}
     >
-      <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.18)" }} />
+      <div className="absolute inset-0" style={{ background: isSubScreen ? "rgba(0,0,0,0.30)" : "rgba(0,0,0,0.18)" }} />
 
-      {LEAVES.map((leaf) => (
+      {!isSubScreen && LEAVES.map((leaf) => (
         <div
           key={leaf.id}
           className="absolute pointer-events-none"
@@ -128,11 +148,11 @@ export default function VillageScreen({
           whiteSpace: "nowrap",
         }}
       >
-        ✦ THORNVEIL VILLAGE ✦
+        {currentTitle}
       </div>
 
       <button
-        data-testid="button-village-return"
+        data-testid={isSubScreen ? "button-subscreen-back" : "button-village-return"}
         className="absolute flex items-center gap-2 px-3 py-2 transition-all hover:scale-105 active:scale-95"
         style={{
           bottom: 20,
@@ -145,10 +165,17 @@ export default function VillageScreen({
           fontSize: "8px",
           letterSpacing: "1px",
         }}
-        onClick={() => { playSfx("menuSelect"); onLeave(); }}
+        onClick={() => {
+          if (isSubScreen) {
+            closePanel();
+          } else {
+            playSfx("menuSelect");
+            onLeave();
+          }
+        }}
       >
         <ArrowLeft className="w-3 h-3" />
-        OVERWORLD
+        {isSubScreen ? "VILLAGE" : "OVERWORLD"}
       </button>
 
       {!menuOpen && (
@@ -166,7 +193,7 @@ export default function VillageScreen({
         </button>
       )}
 
-      {ARROWS.map(({ id, label, icon: Icon, left, top }) => (
+      {!isSubScreen && ARROWS.map(({ id, label, icon: Icon, left, top }) => (
         <button
           key={id}
           data-testid={`button-village-${id}`}
@@ -226,19 +253,41 @@ export default function VillageScreen({
       `}</style>
 
       {activePanel && activePanel !== "tavern" && (
-        <div className="absolute inset-0 z-[50]" style={{ background: "rgba(0,0,0,0.55)" }}>
-          <ShopScreen
-            player={player}
-            items={activePanel === "shop" ? TRADE_SHOP_ITEMS : BLACKSMITH_ITEMS}
-            onBuy={onBuy}
-            onSell={onSell}
-            onBack={closePanel}
-          />
+        <div
+          className="absolute z-[50]"
+          style={{
+            inset: 0,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            paddingTop: "60px",
+            paddingBottom: "60px",
+            paddingLeft: "48px",
+            paddingRight: "48px",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              maxWidth: "520px",
+              height: "100%",
+              maxHeight: "480px",
+              borderRadius: 0,
+            }}
+          >
+            <ShopScreen
+              player={player}
+              items={activePanel === "shop" ? TRADE_SHOP_ITEMS : BLACKSMITH_ITEMS}
+              onBuy={onBuy}
+              onSell={onSell}
+              onBack={closePanel}
+            />
+          </div>
         </div>
       )}
 
       {activePanel === "tavern" && (
-        <div className="absolute inset-0 z-[50] flex items-center justify-center" style={{ background: "rgba(0,0,0,0.6)" }}>
+        <div className="absolute inset-0 z-[50] flex items-center justify-center" style={{ paddingTop: "60px", paddingBottom: "60px" }}>
           <div
             className="relative w-[280px] overflow-hidden"
             style={{
