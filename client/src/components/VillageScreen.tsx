@@ -280,18 +280,18 @@ export default function VillageScreen({
             />
           </div>
           {activePanel === "blacksmith" && (
-            <div style={{ width: 336, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
+            <div style={{ width: 288, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
               <img
                 src={blacksmithSprite}
-                style={{ height: 288, width: "auto", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 0.75s steps(6) infinite" }}
+                style={{ height: 288, width: "auto", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 0.875s steps(7) infinite" }}
               />
             </div>
           )}
           {activePanel === "shop" && (
-            <div style={{ width: 384, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
+            <div style={{ width: 288, height: 288, overflow: "hidden", flexShrink: 0, imageRendering: "pixelated" }}>
               <img
                 src={alchemistSprite}
-                style={{ height: 288, width: "auto", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 0.75s steps(6) infinite" }}
+                style={{ height: 288, width: "auto", imageRendering: "pixelated", display: "block", animation: "npcSpriteAnim 1s steps(8) infinite" }}
               />
             </div>
           )}
