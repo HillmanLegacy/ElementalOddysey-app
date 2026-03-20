@@ -130,7 +130,7 @@ export interface Enemy {
 
 export interface OverworldNode {
   id: number;
-  type: "passage" | "shop" | "event" | "boss" | "rest" | "shaman" | "hut";
+  type: "passage" | "shop" | "event" | "boss" | "rest" | "shaman" | "hut" | "village";
   name: string;
   x: number;
   y: number;
@@ -284,7 +284,7 @@ export interface PendingLevelUp {
 }
 
 export interface GameState {
-  screen: "menu" | "intro" | "creation" | "overworld" | "hut" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect" | "partyUnlock" | "shaman";
+  screen: "menu" | "intro" | "creation" | "overworld" | "hut" | "village" | "battle" | "shop" | "levelUp" | "inventory" | "perkSelect" | "partyUnlock" | "shaman";
   player: PlayerCharacter | null;
   battle: BattleState | null;
   currentShop: ShopItem[] | null;

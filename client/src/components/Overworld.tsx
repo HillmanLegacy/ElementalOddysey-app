@@ -141,6 +141,7 @@ interface OverworldProps {
   onRest: (nodeId: number) => void;
   onShamanVisit: (nodeId: number) => void;
   onHutEnter: () => void;
+  onVillageEnter: () => void;
   onRegionChange: (regionId: number) => void;
   onEquip: (itemId: string) => void;
   onUnequip: (slot: "weapon" | "armor" | "accessory") => void;
@@ -161,7 +162,7 @@ interface OverworldProps {
   onDevTeleportBoss?: () => void;
 }
 
-export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave, onExitToMenu, textSpeed, musicVolume, sfxVolume, onTextSpeedChange, onMusicVolumeChange, onSfxVolumeChange, devInvincible, onDevSetLevel, onDevUnlockSpells, onDevToggleInvincibility, onDevTeleportBoss }: OverworldProps) {
+export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOpen, onRest, onShamanVisit, onHutEnter, onVillageEnter, onRegionChange, onEquip, onUnequip, onUseItem, onArrowClick, onSave, onExitToMenu, textSpeed, musicVolume, sfxVolume, onTextSpeedChange, onMusicVolumeChange, onSfxVolumeChange, devInvincible, onDevSetLevel, onDevUnlockSpells, onDevToggleInvincibility, onDevTeleportBoss }: OverworldProps) {
   const _owSpriteConfig = OVERWORLD_SPRITES[player.spriteId || "samurai"] || OVERWORLD_SPRITES.samurai;
   const playerColorMap = useColorMap(_owSpriteConfig.idle.sheet, _owSpriteConfig.idle.frameWidth, _owSpriteConfig.idle.frameHeight, player.colorGroups);
   const tier = getRegionTier(player.currentRegion, player.regionBossDefeats || {});
@@ -293,7 +294,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
       !player.clearedNodes.includes(currentNodeData.id)
     ) {
       const targetCleared = player.clearedNodes.includes(node.id);
-      const targetIsSafe = node.type === "hut" || node.type === "shop" || node.type === "rest" || node.type === "shaman" || node.type === "passage";
+      const targetIsSafe = node.type === "hut" || node.type === "village" || node.type === "shop" || node.type === "rest" || node.type === "shaman" || node.type === "passage";
       if (!targetCleared && !targetIsSafe) return false;
     }
     return true;
@@ -322,6 +323,8 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
   const triggerNodeAction = (node: OverworldNode) => {
     if (node.type === "hut") {
       onHutEnter();
+    } else if (node.type === "village") {
+      onVillageEnter();
     } else if (node.type === "boss") {
       onNodeSelect(node.id, charPos);
     } else if (node.type === "shop") {
@@ -573,11 +576,12 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
         const isCurrent = node.id === player.currentNode;
         const isBoss = node.type === "boss";
         const isHut = node.type === "hut";
+        const isVillage = node.type === "village";
 
-        const markerSize = isBoss ? "w-11 h-11" : isHut ? "w-10 h-10" : "w-9 h-9";
+        const markerSize = isBoss ? "w-11 h-11" : (isHut || isVillage) ? "w-10 h-10" : "w-9 h-9";
         const iconSize = isBoss ? "w-5 h-5" : "w-4 h-4";
 
-        const bgColor = isHut
+        const bgColor = (isHut || isVillage)
           ? "rgba(180, 140, 60, 0.35)"
           : isCleared
             ? "rgba(34, 197, 94, 0.25)"
@@ -585,7 +589,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               ? isBoss ? "rgba(250, 204, 21, 0.25)" : `${elemColor}30`
               : "rgba(55, 65, 81, 0.25)";
 
-        const borderColor = isHut
+        const borderColor = (isHut || isVillage)
           ? "rgba(220, 180, 80, 0.8)"
           : isCleared
             ? "rgba(34, 197, 94, 0.7)"
@@ -593,7 +597,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               ? isBoss ? "rgba(250, 204, 21, 0.7)" : `${elemColor}90`
               : "rgba(55, 65, 81, 0.5)";
 
-        const iconColor = isHut
+        const iconColor = (isHut || isVillage)
           ? "#dca840"
           : isCleared
             ? "#22c55e"
@@ -610,7 +614,7 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
               top: `${node.y}%`,
               zIndex: Math.floor(node.y) + 20,
               transform: `translate(-50%, -50%) ${isHovered && isCurrent ? "scale(1.15)" : "scale(1)"}`,
-              pointerEvents: node.type === "passage" ? "none" : (isCurrent ? "auto" : "none"),
+              pointerEvents: (node.type === "passage") ? "none" : (isCurrent ? "auto" : "none"),
             }}
             onClick={() => { if (node.type === "passage") return; playSfx('menuSelect'); handleNodeClick(node); }}
             onMouseEnter={() => { if (node.type === "passage") return; setHoveredNode(node.id); }}
@@ -665,6 +669,43 @@ export default function Overworld({ player, onMoveToNode, onNodeSelect, onShopOp
                       <Star className="w-2.5 h-2.5 text-yellow-900" fill="currentColor" />
                     </div>
                   )}
+                </div>
+              </div>
+            ) : isVillage ? (
+              <div className="flex flex-col items-center">
+                <div className="relative">
+                  <div className={`${markerSize} flex items-center justify-center backdrop-blur-sm`}
+                    style={{
+                      borderRadius: "10px",
+                      backgroundColor: "rgba(0,0,0,0.15)",
+                      border: `3px solid rgba(220,180,80,0.95)`,
+                      boxShadow: isHovered || isCurrent
+                        ? `0 0 22px rgba(220, 180, 80, 0.65), inset 0 0 8px rgba(220,180,80,0.1), 0 4px 12px rgba(0,0,0,0.4)`
+                        : `0 2px 8px rgba(0,0,0,0.3)`,
+                    }}
+                  >
+                    <div className="flex flex-col items-center gap-0.5">
+                      <div style={{ fontSize: "18px", lineHeight: 1 }}>🏘️</div>
+                    </div>
+                  </div>
+                  {isCurrent && (
+                    <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full flex items-center justify-center" style={{ backgroundColor: "rgba(220, 180, 80, 0.9)", boxShadow: "0 0 8px rgba(220, 180, 80, 0.6)" }}>
+                      <Star className="w-2.5 h-2.5 text-yellow-900" fill="currentColor" />
+                    </div>
+                  )}
+                </div>
+                <div className="mt-1 px-1.5 py-0.5 text-center" style={{
+                  fontSize: "5px",
+                  letterSpacing: "0.5px",
+                  color: "rgba(220,180,80,0.95)",
+                  background: "rgba(0,0,0,0.55)",
+                  border: "1px solid rgba(220,180,80,0.4)",
+                  whiteSpace: "nowrap",
+                  maxWidth: "80px",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                }}>
+                  {node.name.toUpperCase()}
                 </div>
               </div>
             ) : node.type === "passage" ? (

@@ -14,6 +14,7 @@ import BattleScreen from "@/components/BattleScreen";
 import LevelUpScreen from "@/components/LevelUpScreen";
 import PerkSelectScreen from "@/components/PerkSelectScreen";
 import ShopScreen from "@/components/ShopScreen";
+import VillageScreen from "@/components/VillageScreen";
 import InventoryScreen from "@/components/InventoryScreen";
 import CharacterUnlockScreen from "@/components/CharacterUnlockScreen";
 import CharacterSelectUnlock from "@/components/CharacterSelectUnlock";
@@ -142,7 +143,7 @@ function Game() {
   }, [state.musicVolume]);
 
   useEffect(() => {
-    if (state.screen === "hut" && state.player) {
+    if ((state.screen === "hut" || state.screen === "village") && state.player) {
       const hutRegion = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
       playAmbient("hut");
       if (!battleTransition && !battleEntryReveal && hutRegion.theme === "Fire") {
@@ -192,6 +193,8 @@ function Game() {
   const [hutTargetingItemId, setHutTargetingItemId] = useState<string | null>(null);
   const [hutTransitionIn, setHutTransitionIn] = useState(false);
   const [hutTransitionOut, setHutTransitionOut] = useState(false);
+  const [villageTransitionIn, setVillageTransitionIn] = useState(false);
+  const [villageTransitionOut, setVillageTransitionOut] = useState(false);
   const [exitToMenuTransition, setExitToMenuTransition] = useState(false);
 
   useEffect(() => {
@@ -584,6 +587,7 @@ function Game() {
               }}
               onShamanVisit={openShaman}
               onHutEnter={() => setHutTransitionIn(true)}
+              onVillageEnter={() => setVillageTransitionIn(true)}
               onRegionChange={changeRegion}
               onEquip={equipItem}
               onUnequip={unequipItem}
@@ -629,6 +633,16 @@ function Game() {
                   setHutTransitionIn(false);
                   setHutTransitionOut(true);
                   setScreen("hut");
+                }}
+              />
+            )}
+            {villageTransitionIn && (
+              <BattleTransition
+                direction="in"
+                onComplete={() => {
+                  setVillageTransitionIn(false);
+                  setVillageTransitionOut(true);
+                  setScreen("village");
                 }}
               />
             )}
@@ -712,6 +726,12 @@ function Game() {
               <BattleTransition
                 direction="out"
                 onComplete={() => setHutTransitionOut(false)}
+              />
+            )}
+            {villageTransitionOut && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setVillageTransitionOut(false)}
               />
             )}
             {overworldFromLevelUp && (
@@ -1392,6 +1412,69 @@ function Game() {
             </>
           );
         })();
+
+      case "village":
+        if (!state.player) return null;
+        return (
+          <>
+            <VillageScreen
+              player={state.player}
+              onLeave={() => setVillageTransitionIn(true)}
+              onBuy={(item) => {
+                setState(s => {
+                  if (!s.player) return s;
+                  if (s.player.gold < item.price) return s;
+                  const newInventory = [...(s.player.inventory || []), { id: item.id, name: item.name, type: item.type, description: item.description, effect: item.effect, icon: item.icon, value: item.value, quantity: 1 }];
+                  return { ...s, player: { ...s.player, gold: s.player.gold - item.price, inventory: newInventory } };
+                });
+              }}
+              onSell={(itemId) => {
+                setState(s => {
+                  if (!s.player) return s;
+                  const item = (s.player.inventory || []).find(i => i.id === itemId);
+                  if (!item) return s;
+                  const sellPrice = Math.floor((item.value || 0) / 2);
+                  const newInventory = (s.player.inventory || []).filter(i => i.id !== itemId);
+                  return { ...s, player: { ...s.player, gold: s.player.gold + sellPrice, inventory: newInventory } };
+                });
+              }}
+              onRest={() => {
+                setState(s => {
+                  if (!s.player) return s;
+                  return { ...s, player: { ...s.player, hp: s.player.maxHp, mp: s.player.maxMp } };
+                });
+                playSfx('recover');
+              }}
+              onEquip={equipItem}
+              onUnequip={unequipItem}
+              onUseItem={useItemOverworld}
+              onSave={handleSave}
+              onExitToMenu={() => setExitToMenuTransition(true)}
+              textSpeed={state.textSpeed}
+              musicVolume={state.musicVolume}
+              sfxVolume={state.sfxVolume}
+              onTextSpeedChange={(sp) => setState(s => ({ ...s, textSpeed: sp }))}
+              onMusicVolumeChange={(vol) => { setState(s => ({ ...s, musicVolume: vol })); setMusicVolume(vol / 100); }}
+              onSfxVolumeChange={(vol) => { setState(s => ({ ...s, sfxVolume: vol })); setSfxVolume(vol / 100); }}
+            />
+            {villageTransitionIn && (
+              <BattleTransition
+                direction="in"
+                onComplete={() => {
+                  setVillageTransitionIn(false);
+                  setVillageTransitionOut(true);
+                  setScreen("overworld");
+                }}
+              />
+            )}
+            {villageTransitionOut && (
+              <BattleTransition
+                direction="out"
+                onComplete={() => setVillageTransitionOut(false)}
+              />
+            )}
+          </>
+        );
 
       case "battle":
         if (!state.player || !state.battle) return null;

@@ -411,7 +411,7 @@ export const REGIONS: Region[] = [
     theme: "Wind",
     unlocked: true,
     nodes: [
-      { id: 0,   type: "hut",     name: "Ranger's Post",       x: 5,  y: 50, connections: [1],          region: 0, cleared: false },
+      { id: 0,   type: "hut",     name: "Ranger's Post",       x: 5,  y: 50, connections: [1, 13],      region: 0, cleared: false },
       { id: 1,   type: "passage", name: "Mossy Trail",          x: 17, y: 50, connections: [0, 2, 3],    region: 0, cleared: false },
       { id: 2,   type: "shaman",  name: "Wind Shaman's Grove",  x: 17, y: 25, connections: [1],          region: 0, cleared: false },
       { id: 3,   type: "passage", name: "Breeze Path",          x: 31, y: 50, connections: [1, 4, 5],    region: 0, cleared: false },
@@ -424,6 +424,7 @@ export const REGIONS: Region[] = [
       { id: 10,  type: "passage", name: "Gale Ridge",           x: 74, y: 25, connections: [9],          region: 0, cleared: false },
       { id: 11,  type: "shop",    name: "Thornwood Market",     x: 74, y: 75, connections: [9],          region: 0, cleared: false },
       { id: 12,  type: "boss",    name: "Storm Lord's Peak",    x: 90, y: 50, connections: [9],          region: 0, cleared: false },
+      { id: 13,  type: "village", name: "Thornveil Village",    x: 5,  y: 25, connections: [0],          region: 0, cleared: false },
     ],
   },
   {
