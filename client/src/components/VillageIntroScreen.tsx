@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { MessageSquare } from "lucide-react";
 import villageBg from "@assets/forest_region_village_1774010989526.jpg";
 
 const ac = "#c9a44a";
@@ -109,25 +110,6 @@ export default function VillageIntroScreen({ onComplete }: Props) {
     return () => { timers.current.forEach(clearTimeout); stopTyper(); };
   }, []);
 
-  const handleClick = () => {
-    if (done.current) return;
-    const fullText = DIALOGUE[lineIdx].text;
-    if (typedChars < fullText.length) {
-      stopTyper();
-      setTypedChars(fullText.length);
-    } else if (lineIdx < DIALOGUE.length - 1) {
-      setLineVisible(false);
-      stopTyper();
-      const next = lineIdx + 1;
-      schedule(() => {
-        setLineIdx(next);
-        setTypedChars(0);
-        setLineVisible(true);
-        startTyper(DIALOGUE[next].text);
-      }, 300);
-    }
-  };
-
   const line = DIALOGUE[lineIdx];
   const displayText = line.text.slice(0, typedChars);
   const isTyping = typedChars < line.text.length;
@@ -135,7 +117,6 @@ export default function VillageIntroScreen({ onComplete }: Props) {
   return (
     <div
       className="fixed inset-0 z-[300] overflow-hidden select-none"
-      onClick={handleClick}
       style={{ cursor: "default" }}
     >
       <div
@@ -178,58 +159,39 @@ export default function VillageIntroScreen({ onComplete }: Props) {
         </div>
       ))}
 
+      {/* Tavern-style full-width bottom dialogue bar */}
       <div
-        className="absolute"
+        className="absolute left-0 right-0 bottom-0 flex"
         style={{
-          bottom: 48,
-          left: 40,
-          right: 40,
-          opacity: lineVisible ? 1 : 0,
-          transform: lineVisible ? "translateY(0)" : "translateY(10px)",
-          transition: "opacity 0.35s ease, transform 0.35s ease",
+          height: "155px",
+          background: "linear-gradient(180deg, #0a0808f4 0%, #0d0b0bfa 100%)",
+          borderTop: `2px solid ${ac}`,
+          boxShadow: `0 -4px 30px #000000a0`,
+          fontFamily: "'Press Start 2P', cursive",
           pointerEvents: "none",
+          opacity: lineVisible ? 1 : 0,
+          transition: "opacity 0.35s ease",
+          zIndex: 5,
         }}
       >
+        {/* Speaker column */}
         <div
-          style={{
-            background: "linear-gradient(180deg, #080606f8 0%, #100e0efa 100%)",
-            border: `2px solid ${ac}`,
-            boxShadow: `0 0 24px ${ac}50, 0 4px 40px rgba(0,0,0,0.9)`,
-            padding: "16px 22px 14px",
-            fontFamily: "'Press Start 2P', cursive",
-            position: "relative",
-            maxWidth: 700,
-            margin: "0 auto",
-          }}
+          className="flex flex-col justify-start flex-shrink-0"
+          style={{ width: "130px", borderRight: `1px solid ${ac}25`, padding: "14px 14px" }}
         >
-          <div
-            style={{
-              backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}06 3px, ${ac}06 4px)`,
-              position: "absolute", inset: 0, pointerEvents: "none",
-            }}
-          />
-          <div style={{ position: "relative" }}>
-            <div style={{ fontSize: "10px", color: ac, marginBottom: "12px", letterSpacing: "2px" }}>
-              ▸ {line.speaker}
-            </div>
-            <div style={{ fontSize: "10px", color: line.color, lineHeight: "2.2", letterSpacing: "1px", minHeight: "2.2em" }}>
-              {displayText}
-              {isTyping && (
-                <span style={{ animation: "villageIntroCursor 0.7s step-end infinite", color: ac }}>▌</span>
-              )}
-            </div>
-            {!isTyping && lineIdx < DIALOGUE.length - 1 && (
-              <div
-                style={{
-                  position: "absolute", bottom: 0, right: 0,
-                  fontSize: "10px", color: `${ac}80`,
-                  animation: "villageIntroPulse 1.1s ease-in-out infinite",
-                }}
-              >
-                ▼
-              </div>
-            )}
+          <div className="flex items-center gap-1.5" style={{ marginBottom: "6px" }}>
+            <MessageSquare style={{ width: "12px", height: "12px", flexShrink: 0, color: ac }} />
+            <span style={{ fontSize: "6px", color: ac, letterSpacing: "1.5px", lineHeight: "1.6" }}>
+              {line.speaker.toUpperCase()}
+            </span>
           </div>
+        </div>
+
+        {/* Text column */}
+        <div style={{ flex: 1, overflow: "hidden", padding: "14px 20px", position: "relative" }}>
+          <p style={{ fontSize: "10px", color: line.color, letterSpacing: "1px", lineHeight: "2.4", whiteSpace: "pre-line", margin: 0 }}>
+            "{displayText}<span style={{ opacity: isTyping ? 1 : 0 }}>▌</span>"
+          </p>
         </div>
       </div>
 
@@ -259,14 +221,6 @@ export default function VillageIntroScreen({ onComplete }: Props) {
       </button>
 
       <style>{`
-        @keyframes villageIntroPulse {
-          0%, 100% { opacity: 0.4; transform: translateY(0); }
-          50%       { opacity: 1;   transform: translateY(3px); }
-        }
-        @keyframes villageIntroCursor {
-          0%, 100% { opacity: 1; }
-          50%      { opacity: 0; }
-        }
         @keyframes leafDriftA {
           0%   { transform: translateX(-30px) translateY(0px) rotate(0deg);   opacity: 0; }
           7%   { opacity: 0.82; }
