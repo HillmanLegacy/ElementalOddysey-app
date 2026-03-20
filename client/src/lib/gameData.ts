@@ -923,6 +923,95 @@ export const NICOLAS_QUEST_DIALOGUE: Record<string, NicolasDialogueStage[]> = {
   ],
 };
 
+export interface NicolasQuestDef {
+  id: string;
+  name: string;
+  description: string;
+  goal: string;
+  goldReward: number;
+  stage: number;
+  completionLines: string[];
+}
+
+export const NICOLAS_QUESTS: Record<string, NicolasQuestDef[]> = {
+  Wind: [
+    {
+      id: "wind_q1",
+      name: "The Eastern Paths",
+      description: "Harpies have been terrorizing Breeze Path, leaving merchants afraid to travel.",
+      goal: "Collect a bounty reward from the board.",
+      goldReward: 80,
+      stage: 0,
+      completionLines: [
+        "You dealt with the harpies. I can see it on you — that look.",
+        "Here. More than fair for what you did out there.",
+      ],
+    },
+    {
+      id: "wind_q2",
+      name: "Storm Pass Toll",
+      description: "A cyclops at Storm Pass is blocking the main trade route, extorting travellers.",
+      goal: "Complete a hunt contract from the board.",
+      goldReward: 120,
+      stage: 1,
+      completionLines: [
+        "The merchants are crossing again. You actually cleared Storm Pass.",
+        "I didn't think it would happen. Here's what I promised.",
+      ],
+    },
+    {
+      id: "wind_q3",
+      name: "The Dragon at the Peak",
+      description: "Resk, an ancient dragon, roosts at the peak and casts a shadow over the whole valley.",
+      goal: "Defeat the region boss.",
+      goldReward: 250,
+      stage: 2,
+      completionLines: [
+        "Resk is gone. The whole valley knows it. I've been waiting years for that.",
+        "Take this. Every coin of it is yours.",
+      ],
+    },
+  ],
+  Fire: [
+    {
+      id: "fire_q1",
+      name: "Scorched Path",
+      description: "Fire demons are pushing dangerously close to the settlement along the Scorched Path.",
+      goal: "Collect a bounty reward from the board.",
+      goldReward: 80,
+      stage: 0,
+      completionLines: [
+        "Fewer demons on the road. Word's already spreading through the settlement.",
+        "Take this — you bought us some breathing room.",
+      ],
+    },
+    {
+      id: "fire_q2",
+      name: "Ember Hunt",
+      description: "The demon kin grow bolder every week. Hunters are needed on the Cinder Trail.",
+      goal: "Complete a hunt contract from the board.",
+      goldReward: 120,
+      stage: 1,
+      completionLines: [
+        "The Cinder Trail is quiet tonight. First time in weeks.",
+        "Here's your gold. Well spent.",
+      ],
+    },
+    {
+      id: "fire_q3",
+      name: "Find Ytriel",
+      description: "The fire dragon Ytriel hasn't been seen in months — but it still roosts above the valley.",
+      goal: "Defeat the region boss.",
+      goldReward: 250,
+      stage: 2,
+      completionLines: [
+        "Ytriel. Gone. I've been keeping this inn open waiting for that news.",
+        "Whatever you need. It's yours.",
+      ],
+    },
+  ],
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function getShopItems(region: Region): ShopItem[] {

@@ -83,6 +83,19 @@ export interface PlayerCharacter {
   activeHunts?: HuntData[];
   collectedBountiesCount?: number;
   collectedHuntsCount?: number;
+  activeQuests?: Quest[];
+  completedQuestIds?: string[];
+}
+
+export interface Quest {
+  id: string;
+  name: string;
+  description: string;
+  goal: string;
+  goldReward: number;
+  regionTheme: string;
+  stage: number;
+  status: "in_progress" | "complete";
 }
 
 export interface BountyData {

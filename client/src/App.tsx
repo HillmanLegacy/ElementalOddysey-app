@@ -1486,6 +1486,17 @@ function Game() {
                 });
                 return { ...s, player: { ...s.player, gold: s.player.gold + goldReward, inventory: newInventory, collectedHuntsCount: (s.player.collectedHuntsCount ?? 0) + 1 } };
               })}
+              onAcceptQuest={(quest) => setState(s => {
+                if (!s.player) return s;
+                const existing = s.player.activeQuests ?? [];
+                if (existing.find(q => q.id === quest.id)) return s;
+                return { ...s, player: { ...s.player, activeQuests: [...existing, quest] } };
+              })}
+              onCompleteQuest={(questId, goldReward) => setState(s => {
+                if (!s.player) return s;
+                const completedIds = [...(s.player.completedQuestIds ?? []), questId];
+                return { ...s, player: { ...s.player, gold: s.player.gold + goldReward, completedQuestIds: completedIds } };
+              })}
             />)}
             {villageTransitionIn && (
               <BattleTransition
