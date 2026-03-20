@@ -138,6 +138,7 @@ export default function VillageScreen({
   const [dialoguePhase, setDialoguePhase] = useState<"main" | "accept" | "reject" | null>(null);
   const [currentTopicKey, setCurrentTopicKey] = useState<string | null>(null);
   const dialogueScrollRef = useRef<HTMLDivElement>(null);
+  const typingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [popupLine, setPopupLine] = useState("");
   const [popupIsCompletion, setPopupIsCompletion] = useState(false);
   const [popupQuestId, setPopupQuestId] = useState<string | null>(null);
@@ -222,11 +223,44 @@ export default function VillageScreen({
       setTypedText(popupLine.slice(0, i));
       if (i >= popupLine.length) {
         clearInterval(interval);
-        setTimeout(() => setTypingDone(true), 1500);
+        typingIntervalRef.current = null;
+        setTimeout(() => setTypingDone(true), 800);
       }
     }, 28);
-    return () => clearInterval(interval);
+    typingIntervalRef.current = interval;
+    return () => { clearInterval(interval); typingIntervalRef.current = null; };
   }, [popupLine, dialoguePhase]);
+
+  const isChoiceRequired = dialoguePhase === "main" && !popupIsCompletion
+    && currentTopicKey === "quest" && !currentStageQuestAccepted && !currentStageQuestCompleted && !!popupQuestId;
+
+  const handleBarClick = () => {
+    if (isChoiceRequired) return;
+    if (!typingDone) {
+      if (typingIntervalRef.current) {
+        clearInterval(typingIntervalRef.current);
+        typingIntervalRef.current = null;
+      }
+      setTypedText(popupLine);
+      setTypingDone(true);
+      return;
+    }
+    if (dialoguePhase === "accept" || dialoguePhase === "reject") {
+      playSfx("menuSelect");
+      finishDialogue();
+      return;
+    }
+    if (dialoguePhase === "main" && popupIsCompletion) {
+      playSfx("menuSelect");
+      if (popupQuestId) onCompleteQuest(popupQuestId, popupGoldReward);
+      finishDialogue();
+      return;
+    }
+    if (dialoguePhase === "main" && currentTopicKey !== "quest") {
+      playSfx("menuSelect");
+      finishDialogue();
+    }
+  };
 
   useEffect(() => {
     if (dialogueScrollRef.current) {
@@ -807,7 +841,9 @@ export default function VillageScreen({
             borderTop: `2px solid ${ac}`,
             boxShadow: `0 -4px 30px #000000a0`,
             fontFamily: "'Press Start 2P', cursive",
+            cursor: isChoiceRequired ? "default" : "pointer",
           }}
+          onClick={handleBarClick}
         >
           {/* NPC label column */}
           <div
@@ -818,106 +854,65 @@ export default function VillageScreen({
               <MessageSquare className="w-3 h-3 flex-shrink-0" style={{ color: ac }} />
               <span style={{ fontSize: "6px", color: ac, letterSpacing: "1.5px", lineHeight: "1.4" }}>NICOLAS{"\n"}FERNAL</span>
             </div>
-            {/* Only show close button when in response phase */}
-            {(dialoguePhase === "accept" || dialoguePhase === "reject") && typingDone && (
-              <button
-                onClick={() => { playSfx("menuSelect"); finishDialogue(); }}
-                style={{ background: "transparent", border: `1px solid ${ac}30`, color: `${ac}60`, cursor: "pointer", fontSize: "8px", padding: "4px 8px", letterSpacing: "1px", alignSelf: "flex-start" }}
-                onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = ac}
-                onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = `${ac}60`}
-              >✕ CLOSE</button>
-            )}
+            <span style={{ fontSize: "6px", color: `${ac}35`, letterSpacing: "1px", fontStyle: "italic" }}>
+              {dialoguePhase === "accept" ? "Quest accepted." : dialoguePhase === "reject" ? "Understood." : ""}
+            </span>
           </div>
 
           {/* Scrollable text column */}
           <div
             ref={dialogueScrollRef}
-            style={{ flex: 1, overflowY: "auto", padding: "14px 20px", scrollBehavior: "smooth" }}
+            style={{ flex: 1, overflowY: "auto", padding: "14px 20px", scrollBehavior: "smooth", position: "relative" }}
           >
             <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.4", whiteSpace: "pre-line", margin: 0 }}>
               "{typedText}<span style={{ opacity: typingDone ? 0 : 1 }}>▌</span>"
             </p>
+            {/* Click-to-advance hint */}
+            {typingDone && !isChoiceRequired && (
+              <span
+                className="animate-pulse"
+                style={{ position: "absolute", bottom: "10px", right: "14px", fontSize: "8px", color: `${ac}60` }}
+              >▼</span>
+            )}
           </div>
 
-          {/* Action column */}
-          <div
-            className="flex flex-col justify-between flex-shrink-0"
-            style={{ width: "130px", borderLeft: `1px solid ${ac}25`, padding: "12px 14px" }}
-          >
-            <span style={{ fontSize: "6px", color: `${ac}40`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
-            <div className="flex flex-col gap-2">
-
-              {/* Response phase: just a CLOSE in the NPC column — no extra buttons here */}
-              {(dialoguePhase === "accept" || dialoguePhase === "reject") && typingDone && (
-                <span style={{ fontSize: "6px", color: `${ac}30`, letterSpacing: "1px", fontStyle: "italic" }}>
-                  {dialoguePhase === "accept" ? "Quest accepted." : "Understood."}
-                </span>
-              )}
-
-              {/* Main phase buttons */}
-              {dialoguePhase === "main" && typingDone && (
-                <>
-                  {/* Completion: CLAIM */}
-                  {popupIsCompletion && (
-                    <button
-                      style={{ border: `1px solid #6ee7b760`, background: "#6ee7b715", color: "#6ee7b7", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b730"}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b715"}
-                      onClick={() => { playSfx("menuSelect"); if (popupQuestId) onCompleteQuest(popupQuestId, popupGoldReward); finishDialogue(); }}
-                    >
-                      CLAIM {popupGoldReward}G ›
-                    </button>
-                  )}
-
-                  {/* Quest offer: ACCEPT + REJECT */}
-                  {!popupIsCompletion && currentTopicKey === "quest" && !currentStageQuestAccepted && !currentStageQuestCompleted && popupQuestId && (
-                    <>
-                      <button
-                        style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
-                        onClick={() => {
-                          playSfx("menuSelect");
-                          const def = questForCurrentStage!;
-                          onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" });
-                          const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
-                          setDialoguePhase("accept");
-                          startLine(resp?.accept ?? "Good. Be safe out there.");
-                        }}
-                      >
-                        ACCEPT ›
-                      </button>
-                      <button
-                        style={{ border: `1px solid #e07060a0`, background: "#e0706015", color: "#e07060", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
-                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e0706030"}
-                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#e0706015"}
-                        onClick={() => {
-                          playSfx("menuSelect");
-                          const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
-                          setDialoguePhase("reject");
-                          startLine(resp?.reject ?? "...Understood. The offer stays open.");
-                        }}
-                      >
-                        DECLINE ›
-                      </button>
-                    </>
-                  )}
-
-                  {/* General topic or in-progress: CLOSE */}
-                  {!popupIsCompletion && currentTopicKey !== "quest" && (
-                    <button
-                      style={{ border: `1px solid ${ac}30`, background: "transparent", color: `${ac}60`, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
-                      onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = ac}
-                      onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = `${ac}60`}
-                      onClick={() => { playSfx("menuSelect"); finishDialogue(); }}
-                    >
-                      ✕ CLOSE
-                    </button>
-                  )}
-                </>
-              )}
+          {/* Action column — only shown when a choice is required */}
+          {isChoiceRequired && typingDone && (
+            <div
+              className="flex flex-col justify-end flex-shrink-0 gap-2"
+              style={{ width: "140px", borderLeft: `1px solid ${ac}25`, padding: "12px 14px" }}
+              onClick={e => e.stopPropagation()}
+            >
+              <button
+                style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "7px 10px" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
+                onClick={() => {
+                  playSfx("menuSelect");
+                  const def = questForCurrentStage!;
+                  onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" });
+                  const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
+                  setDialoguePhase("accept");
+                  startLine(resp?.accept ?? "Good. Be safe out there.");
+                }}
+              >
+                ACCEPT ›
+              </button>
+              <button
+                style={{ border: `1px solid #e07060a0`, background: "#e0706015", color: "#e07060", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "7px 10px" }}
+                onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#e0706030"}
+                onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#e0706015"}
+                onClick={() => {
+                  playSfx("menuSelect");
+                  const resp = NICOLAS_TALK_RESPONSES[`${regionTheme}_${nicolasStage}`];
+                  setDialoguePhase("reject");
+                  startLine(resp?.reject ?? "...Understood. The offer stays open.");
+                }}
+              >
+                DECLINE ›
+              </button>
             </div>
-          </div>
+          )}
         </div>
       )}
 
