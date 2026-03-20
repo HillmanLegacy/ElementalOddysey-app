@@ -31,7 +31,7 @@ import { playAmbient, stopAmbient, playMusic, stopMusic, stopAll, setMusicVolume
 import { playSfx } from "@/lib/sfx";
 import { X, Home, Moon, Package, Users, Save, Sparkles, ArrowLeft, LogOut, Heart, Droplets, BarChart2 } from "lucide-react";
 import { groupConsumables } from "@/lib/utils";
-import type { PlayerCharacter } from "@shared/schema";
+import type { PlayerCharacter, BountyData } from "@shared/schema";
 import hutBackground from "@assets/Hut_Background_1771782069190.jpg";
 import SideScrollStage, { SSEnemySnapshot, SSDemonSnapshot } from "@/components/SideScrollStage";
 import ClimbingStage, { ClimbEnemySnapshot } from "@/components/ClimbingStage";
@@ -1423,11 +1423,16 @@ function Game() {
 
       case "village":
         if (!state.player) return null;
+        return (() => {
+        const villageRegionTier = getRegionTier(state.player!.currentRegion, state.player!.regionBossDefeats || {});
+        const villageRegion = getRegionForTier(state.player!.currentRegion, villageRegionTier);
+        const villageTheme = villageRegion.theme;
         return (
           <>
             {!showVillageIntro && (
             <VillageScreen
               player={state.player}
+              regionTheme={villageTheme}
               onLeave={() => setVillageTransitionIn(true)}
               onBuy={(item) => {
                 setState(s => {
@@ -1465,6 +1470,22 @@ function Game() {
               onTextSpeedChange={(sp) => setState(s => ({ ...s, textSpeed: sp }))}
               onMusicVolumeChange={(vol) => { setState(s => ({ ...s, musicVolume: vol })); setMusicVolume(vol / 100); }}
               onSfxVolumeChange={(vol) => { setState(s => ({ ...s, sfxVolume: vol })); setSfxVolume(vol / 100); }}
+              onSetBounty={(bounty) => setState(s => s.player ? { ...s, player: { ...s.player, activeBounty: bounty } } : s)}
+              onCollectBounty={() => setState(s => {
+                if (!s.player?.activeBounty?.completed) return s;
+                const reward = s.player.activeBounty.goldReward;
+                return { ...s, player: { ...s.player, gold: s.player.gold + reward, activeBounty: null } };
+              })}
+              onCollectHunt={(huntId, lootItemId, required, goldReward) => setState(s => {
+                if (!s.player) return s;
+                let remaining = required;
+                const newInventory = s.player.inventory.filter(item => {
+                  const match = item.id === lootItemId || item.id.startsWith(lootItemId + "_");
+                  if (match && remaining > 0) { remaining--; return false; }
+                  return true;
+                });
+                return { ...s, player: { ...s.player, gold: s.player.gold + goldReward, inventory: newInventory } };
+              })}
             />)}
             {villageTransitionIn && (
               <BattleTransition
@@ -1494,6 +1515,7 @@ function Game() {
             )}
           </>
         );
+        })();
 
       case "battle":
         if (!state.player || !state.battle) return null;

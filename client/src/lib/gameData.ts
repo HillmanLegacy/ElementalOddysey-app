@@ -811,6 +811,68 @@ export function rollLootDrops(enemies: import("@shared/schema").Enemy[]): import
   return allDrops;
 }
 
+// ── Bounty & Hunt Data ───────────────────────────────────────────────────────
+
+export interface BountyDef {
+  enemyId: string;
+  enemyName: string;
+  goldReward: number;
+}
+
+export interface HuntDef {
+  id: string;
+  enemyName: string;
+  lootItemId: string;
+  lootName: string;
+  required: number;
+  goldReward: number;
+}
+
+export const BOUNTY_POOLS: Record<string, BountyDef[]> = {
+  Wind: [
+    { enemyId: "wolf_wind",     enemyName: "Storm Wolf", goldReward: 35 },
+    { enemyId: "harpy_wind",    enemyName: "Harpy",      goldReward: 45 },
+    { enemyId: "minotaur_wind", enemyName: "Minotaur",   goldReward: 55 },
+    { enemyId: "cyclops_wind",  enemyName: "Cyclops",    goldReward: 65 },
+  ],
+  Fire: [
+    { enemyId: "slime_fire", enemyName: "Fire Demon", goldReward: 50 },
+    { enemyId: "demon_kin",  enemyName: "Demon Kin",  goldReward: 65 },
+  ],
+};
+
+export const HUNT_POOLS: Record<string, HuntDef[]> = {
+  Wind: [
+    { id: "hunt_harpy_feather_r0",  enemyName: "Harpy",    lootItemId: "harpy_feather",  lootName: "Harpy Feather",  required: 5, goldReward: 90  },
+    { id: "hunt_harpy_claw_r0",     enemyName: "Harpy",    lootItemId: "harpy_claw",     lootName: "Harpy Claw",     required: 3, goldReward: 100 },
+    { id: "hunt_minotaur_horn_r0",  enemyName: "Minotaur", lootItemId: "minotaur_horn",  lootName: "Minotaur Horn",  required: 3, goldReward: 80  },
+    { id: "hunt_tuft_of_fur_r0",    enemyName: "Minotaur", lootItemId: "tuft_of_fur",    lootName: "Tuft of Fur",    required: 5, goldReward: 70  },
+    { id: "hunt_cyclops_eye_r0",    enemyName: "Cyclops",  lootItemId: "cyclops_eye",    lootName: "Cyclops Eye",    required: 2, goldReward: 110 },
+  ],
+  Fire: [
+    { id: "hunt_demon_hide_r1",     enemyName: "Fire Demon", lootItemId: "fire_demon_hide", lootName: "Fire Demon Hide", required: 5, goldReward: 100 },
+    { id: "hunt_demonic_cinder_r1", enemyName: "Fire Demon", lootItemId: "demonic_cinder",  lootName: "Demonic Cinder",  required: 3, goldReward: 120 },
+  ],
+};
+
+export const REGION_TALK_LINES: Record<string, string[]> = {
+  Wind: [
+    "Harpies have been raiding the eastern paths again. Bold creatures.",
+    "A cyclops was spotted near Storm Pass. The merchants are nervous.",
+    "They say Resk still prowls the peak. Anyone who's gone up... hasn't come back.",
+    "Minotaur horns sell well at market. The alchemist across the way pays fair.",
+    "The wind's been strange lately. Something's stirring in the deep thicket.",
+    "Old Thorn spotted tracks beneath the Hollow Thicket. Big ones.",
+  ],
+  Fire: [
+    "Fire demons have been pushing further up the Scorched Path. Troubling.",
+    "The demon kin grow bolder each season. The ember hut's barely standing.",
+    "Ytriel hasn't been seen in months. That's either very good news or very bad.",
+    "Merchants won't travel past the Cinder Trail anymore. Can't blame them.",
+    "Demonic cinders are worth a fortune if you can pry them loose intact.",
+  ],
+};
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function getShopItems(region: Region): ShopItem[] {

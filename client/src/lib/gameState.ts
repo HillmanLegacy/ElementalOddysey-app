@@ -1077,6 +1077,12 @@ export function useGameState() {
 
       const lootItems = s.battle.lootDrops ?? [];
 
+      let updatedBounty = s.player.activeBounty ?? null;
+      if (updatedBounty && !updatedBounty.completed) {
+        const hitTarget = s.battle.enemies.some(e => e.id === updatedBounty!.enemyId);
+        if (hitTarget) updatedBounty = { ...updatedBounty, completed: true };
+      }
+
       const updatedPlayer: PlayerCharacter = {
         ...s.player,
         xp: newXp,
@@ -1084,6 +1090,7 @@ export function useGameState() {
         level: newLevel,
         gold: s.player.gold + totalGold,
         inventory: [...s.player.inventory, ...lootItems],
+        activeBounty: updatedBounty,
         clearedNodes: finalCleared,
         currentRegion,
         currentNode,

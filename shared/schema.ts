@@ -79,6 +79,26 @@ export interface PlayerCharacter {
   merchantLastTier: number;
   merchantSavedStock: ShopItem[] | null;
   villageIntroSeen?: boolean;
+  activeBounty?: BountyData | null;
+  activeHunts?: HuntData[];
+}
+
+export interface BountyData {
+  enemyId: string;
+  enemyName: string;
+  goldReward: number;
+  region: number;
+  completed: boolean;
+}
+
+export interface HuntData {
+  id: string;
+  region: number;
+  enemyName: string;
+  lootItemId: string;
+  lootName: string;
+  required: number;
+  goldReward: number;
 }
 
 export interface InventoryItem {

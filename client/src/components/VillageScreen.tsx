@@ -1,10 +1,11 @@
 import { useState, useRef } from "react";
-import { Menu, ArrowLeft, ShoppingBag, Hammer, Beer, X } from "lucide-react";
+import { Menu, ArrowLeft, ShoppingBag, Hammer, Beer, X, MessageSquare, Crosshair, Target } from "lucide-react";
 import GameMenuPanel from "@/components/GameMenuPanel";
 import ShopScreen from "@/components/ShopScreen";
 import BattleTransition from "@/components/BattleTransition";
 import { playSfx } from "@/lib/sfx";
-import type { PlayerCharacter, ShopItem } from "@shared/schema";
+import type { PlayerCharacter, ShopItem, BountyData } from "@shared/schema";
+import { BOUNTY_POOLS, HUNT_POOLS, REGION_TALK_LINES } from "@/lib/gameData";
 import villageBg from "@assets/forest_region_village_1774010989526.jpg";
 import blacksmithBg from "@assets/village_blacksmith_1774017365247.jpg";
 import tavernBg from "@assets/village_tavern_1774017365247.jpg";
@@ -47,8 +48,11 @@ const BLACKSMITH_ITEMS: ShopItem[] = [
 
 type Panel = null | "shop" | "blacksmith" | "tavern";
 
+type TavernTab = "rest" | "talk" | "bounty" | "hunt";
+
 interface VillageScreenProps {
   player: PlayerCharacter;
+  regionTheme: string;
   onLeave: () => void;
   onBuy: (item: ShopItem) => void;
   onSell: (itemId: string) => void;
@@ -64,6 +68,9 @@ interface VillageScreenProps {
   onTextSpeedChange: (s: "slow" | "medium" | "fast") => void;
   onMusicVolumeChange: (v: number) => void;
   onSfxVolumeChange: (v: number) => void;
+  onSetBounty: (bounty: BountyData) => void;
+  onCollectBounty: () => void;
+  onCollectHunt: (huntId: string, lootItemId: string, required: number, goldReward: number) => void;
 }
 
 const ARROWS: { id: Panel & string; label: string; icon: typeof ShoppingBag; left: string; top: string; labelAbove?: boolean }[] = [
@@ -85,14 +92,19 @@ const LOCATION_BG: Record<string, string> = {
 };
 
 export default function VillageScreen({
-  player, onLeave, onBuy, onSell, onRest,
+  player, regionTheme, onLeave, onBuy, onSell, onRest,
   onEquip, onUnequip, onUseItem, onSave, onExitToMenu,
   textSpeed, musicVolume, sfxVolume,
   onTextSpeedChange, onMusicVolumeChange, onSfxVolumeChange,
+  onSetBounty, onCollectBounty, onCollectHunt,
 }: VillageScreenProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<Panel>(null);
   const [restedMsg, setRestedMsg] = useState(false);
+  const [tavernTab, setTavernTab] = useState<TavernTab>("rest");
+  const [talkLineIdx, setTalkLineIdx] = useState(0);
+  const [bountyCollected, setBountyCollected] = useState(false);
+  const [huntCollected, setHuntCollected] = useState<Set<string>>(new Set());
   const [transitionIn, setTransitionIn] = useState(false);
   const [transitionOut, setTransitionOut] = useState(false);
   const transitionTargetRef = useRef<Panel | "close" | null>(null);
@@ -334,79 +346,232 @@ export default function VillageScreen({
         />
         <div className="absolute inset-0 z-[50] flex items-center justify-center" style={{ paddingTop: "60px", paddingBottom: "60px" }}>
           <div
-            className="relative w-[280px] overflow-hidden"
+            className="relative w-[310px] overflow-hidden"
             style={{
               background: "linear-gradient(180deg,#0a080899 0%,#151010aa 100%)",
               border: `3px solid ${ac}`,
               boxShadow: `0 0 20px ${ac}40, 0 0 60px ${ac}15`,
             }}
           >
-            <div
-              style={{
-                position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`,
-                pointerEvents: "none",
-              }}
-            />
+            <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, ${ac}08 3px, ${ac}08 4px)`, pointerEvents: "none" }} />
+
+            {/* Header */}
             <div className="relative px-4 pt-3 pb-2 flex items-center justify-between" style={{ background: "#0d0b0b99", borderBottom: `3px solid ${ac}` }}>
               <div className="flex items-center gap-2">
                 <Beer className="w-4 h-4" style={{ color: ac }} />
                 <span style={{ fontSize: "9px", color: ac, letterSpacing: "2px" }}>THE BRAMBLE INN</span>
               </div>
-              <button
-                className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110"
-                style={{ border: `1px solid ${ac}50`, background: "transparent" }}
-                onClick={closePanel}
-              >
+              <button className="flex items-center justify-center w-6 h-6 transition-all hover:scale-110" style={{ border: `1px solid ${ac}50`, background: "transparent" }} onClick={closePanel}>
                 <X className="w-3 h-3" style={{ color: ac }} />
               </button>
             </div>
 
-            <div className="relative px-4 py-4 space-y-3">
-              <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "1.8", textAlign: "center" }}>
-                "Rest your bones, traveller.<br />The forest keeps no schedules."
-              </p>
-
-              {restedMsg ? (
-                <div className="text-center py-2" style={{ fontSize: "8px", color: "#6ee7b7", letterSpacing: "1px" }}>
-                  ✓ RESTED &amp; REFRESHED
-                </div>
-              ) : (
+            {/* Tab bar */}
+            <div className="relative flex" style={{ borderBottom: `2px solid ${ac}30` }}>
+              {([
+                { id: "rest",   label: "REST",   Icon: Beer },
+                { id: "talk",   label: "TALK",   Icon: MessageSquare },
+                { id: "bounty", label: "BOUNTY", Icon: Crosshair },
+                { id: "hunt",   label: "HUNT",   Icon: Target },
+              ] as { id: TavernTab; label: string; Icon: typeof Beer }[]).map(({ id, label, Icon }) => (
                 <button
-                  data-testid="button-tavern-rest"
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left transition-all"
+                  key={id}
+                  className="flex-1 flex flex-col items-center gap-0.5 py-2 transition-all"
                   style={{
-                    background: "#0d0b0bf0",
-                    border: `1px solid ${ac}30`,
-                    fontSize: "9px",
-                    color: "#e8e0d0",
-                    letterSpacing: "1px",
+                    background: tavernTab === id ? `${ac}20` : "transparent",
+                    borderBottom: tavernTab === id ? `2px solid ${ac}` : "2px solid transparent",
+                    color: tavernTab === id ? ac : `${ac}60`,
+                    fontSize: "6px",
+                    letterSpacing: "0.5px",
                   }}
-                  onMouseEnter={e => {
-                    (e.currentTarget as HTMLElement).style.background = `${ac}25`;
-                    (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`;
-                  }}
-                  onMouseLeave={e => {
-                    (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0";
-                    (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`;
-                  }}
-                  onClick={() => { playSfx("recover"); onRest(); setRestedMsg(true); }}
+                  onClick={() => { playSfx("menuSelect"); setTavernTab(id); }}
                 >
-                  <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ac}40`, background: "#0a080840" }}>
-                    <Beer className="w-3.5 h-3.5" style={{ color: ac }} />
-                  </div>
-                  <div className="flex flex-col">
-                    <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>REST</span>
-                    <span style={{ fontSize: "7px", color: `${ac}60`, marginTop: "2px" }}>Restore HP &amp; MP (free)</span>
-                  </div>
+                  <Icon className="w-3 h-3" />
+                  {label}
                 </button>
+              ))}
+            </div>
+
+            {/* Tab content */}
+            <div className="relative px-4 py-3" style={{ minHeight: "140px" }}>
+
+              {/* REST */}
+              {tavernTab === "rest" && (
+                <div className="space-y-3">
+                  <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "1.8", textAlign: "center" }}>
+                    "Rest your bones, traveller.<br />The forest keeps no schedules."
+                  </p>
+                  {restedMsg ? (
+                    <div className="text-center py-2" style={{ fontSize: "8px", color: "#6ee7b7", letterSpacing: "1px" }}>✓ RESTED &amp; REFRESHED</div>
+                  ) : (
+                    <button
+                      data-testid="button-tavern-rest"
+                      className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
+                      style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}
+                      onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = `${ac}25`; (e.currentTarget as HTMLElement).style.borderColor = `${ac}80`; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0"; (e.currentTarget as HTMLElement).style.borderColor = `${ac}30`; }}
+                      onClick={() => { playSfx("recover"); onRest(); setRestedMsg(true); }}
+                    >
+                      <div className="w-7 h-7 flex items-center justify-center flex-shrink-0" style={{ border: `1px solid ${ac}40`, background: "#0a080840" }}>
+                        <Beer className="w-3.5 h-3.5" style={{ color: ac }} />
+                      </div>
+                      <div className="flex flex-col">
+                        <span style={{ fontSize: "9px", color: "#e8e0d0", letterSpacing: "1px" }}>REST</span>
+                        <span style={{ fontSize: "7px", color: `${ac}60`, marginTop: "2px" }}>Restore HP &amp; MP (free)</span>
+                      </div>
+                    </button>
+                  )}
+                </div>
               )}
+
+              {/* TALK */}
+              {tavernTab === "talk" && (() => {
+                const lines = REGION_TALK_LINES[regionTheme] || ["Nicolas has nothing to say."];
+                const line = lines[talkLineIdx % lines.length];
+                return (
+                  <div className="space-y-3">
+                    <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "12px" }}>
+                      <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", fontStyle: "italic" }}>
+                        "{line}"
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
+                      <button
+                        className="px-3 py-1"
+                        style={{ border: `1px solid ${ac}60`, background: "transparent", color: ac, fontSize: "7px", letterSpacing: "1px" }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
+                        onClick={() => { playSfx("menuSelect"); setTalkLineIdx(i => i + 1); }}
+                      >
+                        {talkLineIdx < lines.length - 1 ? "NEXT ›" : "AGAIN ›"}
+                      </button>
+                    </div>
+                  </div>
+                );
+              })()}
+
+              {/* BOUNTY */}
+              {tavernTab === "bounty" && (() => {
+                const bounty = player.activeBounty;
+                const pool = BOUNTY_POOLS[regionTheme] || [];
+                if (!bounty) {
+                  return (
+                    <div className="space-y-3">
+                      <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", textAlign: "center" }}>
+                        "I've got a target for you,<br />if you're up to it."
+                      </p>
+                      {pool.length > 0 ? (
+                        <button
+                          className="w-full py-2.5"
+                          style={{ background: "#0d0b0bf0", border: `1px solid ${ac}50`, color: ac, fontSize: "8px", letterSpacing: "2px" }}
+                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}25`}
+                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#0d0b0bf0"}
+                          onClick={() => {
+                            playSfx("menuSelect");
+                            const def = pool[Math.floor(Math.random() * pool.length)];
+                            onSetBounty({ enemyId: def.enemyId, enemyName: def.enemyName, goldReward: def.goldReward, region: 0, completed: false });
+                          }}
+                        >
+                          NEW BOUNTY
+                        </button>
+                      ) : (
+                        <p style={{ fontSize: "7px", color: `${ac}50`, textAlign: "center" }}>No bounties available.</p>
+                      )}
+                    </div>
+                  );
+                }
+                if (!bounty.completed) {
+                  return (
+                    <div className="space-y-3">
+                      <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", textAlign: "center" }}>
+                        "Don't come back empty-handed."
+                      </p>
+                      <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "10px" }}>
+                        <div style={{ fontSize: "6px", color: `${ac}80`, letterSpacing: "1px", marginBottom: "4px" }}>TARGET</div>
+                        <div style={{ fontSize: "10px", color: "#e8e0d0", letterSpacing: "1px", marginBottom: "6px" }}>{bounty.enemyName}</div>
+                        <div style={{ fontSize: "7px", color: "#6ee7b7", letterSpacing: "1px" }}>⬡ {bounty.goldReward} GOLD REWARD</div>
+                      </div>
+                      <div className="text-center py-1" style={{ fontSize: "7px", color: `${ac}60`, letterSpacing: "2px" }}>◈ IN PROGRESS ◈</div>
+                    </div>
+                  );
+                }
+                return (
+                  <div className="space-y-3">
+                    <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", textAlign: "center" }}>
+                      "Well done. A deal's a deal."
+                    </p>
+                    <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "10px" }}>
+                      <div style={{ fontSize: "6px", color: `${ac}80`, letterSpacing: "1px", marginBottom: "4px" }}>BOUNTY COMPLETE</div>
+                      <div style={{ fontSize: "10px", color: "#e8e0d0", letterSpacing: "1px", marginBottom: "6px" }}>{bounty.enemyName}</div>
+                    </div>
+                    {bountyCollected ? (
+                      <div className="text-center py-1" style={{ fontSize: "8px", color: "#6ee7b7", letterSpacing: "1px" }}>✓ +{bounty.goldReward} GOLD COLLECTED</div>
+                    ) : (
+                      <button
+                        className="w-full py-2.5"
+                        style={{ background: `${ac}20`, border: `2px solid ${ac}`, color: ac, fontSize: "8px", letterSpacing: "2px" }}
+                        onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}40`}
+                        onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
+                        onClick={() => { playSfx("recover"); onCollectBounty(); setBountyCollected(true); setTimeout(() => setBountyCollected(false), 3000); }}
+                      >
+                        COLLECT {bounty.goldReward} GOLD
+                      </button>
+                    )}
+                  </div>
+                );
+              })()}
+
+              {/* HUNT */}
+              {tavernTab === "hunt" && (() => {
+                const hunts = HUNT_POOLS[regionTheme] || [];
+                if (hunts.length === 0) return <p style={{ fontSize: "7px", color: `${ac}50`, textAlign: "center", marginTop: "20px" }}>No hunts available.</p>;
+                return (
+                  <div className="space-y-2">
+                    {hunts.map(hunt => {
+                      const count = player.inventory.filter(i => i.id === hunt.lootItemId || i.id.startsWith(hunt.lootItemId + "_")).length;
+                      const ready = count >= hunt.required;
+                      const collected = huntCollected.has(hunt.id);
+                      return (
+                        <div key={hunt.id} style={{ background: "#0d0b0bf0", border: `1px solid ${ready ? ac : ac + "30"}`, padding: "8px" }}>
+                          <div className="flex items-center justify-between" style={{ marginBottom: "4px" }}>
+                            <div>
+                              <div style={{ fontSize: "7px", color: "#e8e0d0", letterSpacing: "0.5px" }}>{hunt.lootName}</div>
+                              <div style={{ fontSize: "6px", color: `${ac}60`, letterSpacing: "0.5px" }}>from {hunt.enemyName}</div>
+                            </div>
+                            <div style={{ textAlign: "right" }}>
+                              <div style={{ fontSize: "7px", color: ready ? "#6ee7b7" : `${ac}80` }}>{Math.min(count, hunt.required)}/{hunt.required}</div>
+                              <div style={{ fontSize: "6px", color: `${ac}60` }}>⬡ {hunt.goldReward}g</div>
+                            </div>
+                          </div>
+                          {collected ? (
+                            <div style={{ fontSize: "6px", color: "#6ee7b7", letterSpacing: "1px", textAlign: "center" }}>✓ COLLECTED</div>
+                          ) : ready ? (
+                            <button
+                              className="w-full py-1 mt-1"
+                              style={{ background: `${ac}20`, border: `1px solid ${ac}`, color: ac, fontSize: "6px", letterSpacing: "1px" }}
+                              onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}40`}
+                              onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}20`}
+                              onClick={() => {
+                                playSfx("recover");
+                                onCollectHunt(hunt.id, hunt.lootItemId, hunt.required, hunt.goldReward);
+                                setHuntCollected(s => new Set([...s, hunt.id]));
+                                setTimeout(() => setHuntCollected(s => { const n = new Set(s); n.delete(hunt.id); return n; }), 3000);
+                              }}
+                            >
+                              COLLECT {hunt.goldReward} GOLD
+                            </button>
+                          ) : null}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="relative px-4 py-2" style={{ borderTop: `1px solid ${ac}20` }}>
-              <p className="text-center" style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>
-                "May the canopy shield you."
-              </p>
+              <p className="text-center" style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>"May the canopy shield you."</p>
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
           </div>
