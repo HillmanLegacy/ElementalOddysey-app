@@ -311,7 +311,7 @@ export default function VillageScreen({
         <>
         <div
           style={{
-            position: "fixed", right: "calc(6% + 200px)", bottom: -75, zIndex: 40,
+            position: "fixed", right: "calc(6% + 160px)", bottom: 125, zIndex: 40,
             width: 576, height: 576,
             backgroundImage: `url(${nicolasSprite})`,
             backgroundSize: "6912px 6912px",
