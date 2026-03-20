@@ -280,8 +280,7 @@ export default function VillageScreen({
 
           {activePanel === "blacksmith" && (
             <div
-              className="absolute z-[50]"
-              style={{ right: "6%", bottom: 0, width: 576, height: 576, overflow: "hidden", imageRendering: "pixelated" }}
+              style={{ position: "fixed", right: "6%", bottom: 0, zIndex: 50, width: 576, height: 576, overflow: "hidden", imageRendering: "pixelated" }}
             >
               <img
                 src={blacksmithSprite}
