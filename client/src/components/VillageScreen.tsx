@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Menu, ArrowLeft, ShoppingBag, Hammer, Beer, X, MessageSquare, Crosshair, Target } from "lucide-react";
 import GameMenuPanel from "@/components/GameMenuPanel";
 import ShopScreen from "@/components/ShopScreen";
@@ -103,8 +103,29 @@ export default function VillageScreen({
   const [restedMsg, setRestedMsg] = useState(false);
   const [tavernTab, setTavernTab] = useState<TavernTab>("rest");
   const [talkLineIdx, setTalkLineIdx] = useState(0);
+  const [typedText, setTypedText] = useState("");
+  const [nextReady, setNextReady] = useState(false);
   const [bountyCollected, setBountyCollected] = useState(false);
   const [huntCollected, setHuntCollected] = useState<Set<string>>(new Set());
+
+  const talkLines = REGION_TALK_LINES[regionTheme] || ["Nicolas has nothing to say."];
+  const currentLine = talkLines[talkLineIdx % talkLines.length];
+
+  useEffect(() => {
+    if (tavernTab !== "talk") return;
+    setTypedText("");
+    setNextReady(false);
+    let i = 0;
+    const interval = setInterval(() => {
+      i++;
+      setTypedText(currentLine.slice(0, i));
+      if (i >= currentLine.length) {
+        clearInterval(interval);
+        setTimeout(() => setNextReady(true), 1500);
+      }
+    }, 28);
+    return () => clearInterval(interval);
+  }, [talkLineIdx, tavernTab, currentLine]);
   const [transitionIn, setTransitionIn] = useState(false);
   const [transitionOut, setTransitionOut] = useState(false);
   const transitionTargetRef = useRef<Panel | "close" | null>(null);
@@ -425,18 +446,16 @@ export default function VillageScreen({
               )}
 
               {/* TALK */}
-              {tavernTab === "talk" && (() => {
-                const lines = REGION_TALK_LINES[regionTheme] || ["Nicolas has nothing to say."];
-                const line = lines[talkLineIdx % lines.length];
-                return (
-                  <div className="space-y-3">
-                    <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "12px" }}>
-                      <p style={{ fontSize: "7px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2", fontStyle: "italic" }}>
-                        "{line}"
-                      </p>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
+              {tavernTab === "talk" && (
+                <div className="space-y-3">
+                  <div style={{ background: "#0d0b0bf0", border: `1px solid ${ac}30`, padding: "12px", minHeight: "80px" }}>
+                    <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.2" }}>
+                      "{typedText}<span style={{ opacity: nextReady ? 0 : 1 }}>▌</span>"
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
+                    {nextReady && (
                       <button
                         className="px-3 py-1"
                         style={{ border: `1px solid ${ac}60`, background: "transparent", color: ac, fontSize: "7px", letterSpacing: "1px" }}
@@ -444,12 +463,12 @@ export default function VillageScreen({
                         onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "transparent"}
                         onClick={() => { playSfx("menuSelect"); setTalkLineIdx(i => i + 1); }}
                       >
-                        {talkLineIdx < lines.length - 1 ? "NEXT ›" : "AGAIN ›"}
+                        {talkLineIdx < talkLines.length - 1 ? "NEXT ›" : "AGAIN ›"}
                       </button>
-                    </div>
+                    )}
                   </div>
-                );
-              })()}
+                </div>
+              )}
 
               {/* BOUNTY */}
               {tavernTab === "bounty" && (() => {
