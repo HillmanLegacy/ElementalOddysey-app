@@ -157,7 +157,7 @@ export default function VillageScreen({
               animation: "villageArrowBounce 1.1s ease-in-out infinite",
             }}
           >
-            <polygon points="11,3 20,10 15,10 15,20 7,20 7,10 2,10" fill={ac} stroke="#8a6a20" strokeWidth="1" />
+            <polygon points="7,2 15,2 15,12 20,12 11,20 2,12 7,12" fill={ac} stroke="#8a6a20" strokeWidth="1" />
           </svg>
         </button>
       ))}
