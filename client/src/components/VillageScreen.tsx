@@ -109,6 +109,7 @@ export default function VillageScreen({
   const [typedText, setTypedText] = useState("");
   const [typingDone, setTypingDone] = useState(false);
   const [talkPopupOpen, setTalkPopupOpen] = useState(false);
+  const dialogueScrollRef = useRef<HTMLDivElement>(null);
   const [popupLine, setPopupLine] = useState("");
   const [popupIsCompletion, setPopupIsCompletion] = useState(false);
   const [popupQuestId, setPopupQuestId] = useState<string | null>(null);
@@ -181,6 +182,12 @@ export default function VillageScreen({
     }, 28);
     return () => clearInterval(interval);
   }, [talkPopupOpen, popupLine]);
+
+  useEffect(() => {
+    if (dialogueScrollRef.current) {
+      dialogueScrollRef.current.scrollTop = dialogueScrollRef.current.scrollHeight;
+    }
+  }, [typedText]);
   const [transitionIn, setTransitionIn] = useState(false);
   const [transitionOut, setTransitionOut] = useState(false);
   const transitionTargetRef = useRef<Panel | "close" | null>(null);
@@ -254,11 +261,12 @@ export default function VillageScreen({
 
       <button
         data-testid={isSubScreen ? "button-subscreen-back" : "button-village-return"}
-        className="absolute flex items-center gap-2 px-3 py-2 transition-all hover:scale-105 active:scale-95"
+        className="absolute flex items-center gap-2 px-3 transition-all hover:scale-105 active:scale-95"
         style={{
-          bottom: 20,
-          left: 16,
-          zIndex: 20,
+          top: 12,
+          left: 60,
+          height: 40,
+          zIndex: 200,
           background: "linear-gradient(180deg,#0a0808f0 0%,#151010f5 100%)",
           border: `2px solid ${ac}`,
           boxShadow: `0 0 12px ${ac}40`,
@@ -699,73 +707,84 @@ export default function VillageScreen({
             </div>
             <div className="absolute bottom-0 left-0 right-0 h-1" style={{ background: `linear-gradient(90deg, transparent, ${ac}40, transparent)` }} />
 
-            {/* Talk popup overlay */}
-            {talkPopupOpen && (
-              <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 300, background: "#000000b8" }} onClick={() => setTalkPopupOpen(false)}>
-                <div
-                  style={{ width: "320px", background: "linear-gradient(180deg, #0a0808f8 0%, #121010fa 100%)", border: `2px solid ${ac}`, boxShadow: `0 0 24px ${ac}40`, fontFamily: "'Press Start 2P', cursive" }}
-                  onClick={e => e.stopPropagation()}
-                >
-                  {/* Header */}
-                  <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: `1px solid ${ac}40`, background: `${ac}10` }}>
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="w-3 h-3" style={{ color: ac }} />
-                      <span style={{ fontSize: "7px", color: ac, letterSpacing: "2px" }}>NICOLAS FERNAL</span>
-                    </div>
-                    <button onClick={() => setTalkPopupOpen(false)} style={{ background: "transparent", border: "none", color: `${ac}80`, cursor: "pointer", fontSize: "10px", lineHeight: 1 }}>✕</button>
-                  </div>
-                  {/* Dialogue body */}
-                  <div style={{ padding: "16px 16px 12px" }}>
-                    <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.2", whiteSpace: "pre-line", minHeight: "80px" }}>
-                      "{typedText}<span style={{ opacity: typingDone ? 0 : 1 }}>▌</span>"
-                    </p>
-                  </div>
-                  {/* Footer */}
-                  <div className="flex items-center justify-between px-4 py-3" style={{ borderTop: `1px solid ${ac}20` }}>
-                    <span style={{ fontSize: "6px", color: `${ac}50`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
-                    <div className="flex items-center gap-2">
-                      {typingDone && popupIsCompletion && (
-                        <button
-                          className="px-3 py-1.5"
-                          style={{ border: `1px solid #6ee7b760`, background: "#6ee7b715", color: "#6ee7b7", fontSize: "7px", letterSpacing: "1px", cursor: "pointer" }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b730"}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b715"}
-                          onClick={() => {
-                            playSfx("menuSelect");
-                            if (popupQuestId) onCompleteQuest(popupQuestId, popupGoldReward);
-                            setTalkPopupOpen(false);
-                          }}
-                        >
-                          CLAIM {popupGoldReward}G ›
-                        </button>
-                      )}
-                      {typingDone && !popupIsCompletion && nicolasStage < 3 && !currentStageQuestAccepted && !currentStageQuestCompleted && popupQuestId && (
-                        <button
-                          className="px-3 py-1.5"
-                          style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "7px", letterSpacing: "1px", cursor: "pointer" }}
-                          onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
-                          onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
-                          onClick={() => {
-                            playSfx("menuSelect");
-                            const def = questForCurrentStage!;
-                            onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" });
-                            setTalkPopupOpen(false);
-                          }}
-                        >
-                          ACCEPT ›
-                        </button>
-                      )}
-                      {typingDone && !popupIsCompletion && currentStageQuestAccepted && !currentStageQuestCompleted && (
-                        <span style={{ fontSize: "6px", color: `${ac}40`, letterSpacing: "1px", fontStyle: "italic" }}>Quest in progress...</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         </div>
         </>
+      )}
+
+      {/* Full-width dialogue bar at bottom of screen */}
+      {talkPopupOpen && (
+        <div
+          className="absolute left-0 right-0 bottom-0 flex"
+          style={{
+            zIndex: 400,
+            height: "140px",
+            background: "linear-gradient(180deg, #0a0808f4 0%, #0d0b0bfa 100%)",
+            borderTop: `2px solid ${ac}`,
+            boxShadow: `0 -4px 30px #000000a0`,
+            fontFamily: "'Press Start 2P', cursive",
+          }}
+        >
+          {/* NPC label column */}
+          <div
+            className="flex flex-col justify-between flex-shrink-0"
+            style={{ width: "130px", borderRight: `1px solid ${ac}25`, padding: "12px 14px" }}
+          >
+            <div className="flex items-center gap-1.5">
+              <MessageSquare className="w-3 h-3 flex-shrink-0" style={{ color: ac }} />
+              <span style={{ fontSize: "6px", color: ac, letterSpacing: "1.5px", lineHeight: "1.4" }}>NICOLAS{"\n"}FERNAL</span>
+            </div>
+            <button
+              onClick={() => setTalkPopupOpen(false)}
+              style={{ background: "transparent", border: `1px solid ${ac}30`, color: `${ac}60`, cursor: "pointer", fontSize: "8px", padding: "4px 8px", letterSpacing: "1px", alignSelf: "flex-start" }}
+              onMouseEnter={e => (e.currentTarget as HTMLElement).style.color = ac}
+              onMouseLeave={e => (e.currentTarget as HTMLElement).style.color = `${ac}60`}
+            >✕ CLOSE</button>
+          </div>
+
+          {/* Scrollable text column */}
+          <div
+            ref={dialogueScrollRef}
+            style={{ flex: 1, overflowY: "auto", padding: "14px 20px", scrollBehavior: "smooth" }}
+          >
+            <p style={{ fontSize: "10px", color: "#c8c0a8", letterSpacing: "1px", lineHeight: "2.4", whiteSpace: "pre-line", margin: 0 }}>
+              "{typedText}<span style={{ opacity: typingDone ? 0 : 1 }}>▌</span>"
+            </p>
+          </div>
+
+          {/* Action column */}
+          <div
+            className="flex flex-col justify-between flex-shrink-0"
+            style={{ width: "130px", borderLeft: `1px solid ${ac}25`, padding: "12px 14px" }}
+          >
+            <span style={{ fontSize: "6px", color: `${ac}40`, letterSpacing: "1px" }}>— Nicolas Fernal</span>
+            <div className="flex flex-col gap-2">
+              {typingDone && popupIsCompletion && (
+                <button
+                  style={{ border: `1px solid #6ee7b760`, background: "#6ee7b715", color: "#6ee7b7", fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b730"}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = "#6ee7b715"}
+                  onClick={() => { playSfx("menuSelect"); if (popupQuestId) onCompleteQuest(popupQuestId, popupGoldReward); setTalkPopupOpen(false); }}
+                >
+                  CLAIM {popupGoldReward}G ›
+                </button>
+              )}
+              {typingDone && !popupIsCompletion && nicolasStage < 3 && !currentStageQuestAccepted && !currentStageQuestCompleted && popupQuestId && (
+                <button
+                  style={{ border: `1px solid ${ac}60`, background: `${ac}18`, color: ac, fontSize: "7px", letterSpacing: "1px", cursor: "pointer", padding: "6px 10px" }}
+                  onMouseEnter={e => (e.currentTarget as HTMLElement).style.background = `${ac}30`}
+                  onMouseLeave={e => (e.currentTarget as HTMLElement).style.background = `${ac}18`}
+                  onClick={() => { playSfx("menuSelect"); const def = questForCurrentStage!; onAcceptQuest({ id: def.id, name: def.name, description: def.description, goal: def.goal, goldReward: def.goldReward, regionTheme, stage: def.stage, status: "in_progress" }); setTalkPopupOpen(false); }}
+                >
+                  ACCEPT ›
+                </button>
+              )}
+              {typingDone && !popupIsCompletion && currentStageQuestAccepted && !currentStageQuestCompleted && (
+                <span style={{ fontSize: "6px", color: `${ac}40`, letterSpacing: "1px", fontStyle: "italic" }}>Quest in progress...</span>
+              )}
+            </div>
+          </div>
+        </div>
       )}
 
       {menuOpen && (
