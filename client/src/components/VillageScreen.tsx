@@ -70,8 +70,7 @@ export default function VillageScreen({
       <img
         src={villageBg}
         alt="Thornveil Village"
-        className="absolute inset-0 w-full h-full object-cover"
-        style={{ imageRendering: "pixelated" }}
+        className="w-full h-full object-cover"
       />
       <div className="absolute inset-0" style={{ background: "rgba(0,0,0,0.18)" }} />
 

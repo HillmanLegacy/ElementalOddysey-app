@@ -143,13 +143,13 @@ function Game() {
   }, [state.musicVolume]);
 
   useEffect(() => {
-    if ((state.screen === "hut" || state.screen === "village") && state.player) {
+    if (state.screen === "hut" && state.player) {
       const hutRegion = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
       playAmbient("hut");
       if (!battleTransition && !battleEntryReveal && hutRegion.theme === "Fire") {
         playMusic("lava_region_music");
       }
-    } else if (state.screen === "overworld" && state.player) {
+    } else if ((state.screen === "overworld" || state.screen === "village") && state.player) {
       const region = getRegionForTier(state.player.currentRegion, getRegionTier(state.player.currentRegion, state.player.regionBossDefeats || {}));
       if (region.theme === "Fire") {
         playAmbient("lava_region");
