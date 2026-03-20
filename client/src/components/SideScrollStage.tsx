@@ -500,7 +500,9 @@ export default function SideScrollStage({
       const isForest = e.type === "minotaur" || e.type === "cyclops" || e.type === "harpy";
       const initY = (isForest ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset;
       const saved = savedEnemyPatrol?.[i];
-      return { x: saved?.x ?? e.x, dir: saved?.dir ?? (-1 as 1 | -1), startX: e.x, y: saved?.y ?? initY, startY: initY };
+      // Harpy's Y changes during flight so restore it; minotaur/cyclops are always pinned to ground — always recompute
+      const restoreY = e.type === "harpy" ? (saved?.y ?? initY) : initY;
+      return { x: saved?.x ?? e.x, dir: saved?.dir ?? (-1 as 1 | -1), startX: e.x, y: restoreY, startY: initY };
     })
   );
 
@@ -534,11 +536,13 @@ export default function SideScrollStage({
   const [facingRight, setFacingRight] = useState(!reversed);
   const [enemyRenderPositions, setEnemyRenderPositions] = useState(resolvedEnemies.map((e, i) => savedEnemyPatrol?.[i]?.x ?? e.x));
   const [enemyRenderY, setEnemyRenderY] = useState<number[]>(resolvedEnemies.map((e, i) => {
-    if (savedEnemyPatrol?.[i]?.y !== undefined) return savedEnemyPatrol[i].y;
     const es = ENEMY_SPRITES_SS[e.type];
     const eH = Math.round(es.iH * es.scale);
     const isForest = e.type === "minotaur" || e.type === "cyclops" || e.type === "harpy";
-    return (isForest ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset;
+    const groundY = (isForest ? PHYS_GROUND_Y : GROUND_Y) - eH + es.groundOffset;
+    // Harpy's Y changes in-flight so restore it; minotaur/cyclops are always pinned to ground
+    if (e.type === "harpy" && savedEnemyPatrol?.[i]?.y !== undefined) return savedEnemyPatrol[i].y;
+    return groundY;
   }));
   const [enemyFacingLeft, setEnemyFacingLeft] = useState(resolvedEnemies.map((_, i) => savedEnemyPatrol?.[i] ? savedEnemyPatrol[i].dir !== 1 : true));
   const [enemyIsChasing, setEnemyIsChasing] = useState(resolvedEnemies.map(() => false));
