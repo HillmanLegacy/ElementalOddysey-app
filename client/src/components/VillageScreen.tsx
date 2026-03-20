@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Menu, ArrowLeft, ShoppingBag, Hammer, Beer, X } from "lucide-react";
 import GameMenuPanel from "@/components/GameMenuPanel";
 import ShopScreen from "@/components/ShopScreen";
+import BattleTransition from "@/components/BattleTransition";
 import { playSfx } from "@/lib/sfx";
 import type { PlayerCharacter, ShopItem } from "@shared/schema";
 import villageBg from "@assets/forest_region_village_1774010989526.jpg";
@@ -92,9 +93,18 @@ export default function VillageScreen({
   const [menuOpen, setMenuOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<Panel>(null);
   const [restedMsg, setRestedMsg] = useState(false);
+  const [transitionIn, setTransitionIn] = useState(false);
+  const [transitionOut, setTransitionOut] = useState(false);
+  const transitionTargetRef = useRef<Panel | "close" | null>(null);
 
-  const openPanel = (p: Panel) => { playSfx("menuSelect"); setActivePanel(p); };
-  const closePanel = () => { playSfx("menuSelect"); setActivePanel(null); setRestedMsg(false); };
+  const openPanel = (p: Panel) => {
+    transitionTargetRef.current = p;
+    setTransitionIn(true);
+  };
+  const closePanel = () => {
+    transitionTargetRef.current = "close";
+    setTransitionIn(true);
+  };
 
   const currentBg = activePanel ? LOCATION_BG[activePanel] : villageBg;
   const currentTitle = activePanel ? LOCATION_TITLES[activePanel] : "✦ THORNVEIL VILLAGE ✦";
@@ -420,6 +430,30 @@ export default function VillageScreen({
           onMusicVolumeChange={onMusicVolumeChange}
           onSfxVolumeChange={onSfxVolumeChange}
           regionTheme="Wind"
+        />
+      )}
+
+      {transitionIn && (
+        <BattleTransition
+          direction="in"
+          sfx="menuSelect"
+          onComplete={() => {
+            const target = transitionTargetRef.current;
+            if (target === "close") {
+              setActivePanel(null);
+              setRestedMsg(false);
+            } else {
+              setActivePanel(target);
+            }
+            setTransitionIn(false);
+            setTransitionOut(true);
+          }}
+        />
+      )}
+      {transitionOut && (
+        <BattleTransition
+          direction="out"
+          onComplete={() => setTransitionOut(false)}
         />
       )}
     </div>
