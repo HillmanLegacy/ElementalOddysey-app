@@ -70,8 +70,8 @@ export default function SpriteAnimator({
   const holdUntilRef = useRef(0);
   const heldFramesRef = useRef<Set<number>>(new Set());
 
-  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale, colorMap });
-  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale, colorMap };
+  const propsRef = useRef({ spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale, colorMap, startFrame });
+  propsRef.current = { spriteSheet, totalFrames, fps, loop, flipX, reverse, paused, onComplete, pauseAtFrame, holdFrames, frameWidth, frameHeight, scale, colorMap, startFrame };
 
   useEffect(() => {
     if (preloadSheets) {
@@ -258,7 +258,7 @@ export default function SpriteAnimator({
           frameRef.current++;
           if (frameRef.current >= tf) {
             if (l) {
-              frameRef.current = 0;
+              frameRef.current = propsRef.current.startFrame ?? 0;
               heldFramesRef.current.clear();
             } else {
               frameRef.current = tf - 1;

@@ -47,7 +47,7 @@ export const STARTER_CHARACTERS: PartyMemberDef[] = [
     className: "Rogue",
     element: "Lightning",
     baseStats: { hp: 75, maxHp: 75, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
-    spriteId: "basken",
+    spriteId: "rogue",
   },
 ];
 
@@ -74,7 +74,7 @@ export const PARTY_CHARACTERS: PartyMemberDef[] = [
     className: "Rogue",
     element: "Lightning",
     baseStats: { hp: 75, maxHp: 75, mp: 35, maxMp: 35, atk: 12, def: 10, agi: 9, int: 8, luck: 6 },
-    spriteId: "basken",
+    spriteId: "rogue",
   },
   {
     id: "knight2d_light",

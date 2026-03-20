@@ -22,6 +22,7 @@ import samuraiDeath from "@/assets/images/samurai-death.png";
 import samuraiDefend from "@/assets/images/samurai-defend.png";
 import samuraiHeal from "@/assets/images/samurai-heal.png";
 import samuraiSpecial from "@/assets/images/samurai-special.png";
+import rogueSheet from "@/assets/images/rogue-sheet.png";
 import vfxFireImpact from "@/assets/images/vfx-fire-impact.png";
 import baskenRun from "@/assets/images/basken-run.png";
 import sfxFireBurst from "@/assets/images/sfx-fire-burst.png";
@@ -221,13 +222,24 @@ const ENEMY_SPRITES: Record<string, string> = {
   crystal_titan: crystalTitanImg,
 };
 
-const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; walk?: string; special?: string; death?: string; defend?: string; heal?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; walkFrames?: number; specialFrames?: number; deathFrames?: number; defendFrames?: number; healFrames?: number; scale?: number }> = {
+const PARTY_SPRITE_MAP: Record<string, { idle: string; attack: string; hurt: string; run?: string; walk?: string; special?: string; death?: string; defend?: string; heal?: string; frameWidth: number; frameHeight: number; idleFrames: number; attackFrames: number; hurtFrames: number; runFrames?: number; walkFrames?: number; specialFrames?: number; deathFrames?: number; defendFrames?: number; healFrames?: number; scale?: number; idleStart?: number; attackStart?: number; hurtStart?: number; runStart?: number; deathStart?: number; specialStart?: number; defendStart?: number }> = {
   samurai: { idle: samuraiIdle, attack: samuraiAttack, hurt: samuraiHurt, run: samuraiRun, death: samuraiDeath, defend: samuraiDefend, heal: samuraiHeal, special: samuraiSpecial, frameWidth: 96, frameHeight: 96, idleFrames: 10, attackFrames: 7, hurtFrames: 4, runFrames: 16, specialFrames: 14, deathFrames: 9, defendFrames: 6, healFrames: 15, scale: 3.5 },
   knight: { idle: slknightIdle, attack: slknightAttack, hurt: slknightHurt, run: slknightRun, walk: slknightRun, special: slknightSpecial, death: slknightDeath, frameWidth: 128, frameHeight: 64, idleFrames: 8, attackFrames: 9, hurtFrames: 4, runFrames: 8, walkFrames: 8, specialFrames: 12, deathFrames: 4, scale: 2 },
   basken: { idle: baskenIdle, attack: baskenAttack, hurt: baskenHurt, run: baskenRun, frameWidth: 56, frameHeight: 56, idleFrames: 5, attackFrames: 8, hurtFrames: 3, runFrames: 6, scale: 3.5 },
   ranger: { idle: rangerIdle, attack: rangerAttack, hurt: rangerHurt, frameWidth: 64, frameHeight: 48, idleFrames: 6, attackFrames: 6, hurtFrames: 6, scale: 3.5 },
   knight2d: { idle: knight2dIdle, attack: knight2dAttack, hurt: knight2dHurt, frameWidth: 84, frameHeight: 84, idleFrames: 8, attackFrames: 4, hurtFrames: 3, scale: 3.5 },
   axewarrior: { idle: axewarriorIdle, attack: axewarriorAttack, hurt: axewarriorHurt, frameWidth: 94, frameHeight: 91, idleFrames: 6, attackFrames: 8, hurtFrames: 3, scale: 3.5 },
+  rogue: {
+    idle: rogueSheet, attack: rogueSheet, hurt: rogueSheet, run: rogueSheet, death: rogueSheet, special: rogueSheet, defend: rogueSheet,
+    frameWidth: 56, frameHeight: 56, scale: 3.5,
+    idleFrames: 6,    idleStart: 0,
+    attackFrames: 6,  attackStart: 8,
+    runFrames: 8,     runStart: 16,
+    hurtFrames: 4,    hurtStart: 40,
+    deathFrames: 12,  deathStart: 48,
+    specialFrames: 7, specialStart: 64,
+    defendFrames: 3,  defendStart: 80,
+  },
 };
 
 const GAME_CONTAINER_HEIGHT = 640;
@@ -245,6 +257,7 @@ const SPRITE_COLORS: Record<string, string> = {
   ranger: "#2dd4bf",
   knight2d: "#fde68a",
   axewarrior: "#a16207",
+  rogue: "#c084fc",
 };
 
 const HARPY_COLOR_VARIANTS: Array<Record<string, string> | null> = [
@@ -2951,13 +2964,17 @@ export default function BattleScreen({
   const playerSprites = PARTY_SPRITE_MAP[player.spriteId || "samurai"] || PARTY_SPRITE_MAP.samurai;
 
   const getSpriteSheet = (): { src: string; frames: number; fps: number; loop: boolean; pauseAt?: number; startAt?: number; holdFrames?: Record<number, number>; w: number; h: number } => {
-    const idle = { src: playerSprites.idle, frames: playerSprites.idleFrames, fps: 8, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
-    const atk = { src: playerSprites.attack, frames: playerSprites.attackFrames, fps: 12, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
-    const hurt = { src: playerSprites.hurt, frames: playerSprites.hurtFrames, fps: 10, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+    const idleStart = playerSprites.idleStart ?? 0;
+    const atkStart = playerSprites.attackStart ?? 0;
+    const hurtStart = playerSprites.hurtStart ?? 0;
+    const runStart = playerSprites.runStart ?? 0;
+    const idle = { src: playerSprites.idle, frames: idleStart + playerSprites.idleFrames, fps: 8, loop: true, startAt: idleStart || undefined, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+    const atk = { src: playerSprites.attack, frames: atkStart + playerSprites.attackFrames, fps: 12, loop: false, startAt: atkStart || undefined, pauseAt: atkStart + playerSprites.attackFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+    const hurt = { src: playerSprites.hurt, frames: hurtStart + playerSprites.hurtFrames, fps: 10, loop: false, startAt: hurtStart || undefined, pauseAt: hurtStart + playerSprites.hurtFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
     const runSheet = playerSprites.run;
-    const runConfig = runSheet ? { src: runSheet, frames: playerSprites.runFrames || 6, fps: 12, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : idle;
+    const runConfig = runSheet ? { src: runSheet, frames: runStart + (playerSprites.runFrames || 6), fps: 12, loop: true, startAt: runStart || undefined, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : idle;
     const walkSheet = playerSprites.walk;
-    const walkConfig = walkSheet ? { src: walkSheet, frames: playerSprites.walkFrames || 4, fps: 8, loop: true, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : runConfig;
+    const walkConfig = walkSheet ? { src: walkSheet, frames: runStart + (playerSprites.walkFrames || 4), fps: 8, loop: true, startAt: runStart || undefined, w: playerSprites.frameWidth, h: playerSprites.frameHeight } : runConfig;
 
     switch (animPhase) {
       case "runToEnemy":
@@ -2966,19 +2983,27 @@ export default function BattleScreen({
         return walkConfig;
       case "attacking":
         return atk;
-      case "casting":
+      case "casting": {
         if (windBladeActive) {
           return { ...atk, fps: 14, loop: false, pauseAt: atk.frames - 1 };
         }
+        const castSheet = playerSprites.special;
+        const castStart = playerSprites.specialStart ?? 0;
+        const castFrames = playerSprites.specialFrames;
+        if (castSheet && castStart > 0 && castFrames) {
+          return { src: castSheet, frames: castStart + castFrames, fps: 10, loop: false, startAt: castStart, pauseAt: castStart + castFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+        }
         return atk;
+      }
       case "incinerationSlash": {
         if (player.spriteId === "knight") {
           return { src: slknightIncSlash, frames: 40, fps: 12, loop: false, startAt: 8, pauseAt: 19, w: 128, h: 64 };
         }
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
+        const incSpecialStart = playerSprites.specialStart ?? 0;
         if (specialSheet) {
-          return { src: specialSheet, frames: specialFrames, fps: 12, loop: false, pauseAt: specialFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+          return { src: specialSheet, frames: incSpecialStart + specialFrames, fps: 12, loop: false, startAt: incSpecialStart || undefined, pauseAt: incSpecialStart + specialFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
         return { ...atk, fps: 12, loop: false, pauseAt: atk.frames - 1 };
       }
@@ -3026,16 +3051,18 @@ export default function BattleScreen({
       case "defending": {
         const defendSheet = playerSprites.defend;
         const defendFrames = playerSprites.defendFrames || 6;
+        const defendStart = playerSprites.defendStart ?? 0;
         if (defendSheet) {
-          return { src: defendSheet, frames: defendFrames, fps: 12, loop: false, pauseAt: defendFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+          return { src: defendSheet, frames: defendStart + defendFrames, fps: 12, loop: false, startAt: defendStart || undefined, pauseAt: defendStart + defendFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
         return idle;
       }
       case "playerDeath": {
         const deathSheet = playerSprites.death;
         const deathFrames = playerSprites.deathFrames || 4;
+        const deathStart = playerSprites.deathStart ?? 0;
         if (deathSheet) {
-          return { src: deathSheet, frames: deathFrames, fps: 8, loop: false, pauseAt: deathFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+          return { src: deathSheet, frames: deathStart + deathFrames, fps: 8, loop: false, startAt: deathStart || undefined, pauseAt: deathStart + deathFrames - 1, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
         return idle;
       }
@@ -3050,8 +3077,9 @@ export default function BattleScreen({
       case "samuraiWindMagic": {
         const specialSheet = playerSprites.special;
         const specialFrames = playerSprites.specialFrames || playerSprites.attackFrames;
+        const specialStart = playerSprites.specialStart ?? 0;
         if (specialSheet) {
-          return { src: specialSheet, frames: specialFrames, fps: 12, loop: false, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
+          return { src: specialSheet, frames: specialStart + specialFrames, fps: 12, loop: false, startAt: specialStart || undefined, w: playerSprites.frameWidth, h: playerSprites.frameHeight };
         }
         return atk;
       }
