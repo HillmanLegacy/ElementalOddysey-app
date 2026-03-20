@@ -198,6 +198,13 @@ function Game() {
   const [villageTransitionOut, setVillageTransitionOut] = useState(false);
   const [showVillageIntro, setShowVillageIntro] = useState(false);
   const [exitToMenuTransition, setExitToMenuTransition] = useState(false);
+  const [questNotif, setQuestNotif] = useState<{ name: string; description: string } | null>(null);
+  const questNotifTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const showQuestNotif = (name: string, description: string) => {
+    if (questNotifTimerRef.current) clearTimeout(questNotifTimerRef.current);
+    setQuestNotif({ name, description });
+    questNotifTimerRef.current = setTimeout(() => setQuestNotif(null), 2000);
+  };
 
   useEffect(() => {
     const handleOpenOptions = () => { setShowOptions(true); };
@@ -1492,12 +1499,15 @@ function Game() {
                 if (existing.find(h => h.id === hunt.id)) return s;
                 return { ...s, player: { ...s.player, activeHunts: [...existing, hunt] } };
               })}
-              onAcceptQuest={(quest) => setState(s => {
-                if (!s.player) return s;
-                const existing = s.player.activeQuests ?? [];
-                if (existing.find(q => q.id === quest.id)) return s;
-                return { ...s, player: { ...s.player, activeQuests: [...existing, quest] } };
-              })}
+              onAcceptQuest={(quest) => {
+                showQuestNotif(quest.name, quest.description);
+                setState(s => {
+                  if (!s.player) return s;
+                  const existing = s.player.activeQuests ?? [];
+                  if (existing.find(q => q.id === quest.id)) return s;
+                  return { ...s, player: { ...s.player, activeQuests: [...existing, quest] } };
+                });
+              }}
               onCompleteQuest={(questId, goldReward) => setState(s => {
                 if (!s.player) return s;
                 const completedIds = [...(s.player.completedQuestIds ?? []), questId];
@@ -1526,7 +1536,23 @@ function Game() {
               <VillageIntroScreen
                 onComplete={() => {
                   setShowVillageIntro(false);
-                  setState(s => s.player ? { ...s, player: { ...s.player, villageIntroSeen: true } } : s);
+                  const introQuest = {
+                    id: "intro_q0",
+                    name: "The Shaman's Warning",
+                    description: "Something stirs in the forest. Seek out Lania, the Wind Shaman, and learn what she has witnessed.",
+                    goal: "Travel through the forest and find the Wind Shaman.",
+                    goldReward: 0,
+                    regionTheme: "Wind",
+                    stage: -1,
+                    status: "in_progress" as const,
+                  };
+                  showQuestNotif(introQuest.name, introQuest.description);
+                  setState(s => {
+                    if (!s.player) return s;
+                    const existing = s.player.activeQuests ?? [];
+                    if (existing.find(q => q.id === introQuest.id)) return { ...s, player: { ...s.player, villageIntroSeen: true } };
+                    return { ...s, player: { ...s.player, villageIntroSeen: true, activeQuests: [...existing, introQuest] } };
+                  });
                 }}
               />
             )}
@@ -1815,6 +1841,66 @@ function Game() {
           }}
         />
       )}
+      {/* Quest notification popup — top-right corner */}
+      <div
+        style={{
+          position: "fixed",
+          top: "18px",
+          right: "18px",
+          zIndex: 9000,
+          width: "310px",
+          pointerEvents: questNotif ? "auto" : "none",
+          transform: questNotif ? "translateX(0)" : "translateX(340px)",
+          opacity: questNotif ? 1 : 0,
+          transition: "transform 0.35s cubic-bezier(0.22,1,0.36,1), opacity 0.3s ease",
+          cursor: "pointer",
+          fontFamily: "'Press Start 2P', cursive",
+        }}
+        onClick={() => {
+          if (questNotifTimerRef.current) clearTimeout(questNotifTimerRef.current);
+          setQuestNotif(null);
+        }}
+      >
+        <div
+          style={{
+            background: "linear-gradient(180deg, #0a0808f8 0%, #151010fc 100%)",
+            border: `2px solid #c9a44a`,
+            boxShadow: `0 0 24px #c9a44a40, 0 8px 40px #00000099`,
+            padding: "14px 16px 14px",
+            position: "relative",
+            overflow: "hidden",
+          }}
+        >
+          {/* Scanline texture */}
+          <div style={{
+            backgroundImage: `repeating-linear-gradient(0deg, transparent, transparent 3px, #c9a44a06 3px, #c9a44a06 4px)`,
+            position: "absolute", inset: 0, pointerEvents: "none",
+          }} />
+          <div style={{ position: "relative" }}>
+            {/* Header */}
+            <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "10px" }}>
+              <div style={{
+                width: "6px", height: "6px", background: "#c9a44a",
+                boxShadow: "0 0 6px #c9a44a",
+                flexShrink: 0,
+              }} />
+              <span style={{ fontSize: "7px", color: "#c9a44a", letterSpacing: "2px" }}>NEW QUEST</span>
+            </div>
+            {/* Quest name */}
+            <div style={{ fontSize: "9px", color: "#e8dfc0", letterSpacing: "1px", lineHeight: "1.8", marginBottom: "8px" }}>
+              {questNotif?.name}
+            </div>
+            {/* Description */}
+            <div style={{ fontSize: "7px", color: "#8a8070", letterSpacing: "0.5px", lineHeight: "1.9" }}>
+              {questNotif?.description}
+            </div>
+            {/* Dismiss hint */}
+            <div style={{ fontSize: "6px", color: "#c9a44a35", letterSpacing: "1px", marginTop: "10px", textAlign: "right" }}>
+              click to dismiss
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
