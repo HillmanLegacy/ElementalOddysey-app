@@ -292,7 +292,7 @@ export default function VillageScreen({
 
           {activePanel === "shop" && (
             <div
-              style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: -75, zIndex: 50, width: 576, height: 576, overflow: "hidden", imageRendering: "pixelated" }}
+              style={{ position: "fixed", left: "50%", transform: "translateX(-50%)", bottom: -75, zIndex: 40, width: 576, height: 576, overflow: "hidden", imageRendering: "pixelated" }}
             >
               <img
                 src={alchemistSprite}
