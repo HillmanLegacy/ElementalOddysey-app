@@ -1448,7 +1448,7 @@ function Game() {
               onEquip={equipItem}
               onUnequip={unequipItem}
               onUseItem={useItemOverworld}
-              onSave={handleSave}
+              onSave={handleSaveToSlot}
               onExitToMenu={() => setExitToMenuTransition(true)}
               textSpeed={state.textSpeed}
               musicVolume={state.musicVolume}
