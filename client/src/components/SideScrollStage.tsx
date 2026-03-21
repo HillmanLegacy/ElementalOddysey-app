@@ -457,11 +457,42 @@ export default function SideScrollStage({
 
   // Two-phase CSS walk-off: set exitAnim first (applies transition style), then on next rAF
   // activate the transform so the browser sees an initial state to transition FROM.
+  // Also runs a footstep interval for the walk-off duration since the RAF loop is cancelled.
   useEffect(() => {
     if (!exitAnim) { setExitTransformActive(false); return; }
     const raf = requestAnimationFrame(() => setExitTransformActive(true));
-    return () => cancelAnimationFrame(raf);
-  }, [exitAnim]);
+
+    let frameAcc = playerFrameAccRef.current;
+    let frameIdx = playerFrameIdxRef.current;
+    let stepTimer = footstepTimerRef.current;
+    const TICK = 1 / 60;
+    const intervalId = setInterval(() => {
+      if (charSprite.stepFrames) {
+        frameAcc += TICK;
+        const frameDur = 1 / 14;
+        while (frameAcc >= frameDur) {
+          frameAcc -= frameDur;
+          frameIdx = (frameIdx + 1) % charSprite.runF;
+          if (charSprite.stepFrames.includes(frameIdx)) {
+            playSfx("footstep", 0.35);
+          }
+        }
+      } else {
+        stepTimer -= TICK;
+        if (stepTimer <= 0) {
+          playSfx("footstep", 0.25);
+          stepTimer = 0.21;
+        }
+      }
+    }, TICK * 1000);
+    const stopId = setTimeout(() => clearInterval(intervalId), exitAnim.dur * 1000 + 100);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(intervalId);
+      clearTimeout(stopId);
+    };
+  }, [exitAnim]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const defeatedRef = useRef(defeatedEnemyIndices);
   const lastHandledFleeRef = useRef<number | null>(null);

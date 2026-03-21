@@ -354,6 +354,8 @@ export default function ClimbingStage({
   const [isRunning, setIsRunning] = useState(false);
   const [isJumping, setIsJumping] = useState(false);
   const [facingRight, setFacingRight] = useState(true);
+  const [exitAnim, setExitAnim] = useState<{ dist: number; dur: number } | null>(null);
+  const [exitTransformActive, setExitTransformActive] = useState(false);
   const [enemyPositions, setEnemyPositions] = useState(
     enemies.map((_, i) => ({ x: enemyPatrolRef.current[i].x, y: enemyPatrolRef.current[i].y }))
   );
@@ -415,6 +417,43 @@ export default function ClimbingStage({
       }
     }
   }, [defeatedEnemyIndices, fleeEnemyIndex, enemies, platforms, playerH, playerW, charGroundOffset]);
+
+  // Two-phase CSS walk-off: activates transform after mount + runs footstep sounds during walkoff
+  useEffect(() => {
+    if (!exitAnim) { setExitTransformActive(false); return; }
+    const raf = requestAnimationFrame(() => setExitTransformActive(true));
+
+    let frameAcc = playerFrameAccRef.current;
+    let frameIdx = playerFrameIdxRef.current;
+    let stepTimer = footstepTimerRef.current;
+    const TICK = 1 / 60;
+    const intervalId = setInterval(() => {
+      if (charSprite.stepFrames) {
+        frameAcc += TICK;
+        const frameDur = 1 / 14;
+        while (frameAcc >= frameDur) {
+          frameAcc -= frameDur;
+          frameIdx = (frameIdx + 1) % charSprite.runF;
+          if (charSprite.stepFrames.includes(frameIdx)) {
+            playSfx("footstep", 0.30);
+          }
+        }
+      } else {
+        stepTimer -= TICK;
+        if (stepTimer <= 0) {
+          playSfx("footstep", 0.28);
+          stepTimer = 0.22;
+        }
+      }
+    }, TICK * 1000);
+    const stopId = setTimeout(() => clearInterval(intervalId), exitAnim.dur * 1000 + 100);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      clearInterval(intervalId);
+      clearTimeout(stopId);
+    };
+  }, [exitAnim]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const onDown = (e: KeyboardEvent) => {
@@ -569,16 +608,21 @@ export default function ClimbingStage({
         return;
       }
 
-      if (!descending && p.x <= EXIT_TRIGGER_X && atGround && !stageCompleteRef.current) {
+      if (
+        ((!descending && p.x <= EXIT_TRIGGER_X && atGround) ||
+          (descending && p.x <= EXIT_TRIGGER_X && atTop)) &&
+        !stageCompleteRef.current
+      ) {
         stageCompleteRef.current = true;
         cancelAnimationFrame(rafRef.current);
-        onExitRef.current();
-        return;
-      }
-      if (descending && p.x <= EXIT_TRIGGER_X && atTop && !stageCompleteRef.current) {
-        stageCompleteRef.current = true;
-        cancelAnimationFrame(rafRef.current);
-        onExitRef.current();
+        // CSS walk-off to the left, then fire onExit on transitionEnd
+        const dist = -(p.x + playerW + 80);
+        const dur = Math.abs(dist) / MAX_SPEED;
+        setIsRunning(true);
+        setIsJumping(false);
+        setFacingRight(false);
+        facingRightRef.current = false;
+        setExitAnim({ dist, dur });
         return;
       }
 
@@ -886,14 +930,20 @@ export default function ClimbingStage({
         );
       })}
 
-      <div data-testid="img-climb-character" style={{
-        position: "absolute",
-        left: renderX,
-        top: toScreenY(renderY),
-        width: playerW,
-        height: playerH,
-        zIndex: 7,
-      }}>
+      <div
+        data-testid="img-climb-character"
+        style={{
+          position: "absolute",
+          left: renderX,
+          top: toScreenY(renderY),
+          width: playerW,
+          height: playerH,
+          zIndex: 7,
+          transition: exitAnim ? `transform ${exitAnim.dur.toFixed(3)}s linear` : undefined,
+          transform: (exitAnim && exitTransformActive) ? `translateX(${exitAnim.dist}px)` : undefined,
+        }}
+        onTransitionEnd={exitAnim ? () => onExitRef.current() : undefined}
+      >
         <SpriteAnimator
           spriteSheet={spriteSrc}
           frameWidth={charSprite.iW}
