@@ -945,6 +945,7 @@ export default function ClimbingStage({
         onTransitionEnd={exitAnim ? () => onExitRef.current() : undefined}
       >
         <SpriteAnimator
+          key={isJumping ? "jumping" : isRunning ? "running" : "idle"}
           spriteSheet={spriteSrc}
           frameWidth={charSprite.iW}
           frameHeight={charSprite.iH}

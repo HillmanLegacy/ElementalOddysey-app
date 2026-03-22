@@ -1193,7 +1193,7 @@ export default function SideScrollStage({
         return { src: sheet, frames: at + n, fps: 10, loop: false, startAt: at, pauseAt: at + n - 1 };
       }
     }
-    return { src: charSprite.run, frames: 1, fps: 8, loop: false, pauseAt: 0 };
+    return { src: charSprite.run, frames: 1, fps: 8, loop: true };
   };
   const jumpSpriteConfig = isJumping ? getJumpSprite() : null;
   const idleStart = charSprite.idleStart ?? 0;
@@ -1441,6 +1441,7 @@ export default function SideScrollStage({
           } : undefined}
         >
           <SpriteAnimator
+            key={isJumping ? "jumping" : isRunning ? "running" : "idle"}
             spriteSheet={spriteSrc}
             frameWidth={charSprite.iW}
             frameHeight={charSprite.iH}
