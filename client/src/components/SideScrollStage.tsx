@@ -721,6 +721,12 @@ export default function SideScrollStage({
   useEffect(() => {
     if (stageCompleteRef.current) return;
     battlePendingRef.current = false;   // reset on every effect run (covers post-battle resume)
+    physRef.current.vx = 0;            // clear any momentum accumulated before/during battle
+    physRef.current.vy = 0;
+    keysRef.current.left = false;       // clear stale key state so player doesn't auto-run on return
+    keysRef.current.right = false;
+    keysRef.current.jumpPressed = false;
+    keysRef.current.jumpHeld = false;
     fireballsRef.current = [];          // clear any stale projectiles
     setFireballs([]);
     setExplosions([]);

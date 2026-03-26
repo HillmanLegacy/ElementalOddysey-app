@@ -486,6 +486,12 @@ export default function ClimbingStage({
   useEffect(() => {
     if (stageCompleteRef.current) return;
     battlePendingRef.current = false;
+    physRef.current.vx = 0;             // clear momentum so player doesn't auto-run after battle
+    physRef.current.vy = 0;
+    keysRef.current.left = false;        // clear stale key state
+    keysRef.current.right = false;
+    keysRef.current.jumpPressed = false;
+    keysRef.current.jumpHeld = false;
     lastTimeRef.current = null;
 
     const loop = (ts: number) => {
